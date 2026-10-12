@@ -44,3 +44,4 @@ example
 
 # subagent-driven-development workspace
 .superpowers/
+.env

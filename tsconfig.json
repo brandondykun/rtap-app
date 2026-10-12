@@ -12,7 +12,8 @@
     },
     "types": [
       "jest"
-    ]
+    ],
+    "experimentalDecorators": true
   },
   "include": [
     "**/*.ts",
