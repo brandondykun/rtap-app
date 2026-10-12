@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.eratassoftware.rtap"
+      "bundleIdentifier": "com.eratas.rtap"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.eratassoftware.rtap"
+      "package": "com.eratas.rtap"
     },
     "plugins": [
       "expo-router",
