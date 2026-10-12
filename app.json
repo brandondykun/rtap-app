@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "map",
+    "name": "Tactical Map",
     "slug": "map",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "map",
     "userInterfaceStyle": "automatic",
@@ -18,10 +18,6 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
