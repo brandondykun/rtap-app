@@ -1,0 +1,1 @@
+../../.agents/rules/repo-overview.mdc

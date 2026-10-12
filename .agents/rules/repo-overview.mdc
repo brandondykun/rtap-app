@@ -1,0 +1,14 @@
+---
+description: High-level overview of the repo — always on.
+alwaysApply: true
+---
+
+# Repository overview
+
+Source lives under `src/`, split by concern (`app/` routes, `features/`,
+`components/`, `api/`, `hooks/`, `stores/`, `lib/`, `config/`, `theme/`).
+
+## Conventions
+
+- Feature modules own their own screens, queries, and mutations; shared UI stays
+  in `components/ui/`. Reach across features by deep import, not via a barrel.
