@@ -9,9 +9,9 @@ export const LOGO_ROW_HEIGHT = 28;
  * The attribution (i) button's tappable frame is taller than the wordmark and centers its icon,
  * so at the same `top` the icon sits visibly lower. Raise it so the icon lines up with the logo.
  */
-export const ATTRIBUTION_RAISE = 10;
-/** Room reserved for the Mapbox wordmark before the attribution button. */
-export const LOGO_WIDTH = 96;
+export const ATTRIBUTION_RAISE = 16;
+/** Room reserved for the attribution (i) button, which sits left of the Mapbox wordmark. */
+export const ATTRIBUTION_WIDTH = 32;
 
 export type Insets = { top: number; right: number; bottom: number; left: number };
 
@@ -25,14 +25,14 @@ export function ornamentTop({ landscape, insets }: { landscape: boolean; insets:
 
 /**
  * Mapbox ornament positions. The logo and attribution must stay visible (Mapbox terms), so they
- * sit top-left: under the full-width toolbar in portrait, beside the top-right toolbar in
- * landscape. There is no scale bar (it costs too much screen space).
+ * sit top-left (the (i) button first, then the wordmark): under the full-width toolbar in
+ * portrait, beside the top-right toolbar in landscape. There is no scale bar (it costs too much screen space).
  */
 export function ornamentPositions({ landscape, insets }: { landscape: boolean; insets: Insets }) {
   const left = insets.left + EDGE;
   const top = ornamentTop({ landscape, insets });
   return {
-    logo: { top, left },
-    attribution: { top: Math.max(0, top - ATTRIBUTION_RAISE), left: left + LOGO_WIDTH },
+    attribution: { top: Math.max(0, top - ATTRIBUTION_RAISE), left },
+    logo: { top, left: left + ATTRIBUTION_WIDTH },
   };
 }
