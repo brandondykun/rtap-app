@@ -14,6 +14,12 @@ export const ATTRIBUTION_RAISE = { portrait: 20, landscape: 24 } as const;
 function attributionRaise(landscape: boolean): number {
   return landscape ? ATTRIBUTION_RAISE.landscape : ATTRIBUTION_RAISE.portrait;
 }
+
+/**
+ * Logo row top in landscape (from the safe area). The (i) button's frame then starts slightly
+ * above the safe area; that is padding around the icon, which stays on screen.
+ */
+export const LANDSCAPE_LOGO_TOP = 22;
 /** Room reserved for the attribution (i) button, which sits left of the Mapbox wordmark. */
 export const ATTRIBUTION_WIDTH = 32;
 
@@ -25,10 +31,10 @@ export function isLandscape(width: number, height: number): boolean {
 
 /**
  * Top of the Mapbox logo row, measured from the safe area: under the full-width toolbar in
- * portrait, at the top edge in landscape. Never so high that the raised (i) button goes above it.
+ * portrait, near the top edge in landscape.
  */
 export function ornamentRowTop(landscape: boolean): number {
-  return Math.max(EDGE + (landscape ? 0 : TOOLBAR_HEIGHT + GAP), attributionRaise(landscape));
+  return landscape ? LANDSCAPE_LOGO_TOP : EDGE + TOOLBAR_HEIGHT + GAP;
 }
 
 /**

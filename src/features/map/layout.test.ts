@@ -4,6 +4,7 @@ import {
   EDGE,
   GAP,
   isLandscape,
+  LANDSCAPE_LOGO_TOP,
   LOGO_ROW_HEIGHT,
   ornamentPositions,
   ornamentRowTop,
@@ -25,9 +26,11 @@ describe('map layout', () => {
     expect(p.logo).toEqual({ top, left: EDGE + ATTRIBUTION_WIDTH });
   });
 
-  it('keeps the raised (i) button on screen at the top edge in landscape', () => {
+  it('keeps the logo near the top edge in landscape, with the (i) button raised to line up', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS });
-    expect(p.attribution.top).toBeGreaterThanOrEqual(0);
+    expect(p.logo.top).toBe(LANDSCAPE_LOGO_TOP);
+    // Only the button's padding may extend past the safe area, never the icon (~half its frame).
+    expect(p.attribution.top).toBeGreaterThanOrEqual(-EDGE);
     expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE.landscape);
     expect(p.attribution.left).toBe(EDGE);
   });
