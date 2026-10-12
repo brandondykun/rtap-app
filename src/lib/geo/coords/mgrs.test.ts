@@ -91,7 +91,7 @@ describe('parseMgrs', () => {
 });
 
 describe('band and zone line round-trips', () => {
-  const cases: Array<[number, number]> = [
+  const cases: [number, number][] = [
     [39.9999, -77.03], // S/T band line
     [40.0001, -77.03],
     [38.9, -78.0001], // zone 17/18 line
