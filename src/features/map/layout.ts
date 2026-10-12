@@ -9,7 +9,7 @@ export const LOGO_ROW_HEIGHT = 28;
  * The attribution (i) button's tappable frame is taller than the wordmark and centers its icon,
  * so at the same `top` the icon sits visibly lower. Raise it so the icon lines up with the logo.
  */
-export const ATTRIBUTION_RAISE = 16;
+export const ATTRIBUTION_RAISE = 26;
 /** Room reserved for the attribution (i) button, which sits left of the Mapbox wordmark. */
 export const ATTRIBUTION_WIDTH = 32;
 
