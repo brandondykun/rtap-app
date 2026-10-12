@@ -1,7 +1,7 @@
 # Tactical Map — Architecture Design
 
 **Date:** 2026-10-12
-**Status:** Draft — awaiting review
+**Status:** Approved with mockups (2026-10-12)
 
 ## 1. Purpose and scope
 
@@ -16,21 +16,28 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Missions screen (app entry): lists the user's missions/maps, creates a new one, and opens
   one in the map. The map is always entered with a mission selected.
 - Map screen for the selected mission, usable in portrait and landscape.
-- User's own location with a heading-aware icon.
-- Always-visible center crosshair with the MGRS coordinate of the crosshair.
-- Range and bearing from the user to the crosshair, in the chosen unit and north reference.
-- Top toolbar with: symbol selection, drop point, grid/magnetic toggle, app menu.
-- Add a point (crosshair "drop" or long-press) → saved to WatermelonDB → rendered on the map.
-- Select a point → properties menu (name, symbol, MGRS, range/bearing, hide, delete).
+- User's own location with a heading-aware icon (view cone) labeled "YOU".
+- Always-visible center crosshair; bottom-left readout card with the crosshair's MGRS and
+  range/bearing from the user (tap the bearing to toggle grid ↔ magnetic).
+- Top toolbar: app menu, POINT tool, settings. Map controls: north-up, zoom in/out,
+  recenter, scale bar.
+- Add Point panel (POINT tool or long-press): MGRS entry, Center/Me, affiliation, unit type,
+  name, notes → saved to WatermelonDB → rendered on the map.
+- Select a point → Edit Point panel (same form plus hide and delete).
 - Toggle visibility of any map item.
-- App menu with settings (coordinate format, angle unit, north reference, theme)
-  and "Switch mission" (returns to the missions screen).
+- App menu ("Switch mission", About) and Settings menu (coordinate format, angle unit,
+  north reference, declination override).
 
 **Explicitly out of MVP (architecture must accommodate)**
 - Offline tile download UI (service layer is built; no UI).
 - Lines, polygons, and other map item kinds.
 - Remote sync, authentication, paid tier, live teammate locations.
 - Runtime rasterization of arbitrary SIDCs.
+- Shown in mockups but not designed yet (left out of MVP): LINE, POLYGON, MEASURE and LAYERS
+  tools; routes; MGRS grid overlay with grid labels; the "Share" toggle; mesh status, GPS
+  accuracy, altitude and Zulu-time readouts; callsigns (e.g. "2-1").
+- Day and night/red-light themes (MVP ships the mockup dark theme; theming is wired so
+  more themes are data-only additions).
 - Web. `@rnmapbox/maps` is native-only; template web files are removed.
 
 **Platform baseline:** Expo SDK 57, React Native 0.86 (New Architecture), React 19.2,
@@ -91,7 +98,9 @@ src/
     map/
       MapScreen.tsx
       canvas/                # MapCanvas, camera controller, style constants
-      layers/                # PointsLayer, SelfLayer (later TeamLayer, LinesLayer, …)
+      layers/                # PointsLayer, LabelsLayer, SelfLayer, DraftLayer
+                             # (later TeamLayer, LinesLayer, …)
+      controls/              # NorthUpButton, ZoomButtons, RecenterButton, ReadoutCard
       interaction/           # crosshair, readout, long-press, selection
       offline/               # TilePackService interface + Mapbox implementation
     map-items/
@@ -100,10 +109,11 @@ src/
       repository.ts          # observe / query / create / update / delete
       commands.ts            # placePoint, updateItem, deleteItem, toggleItemVisibility
       selectors.ts           # records → GeoJSON FeatureCollection (cached)
-      presets.ts             # MVP SIDC palette
+      naming.ts              # auto-names (HOS-4, …)
+      menus/                 # PointForm, AddPointMenu, EditPointMenu
     toolbar/                 # top toolbar UI
     location/                # self position + heading stream
-    symbology/               # SIDC → Mapbox image registry
+    symbology/               # presets (affiliation × unit type → SIDC), image registry
     menus/                   # registry, MenuHost, menu definitions
   components/
     ui/                      # shared primitives (buttons, icons)
@@ -112,7 +122,7 @@ src/
     geo/                     # pure TypeScript geospatial library (Section 6)
     db/                      # schema, migrations, adapter, id generator, sync config
     identity/                # deviceId now; userId later
-  stores/                    # Zustand: interaction, settings, presence, menu
+  stores/                    # Zustand: interaction, draft, settings, presence, menu
   theme/                     # tokens, themes, mapColors (Section 10)
   config/                    # env access (Mapbox token), constants
 ```
@@ -195,7 +205,7 @@ author, etc.) follows the same pattern.
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
 - **Settings** (coordinate format, angle unit, north reference, declination
-  override, theme): Zustand persisted to `expo-sqlite/kv-store`. Per-device, never synced.
+  override): Zustand persisted to `expo-sqlite/kv-store`. Per-device, never synced.
 
 ## 6. Geospatial library (`lib/geo`)
 
@@ -278,16 +288,23 @@ lib/geo/
 - Both sit behind `getSymbolImage(sidc)`; layers do not change.
 
 ### 8.3 Self and teammate icons
-- **Self:** rnmapbox `LocationPuck` with `puckBearing="heading"` and a custom user/chevron
-  icon (not a 2525 symbol).
-- **Teammates (later):** a `SymbolLayer` over the presence store's GeoJSON with
-  `iconRotate: ['get', 'heading']`, `iconRotationAlignment: 'map'`, using the same icon.
+- **Look (mockups):** white-ringed `sky-400` disc with a dark navigation arrow, a translucent
+  `sky-400` view cone pointing along the heading, and a "YOU" label chip. Not a 2525 symbol.
+- **Self:** `SelfLayer` — a `ShapeSource` with one feature from the presence store (fed by
+  `expo-location` position + heading), rendered by a `SymbolLayer` with
+  `iconRotate: ['get', 'heading']`, `iconRotationAlignment: 'map'`. Heading updates are
+  throttled (≈10 Hz, ≥2° change) to keep source updates cheap.
+- **Teammates (later):** the same layer style over the presence store's teammate features,
+  so self and teammates share one rendering path.
 
 ### 8.4 Crosshair and readout
-- The crosshair and its readout are **always visible**.
-- Readout line 1: **MGRS of the crosshair**. Line 2: range and bearing from the user to the
-  crosshair in the selected unit and north reference (shows "—" without a position fix),
-  plus the G-M angle.
+- The crosshair (thin white cross with a center dot) and its readout are **always visible**.
+- The readout is a card at the bottom-left (portrait and landscape).
+  Line 1 (large, monospace): crosshair icon + **MGRS of the crosshair**
+  (`18S UJ 24000 06000`).
+  Line 2 (small): range and bearing from the user to the crosshair in the selected unit and
+  north reference, e.g. `1.15 km · 103° GRID` (shows "—" without a position fix). **Tapping
+  the bearing toggles grid ↔ magnetic** — this is the one-tap north-reference toggle.
 - Only the readout component subscribes to a throttled (~one update per frame)
   `cameraCenter` value fed from `onCameraChanged`. It is initialized from the initial camera
   so it is never blank.
@@ -296,16 +313,45 @@ lib/geo/
   describes the point under the crosshair. *(Plan must verify rnmapbox reports the padded
   center; fallback is `getCoordinateFromView` at the crosshair position.)*
 
-### 8.5 Placing items
-- **Drop button** → `placePoint(crosshairCoord, activeSidc)`.
-- **Long-press on map** → `placePoint(pressCoord, activeSidc)`.
-- Both give haptic feedback (`expo-haptics`). The point is created immediately with an
-  auto-name (e.g. "Hostile 3"); the `item.properties` menu opens at its `peek` detent for
-  optional edits. Ignoring it does not block further placement.
+### 8.5 Placing items (Add Point flow, from mockups)
+- **Entry:** the POINT tool opens the `point.add` panel with a **draft point** at the
+  crosshair. **Long-press** on the map opens it with the draft at the pressed coordinate
+  (or moves the draft there if the panel is already open).
+- **The draft is not in the database.** It lives in a `draft` Zustand store
+  (`coord`, `affiliation`, `unitType`, `name`, `notes`) and is drawn by `DraftLayer`:
+  the symbol, a dashed amber selection ring with tick marks, an amber "`HOS-4 · NEW`" label,
+  and a dashed amber range line from the user to the draft labeled `1.15 km · 103°`.
+- **Map follows the coordinate:** whenever the draft coordinate changes (valid MGRS typed,
+  Center, Me, long-press), the camera eases to it, using the panel's camera padding so it
+  lands in the center of the visible map area. Panning the map does *not* move the draft.
+- **Form:** MGRS split into four fields (zone+band, 100 km square, easting, northing) with
+  live validation (`✓ Valid · 1.15 km @ 103°`); **Center** (draft ← crosshair) and **Me**
+  (draft ← own position); affiliation segmented control (friendly / hostile / neutral /
+  unknown, shown as frame icons); **Name** (auto, e.g. `HOS-4`, editable); **unit type**
+  dropdown; **notes** button that reveals a notes field.
+- **Add** → `placePoint({ missionId, coord, sidc, name, notes })`, success haptic. The panel
+  stays open for rapid entry: affiliation and type are kept, the name increments, and the
+  draft resets to the crosshair. **Cancel** closes the panel and clears the draft.
+- **Auto-names:** `<PREFIX>-<n>` with `FRD`, `HOS`, `NEU`, `UNK` prefixes; `n` is one more
+  than the highest existing number for that prefix in the mission.
+- **SIDC:** built from affiliation × unit type (`symbology/presets.ts`). MVP unit types:
+  Unspecified, Infantry, Dismounted infantry, Armor, Medical, Observation post.
+- **Editing:** tapping a point opens `point.edit` — the same form component prefilled,
+  with **Save**, a hide toggle, and **Delete**.
 
-### 8.6 Interaction store
-`activeSidc`, `selectedItemId`, `followMode`, `cameraCenter` (throttled). No `crosshairVisible`
-— the crosshair is always shown.
+### 8.6 Interaction stores
+- `interaction`: `selectedItemId`, `followMode`, `cameraCenter` (throttled),
+  `cameraBearing` (throttled, for the north-up button).
+- `draft`: the in-progress point (above).
+- The crosshair is always shown; there is no visibility flag.
+
+### 8.6a Map controls (right edge, from mockups)
+- **North-up button** under the toolbar: compass needle rotated by `cameraBearing`; tap
+  resets bearing to 0.
+- **Zoom in / zoom out** stacked buttons and **recenter** (follow user) at the bottom-right.
+- **Scale bar** at the bottom (rnmapbox native scale bar, styled as close to the mockup as
+  the native ornament allows).
+- **Basemap:** Mapbox satellite style.
 
 ### 8.7 Offline tiles (`features/map/offline`)
 `TilePackService` interface — `create(bounds, minZoom, maxZoom)`, `list()`, `delete(id)`,
@@ -322,11 +368,17 @@ Default tile behavior is online with Mapbox's ambient cache.
 
 ## 9. Toolbar (`features/toolbar`)
 - A **top bar in both portrait and landscape**, absolutely positioned over the map,
-  respecting safe-area insets (top in portrait; leading/trailing in landscape).
-- MVP buttons: app menu, symbol selector (shows active SIDC, opens `symbol.picker`), drop
-  point, grid/magnetic toggle, recenter/follow.
-- If buttons exceed the available width, the bar scrolls horizontally or overflows into a
-  "more" action. It does not wrap.
+  respecting safe-area insets. Rounded, translucent near-black container.
+  - **Portrait:** full width.
+  - **Landscape:** anchored top-right, sized to its content, so a left panel never
+    overlaps it.
+- Layout: hamburger (app menu) · divider · tool buttons (icon over uppercase label) ·
+  divider · gear (settings menu).
+- **MVP tools:** POINT only. LINE, POLYGON, MEASURE, LAYERS are added later through the
+  same `ToolButton` component.
+- **Active tool:** amber icon and label on a dark amber tinted background (POINT while the
+  Add Point panel is open).
+- If buttons exceed the available width, the bar scrolls horizontally. It does not wrap.
 
 ## 10. Semantic styling (`src/theme`)
 - **NativeWind**, pending a compatibility check against SDK 57 / RN 0.86 in the plan.
@@ -335,10 +387,45 @@ Default tile behavior is online with Mapbox's ambient cache.
   2. *Semantic tokens* — `surface`, `surface-raised`, `surface-overlay`, `text`,
      `text-muted`, `accent`, `danger`, `border`, `readout`, and affiliation colors
      `friendly`, `hostile`, `neutral`, `unknown`.
-  3. *Themes* — `day`, `dark` in MVP; `night` (red-light) later.
+  3. *Themes* — MVP ships one theme, `dark` (the mockups); `day` and `night` (red-light)
+     are later data-only additions.
 - Semantic tokens are exposed to NativeWind as CSS variables; components use
   `bg-surface text-text border-border`. Theme switching swaps variables.
-- `mapColors(theme)` exports the same semantic values as raw colors for Mapbox layer styles.
+- `mapColors(theme)` exports the same semantic values as raw colors for Mapbox layer styles
+  and for the symbol build script (milsymbol fill colors are overridden with the
+  affiliation tokens so map symbols use Tailwind colors too).
+
+**Dark theme (from mockups, Tailwind palette only):**
+
+| Semantic token     | Tailwind     | Used for                                         |
+|--------------------|--------------|--------------------------------------------------|
+| `surface`          | `stone-900`  | panels/sheets                                    |
+| `surface-chrome`   | `neutral-950` @ 90% | toolbar, map control buttons, readout card |
+| `surface-input`    | `neutral-950`| text fields, segmented controls                  |
+| `surface-raised`   | `stone-800`  | secondary buttons (Center, Me, notes)            |
+| `border`           | `stone-700`  | field and button borders, dividers               |
+| `text`             | `stone-50`   | primary text                                     |
+| `text-muted`       | `stone-400`  | field labels, secondary readout line             |
+| `accent`           | `amber-500`  | primary button, active tool, focused field, draft |
+| `accent-subtle`    | `amber-950`  | active tool background                           |
+| `on-accent`        | `neutral-950`| text on amber                                    |
+| `success`          | `green-500`  | "Valid" indicator                                |
+| `danger`           | `red-500`    | delete, invalid input                            |
+| `friendly`         | `sky-300`    | friendly symbols and selection                   |
+| `hostile`          | `red-400`    | hostile symbols, objective outlines              |
+| `neutral`          | `green-300`  | neutral symbols                                  |
+| `unknown`          | `yellow-300` | unknown symbols                                  |
+| `self`             | `sky-400`    | own-position disc and view cone                  |
+| `map-label-bg`     | `neutral-950` @ 85% | map label chips                           |
+| `map-label-text`   | `stone-50`   | map label text                                   |
+
+**Typography:** system sans for UI; panel titles uppercase with wide tracking; field labels
+small uppercase `text-muted` with wide tracking; a bundled monospace font (JetBrains Mono)
+for MGRS, readouts and map labels, with tabular digits.
+
+**Map labels:** monospace text on a dark rounded chip (draft label: amber chip with dark
+text). Mapbox has no text background, so labels are a separate `SymbolLayer` using a
+stretchable chip image with `iconTextFit: 'both'`, offset below the symbol.
 - Spacing, radius, and type scale use Tailwind defaults, plus a monospace, tabular-digit
   readout style for MGRS and bearings.
 - **Lint:** no hex color literals or raw palette classes outside `src/theme/`.
@@ -360,12 +447,12 @@ Default tile behavior is online with Mapbox's ambient cache.
 - Every menu is declared once:
   ```ts
   defineMenu({
-    id: 'item.properties',
+    id: 'point.edit',
     family: 'action',            // 'app' | 'action'
-    title: 'Point',
+    title: 'Edit Point',
     params: z.object({ itemId: z.string() }),
     detents: ['peek', 'half', 'full'],
-    component: ItemPropertiesMenu,
+    component: EditPointMenu,
   })
   ```
 - Menu store (Zustand) holds a typed stack: `openMenu(id, params)` (replace stack),
@@ -375,20 +462,31 @@ Default tile behavior is online with Mapbox's ambient cache.
   licenses).
 
 ### 11.3 Primitives (`components/menu`)
-`MenuHeader` (title, back, close), `MenuSection`, `MenuRow`, `MenuToggle`, `MenuTextField`,
-`MenuSegmented`, `SymbolGrid`, `MenuActions` (primary / destructive). Menus compose only
-these primitives; primitives use only semantic tokens and may wrap `@expo/ui` controls.
+- `MenuHeader` — leading text action (`Cancel` / back), centered uppercase title, trailing
+  primary button (amber, e.g. `✓ Add`).
+- `MenuSection` — uppercase muted label above content.
+- `MenuRow`, `MenuToggle`, `MenuTextField`, `MenuSegmented`, `MenuSelect` (dropdown),
+  `MenuButton` (secondary: icon + label, e.g. Center / Me), `MenuActions`
+  (primary / destructive), `MgrsInput` (the four-field MGRS entry with validation line).
+- Menus compose only these primitives; primitives use only semantic tokens and may wrap
+  `@expo/ui` controls (e.g. Switch, Picker/Menu for `MenuSelect`).
 
 ### 11.4 MVP menus
-- **App family:** `app.root` → "Switch mission", `settings` (coordinate format, angle unit, north reference,
-  declination override, theme), `about`.
-- **Action family:** `symbol.picker`, `item.properties` (name, symbol, notes, MGRS,
-  range/bearing, hide toggle, delete).
+- **App family:**
+  - `app.root` (hamburger) → "Switch mission", About.
+  - `settings` (gear) → coordinate format, angle unit (degrees / mils), north reference
+    (grid / magnetic / true), declination override.
+- **Action family:** `point.add`, `point.edit` (Section 8.5).
 
 ### 11.5 Visual design
-Mockups will be stored in `docs/design/mockups/` and referenced from UI tasks in the
-implementation plan. Token values (Section 10), toolbar layout (Section 9), and panel
-appearance (Section 11.1) follow the mockups; the architecture above does not depend on them.
+Mockups live in `docs/design/mockups/` and are the visual reference for MVP UI:
+- `portrait-map-idle.png`, `landscape-map-idle.png` — idle map: toolbar, map controls,
+  readout card, symbols with label chips, self icon.
+- `portrait-add-point.png`, `landscape-add-point.png` — Add Point panel as bottom sheet
+  (portrait, ~⅓ height with grab handle) and left panel (landscape, ~40% width, full
+  height), with the map auto-panned so the draft sits in the visible center.
+
+Elements in the mockups that are out of MVP scope are listed in Section 1.
 
 ## 12. Error handling
 - **Location denied / no fix:** map fully usable, no puck, range/bearing shows "—", one
@@ -405,6 +503,8 @@ appearance (Section 11.1) follow the mockups; the architecture above does not de
 - **Data layer:** repositories, commands, selectors tested with WatermelonDB's LokiJS
   in-memory adapter (UUIDs, authorship stamps, mission scoping, visibility, feature cache, mission list ordering and item counts).
 - **Menu system:** registry typing, stack operations.
+- **Add Point flow:** auto-naming, SIDC composition, draft store transitions (Center, Me,
+  long-press, Add resets, Cancel clears), MGRS field validation.
 - **UI:** focused React Native Testing Library tests for toolbar, readout, menu primitives;
   `@rnmapbox/maps` mocked.
 - **Performance:** dev-only seed of 5,000 points; manual device check of panning
@@ -439,11 +539,15 @@ Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks
    dev build before building on it. If it fails, revisit Section 5 before continuing.
 2. **NativeWind compatibility** with SDK 57 / RN 0.86 — choose the supported major version;
    if none, fall back to typed tokens + `StyleSheet` with the same semantic names.
-3. **`@rnmapbox/maps`** version for RN 0.86, including `LocationPuck` heading support.
+3. **`@rnmapbox/maps`** version for RN 0.86; `iconTextFit` label chips and the native scale
+   bar render as specified.
 4. **`geomagnetism`** covers WMM2025 dates.
 5. **Camera padding** center behavior (Section 8.4).
 6. **Saved camera restore** on mission open applies before first render without a visible
    jump (initial camera props vs. imperative move).
+7. **Map label font:** Mapbox labels need glyphs served by the style; confirm a monospace
+   font stack available to the satellite style (or upload JetBrains Mono glyphs to the
+   Mapbox account), with a documented fallback.
 
 ## 17. Future evolution (informative)
 - **Sync:** implement `synchronize()` pull/push in `lib/db/sync`, excluding local-only
