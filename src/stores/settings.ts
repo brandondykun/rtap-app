@@ -1,0 +1,62 @@
+import Storage from 'expo-sqlite/kv-store';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import type { AngleUnit, NorthRef } from '@/lib/geo/types';
+
+export type CoordinateFormat = 'mgrs' | 'latlon';
+
+type SettingsValues = {
+  coordinateFormat: CoordinateFormat;
+  angleUnit: AngleUnit;
+  northRef: NorthRef;
+  /** Manual declination in degrees (east positive); null = use the WMM model. */
+  declinationOverrideDeg: number | null;
+};
+
+type SettingsActions = {
+  setCoordinateFormat: (format: CoordinateFormat) => void;
+  setAngleUnit: (unit: AngleUnit) => void;
+  setNorthRef: (ref: NorthRef) => void;
+  /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
+  toggleGridMagnetic: () => void;
+  /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
+  setDeclinationOverride: (deg: number | null) => boolean;
+};
+
+export type SettingsState = SettingsValues & SettingsActions;
+
+export const DEFAULT_SETTINGS: SettingsValues = {
+  coordinateFormat: 'mgrs',
+  angleUnit: 'deg',
+  northRef: 'grid',
+  declinationOverrideDeg: null,
+};
+
+export const useSettings = create<SettingsState>()(
+  persist(
+    (set, get) => ({
+      ...DEFAULT_SETTINGS,
+      setCoordinateFormat: (coordinateFormat) => set({ coordinateFormat }),
+      setAngleUnit: (angleUnit) => set({ angleUnit }),
+      setNorthRef: (northRef) => set({ northRef }),
+      toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
+      setDeclinationOverride: (deg) => {
+        if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
+        set({ declinationOverrideDeg: deg });
+        return true;
+      },
+    }),
+    {
+      name: 'settings',
+      version: 1,
+      storage: createJSONStorage(() => Storage),
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg }) => ({
+        coordinateFormat,
+        angleUnit,
+        northRef,
+        declinationOverrideDeg,
+      }),
+    },
+  ),
+);
