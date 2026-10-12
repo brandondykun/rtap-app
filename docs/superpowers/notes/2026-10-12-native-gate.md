@@ -1,14 +1,14 @@
 # Native dependency gate — 2026-10-12
 
-Device verification was NOT run locally (disk space exhausted; the user will build a dev client with EAS). All device checks are PENDING.
+Device verification was NOT run locally (disk space exhausted). The user built an EAS development client. iOS checks passed on device on 2026-10-12 (spike screen: Mapbox satellite, semantic NativeWind classes, `createMission` against the real app database, relaunch persistence, rotation). Android is still PENDING.
 
 | Check | iOS | Android |
 |-------|-----|---------|
-| Builds and launches | PENDING (EAS dev build by user) | PENDING (EAS dev build by user) |
-| Mapbox satellite renders | PENDING (EAS dev build by user; needs Mapbox token) | PENDING (EAS dev build by user; needs Mapbox token) |
-| NativeWind classes apply | PENDING (EAS dev build by user) | PENDING (EAS dev build by user) |
-| WatermelonDB decorated field writes/reads | PENDING (EAS dev build by user) | PENDING (EAS dev build by user) |
-| WatermelonDB persists across relaunch | PENDING (EAS dev build by user) | PENDING (EAS dev build by user) |
+| Builds and launches | PASS (after the two Babel fixes below) | PENDING |
+| Mapbox satellite renders | PASS | PENDING |
+| NativeWind classes apply | PASS (semantic tokens) | PENDING |
+| WatermelonDB decorated field writes/reads | PASS (JSI) | PENDING (async adapter) |
+| WatermelonDB persists across relaunch | PASS | PENDING |
 
 Installed versions:
 
@@ -31,3 +31,8 @@ Notes / workarounds:
 - `tailwindcss` and the babel plugins moved to devDependencies.
 - Mapbox needs `EXPO_PUBLIC_MAPBOX_TOKEN` (public token) in a git-ignored `.env`; also an EAS env var for cloud builds. Mapbox native SDK download may also need `RNMAPBOX_MAPS_DOWNLOAD_TOKEN` (secret, `DOWNLOADS:READ`) at build time.
 - Spike screen (inserting a row on mount) was reverted to the placeholder.
+
+EAS dev build findings (iOS):
+- Bundling failed: "Class private methods are not enabled" in RN's `GlobalStateObserver.js`. The explicit loose class-properties plugin requires the private-methods transforms in the same mode. Fixed in 260c0a9.
+- Runtime red screen: "Cannot assign to read-only property 'NONE'" (RN `Event.js`). Running the decorator/class-properties plugins over node_modules turned Flow-only field declarations into real assignments. Fixed in 49e725b by scoping those plugins to app code (Babel `overrides` with a filename `test`; a RegExp `exclude` breaks Metro's transformer construction).
+- Rotation re-layout works with the map mounted.
