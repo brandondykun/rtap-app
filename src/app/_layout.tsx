@@ -15,7 +15,14 @@ void SplashScreen.preventAutoHideAsync();
 
 function ThemedStack() {
   const { colors } = useTheme();
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }}>
+      <Stack.Screen
+        name="missions/new"
+        options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }}
+      />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
