@@ -35,6 +35,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const followMode = useInteraction((s) => s.followMode);
   const setFollowMode = useInteraction((s) => s.setFollowMode);
   const selfPosition = usePresence((s) => s.selfPosition?.position ?? null);
+  // Only a camera the app or user actually moved is worth persisting (not the untouched open).
+  const cameraMoved = useRef(false);
   const saver = useCameraPersistence(ctx, missionId);
   useSelfLocation();
 
@@ -45,22 +47,29 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const centerCoordinate: [number, number] = [selfPosition.lon, selfPosition.lat];
     if (!centeredOnSelf.current) {
       centeredOnSelf.current = true;
+      cameraMoved.current = true;
       cameraRef.current?.setCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
-    } else if (followMode) {
+    } else if (useInteraction.getState().followMode) {
       cameraRef.current?.setCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
     }
-  }, [selfPosition, followMode]);
+  }, [selfPosition]);
 
   const onUserGesture = () => {
+    cameraMoved.current = true;
     if (useInteraction.getState().followMode) setFollowMode(false);
   };
   const zoomBy = (delta: number) => {
+    cameraMoved.current = true;
     const zoomLevel = clampZoom(useInteraction.getState().cameraZoom + delta);
     cameraRef.current?.setCamera({ zoomLevel, ...EASE, animationDuration: 250 });
   };
-  const northUp = () => cameraRef.current?.setCamera({ heading: 0, ...EASE, animationDuration: 300 });
+  const northUp = () => {
+    cameraMoved.current = true;
+    cameraRef.current?.setCamera({ heading: 0, ...EASE, animationDuration: 300 });
+  };
   const recenter = () => {
     if (!selfPosition) return;
+    cameraMoved.current = true;
     setFollowMode(true);
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
     cameraRef.current?.setCamera({ centerCoordinate: [selfPosition.lon, selfPosition.lat], zoomLevel, ...EASE, animationDuration: 500 });
@@ -78,7 +87,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         cameraRef={cameraRef}
         initialCamera={initialCamera}
         landscape={landscape}
-        onCameraIdle={saver.schedule}
+        onCameraIdle={(camera) => {
+          if (cameraMoved.current) saver.schedule(camera);
+        }}
         onUserGesture={onUserGesture}>
         <PointsLayer missionId={missionId} />
         <SelfLayer />
