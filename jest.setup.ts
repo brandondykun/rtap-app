@@ -17,3 +17,5 @@ jest.mock('expo-sqlite/kv-store', () => {
   };
   return { __esModule: true, default: api, Storage: api };
 });
+
+jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);

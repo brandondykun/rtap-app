@@ -8,6 +8,10 @@ module.exports = {
     extend: {
       // Values come from CSS variables set by ThemeProvider (src/theme/tokens.ts).
       colors: Object.fromEntries(semanticTokens.map((name) => [name, `var(--${name})`])),
+      fontFamily: {
+        mono: ['JetBrainsMono_500Medium'],
+        'mono-bold': ['JetBrainsMono_700Bold'],
+      },
     },
   },
   plugins: [],
