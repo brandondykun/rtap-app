@@ -1,4 +1,4 @@
-import { EDGE, GAP, isLandscape, LOGO_ROW_HEIGHT, LOGO_WIDTH, ornamentPositions, TOOLBAR_HEIGHT } from './layout';
+import { ATTRIBUTION_RAISE, EDGE, GAP, isLandscape, LOGO_ROW_HEIGHT, LOGO_WIDTH, ornamentPositions, TOOLBAR_HEIGHT } from './layout';
 
 const insets = { top: 47, right: 0, bottom: 34, left: 0 };
 
@@ -11,7 +11,7 @@ describe('map layout', () => {
   it('keeps the logo below the full-width toolbar in portrait', () => {
     const p = ornamentPositions({ landscape: false, insets });
     expect(p.logo).toEqual({ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, left: EDGE });
-    expect(p.attribution).toEqual({ top: p.logo.top, left: EDGE + LOGO_WIDTH });
+    expect(p.attribution).toEqual({ top: p.logo.top - ATTRIBUTION_RAISE, left: EDGE + LOGO_WIDTH });
   });
 
   it('puts the logo top-left in landscape (toolbar is top-right)', () => {

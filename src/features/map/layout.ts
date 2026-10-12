@@ -5,6 +5,11 @@ export const TOOLBAR_HEIGHT = 64;
 export const CONTROL_SIZE = 52;
 /** Height of the Mapbox logo/attribution row. */
 export const LOGO_ROW_HEIGHT = 28;
+/**
+ * The attribution (i) button's tappable frame is taller than the wordmark and centers its icon,
+ * so at the same `top` the icon sits visibly lower. Raise it so the icon lines up with the logo.
+ */
+export const ATTRIBUTION_RAISE = 10;
 /** Room reserved for the Mapbox wordmark before the attribution button. */
 export const LOGO_WIDTH = 96;
 
@@ -28,6 +33,6 @@ export function ornamentPositions({ landscape, insets }: { landscape: boolean; i
   const top = ornamentTop({ landscape, insets });
   return {
     logo: { top, left },
-    attribution: { top, left: left + LOGO_WIDTH },
+    attribution: { top: Math.max(0, top - ATTRIBUTION_RAISE), left: left + LOGO_WIDTH },
   };
 }
