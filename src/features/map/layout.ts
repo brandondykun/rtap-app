@@ -9,7 +9,7 @@ export const LOGO_ROW_HEIGHT = 28;
  * The attribution (i) button's tappable frame is taller than the wordmark and centers its icon,
  * so at the same `top` the icon sits visibly lower. Raise it so the icon lines up with the logo.
  */
-export const ATTRIBUTION_RAISE = { portrait: 20, landscape: 22 } as const;
+export const ATTRIBUTION_RAISE = { portrait: 22, landscape: 22 } as const;
 
 function attributionRaise(landscape: boolean): number {
   return landscape ? ATTRIBUTION_RAISE.landscape : ATTRIBUTION_RAISE.portrait;
