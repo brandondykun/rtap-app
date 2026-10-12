@@ -49,8 +49,7 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
       styleURL={MAP_STYLE_URL}
       compassEnabled={false}
       pitchEnabled={false}
-      scaleBarEnabled
-      scaleBarPosition={ornaments.scaleBar}
+      scaleBarEnabled={false}
       logoPosition={ornaments.logo}
       attributionPosition={ornaments.attribution}
       onCameraChanged={onCameraChanged}

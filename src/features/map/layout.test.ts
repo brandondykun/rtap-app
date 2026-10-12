@@ -1,4 +1,4 @@
-import { EDGE, GAP, isLandscape, LOGO_ROW_HEIGHT, LOGO_WIDTH, ornamentPositions, READOUT_HEIGHT, TOOLBAR_HEIGHT } from './layout';
+import { EDGE, GAP, isLandscape, LOGO_ROW_HEIGHT, LOGO_WIDTH, ornamentPositions, TOOLBAR_HEIGHT } from './layout';
 
 const insets = { top: 47, right: 0, bottom: 34, left: 0 };
 
@@ -19,13 +19,7 @@ describe('map layout', () => {
     expect(p.logo).toEqual({ top: EDGE, left: 47 + EDGE });
   });
 
-  it('places the scale bar above the readout card', () => {
-    const p = ornamentPositions({ landscape: false, insets });
-    expect(p.scaleBar).toEqual({ bottom: insets.bottom + EDGE + READOUT_HEIGHT + GAP, left: EDGE });
-  });
-
   it('exposes the logo row height for the location banner', () => {
     expect(LOGO_ROW_HEIGHT).toBe(28);
-    expect(READOUT_HEIGHT).toBe(80);
   });
 });

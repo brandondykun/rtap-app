@@ -48,6 +48,7 @@ describe('MapCanvas', () => {
     expect(camera.centerCoordinate).toBeUndefined();
     expect(mapboxMock().__props.Images.main.images).toBe(MAP_IMAGES);
     expect(mapboxMock().__props.MapView.main.compassEnabled).toBe(false);
+    expect(mapboxMock().__props.MapView.main.scaleBarEnabled).toBe(false);
   });
 
   it('seeds the interaction store with the initial camera', async () => {

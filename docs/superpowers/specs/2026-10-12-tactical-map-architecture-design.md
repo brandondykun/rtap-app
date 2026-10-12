@@ -20,7 +20,7 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Always-visible center crosshair; bottom-left readout card with the crosshair's MGRS and
   range/bearing from the user (tap the bearing to toggle grid ↔ magnetic).
 - Top toolbar: app menu, POINT tool, settings. Map controls: north-up, zoom in/out,
-  recenter, scale bar.
+  recenter. No scale bar (user decision 2026-10-12: too much screen space).
 - Add Point panel (POINT tool or long-press): MGRS entry, Center/Me, affiliation, unit type,
   name, notes → saved to WatermelonDB → rendered on the map.
 - Select a point → Edit Point panel (same form plus hide and delete).
@@ -350,8 +350,8 @@ lib/geo/
 - **North-up button** under the toolbar: compass needle rotated by `cameraBearing`; tap
   resets bearing to 0.
 - **Zoom in / zoom out** stacked buttons and **recenter** (follow user) at the bottom-right.
-- **Scale bar** at the bottom (rnmapbox native scale bar, styled as close to the mockup as
-  the native ornament allows).
+- **No scale bar** (user decision 2026-10-12: it takes too much screen space; the mockups'
+  scale bar is dropped).
 - **Basemap:** Mapbox satellite style.
 
 ### 8.7 Offline tiles (`features/map/offline`)

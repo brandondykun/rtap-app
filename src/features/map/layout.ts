@@ -3,7 +3,6 @@ export const EDGE = 12;
 export const GAP = 8;
 export const TOOLBAR_HEIGHT = 64;
 export const CONTROL_SIZE = 52;
-export const READOUT_HEIGHT = 80;
 /** Height of the Mapbox logo/attribution row. */
 export const LOGO_ROW_HEIGHT = 28;
 /** Room reserved for the Mapbox wordmark before the attribution button. */
@@ -22,7 +21,7 @@ export function ornamentTop({ landscape, insets }: { landscape: boolean; insets:
 /**
  * Mapbox ornament positions. The logo and attribution must stay visible (Mapbox terms), so they
  * sit top-left: under the full-width toolbar in portrait, beside the top-right toolbar in
- * landscape. The scale bar sits just above the readout card.
+ * landscape. There is no scale bar (it costs too much screen space).
  */
 export function ornamentPositions({ landscape, insets }: { landscape: boolean; insets: Insets }) {
   const left = insets.left + EDGE;
@@ -30,6 +29,5 @@ export function ornamentPositions({ landscape, insets }: { landscape: boolean; i
   return {
     logo: { top, left },
     attribution: { top, left: left + LOGO_WIDTH },
-    scaleBar: { bottom: insets.bottom + EDGE + READOUT_HEIGHT + GAP, left },
   };
 }

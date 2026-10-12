@@ -50,7 +50,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 5 | Crosshair centered; readout MGRS changes while panning; tapping the bearing switches GRID ↔ MAG | PENDING |
 | 6 | North-up needle follows map rotation; tap resets north. Zoom ± and recenter work; panning turns follow off | PENDING |
 | 7 | Toolbar: full width in portrait, top-right in landscape; POINT and gear dimmed; hamburger returns to missions | PENDING |
-| 8 | Mapbox logo/attribution visible top-left; scale bar above the readout | PENDING |
+| 8 | Mapbox logo/attribution visible top-left; no scale bar | PENDING |
 | 9 | Label chips: dark rounded chips under symbols, text readable, corners not distorted (stretch zones work) | PENDING |
 | 10 | Map label glyphs load (DIN Pro). Monospace map labels need JetBrains Mono glyphs uploaded to Mapbox — decide | PENDING |
 | 11 | Seed 5k → panning/zooming smooth for 30 s in both orientations | PENDING |
@@ -59,7 +59,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 14 | Pan, then within ~1 s swipe to the app switcher and kill the app; reopen the mission: camera is where you left it | PENDING |
 | 15 | Pan/rotate, then rotate the device both ways: the camera never jumps back to the opening view | PENDING |
 | 16 | Deny location in portrait: banner does not cover the Mapbox logo/attribution | PENDING |
-| 17 | Pan above 84°N (lat/lon fallback) in portrait: readout card does not overlap zoom/recenter; scale bar clears the card | PENDING |
+| 17 | Pan above 84°N (lat/lon fallback) in portrait: readout card does not overlap zoom/recenter | PENDING |
 | 18 | Follow: tap recenter and walk — camera follows, button highlighted; pinch/pan turns follow off; recenter keeps zoom ≥ 15 | PENDING |
 | 19 | Turn the phone through north: the view cone crosses north smoothly (no 358° spin) | PENDING |
 | 20 | First launch: grant location on the map → centers once; leave and reopen → opens at that saved view without a jump | PENDING |
