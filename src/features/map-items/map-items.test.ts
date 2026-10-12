@@ -68,6 +68,16 @@ describe('map items', () => {
     expect(pointCoord(item!.geometry)).toEqual(moved);
   });
 
+  it('stamps the editor separately from the creator', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A' });
+    if (!r.ok) throw new Error('setup failed');
+    await updateItem({ ...ctx, actorId: () => 'device-2' }, r.value.id, { name: 'B' });
+    const item = await findItem(ctx.db, r.value.id);
+    expect(item?.updatedBy).toBe('device-2');
+    expect(item?.createdBy).toBe('device-test');
+  });
+
   it('reports not_found for unknown ids', async () => {
     const ctx = makeTestContext();
     expect(await updateItem(ctx, 'nope', { name: 'x' })).toMatchObject({ ok: false, error: 'not_found' });
@@ -79,6 +89,9 @@ describe('map items', () => {
     const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A' });
     if (!r.ok) throw new Error('setup failed');
     expect(await deleteItem(ctx, r.value.id)).toEqual({ ok: true, value: undefined });
+    // The raw row must survive as a tombstone (not be destroyed permanently) so it can sync.
+    const raw = await ctx.db.adapter.find('map_items', r.value.id);
+    expect(raw).toMatchObject({ id: r.value.id, _status: 'deleted' });
     expect(await firstValueFrom(observeMissionItems(ctx.db, 'm1'))).toEqual([]);
     expect(await getMissionItemNames(ctx.db, 'm1')).toEqual([]);
   });
