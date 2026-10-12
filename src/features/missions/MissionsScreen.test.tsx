@@ -8,7 +8,10 @@ import { createMission, markMissionOpened } from './commands';
 import { MissionsScreen } from './MissionsScreen';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
+jest.mock('expo-router', () => ({
+  useRouter: () => mockRouter,
+  useFocusEffect: (effect: () => void) => (jest.requireActual('react') as typeof import('react')).useEffect(effect, [effect]),
+}));
 
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };

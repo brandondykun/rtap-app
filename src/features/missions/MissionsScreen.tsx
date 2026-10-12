@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +14,12 @@ export function MissionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const missions = useObservable<MissionSummary[] | null>(() => observeMissionSummaries(ctx.db), null, [ctx]);
-  const now = Date.now();
+  const [now, setNow] = useState(Date.now);
+  useFocusEffect(
+    useCallback(() => {
+      setNow(Date.now());
+    }, []),
+  );
 
   const openCreate = () => router.push('/missions/new');
   const openMission = (missionId: string) =>
