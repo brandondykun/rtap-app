@@ -1,7 +1,7 @@
 export type Affiliation = 'friend' | 'hostile' | 'neutral' | 'unknown';
 export const AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'neutral', 'unknown'];
 
-export type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'observer';
+export type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'engineer';
 
 /** MVP unit types with their 2525C ground-unit function IDs (6 chars). */
 const UNIT_FUNCTIONS: Record<UnitType, { label: string; functionId: string }> = {
@@ -10,7 +10,7 @@ const UNIT_FUNCTIONS: Record<UnitType, { label: string; functionId: string }> = 
   armor: { label: 'Armor', functionId: 'UCA---' },
   recon: { label: 'Reconnaissance', functionId: 'UCR---' },
   medical: { label: 'Medical', functionId: 'USM---' },
-  observer: { label: 'Observer', functionId: 'UCFO--' },
+  engineer: { label: 'Engineer', functionId: 'UCE---' },
 };
 
 export const UNIT_TYPES: readonly { id: UnitType; label: string }[] = (

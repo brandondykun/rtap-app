@@ -7,7 +7,7 @@ describe('SIDC presets (MIL-STD-2525C)', () => {
     ['neutral', 'armor', 'SNGPUCA--------'],
     ['unknown', 'unspecified', 'SUGPU----------'],
     ['friend', 'medical', 'SFGPUSM--------'],
-    ['hostile', 'observer', 'SHGPUCFO-------'],
+    ['hostile', 'engineer', 'SHGPUCE--------'],
   ] as const)('%s %s → %s', (affiliation, unitType, sidc) => {
     expect(composeSidc(affiliation, unitType)).toBe(sidc);
     expect(composeSidc(affiliation, unitType)).toHaveLength(15);
