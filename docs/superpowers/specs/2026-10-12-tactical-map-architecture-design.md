@@ -91,8 +91,6 @@ src/
     missions/
       MissionsScreen.tsx     # list + empty state + create CTA
       CreateMissionScreen.tsx
-      model.ts               # Mission model
-      view-state-model.ts    # MissionViewState model (local only)
       repository.ts          # observe list (with item counts), get, create
       commands.ts            # createMission, markMissionOpened, saveMissionCamera
     map/
@@ -104,8 +102,7 @@ src/
       interaction/           # crosshair, readout, long-press, selection
       offline/               # TilePackService interface + Mapbox implementation
     map-items/
-      model.ts               # MapItem Watermelon model
-      view-state-model.ts    # ItemViewState Watermelon model (local only)
+      geometry.ts            # GeoJSON geometry (de)serialization
       repository.ts          # observe / query / create / update / delete
       commands.ts            # placePoint, updateItem, deleteItem, toggleItemVisibility
       selectors.ts           # records → GeoJSON FeatureCollection (cached)
@@ -120,7 +117,10 @@ src/
     menu/                    # menu primitives (Section 11)
   lib/
     geo/                     # pure TypeScript geospatial library (Section 6)
-    db/                      # schema, migrations, adapter, id generator, sync config
+    db/                      # schema, migrations, models/, adapters, id generator,
+                             # sync config, command context (models live here so
+                             # lib/ never imports features/)
+    result.ts                # shared Result<T, E> type (geo, commands)
     identity/                # deviceId now; userId later
   stores/                    # Zustand: interaction, draft, settings, presence, menu
   theme/                     # tokens, themes, mapColors (Section 10)
@@ -215,8 +215,7 @@ happens only at the edges.
 
 ```
 lib/geo/
-  types.ts             # LatLon, NorthRef ('true'|'grid'|'magnetic'), AngleUnit ('deg'|'mil'),
-                       # Result<T>
+  types.ts             # LatLon, NorthRef ('true'|'grid'|'magnetic'), AngleUnit ('deg'|'mil')
   coords/mgrs.ts       # toMgrs(p, precision), parseMgrs(str): Result<LatLon>
   coords/utm.ts        # toUtm(p)
   measure/geodesic.ts  # inverse(a, b) → { distanceM, azimuthTrue }; destination(p, az, d)
@@ -335,7 +334,9 @@ lib/geo/
 - **Auto-names:** `<PREFIX>-<n>` with `FRD`, `HOS`, `NEU`, `UNK` prefixes; `n` is one more
   than the highest existing number for that prefix in the mission.
 - **SIDC:** built from affiliation × unit type (`symbology/presets.ts`). MVP unit types:
-  Unspecified, Infantry, Dismounted infantry, Armor, Medical, Observation post.
+  Unspecified, Infantry, Armor, Reconnaissance, Medical, Observer (2525C function IDs;
+  2525C has no distinct "dismounted infantry" code, so the mockup's example maps to
+  Infantry).
 - **Editing:** tapping a point opens `point.edit` — the same form component prefilled,
   with **Save**, a hide toggle, and **Delete**.
 
