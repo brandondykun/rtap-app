@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Tactical Map",
+    "name": "RTAP: Realtime Team Awareness Platform",
     "slug": "map",
     "version": "1.0.0",
     "orientation": "default",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.brandon.dykun.eratas.map"
+      "bundleIdentifier": "com.eratassoftware.rtap"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,8 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "package": "com.eratassoftware.rtap"
     },
     "plugins": [
       "expo-router",
@@ -38,7 +39,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Tactical Map shows your position and heading on the map.",
+          "locationWhenInUsePermission": "RTAP shows your position and heading on the map.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false
         }
@@ -66,6 +67,13 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "backgroundColor": "#1c1917"
+    "backgroundColor": "#1c1917",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "865061f6-4c5e-4070-abdb-392c927ddcc3"
+      }
+    },
+    "owner": "eratas-software"
   }
 }
