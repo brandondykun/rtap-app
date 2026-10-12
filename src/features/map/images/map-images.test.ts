@@ -20,10 +20,15 @@ describe('map images', () => {
     expect(existsSync(join(ASSETS, 'label-chip.png'))).toBe(true);
   });
 
-  it('keeps the chip stretch zone clear of the rounded corners', () => {
-    const [[x0, x1]] = LABEL_CHIP_IMAGE_OPTIONS.stretchX;
+  it('keeps the chip stretch zone inside the image and clear of the rounded corners', () => {
+    // Options are in points; rnmapbox multiplies them by `scale` to get image pixels.
+    const { scale } = LABEL_CHIP_IMAGE_OPTIONS;
+    const [[x0, x1]] = LABEL_CHIP_IMAGE_OPTIONS.stretchX.map(([a, b]) => [a * scale, b * scale]);
     expect(x0).toBeGreaterThanOrEqual(LABEL_CHIP_SPEC.radiusPx);
     expect(x1).toBeLessThanOrEqual(LABEL_CHIP_SPEC.sizePx - LABEL_CHIP_SPEC.radiusPx);
+    const [c0, c1, c2, c3] = LABEL_CHIP_IMAGE_OPTIONS.content.map((v) => v * scale);
+    expect(Math.min(c0, c1)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(c2, c3)).toBeLessThanOrEqual(LABEL_CHIP_SPEC.sizePx);
     expect(LABEL_CHIP_IMAGE_OPTIONS.stretchY).toEqual(LABEL_CHIP_IMAGE_OPTIONS.stretchX);
   });
 });

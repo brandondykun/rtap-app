@@ -69,3 +69,7 @@ Fallbacks if a check fails:
 - 9: drop `stretchX`/`stretchY`/`content` from `LABEL_CHIP_IMAGE_OPTIONS` (whole-image stretch) or render chips at `scale: 1`.
 - 10: keep DIN Pro (proportional) until JetBrains Mono glyphs are uploaded; switch `MAP_LABEL_FONT`.
 - 2 (visible jump): keep `defaultSettings` and add `animationDuration: 0`; report to the controller.
+
+Plan 2 device findings (iOS):
+- Label chip: rnmapbox multiplies `stretchX`/`stretchY`/`content` by the image entry's `scale` (RNMBXUtils.swift), so they must be given in points. Pixel values triggered "expected stretchX area lies within an image (width 72)". Fixed by expressing them in points.
+- Scale bar removed at the user's request (too much screen space).

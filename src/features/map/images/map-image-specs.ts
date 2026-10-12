@@ -4,13 +4,16 @@
 export const SELF_ICON_SIZE = 64;
 
 /**
- * Label chip: one image rendered at 3× pixel density. Mapbox stretch/content values are in
- * image pixels, so the chip ships as a single 3× file with `scale: 3` to keep them unambiguous.
+ * Label chip: one image rendered at 3× pixel density, shipped as a single file with `scale: 3`.
+ * rnmapbox multiplies stretch/content values by `scale` before handing them to Mapbox, so the
+ * options below are in points (image pixels ÷ scale).
  */
 export const LABEL_CHIP_SPEC = { sizePx: 72, radiusPx: 12, insetPx: 18, scale: 3 } as const;
 
 const { sizePx, insetPx, scale } = LABEL_CHIP_SPEC;
-const inner: [number, number] = [insetPx, sizePx - insetPx];
+const inset = insetPx / scale;
+const size = sizePx / scale;
+const inner: [number, number] = [inset, size - inset];
 
 export const LABEL_CHIP_IMAGE_OPTIONS: {
   scale: number;
@@ -21,5 +24,5 @@ export const LABEL_CHIP_IMAGE_OPTIONS: {
   scale,
   stretchX: [inner],
   stretchY: [inner],
-  content: [insetPx, insetPx, sizePx - insetPx, sizePx - insetPx],
+  content: [inset, inset, size - inset, size - inset],
 };
