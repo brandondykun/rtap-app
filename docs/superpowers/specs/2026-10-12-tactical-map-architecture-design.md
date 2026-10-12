@@ -23,7 +23,7 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Add a point (crosshair "drop" or long-press) → saved to WatermelonDB → rendered on the map.
 - Select a point → properties menu (name, symbol, MGRS, range/bearing, hide, delete).
 - Toggle visibility of any map item.
-- App menu with settings (coordinate format, angle unit, north reference, mil system, theme)
+- App menu with settings (coordinate format, angle unit, north reference, theme)
   and "Switch mission" (returns to the missions screen).
 
 **Explicitly out of MVP (architecture must accommodate)**
@@ -194,7 +194,7 @@ author, etc.) follows the same pattern.
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
-- **Settings** (coordinate format, angle unit, north reference, mil system, declination
+- **Settings** (coordinate format, angle unit, north reference, declination
   override, theme): Zustand persisted to `expo-sqlite/kv-store`. Per-device, never synced.
 
 ## 6. Geospatial library (`lib/geo`)
@@ -206,14 +206,14 @@ happens only at the edges.
 ```
 lib/geo/
   types.ts             # LatLon, NorthRef ('true'|'grid'|'magnetic'), AngleUnit ('deg'|'mil'),
-                       # MilSystem (6400 | 6300 | 6000), Result<T>
+                       # Result<T>
   coords/mgrs.ts       # toMgrs(p, precision), parseMgrs(str): Result<LatLon>
   coords/utm.ts        # toUtm(p)
   measure/geodesic.ts  # inverse(a, b) → { distanceM, azimuthTrue }; destination(p, az, d)
   north/grid.ts        # gridConvergence(p)
   north/magnetic.ts    # declination(p, date) — wraps `geomagnetism`
   north/convert.ts     # fromTrue(azTrue, ref, p, ctx) / toTrue(az, ref, p, ctx)
-  units/angle.ts       # degToMils(deg, milSystem) / milsToDeg(...)
+  units/angle.ts       # degToMils(deg) / milsToDeg(mils) — NATO 6400 mils per circle
   format/mgrs.ts       # "18S UJ 23480 06470"
   format/bearing.ts    # "1234 mils MAG" / "069° GRID"
   format/distance.ts   # m / km
@@ -227,7 +227,7 @@ lib/geo/
   G-M angle.
 - **Declination:** computed offline with the date injected (deterministic tests). Settings
   allow a manual declination override.
-- **Mils:** default NATO 6400; 6300 and 6000 selectable.
+- **Mils:** NATO 6400 mils per circle only (`MILS_PER_CIRCLE = 6400`); no other mil systems.
 - **`describeVector`** is the only function UI uses for range/bearing, so the crosshair
   readout, item details, and future measuring tools always agree.
 - **Errors:** invalid input returns a typed `Result` error (e.g. unparseable MGRS, positions
@@ -381,7 +381,7 @@ these primitives; primitives use only semantic tokens and may wrap `@expo/ui` co
 
 ### 11.4 MVP menus
 - **App family:** `app.root` → "Switch mission", `settings` (coordinate format, angle unit, north reference,
-  mil system, declination override, theme), `about`.
+  declination override, theme), `about`.
 - **Action family:** `symbol.picker`, `item.properties` (name, symbol, notes, MGRS,
   range/bearing, hide toggle, delete).
 
