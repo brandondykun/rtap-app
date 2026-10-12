@@ -13,7 +13,9 @@ training and military-simulation enthusiasts. Not intended for military use.
 - **Paid (post-MVP):** collaborative missions — shared map items and live member locations.
 
 **MVP scope**
-- One map screen, usable in portrait and landscape.
+- Missions screen (app entry): lists the user's missions/maps, creates a new one, and opens
+  one in the map. The map is always entered with a mission selected.
+- Map screen for the selected mission, usable in portrait and landscape.
 - User's own location with a heading-aware icon.
 - Always-visible center crosshair with the MGRS coordinate of the crosshair.
 - Range and bearing from the user to the crosshair, in the chosen unit and north reference.
@@ -21,7 +23,8 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Add a point (crosshair "drop" or long-press) → saved to WatermelonDB → rendered on the map.
 - Select a point → properties menu (name, symbol, MGRS, range/bearing, hide, delete).
 - Toggle visibility of any map item.
-- App menu with settings (coordinate format, angle unit, north reference, mil system, theme).
+- App menu with settings (coordinate format, angle unit, north reference, mil system, theme)
+  and "Switch mission" (returns to the missions screen).
 
 **Explicitly out of MVP (architecture must accommodate)**
 - Offline tile download UI (service layer is built; no UI).
@@ -72,9 +75,19 @@ Rejected alternatives:
 ```
 src/
   app/                       # routes only, thin
-    _layout.tsx              # providers: Database, GestureHandler, SafeArea, Theme
-    index.tsx                # → <MapScreen/>
+    _layout.tsx              # providers: Database, GestureHandler, SafeArea, Theme; Stack
+    index.tsx                # → <MissionsScreen/>
+    missions/
+      new.tsx                # → <CreateMissionScreen/> (form sheet)
+      [missionId].tsx        # → <MapScreen missionId/>
   features/
+    missions/
+      MissionsScreen.tsx     # list + empty state + create CTA
+      CreateMissionScreen.tsx
+      model.ts               # Mission model
+      view-state-model.ts    # MissionViewState model (local only)
+      repository.ts          # observe list (with item counts), get, create
+      commands.ts            # createMission, markMissionOpened, saveMissionCamera
     map/
       MapScreen.tsx
       canvas/                # MapCanvas, camera controller, style constants
@@ -94,13 +107,13 @@ src/
     menus/                   # registry, MenuHost, menu definitions
   components/
     ui/                      # shared primitives (buttons, icons)
-    menu/                    # menu primitives (Section 10)
+    menu/                    # menu primitives (Section 11)
   lib/
     geo/                     # pure TypeScript geospatial library (Section 6)
     db/                      # schema, migrations, adapter, id generator, sync config
     identity/                # deviceId now; userId later
   stores/                    # Zustand: interaction, settings, presence, menu
-  theme/                     # tokens, themes, mapColors (Section 9)
+  theme/                     # tokens, themes, mapColors (Section 10)
   config/                    # env access (Mapbox token), constants
 ```
 
@@ -143,6 +156,12 @@ item_view_state                  # LOCAL ONLY — never synced
   map_item_id   string   indexed
   hidden        boolean
   updated_at    number
+
+mission_view_state               # LOCAL ONLY — never synced
+  mission_id      string   indexed
+  last_opened_at  number             # sorts the missions list
+  camera          string?            # JSON { center, zoom, bearing } to restore on open
+  updated_at      number
 ```
 
 ### 5.2 Sync-readiness rules
@@ -151,8 +170,9 @@ item_view_state                  # LOCAL ONLY — never synced
   managed by WatermelonDB.
 - **Authorship:** every command stamps `created_by` / `updated_by` from `lib/identity`
   (persistent `deviceId` now, `userId` once accounts exist).
-- **Scoping:** every map item belongs to a mission. The MVP auto-creates one local mission
-  on first launch and uses it as the active mission.
+- **Scoping:** every map item belongs to a mission. The user creates or selects a mission on
+  the missions screen before entering the map; the active mission is the `missionId` route
+  param, passed explicitly to repositories and commands (no global "active mission" store).
 - **Local-only tables** are listed in one place (`lib/db/sync-config.ts`) and excluded from
   the future sync push/pull.
 - **Migrations:** `schemaMigrations` from v1; released migrations are never edited.
@@ -163,7 +183,15 @@ for other users. A row exists in `item_view_state` only for items whose view sta
 changed; absence means visible. A future `layer_view_state` table (hide by affiliation,
 author, etc.) follows the same pattern.
 
-### 5.4 Data kept outside WatermelonDB
+### 5.4 Missions
+- A mission is the user's named map: the container for map items and, in the paid tier,
+  the unit that is shared with other users.
+- "Last opened" and "last camera" are per-device view state (`mission_view_state`), not
+  mission data, for the same reason as item visibility.
+- MVP mission operations: list, create (name), open. Rename and delete are small later
+  additions through the same repository/commands.
+
+### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
 - **Settings** (coordinate format, angle unit, north reference, mil system, declination
@@ -206,9 +234,30 @@ lib/geo/
   outside MGRS coverage). Never silent `NaN`.
 - All functions are pure and synchronous, cheap enough to call per camera frame.
 
-## 7. Map engine and interaction (`features/map`)
+## 7. Screens and navigation
 
-### 7.1 Rendering
+```
+/                        MissionsScreen    list of missions → tap opens map
+/missions/new            CreateMissionScreen (form sheet) → creates, then replaces into map
+/missions/[missionId]    MapScreen
+```
+
+- **Missions screen:** missions sorted by `last_opened_at` (then `created_at`), each row
+  showing name, item count, and last opened. Empty state with a "Create mission" call to
+  action. Standard virtualized list; this screen has no map.
+- **Create mission:** name field (prefilled, e.g. "Mission 1"); on create, navigates
+  (replace) straight into the new mission's map.
+- **Opening a mission:** `markMissionOpened` is called; the map restores the saved camera
+  if present, otherwise centers on the user's location (or a world view without a fix).
+- **Leaving the map:** camera is saved (`saveMissionCamera`) when the screen blurs and on a
+  debounced idle after camera moves. "Switch mission" in the app menu navigates back.
+- **iOS swipe-back is disabled on the map screen** (`gestureEnabled: false`) so edge pans
+  are never stolen from the map.
+- An invalid or deleted `missionId` redirects to `/`.
+
+## 8. Map engine and interaction (`features/map`)
+
+### 8.1 Rendering
 - `MapCanvas` = `MapView` + `Camera` + layers.
 - **The camera is uncontrolled.** The native map owns center/zoom/bearing. Programmatic
   moves (recenter, fly to item, follow) use imperative `cameraRef` calls. No camera values
@@ -222,19 +271,19 @@ lib/geo/
 - Layer style objects are module-level constants (or memoized per theme).
 - The map never remounts on orientation change.
 
-### 7.2 Symbology (`features/symbology`)
+### 8.2 Symbology (`features/symbology`)
 - **MVP:** a build-time Node script renders the preset SIDCs with `milsymbol` into
   `@2x`/`@3x` PNGs under `assets/symbols/`, registered via rnmapbox `<Images>`.
 - **Later:** runtime rasterization (Skia) for arbitrary SIDCs, cached on disk by SIDC.
 - Both sit behind `getSymbolImage(sidc)`; layers do not change.
 
-### 7.3 Self and teammate icons
+### 8.3 Self and teammate icons
 - **Self:** rnmapbox `LocationPuck` with `puckBearing="heading"` and a custom user/chevron
   icon (not a 2525 symbol).
 - **Teammates (later):** a `SymbolLayer` over the presence store's GeoJSON with
   `iconRotate: ['get', 'heading']`, `iconRotationAlignment: 'map'`, using the same icon.
 
-### 7.4 Crosshair and readout
+### 8.4 Crosshair and readout
 - The crosshair and its readout are **always visible**.
 - Readout line 1: **MGRS of the crosshair**. Line 2: range and bearing from the user to the
   crosshair in the selected unit and north reference (shows "—" without a position fix),
@@ -247,23 +296,23 @@ lib/geo/
   describes the point under the crosshair. *(Plan must verify rnmapbox reports the padded
   center; fallback is `getCoordinateFromView` at the crosshair position.)*
 
-### 7.5 Placing items
+### 8.5 Placing items
 - **Drop button** → `placePoint(crosshairCoord, activeSidc)`.
 - **Long-press on map** → `placePoint(pressCoord, activeSidc)`.
 - Both give haptic feedback (`expo-haptics`). The point is created immediately with an
   auto-name (e.g. "Hostile 3"); the `item.properties` menu opens at its `peek` detent for
   optional edits. Ignoring it does not block further placement.
 
-### 7.6 Interaction store
+### 8.6 Interaction store
 `activeSidc`, `selectedItemId`, `followMode`, `cameraCenter` (throttled). No `crosshairVisible`
 — the crosshair is always shown.
 
-### 7.7 Offline tiles (`features/map/offline`)
+### 8.7 Offline tiles (`features/map/offline`)
 `TilePackService` interface — `create(bounds, minZoom, maxZoom)`, `list()`, `delete(id)`,
 `progress$` — implemented over rnmapbox `offlineManager`. Built and tested; no UI in MVP.
 Default tile behavior is online with Mapbox's ambient cache.
 
-### 7.8 Performance rules
+### 8.8 Performance rules
 1. No per-item React components on the map.
 2. No camera state in React driving the map.
 3. Stable style references.
@@ -271,7 +320,7 @@ Default tile behavior is online with Mapbox's ambient cache.
 5. High-frequency readouts are isolated components subscribing to throttled values.
 6. Before merging map changes, check panning with 5,000 seeded points on a physical device.
 
-## 8. Toolbar (`features/toolbar`)
+## 9. Toolbar (`features/toolbar`)
 - A **top bar in both portrait and landscape**, absolutely positioned over the map,
   respecting safe-area insets (top in portrait; leading/trailing in landscape).
 - MVP buttons: app menu, symbol selector (shows active SIDC, opens `symbol.picker`), drop
@@ -279,7 +328,7 @@ Default tile behavior is online with Mapbox's ambient cache.
 - If buttons exceed the available width, the bar scrolls horizontally or overflows into a
   "more" action. It does not wrap.
 
-## 9. Semantic styling (`src/theme`)
+## 10. Semantic styling (`src/theme`)
 - **NativeWind**, pending a compatibility check against SDK 57 / RN 0.86 in the plan.
 - **Token layers in `src/theme/tokens.ts` (single source of truth):**
   1. *Palette* — Tailwind colors defined by hand. Referenced only within `src/theme/`.
@@ -296,18 +345,18 @@ Default tile behavior is online with Mapbox's ambient cache.
 - Template theming files (`constants/theme.ts`, `themed-*`, `use-theme`, `global.css`
   contents) are replaced.
 
-## 10. Menu system
+## 11. Menu system
 
-### 10.1 Panel
+### 11.1 Panel
 - One in-house `Panel` component (Reanimated + Gesture Handler): a **bottom sheet with
   detents in portrait**, a **left drawer in landscape**.
 - **No backdrop.** The host uses `pointerEvents="box-none"`; the map remains fully
   interactive (pan, zoom, long-press) while a menu is open.
-- The panel publishes its occupied rectangle for camera padding (Section 7.4).
+- The panel publishes its occupied rectangle for camera padding (Section 8.4).
 - Detents: `peek`, `half`, `full` (bottom); drawer width fixed per device class (left).
 - Keyboard handling for text fields keeps the focused field visible.
 
-### 10.2 Registry and stack
+### 11.2 Registry and stack
 - Every menu is declared once:
   ```ts
   defineMenu({
@@ -325,23 +374,23 @@ Default tile behavior is online with Mapbox's ambient cache.
 - Menus are not Expo Router routes. Routes are reserved for full-screen pages (e.g. About,
   licenses).
 
-### 10.3 Primitives (`components/menu`)
+### 11.3 Primitives (`components/menu`)
 `MenuHeader` (title, back, close), `MenuSection`, `MenuRow`, `MenuToggle`, `MenuTextField`,
 `MenuSegmented`, `SymbolGrid`, `MenuActions` (primary / destructive). Menus compose only
 these primitives; primitives use only semantic tokens and may wrap `@expo/ui` controls.
 
-### 10.4 MVP menus
-- **App family:** `app.root` → `settings` (coordinate format, angle unit, north reference,
+### 11.4 MVP menus
+- **App family:** `app.root` → "Switch mission", `settings` (coordinate format, angle unit, north reference,
   mil system, declination override, theme), `about`.
 - **Action family:** `symbol.picker`, `item.properties` (name, symbol, notes, MGRS,
   range/bearing, hide toggle, delete).
 
-## 10.5 Visual design
+### 11.5 Visual design
 Mockups will be stored in `docs/design/mockups/` and referenced from UI tasks in the
-implementation plan. Token values (Section 9), toolbar layout (Section 8), and panel
-appearance (Section 10.1) follow the mockups; the architecture above does not depend on them.
+implementation plan. Token values (Section 10), toolbar layout (Section 9), and panel
+appearance (Section 11.1) follow the mockups; the architecture above does not depend on them.
 
-## 11. Error handling
+## 12. Error handling
 - **Location denied / no fix:** map fully usable, no puck, range/bearing shows "—", one
   dismissible banner to enable location.
 - **Command failure:** commands return a `Result`; UI shows a toast and error haptic.
@@ -349,30 +398,30 @@ appearance (Section 10.1) follow the mockups; the architecture above does not de
   `EXPO_PUBLIC_MAPBOX_TOKEN` in an uncommitted `.env`.
 - **Geo input errors:** typed `Result` errors (Section 6).
 
-## 12. Testing
+## 13. Testing
 - **`lib/geo`:** Jest golden-vector tests — GeographicLib test data, NGA MGRS samples
   (including zone/band edges and Norway/Svalbard exceptions), official WMM test values.
   Highest coverage bar in the repo.
 - **Data layer:** repositories, commands, selectors tested with WatermelonDB's LokiJS
-  in-memory adapter (UUIDs, authorship stamps, mission scoping, visibility, feature cache).
+  in-memory adapter (UUIDs, authorship stamps, mission scoping, visibility, feature cache, mission list ordering and item counts).
 - **Menu system:** registry typing, stack operations.
 - **UI:** focused React Native Testing Library tests for toolbar, readout, menu primitives;
   `@rnmapbox/maps` mocked.
 - **Performance:** dev-only seed of 5,000 points; manual device check of panning
   smoothness.
 
-## 13. Tooling
+## 14. Tooling
 - TypeScript strict; `jest-expo`; ESLint boundary rules (Section 4) and styling rules
-  (Section 9).
+  (Section 10).
 - `expo-dev-client`; config plugins for `@rnmapbox/maps`, `expo-location` (usage strings),
   WatermelonDB; Babel decorators configuration for WatermelonDB models.
 - `app.json`: `orientation: "default"`; web target removed.
 - `zod` for typed menu params.
 - Packages installed with `npx expo install`.
 
-## 14. Agent skills and rules
+## 15. Agent skills and rules
 Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks):
-1. **`map-performance`** — Section 7.8 rules as a checklist.
+1. **`map-performance`** — Section 8.8 rules as a checklist.
 2. **`geo-library`** — canonical forms, wrapping libraries, golden-vector tests,
    `describeVector` usage, no trigonometry in features.
 3. **`data-layer`** — adding tables/columns/commands; sync stamps, UUIDs, commands as only
@@ -385,16 +434,18 @@ Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks
 
 `.agents/rules/repo-overview.mdc` gains a short architecture summary linking to this spec.
 
-## 15. Risks and verification gates (first plan steps)
+## 16. Risks and verification gates (first plan steps)
 1. **WatermelonDB on RN 0.86 New Architecture** (JSI SQLite adapter) — prove in a throwaway
    dev build before building on it. If it fails, revisit Section 5 before continuing.
 2. **NativeWind compatibility** with SDK 57 / RN 0.86 — choose the supported major version;
    if none, fall back to typed tokens + `StyleSheet` with the same semantic names.
 3. **`@rnmapbox/maps`** version for RN 0.86, including `LocationPuck` heading support.
 4. **`geomagnetism`** covers WMM2025 dates.
-5. **Camera padding** center behavior (Section 7.4).
+5. **Camera padding** center behavior (Section 8.4).
+6. **Saved camera restore** on mission open applies before first render without a visible
+   jump (initial camera props vs. imperative move).
 
-## 16. Future evolution (informative)
+## 17. Future evolution (informative)
 - **Sync:** implement `synchronize()` pull/push in `lib/db/sync`, excluding local-only
   tables; server keyed by UUIDs and mission IDs.
 - **Collaboration:** presence store fed by a realtime channel; `TeamLayer`; mission
