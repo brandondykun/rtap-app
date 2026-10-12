@@ -48,10 +48,17 @@ function normalizeParts(parts: MgrsParts): Result<MgrsParts, 'invalid'> {
   return splitMgrs(`${clean(parts.zoneBand)}${clean(parts.square)}${easting}${northing}`);
 }
 
-const OVERLAP_TOLERANCE_DEG = 1e-9;
+/**
+ * Tolerance in degrees for the overlap check: one square's width at the reference's precision,
+ * converted with ~111 km per degree. The library's rounding can place a square's edge up to a
+ * square width past the zone or band line it actually belongs to.
+ */
+function overlapToleranceDeg(digits: number): number {
+  return 10 ** (5 - digits) / 111_000;
+}
 
-function overlaps(min: number, max: number, range: [number, number]): boolean {
-  return min <= range[1] + OVERLAP_TOLERANCE_DEG && max >= range[0] - OVERLAP_TOLERANCE_DEG;
+function overlaps(min: number, max: number, range: [number, number], tol: number): boolean {
+  return min <= range[1] + tol && max >= range[0] - tol;
 }
 
 /** Parses an MGRS reference (string or four fields) to the center of the referenced square. */
@@ -80,7 +87,13 @@ export function parseMgrs(input: string | MgrsParts): Result<LatLon, MgrsError> 
   const band = zoneBand.slice(-1);
   const latRange = bandLatRange(band);
   const lonRange = zoneLonRange(zone, band);
-  if (latRange === null || lonRange === null || !overlaps(south, north, latRange) || !overlaps(west, east, lonRange)) {
+  const tol = overlapToleranceDeg(easting.length);
+  if (
+    latRange === null ||
+    lonRange === null ||
+    !overlaps(south, north, latRange, tol) ||
+    !overlaps(west, east, lonRange, tol)
+  ) {
     return err('invalid', 'Grid zone does not match the square and digits');
   }
   return ok({ lat, lon });

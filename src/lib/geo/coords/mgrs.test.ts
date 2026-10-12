@@ -141,7 +141,7 @@ describe('zero-padded zones', () => {
 });
 
 describe('reported near-boundary references', () => {
-  it.each(['18JUK0823757763', '18SUK267297'])('accepts %p', (ref) => {
+  it.each(['18CWS65', '18JUK0823757763', '18SUK267297'])('accepts %p', (ref) => {
     expect(parseMgrs(ref).ok).toBe(true);
   });
 });
