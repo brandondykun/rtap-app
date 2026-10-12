@@ -41,3 +41,20 @@ describe('describeVector', () => {
     expect(v.distanceLabel).toBe('0 m');
   });
 });
+
+describe('describeVector with non-finite input', () => {
+  it('labels a NaN origin with dashes', () => {
+    const v = describeVector({ lat: NaN, lon: 0 }, DC, { unit: 'deg', ref: 'grid', date });
+    expect(v.distanceM).toBeNaN();
+    expect(v.bearingDeg).toBeNull();
+    expect(v.distanceLabel).toBe('—');
+    expect(v.bearingLabel).toBe('—');
+    expect(v.refLabel).toBe('GRID');
+  });
+
+  it('labels a NaN target with dashes', () => {
+    const v = describeVector(DC, { lat: 0, lon: NaN }, { unit: 'mil', ref: 'true', date });
+    expect(v.distanceLabel).toBe('—');
+    expect(v.bearingLabel).toBe('—');
+  });
+});

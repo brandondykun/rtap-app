@@ -1,3 +1,5 @@
+import { inverse } from '../measure/geodesic';
+
 import { parseMgrs, splitMgrs, toMgrs } from './mgrs';
 
 describe('toMgrs', () => {
@@ -85,5 +87,61 @@ describe('parseMgrs', () => {
 
   it('rejects garbage without throwing', () => {
     expect(parseMgrs('garbage')).toMatchObject({ ok: false, error: 'invalid' });
+  });
+});
+
+describe('band and zone line round-trips', () => {
+  const cases: Array<[number, number]> = [
+    [39.9999, -77.03], // S/T band line
+    [40.0001, -77.03],
+    [38.9, -78.0001], // zone 17/18 line
+    [38.9, -77.9999],
+    [-32.0, -77.03],
+    [63.9999, 5.0], // Norway
+    [72.0001, 8.9999], // Svalbard
+    [72.0001, 9.0001],
+  ];
+
+  it.each(cases)('parses toMgrs output at %p, %p for precisions 1–5', (lat, lon) => {
+    for (const precision of [1, 2, 3, 4, 5] as const) {
+      const ref = toMgrs({ lat, lon }, precision);
+      expect(ref.ok).toBe(true);
+      if (!ref.ok) continue;
+      const parsed = parseMgrs(ref.value);
+      expect(parsed.ok).toBe(true);
+      if (!parsed.ok) continue;
+      // The parsed centre lies within about one square width of the original point.
+      // (The library's forward rounding can put the original just outside its own square.)
+      const squareM = 10 ** (5 - precision);
+      expect(inverse(parsed.value, { lat, lon }).distanceM).toBeLessThan(squareM * 1.5);
+    }
+  });
+
+  it('rejects a 32X reference, which does not exist', () => {
+    expect(parseMgrs('32XNN0000000000')).toMatchObject({ ok: false, error: 'invalid' });
+  });
+
+  it('accepts a reference just south of the S/T band line', () => {
+    expect(parseMgrs('18SUK267297').ok).toBe(true);
+  });
+});
+
+describe('zero-padded zones', () => {
+  it('normalizes a leading zero to the bare zone number', () => {
+    const r = splitMgrs('08SKG1234512345');
+    expect(r.ok && r.value.zoneBand).toBe('8S');
+  });
+
+  it('parses a zero-padded reference that matches zone 8', () => {
+    const ref = toMgrs({ lat: 38.9, lon: -136.5 }, 5);
+    if (!ref.ok) throw new Error('setup failed');
+    const padded = `0${ref.value.replace(/^0/, '')}`;
+    expect(parseMgrs(padded).ok).toBe(true);
+  });
+});
+
+describe('reported near-boundary references', () => {
+  it.each(['18JUK0823757763', '18SUK267297'])('accepts %p', (ref) => {
+    expect(parseMgrs(ref).ok).toBe(true);
   });
 });

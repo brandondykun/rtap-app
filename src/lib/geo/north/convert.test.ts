@@ -46,3 +46,10 @@ describe('gridMagneticAngle', () => {
     expect(gridMagneticAngle(DC, ctx)).toBeCloseTo(10 - gridConvergence(DC), 10);
   });
 });
+
+describe('non-finite declination override', () => {
+  it('is treated as absent', () => {
+    const modelled = northOffset('magnetic', DC, { date, declinationOverrideDeg: null });
+    expect(northOffset('magnetic', DC, { date, declinationOverrideDeg: NaN })).toBe(modelled);
+  });
+});

@@ -25,3 +25,9 @@ describe('declination (WMM2025)', () => {
     expect(Number.isFinite(d)).toBe(true);
   });
 });
+
+describe('invalid date', () => {
+  it('does not throw for an Invalid Date', () => {
+    expect(Number.isFinite(declination({ lat: 38.9, lon: -77 }, new Date('nope')))).toBe(true);
+  });
+});

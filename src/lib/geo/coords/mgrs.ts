@@ -3,6 +3,7 @@ import * as mgrs from 'mgrs';
 import { err, ok, type Result } from '@/lib/result';
 
 import type { LatLon } from '../types';
+import { bandLatRange, zoneLonRange } from './utm';
 
 export type MgrsPrecision = 1 | 2 | 3 | 4 | 5;
 export type MgrsError = 'out_of_range' | 'invalid';
@@ -32,7 +33,9 @@ export function splitMgrs(input: string): Result<MgrsParts, 'invalid'> {
   const digits = m[3];
   if (digits.length % 2 !== 0) return err('invalid', 'Easting and northing need the same number of digits');
   const half = digits.length / 2;
-  return ok({ zoneBand: m[1], square: m[2], easting: digits.slice(0, half), northing: digits.slice(half) });
+  // Drop a leading zero so `08S…` and `8S…` compare equal (the zone check uses the bare number).
+  const zoneBand = m[1].length === 3 && m[1][0] === '0' ? m[1].slice(1) : m[1];
+  return ok({ zoneBand, square: m[2], easting: digits.slice(0, half), northing: digits.slice(half) });
 }
 
 function normalizeParts(parts: MgrsParts): Result<MgrsParts, 'invalid'> {
@@ -43,6 +46,12 @@ function normalizeParts(parts: MgrsParts): Result<MgrsParts, 'invalid'> {
     return err('invalid', 'Easting and northing need the same number of digits (1–5)');
   }
   return splitMgrs(`${clean(parts.zoneBand)}${clean(parts.square)}${easting}${northing}`);
+}
+
+const OVERLAP_TOLERANCE_DEG = 1e-9;
+
+function overlaps(min: number, max: number, range: [number, number]): boolean {
+  return min <= range[1] + OVERLAP_TOLERANCE_DEG && max >= range[0] - OVERLAP_TOLERANCE_DEG;
 }
 
 /** Parses an MGRS reference (string or four fields) to the center of the referenced square. */
@@ -61,10 +70,17 @@ export function parseMgrs(input: string | MgrsParts): Result<LatLon, MgrsError> 
   }
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return err('invalid', 'Not an MGRS reference');
 
-  // The library resolves northing using the band letter without checking it; a wrong band
-  // silently yields a wrong position. Round-trip and require the same zone and band.
-  const back = toMgrs({ lat, lon }, 1);
-  if (!back.ok || !back.value.startsWith(zoneBand)) {
+  // The library resolves northing without checking the band letter, so a wrong band silently
+  // yields a wrong position. Check that the referenced square overlaps the band's latitude
+  // range and the zone's longitude range. The square, not its centre, is tested: squares
+  // straddling a band or zone line are valid references.
+  const bbox = mgrs.inverse(`${zoneBand}${square}${easting}${northing}`);
+  const [west, south, east, north] = bbox;
+  const zone = Number(zoneBand.slice(0, -1));
+  const band = zoneBand.slice(-1);
+  const latRange = bandLatRange(band);
+  const lonRange = zoneLonRange(zone, band);
+  if (latRange === null || lonRange === null || !overlaps(south, north, latRange) || !overlaps(west, east, lonRange)) {
     return err('invalid', 'Grid zone does not match the square and digits');
   }
   return ok({ lat, lon });

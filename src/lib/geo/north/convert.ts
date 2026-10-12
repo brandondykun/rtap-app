@@ -5,6 +5,11 @@ import { declination } from './magnetic';
 
 export type NorthContext = { date: Date; declinationOverrideDeg?: number | null };
 
+/** Returns the value if it is a finite number, otherwise the fallback. */
+function finiteOr(value: number | null | undefined, fallback: () => number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback();
+}
+
 /** Angle from true north to the given north reference at p, east positive. */
 export function northOffset(ref: NorthRef, p: LatLon, ctx: NorthContext): number {
   switch (ref) {
@@ -13,7 +18,7 @@ export function northOffset(ref: NorthRef, p: LatLon, ctx: NorthContext): number
     case 'grid':
       return gridConvergence(p);
     case 'magnetic':
-      return ctx.declinationOverrideDeg ?? declination(p, ctx.date);
+      return finiteOr(ctx.declinationOverrideDeg, () => declination(p, ctx.date));
   }
 }
 

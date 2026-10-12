@@ -9,10 +9,13 @@ let cachedDay = '';
 let cachedModel: Model | null = null;
 
 function modelFor(date: Date): Model {
-  const day = date.toISOString().slice(0, 10);
+  // An Invalid Date would throw in toISOString; fall back to now rather than failing a readout.
+  const valid = Number.isNaN(date.getTime()) ? new Date() : date;
+  const day = valid.toISOString().slice(0, 10);
   if (cachedModel === null || day !== cachedDay) {
-    // Fall back to the nearest model rather than throwing when the date is outside WMM2025.
-    cachedModel = geomagnetism.model(date, { allowOutOfBoundsModel: true });
+    // Outside the WMM2025 window the library extrapolates the nearest model's secular variation
+    // and logs a console error; the result is still finite.
+    cachedModel = geomagnetism.model(valid, { allowOutOfBoundsModel: true });
     cachedDay = day;
   }
   return cachedModel;
