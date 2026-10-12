@@ -2,7 +2,7 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
-const GEO_LIBS = ['mgrs', 'mgrs/*', 'geographiclib-geodesic', 'geographiclib-geodesic/*', 'geomagnetism', 'geomagnetism/*'];
+const GEO_LIBS_REGEX = '^(mgrs|geographiclib-geodesic|geomagnetism)(/.*)?$';
 const WATERMELON = ['@nozbe/watermelondb', '@nozbe/watermelondb/*'];
 const MAPBOX = ['@rnmapbox/maps', '@rnmapbox/maps/*'];
 const REACT = ['react', 'react/*', 'react-native', 'react-native/*'];
@@ -29,7 +29,7 @@ const msg = {
 /** One no-restricted-imports rule per zone; flat config replaces (not merges) rule options. */
 function restrict({ geo = true, db = true, mapbox = true, upper = false, react = false }) {
   const patterns = [];
-  if (geo) patterns.push({ group: GEO_LIBS, message: msg.geo });
+  if (geo) patterns.push({ regex: GEO_LIBS_REGEX, message: msg.geo });
   if (db) patterns.push({ group: WATERMELON, message: msg.db });
   if (mapbox) patterns.push({ group: MAPBOX, message: msg.mapbox });
   if (upper) patterns.push({ group: UPPER_LAYERS, message: msg.upper });
