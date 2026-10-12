@@ -1047,7 +1047,7 @@ describe('gridConvergence', () => {
   });
 
   it('is positive east of the central meridian in the northern hemisphere', () => {
-    expect(gridConvergence({ lat: 45, lon: -72 })).toBeCloseTo(2.1223, 3);
+    expect(gridConvergence({ lat: 45, lon: -73 })).toBeCloseTo(1.4145, 3);
   });
 
   it('flips sign in the southern hemisphere (Cape Town, zone 34)', () => {
@@ -1084,8 +1084,10 @@ describe('declination (WMM2025)', () => {
   });
 
   it('does not throw for dates outside the model window', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const d = declination({ lat: 38.9, lon: -77 }, new Date(Date.UTC(2035, 0, 1)));
     expect(Number.isFinite(d)).toBe(true);
+    spy.mockRestore();
   });
 });
 ```
@@ -1097,7 +1099,7 @@ import { fromTrue, gridMagneticAngle, northOffset, toTrue } from './convert';
 import { gridConvergence } from './grid';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
-const EAST = { lat: 45, lon: -72 }; // convergence ≈ +2.12°
+const EAST = { lat: 45, lon: -73 }; // convergence ≈ +1.41°
 const date = new Date(Date.UTC(2026, 5, 1));
 
 describe('northOffset', () => {
@@ -1120,7 +1122,7 @@ describe('northOffset', () => {
 
 describe('fromTrue / toTrue', () => {
   it('wraps across north instead of going negative', () => {
-    expect(fromTrue(1, 'grid', EAST, { date })).toBeCloseTo(358.8777, 3);
+    expect(fromTrue(1, 'grid', EAST, { date })).toBeCloseTo(359.5855, 3);
   });
 
   it('subtracts an east declination', () => {
