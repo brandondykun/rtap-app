@@ -19,9 +19,9 @@ function attributionRaise(landscape: boolean): number {
  * Logo row top in landscape (from the safe area). The (i) button's frame then starts slightly
  * above the safe area; that is padding around the icon, which stays on screen.
  */
-export const LANDSCAPE_LOGO_TOP = 18;
+export const LANDSCAPE_LOGO_TOP = 14;
 /** Room reserved for the attribution (i) button, which sits left of the Mapbox wordmark. */
-export const ATTRIBUTION_WIDTH = 32;
+export const ATTRIBUTION_WIDTH = 36;
 
 export type Insets = { top: number; right: number; bottom: number; left: number };
 
