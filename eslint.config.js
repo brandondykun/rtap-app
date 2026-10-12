@@ -2,10 +2,21 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
-const GEO_LIBS = ['mgrs', 'geographiclib-geodesic', 'geomagnetism'];
+const GEO_LIBS = ['mgrs', 'mgrs/*', 'geographiclib-geodesic', 'geographiclib-geodesic/*', 'geomagnetism', 'geomagnetism/*'];
 const WATERMELON = ['@nozbe/watermelondb', '@nozbe/watermelondb/*'];
 const MAPBOX = ['@rnmapbox/maps', '@rnmapbox/maps/*'];
-const UPPER_LAYERS = ['@/features/*', '@/stores/*', '@/components/*', '@/app/*'];
+const REACT = ['react', 'react/*', 'react-native', 'react-native/*'];
+const UPPER_LAYERS = [
+  '@/features/*',
+  '@/stores/*',
+  '@/components/*',
+  '@/app/*',
+  // Relative imports from src/lib into upper layers.
+  '**/features/**',
+  '**/stores/**',
+  '**/components/**',
+  '**/app/**',
+];
 
 const msg = {
   geo: 'Geodesy libraries are wrapped by src/lib/geo. Import from @/lib/geo/... instead.',
@@ -17,14 +28,13 @@ const msg = {
 
 /** One no-restricted-imports rule per zone; flat config replaces (not merges) rule options. */
 function restrict({ geo = true, db = true, mapbox = true, upper = false, react = false }) {
-  const paths = [];
   const patterns = [];
-  if (geo) paths.push(...GEO_LIBS.map((name) => ({ name, message: msg.geo })));
+  if (geo) patterns.push({ group: GEO_LIBS, message: msg.geo });
   if (db) patterns.push({ group: WATERMELON, message: msg.db });
   if (mapbox) patterns.push({ group: MAPBOX, message: msg.mapbox });
   if (upper) patterns.push({ group: UPPER_LAYERS, message: msg.upper });
-  if (react) paths.push({ name: 'react', message: msg.react }, { name: 'react-native', message: msg.react });
-  return { 'no-restricted-imports': ['error', { paths, patterns }] };
+  if (react) patterns.push({ group: REACT, message: msg.react });
+  return { 'no-restricted-imports': ['error', { patterns }] };
 }
 
 module.exports = defineConfig([
@@ -37,7 +47,7 @@ module.exports = defineConfig([
   { files: ['src/lib/db/**/*.{ts,tsx}'], rules: restrict({ db: false, upper: true }) },
   { files: ['src/features/map/**/*.{ts,tsx}'], rules: restrict({ mapbox: false }) },
   {
-    files: ['src/features/*/repository.ts', 'src/features/*/commands.ts', 'src/features/*/*.test.ts'],
+    files: ['src/features/*/repository.ts', 'src/features/*/commands.ts', 'src/features/*/*.test.{ts,tsx}'],
     rules: restrict({ db: false }),
   },
 ]);

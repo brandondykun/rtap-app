@@ -14,11 +14,14 @@ description: Use whenever you compute or display coordinates, MGRS, distances, b
    `@/lib/geo/vector`. Every readout must go through it so they agree.
 3. **Libraries are wrapped.** Only `src/lib/geo/**` may import `mgrs`,
    `geographiclib-geodesic`, `geomagnetism` (lint enforced). Add new geodesy libraries the
-   same way: wrap them, export our own types.
+   same way: wrap them, export our own types. `parseMgrs` accepts references whose square
+   overlaps the stated band/zone (precision-scaled tolerance, Norway/Svalbard exceptions) and
+   normalizes zero-padded zones (`08S` → `8S`).
 4. **No React / React Native** in `src/lib/geo` (lint enforced). Functions are pure and
    synchronous; they run on every camera frame.
-5. **Errors are values.** Return `Result` (`@/lib/result`) for bad input (unparseable MGRS,
-   polar positions). Never throw, never return `NaN`.
+5. **Errors are values.** Return `Result` for bad input (unparseable MGRS,
+   polar positions); never throw. `describeVector` returns `'—'` labels and a null bearing
+   for non-finite input (its `distanceM` is then NaN). Render labels, not raw numbers.
 6. **Mils are NATO 6400 only** (`MILS_PER_CIRCLE`).
 7. **Sign conventions** (east positive): `gridConvergence` = true→grid north,
    `declination` = true→magnetic north. `ref azimuth = true azimuth − offset`.
