@@ -65,8 +65,8 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
       disabled={disabled}
       onPress={onPress}
       hitSlop={6}
-      className={`h-12 w-12 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
-      <Icon name={icon} size={28} color={colors.text} />
+      className={`h-11 w-11 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
+      <Icon name={icon} size={24} color={colors.text} />
     </Pressable>
   );
 }

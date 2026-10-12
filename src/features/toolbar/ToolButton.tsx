@@ -17,8 +17,8 @@ export function ToolButton({ icon, label, active = false, onPress }: Props) {
       accessibilityState={{ selected: active, disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`min-w-16 items-center rounded-2xl px-3 py-1 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
-      <Icon name={icon} size={24} color={color} />
+      className={`min-w-14 items-center rounded-2xl px-3 py-1 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
+      <Icon name={icon} size={20} color={color} />
       <Text style={{ color }} className="mt-0.5 text-xs font-semibold tracking-wider">
         {label}
       </Text>

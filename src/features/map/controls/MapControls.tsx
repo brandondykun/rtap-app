@@ -49,11 +49,11 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
 function NorthNeedle() {
   const { colors } = useTheme();
   const bearing = useInteraction((s) => s.cameraBearing);
-  const half = { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderLeftColor: 'transparent', borderRightColor: 'transparent' };
+  const half = { width: 0, height: 0, borderLeftWidth: 5, borderRightWidth: 5, borderLeftColor: 'transparent', borderRightColor: 'transparent' };
   return (
     <View testID="north-needle" style={{ transform: [{ rotate: `${-bearing}deg` }] }} className="items-center">
-      <View style={{ ...half, borderBottomWidth: 14, borderBottomColor: colors.danger }} />
-      <View style={{ ...half, borderTopWidth: 14, borderTopColor: colors.text }} />
+      <View style={{ ...half, borderBottomWidth: 12, borderBottomColor: colors.danger }} />
+      <View style={{ ...half, borderTopWidth: 12, borderTopColor: colors.text }} />
     </View>
   );
 }
