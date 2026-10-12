@@ -40,10 +40,44 @@ describe('settings store', () => {
     expect(useSettings.getState().declinationOverrideDeg).toBeNull();
   });
 
-  it('persists to the kv store', async () => {
+  it('persists to the kv store', () => {
     useSettings.getState().setAngleUnit('mil');
-    await new Promise((r) => setTimeout(r, 0));
-    const raw = await Storage.getItem('settings');
+    const raw = Storage.getItemSync('settings');
     expect(JSON.parse(raw ?? '{}').state.angleUnit).toBe('mil');
+  });
+
+  describe('hydration', () => {
+    const seed = (state: unknown) => Storage.setItemSync('settings', JSON.stringify({ state, version: 1 }));
+
+    it('loads valid persisted values, including ±180 declination', async () => {
+      seed({ coordinateFormat: 'latlon', angleUnit: 'mil', northRef: 'magnetic', declinationOverrideDeg: 180 });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState()).toMatchObject({
+        coordinateFormat: 'latlon',
+        angleUnit: 'mil',
+        northRef: 'magnetic',
+        declinationOverrideDeg: 180,
+      });
+      seed({ declinationOverrideDeg: -180 });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().declinationOverrideDeg).toBe(-180);
+    });
+
+    it('falls back per field for corrupt values', async () => {
+      seed({ coordinateFormat: 'utm', angleUnit: 'mil', northRef: 42, declinationOverrideDeg: 181 });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState()).toMatchObject({
+        coordinateFormat: 'mgrs',
+        angleUnit: 'mil',
+        northRef: 'grid',
+        declinationOverrideDeg: null,
+      });
+    });
+
+    it('survives unparseable JSON', async () => {
+      Storage.setItemSync('settings', '{not json');
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().coordinateFormat).toBe('mgrs');
+    });
   });
 });

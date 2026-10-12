@@ -1,6 +1,6 @@
 import Storage from 'expo-sqlite/kv-store';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 
@@ -33,6 +33,32 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   declinationOverrideDeg: null,
 };
 
+const syncStorage: StateStorage = {
+  getItem: (key) => Storage.getItemSync(key),
+  setItem: (key, value) => Storage.setItemSync(key, value),
+  removeItem: (key) => void Storage.removeItemSync(key),
+};
+
+function pick<T>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+/** Validates persisted values field by field; anything invalid keeps the current value. */
+function mergePersisted(persisted: unknown, current: SettingsState): SettingsState {
+  const p = (persisted && typeof persisted === 'object' ? persisted : {}) as Record<string, unknown>;
+  const decl = p.declinationOverrideDeg;
+  return {
+    ...current,
+    coordinateFormat: pick(p.coordinateFormat, ['mgrs', 'latlon'], current.coordinateFormat),
+    angleUnit: pick(p.angleUnit, ['deg', 'mil'], current.angleUnit),
+    northRef: pick(p.northRef, ['true', 'grid', 'magnetic'], current.northRef),
+    declinationOverrideDeg:
+      decl === null || (typeof decl === 'number' && Number.isFinite(decl) && Math.abs(decl) <= 180)
+        ? decl
+        : current.declinationOverrideDeg,
+  };
+}
+
 export const useSettings = create<SettingsState>()(
   persist(
     (set, get) => ({
@@ -50,7 +76,8 @@ export const useSettings = create<SettingsState>()(
     {
       name: 'settings',
       version: 1,
-      storage: createJSONStorage(() => Storage),
+      storage: createJSONStorage(() => syncStorage),
+      merge: mergePersisted,
       partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg }) => ({
         coordinateFormat,
         angleUnit,

@@ -58,6 +58,14 @@ describe('createPointFeatureSelector', () => {
   });
 });
 
+describe('unknown SIDCs', () => {
+  it('renders the default symbol for a SIDC outside the presets', () => {
+    const select = createPointFeatureSelector();
+    const fc = select([item('a', 1, { sidc: 'SFGPEVAT-------' })]);
+    expect(fc.features[0].properties.sidc).toBe(DEFAULT_SIDC);
+  });
+});
+
 describe('hiddenFilter', () => {
   it('excludes hidden ids by property', () => {
     expect(hiddenFilter(['a', 'b'])).toEqual(['!', ['in', ['get', 'id'], ['literal', ['a', 'b']]]]);

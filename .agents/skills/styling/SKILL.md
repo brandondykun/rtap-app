@@ -18,6 +18,7 @@ description: Use whenever you add or change colors, classNames, styles, themes, 
 5. **Themes** are data: a new theme (day, night/red-light) is a new entry in `themes`.
 6. **Match the mockups** in `docs/design/mockups/`: dark chrome, amber accent, uppercase
    tracked labels, monospace readouts and map labels.
+7. **No opacity modifiers on tokens.** Token colors are CSS variables, so Tailwind opacity modifiers (`bg-accent/50`) don't work — add a translucent token instead. The `neutral` token (affiliation green) replaces Tailwind's `neutral-*` scale in classNames.
 
 ## Token reference (dark)
 | Token | Use |
