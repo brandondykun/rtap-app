@@ -22,7 +22,7 @@ export function PointsLayer({ missionId }: { missionId: string }) {
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const select = useMemo(() => createPointFeatureSelector(), []);
   const shape = useMemo(() => select(items), [select, items]);
-  const filter = useMemo(() => hiddenFilter(hiddenIds) as LayerFilter, [hiddenIds]);
+  const filter = useMemo(() => hiddenFilter(hiddenIds) as unknown as LayerFilter, [hiddenIds]);
   const labelStyle = useMemo(() => makePointLabelStyle(colors), [colors]);
 
   return (
