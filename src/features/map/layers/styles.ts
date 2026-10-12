@@ -1,0 +1,44 @@
+import type { SymbolLayerStyle } from '@rnmapbox/maps';
+
+import type { SemanticToken } from '@/theme/tokens';
+
+import { MAP_IMAGE_IDS } from '../images/map-images';
+
+/**
+ * Font stack for map labels. Glyphs come from the Mapbox style's glyph server; these fonts are
+ * available to every account. A monospace stack (JetBrains Mono) needs its glyphs uploaded to
+ * the Mapbox account first — tracked in the native gate notes. Every font in a stack must exist,
+ * or no labels render.
+ */
+export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
+
+/** Symbol icons: every point always shows; collisions never hide a symbol. */
+export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
+  iconImage: ['get', 'sidc'],
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
+
+/** Label chips below each symbol; labels may hide each other when crowded (never the symbols). */
+export function makePointLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return {
+    textField: ['get', 'name'],
+    textFont: MAP_LABEL_FONT,
+    textSize: 12,
+    textColor: colors['map-label-text'],
+    textAnchor: 'top',
+    textOffset: [0, 1.7],
+    iconImage: MAP_IMAGE_IDS.labelChip,
+    iconTextFit: 'both',
+    iconTextFitPadding: [2, 6, 2, 6],
+  };
+}
+
+export const SELF_STYLE: SymbolLayerStyle = {
+  iconImage: ['get', 'icon'],
+  iconRotate: ['get', 'heading'],
+  iconRotationAlignment: 'map',
+  iconPitchAlignment: 'map',
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
