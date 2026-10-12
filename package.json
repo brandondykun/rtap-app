@@ -26,6 +26,7 @@
     "expo-symbols": "~57.0.3",
     "expo-system-ui": "~57.0.4",
     "geographiclib-geodesic": "^2.2.0",
+    "geomagnetism": "^0.2.0",
     "mgrs": "^2.2.0",
     "nativewind": "^4.2.7",
     "react": "19.2.3",
