@@ -5,10 +5,17 @@ alwaysApply: true
 
 # Repository overview
 
-Source lives under `src/`, split by concern (`app/` routes, `features/`,
-`components/`, `api/`, `hooks/`, `stores/`, `lib/`, `config/`, `theme/`).
+Tactical map app (Expo SDK 57, iOS + Android, offline-first). Architecture spec:
+`docs/superpowers/specs/2026-10-12-tactical-map-architecture-design.md`; mockups:
+`docs/design/mockups/`.
+
+Source lives under `src/`, split by concern (`app/` routes, `features/`, `components/`,
+`hooks/`, `stores/`, `lib/`, `config/`, `theme/`).
 
 ## Conventions
 
-- Feature modules own their own screens, queries, and mutations; shared UI stays
-  in `components/ui/`. Reach across features by deep import, not via a barrel.
+- Feature modules own their screens, repositories (reads) and commands (writes); shared UI
+  stays in `components/`. Reach across features by deep import, not via a barrel.
+- `lib/` never imports `features/`, `stores/`, `components/` or `app/` (lint enforced).
+- Skills: `geo-library` (coordinates, bearings), `data-layer` (WatermelonDB, sync rules),
+  `styling` (semantic tokens), `commits` (commit messages).
