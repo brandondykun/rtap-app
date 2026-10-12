@@ -50,4 +50,22 @@ module.exports = defineConfig([
     files: ['src/features/*/repository.ts', 'src/features/*/commands.ts', 'src/features/*/*.test.{ts,tsx}'],
     rules: restrict({ db: false }),
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/theme/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]',
+          message: 'No hex colors outside src/theme. Use a semantic token (className or useTheme().colors).',
+        },
+        {
+          selector:
+            'Literal[value=/\\b(?:bg|text|border|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d{2,3}\\b/]',
+          message: 'No raw Tailwind palette classes. Use semantic classes (bg-surface, text-accent, ...).',
+        },
+      ],
+    },
+  },
 ]);

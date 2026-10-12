@@ -1,0 +1,21 @@
+[
+  "surface",
+  "surface-chrome",
+  "surface-input",
+  "surface-raised",
+  "border",
+  "text",
+  "text-muted",
+  "accent",
+  "accent-subtle",
+  "on-accent",
+  "success",
+  "danger",
+  "friendly",
+  "hostile",
+  "neutral",
+  "unknown",
+  "self",
+  "map-label-bg",
+  "map-label-text"
+]
