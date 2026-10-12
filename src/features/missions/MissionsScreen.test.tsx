@@ -13,6 +13,9 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (effect: () => void) => (jest.requireActual('react') as typeof import('react')).useEffect(effect, [effect]),
 }));
 
+const mockSeed = jest.fn(async (..._args: unknown[]) => ({ ok: true as const, value: { missionId: 'seeded' } }));
+jest.mock('@/features/dev/commands', () => ({ PERF_SEED_COUNT: 5000, seedPerformanceMission: (...a: unknown[]) => mockSeed(...a) }));
+
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };
 
@@ -56,5 +59,12 @@ describe('MissionsScreen', () => {
     });
     await fireEvent.press(screen.getByText('+ New'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
+  });
+
+  it('seeds a 5k performance mission in development builds', async () => {
+    await renderWithProviders(<MissionsScreen />);
+    await fireEvent.press(await screen.findByText('Seed 5k'));
+    expect(mockSeed).toHaveBeenCalledWith(expect.anything(), { count: 5000 });
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/missions/[missionId]', params: { missionId: 'seeded' } });
   });
 });

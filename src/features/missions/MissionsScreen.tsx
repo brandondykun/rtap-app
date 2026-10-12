@@ -1,8 +1,9 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 
@@ -25,17 +26,33 @@ export function MissionsScreen() {
   const openMission = (missionId: string) =>
     router.push({ pathname: '/missions/[missionId]', params: { missionId } });
 
+  const seeding = useRef(false);
+  const seed = async () => {
+    if (seeding.current) return;
+    seeding.current = true;
+    const result = await seedPerformanceMission(ctx, { count: PERF_SEED_COUNT });
+    seeding.current = false;
+    if (result.ok) openMission(result.value.missionId);
+  };
+
   return (
     <View
       className="flex-1 bg-surface"
       style={{ paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}>
       <View className="flex-row items-center justify-between px-4 pb-3 pt-4">
         <Text className="text-lg font-semibold uppercase tracking-widest text-text">Missions</Text>
-        {missions && missions.length > 0 ? (
-          <Pressable accessibilityRole="button" onPress={openCreate} className="rounded-xl bg-accent px-4 py-2">
-            <Text className="font-bold text-on-accent">+ New</Text>
-          </Pressable>
-        ) : null}
+        <View className="flex-row items-center gap-3">
+          {__DEV__ ? (
+            <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8}>
+              <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
+            </Pressable>
+          ) : null}
+          {missions && missions.length > 0 ? (
+            <Pressable accessibilityRole="button" onPress={openCreate} className="rounded-xl bg-accent px-4 py-2">
+              <Text className="font-bold text-on-accent">+ New</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       {missions === null ? null : missions.length === 0 ? (
         <EmptyState onCreate={openCreate} />

@@ -18,4 +18,5 @@ Source lives under `src/`, split by concern (`app/` routes, `features/`, `compon
   stays in `components/`. Reach across features by deep import, not via a barrel.
 - `lib/` never imports `features/`, `stores/`, `components/` or `app/` (lint enforced).
 - Skills: `geo-library` (coordinates, bearings), `data-layer` (WatermelonDB, sync rules),
-  `styling` (semantic tokens), `commits` (commit messages).
+  `styling` (semantic tokens), `map-performance` (anything on or over the map),
+  `commits` (commit messages).
