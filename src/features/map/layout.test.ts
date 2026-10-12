@@ -21,14 +21,14 @@ describe('map layout', () => {
   it('puts the (i) button left of the logo and raised by ATTRIBUTION_RAISE, under the toolbar in portrait', () => {
     const p = ornamentPositions({ landscape: false, insets: NO_INSETS });
     const top = EDGE + TOOLBAR_HEIGHT + GAP;
-    expect(p.attribution).toEqual({ top: top - ATTRIBUTION_RAISE, left: EDGE });
+    expect(p.attribution).toEqual({ top: top - ATTRIBUTION_RAISE.portrait, left: EDGE });
     expect(p.logo).toEqual({ top, left: EDGE + ATTRIBUTION_WIDTH });
   });
 
   it('keeps the raised (i) button on screen at the top edge in landscape', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS });
     expect(p.attribution.top).toBeGreaterThanOrEqual(0);
-    expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE);
+    expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE.landscape);
     expect(p.attribution.left).toBe(EDGE);
   });
 
