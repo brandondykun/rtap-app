@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { getMapboxToken } from '@/config/env';
@@ -25,11 +25,17 @@ export function MapScreen({ missionId }: { missionId: string }) {
     };
   }, [ctx, missionId]);
 
-  useEffect(() => {
-    if (opened?.status === 'missing') router.replace('/');
-  }, [opened, router]);
+  // Pop back to the existing missions list when there is one; replace only if this is the stack root.
+  const leave = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }, [router]);
 
-  if (!getMapboxToken()) return <MissingTokenScreen onBack={() => router.replace('/')} />;
+  useEffect(() => {
+    if (opened?.status === 'missing') leave();
+  }, [opened, leave]);
+
+  if (!getMapboxToken()) return <MissingTokenScreen onBack={leave} />;
   if (opened === null || opened.status === 'missing') return <View className="flex-1 bg-surface" />;
   return <MissionMap missionId={missionId} savedCamera={opened.camera} />;
 }
