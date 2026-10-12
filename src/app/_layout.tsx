@@ -21,6 +21,8 @@ function ThemedStack() {
         name="missions/new"
         options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }}
       />
+      {/* Edge swipes belong to the map, never to navigation. */}
+      <Stack.Screen name="missions/[missionId]" options={{ gestureEnabled: false }} />
     </Stack>
   );
 }
