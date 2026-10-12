@@ -16,7 +16,7 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Missions screen (app entry): lists the user's missions/maps, creates a new one, and opens
   one in the map. The map is always entered with a mission selected.
 - Map screen for the selected mission, usable in portrait and landscape.
-- User's own location with a heading-aware icon (view cone) labeled "YOU".
+- User's own location with a heading-aware icon (view cone) (no label).
 - Always-visible center crosshair; bottom-left readout card with the crosshair's MGRS and
   range/bearing from the user (tap the bearing to toggle grid ↔ magnetic).
 - Top toolbar: app menu, POINT tool, settings. Map controls: north-up, zoom in/out,
@@ -288,7 +288,7 @@ lib/geo/
 
 ### 8.3 Self and teammate icons
 - **Look (mockups):** white-ringed `sky-400` disc with a dark navigation arrow, a translucent
-  `sky-400` view cone pointing along the heading, and a "YOU" label chip. Not a 2525 symbol.
+  `sky-400` view cone pointing along the heading. No label. Not a 2525 symbol.
 - **Self:** `SelfLayer` — a `ShapeSource` with one feature from the presence store (fed by
   `expo-location` position + heading), rendered by a `SymbolLayer` with
   `iconRotate: ['get', 'heading']`, `iconRotationAlignment: 'map'`. Heading updates are
