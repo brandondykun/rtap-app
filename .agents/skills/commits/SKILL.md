@@ -57,3 +57,8 @@ chore: bump expo to SDK 56
 docs: document env-driven app identity in README
 style: format repo with prettier
 ```
+
+## No attribution trailers
+
+Never add `Co-Authored-By:` or any other attribution/trailer line (including AI-tool
+attribution) to a commit message. The message is the subject plus an optional body, nothing else.

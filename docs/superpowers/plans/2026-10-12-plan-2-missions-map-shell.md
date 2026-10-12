@@ -55,7 +55,7 @@ and the hamburger temporarily performs "Switch mission" (back to the list).
 - Tests: React Native Testing Library 14 — `render`, `fireEvent.*`, `act` are **async; always `await` them**. Wrap UI in `renderWithProviders` (Task 1).
 - Any test whose imports reach `@rnmapbox/maps` must call `jest.mock('@rnmapbox/maps');` (uses the manual mock `__mocks__/@rnmapbox/maps.tsx` from Task 8). Inspect what layers received via `mapboxMock()` from `@/test-utils/mapbox-mock`.
 - After adding or renaming any file under `src/app/`, regenerate typed routes before `tsc`: `npx expo export --platform ios --output-dir /tmp/rtap-typegen > /dev/null` (rewrites `.expo/types/router.d.ts`; also proves the app bundles).
-- Commit messages use Conventional Commits (`.agents/skills/commits/SKILL.md`) and end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- Commit messages use Conventional Commits (`.agents/skills/commits/SKILL.md`). **Never add a `Co-Authored-By` trailer or any other attribution line.**
 - Before declaring any task done: `npx jest`, `npx tsc --noEmit`, `npx expo lint` all pass.
 
 ## Review Focus
@@ -351,9 +351,7 @@ Expected: all pass. (If `fontError` is typed `Error | null` vs `undefined` diffe
 
 ```bash
 git add -A
-git commit -m "feat: add app providers, fonts, icons and observable hook
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add app providers, fonts, icons and observable hook"
 ```
 
 ---
@@ -473,9 +471,7 @@ Expected: PASS.
 
 ```bash
 git add src/features/missions
-git commit -m "feat: hide deleted missions and format mission rows
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: hide deleted missions and format mission rows"
 ```
 
 ---
@@ -685,9 +681,7 @@ Expected: PASS.
 
 ```bash
 git add -A
-git commit -m "feat: add missions list screen
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add missions list screen"
 ```
 
 ---
@@ -898,9 +892,7 @@ Expected: PASS.
 
 ```bash
 git add -A
-git commit -m "feat: add create-mission sheet
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add create-mission sheet"
 ```
 
 ---
@@ -1081,9 +1073,7 @@ Expected: PASS.
 
 ```bash
 git add src/stores
-git commit -m "feat: add interaction and presence stores
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add interaction and presence stores"
 ```
 
 ---
@@ -1437,9 +1427,7 @@ Expected: PASS. (`render` resolves after mount effects and the mocked promises s
 
 ```bash
 git add jest.setup.ts src/features/location
-git commit -m "feat: stream own position and heading into presence
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: stream own position and heading into presence"
 ```
 
 ---
@@ -1621,9 +1609,7 @@ Expected: PASS.
 
 ```bash
 git add package.json scripts/build-map-images.ts assets/map src/features/map/images
-git commit -m "feat: generate self icon and label chip map images
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: generate self icon and label chip map images"
 ```
 
 ---
@@ -2109,9 +2095,7 @@ Expected: PASS. If `tsc` rejects `createRef<never>()` in the test, use `createRe
 
 ```bash
 git add -A
-git commit -m "feat: add uncontrolled map canvas with throttled camera feed
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add uncontrolled map canvas with throttled camera feed"
 ```
 
 ---
@@ -2418,9 +2402,7 @@ Expected: PASS. If `tsc` rejects an expression literal in a style (e.g. `['get',
 
 ```bash
 git add src/features/map/layers
-git commit -m "feat: render mission points, label chips and own position
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: render mission points, label chips and own position"
 ```
 
 ---
@@ -2691,9 +2673,7 @@ Expected: PASS.
 
 ```bash
 git add src/features/map/interaction src/features/map/controls
-git commit -m "feat: add crosshair and MGRS readout card
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add crosshair and MGRS readout card"
 ```
 
 ---
@@ -2880,9 +2860,7 @@ Expected: PASS.
 
 ```bash
 git add src/features/map/controls
-git commit -m "feat: add north-up, zoom and recenter map controls
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add north-up, zoom and recenter map controls"
 ```
 
 ---
@@ -3070,9 +3048,7 @@ Expected: PASS.
 
 ```bash
 git add src/features/toolbar
-git commit -m "feat: add top toolbar
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add top toolbar"
 ```
 
 ---
@@ -3660,9 +3636,7 @@ Expected: all pass; the iOS bundle builds.
 
 ```bash
 git add -A
-git commit -m "feat: add mission map screen with camera persistence
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add mission map screen with camera persistence"
 ```
 
 ---
@@ -3878,9 +3852,7 @@ Expected: PASS.
 
 ```bash
 git add src/features/map/offline
-git commit -m "feat: add offline tile pack service
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add offline tile pack service"
 ```
 
 ---
@@ -4116,9 +4088,7 @@ Expected: PASS.
 
 ```bash
 git add -A
-git commit -m "feat: add 5k-point performance seed and map-performance skill
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "feat: add 5k-point performance seed and map-performance skill"
 ```
 
 ---
@@ -4166,9 +4136,7 @@ Fallbacks if a check fails:
 
 ```bash
 git add docs/superpowers/notes/2026-10-12-native-gate.md
-git commit -m "docs: add Plan 2 device checklist to gate notes
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+git commit -m "docs: add Plan 2 device checklist to gate notes"
 ```
 
 - [ ] **Step 3: Hand off to the user**
