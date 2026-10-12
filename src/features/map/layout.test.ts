@@ -1,6 +1,16 @@
-import { ATTRIBUTION_RAISE, ATTRIBUTION_WIDTH, EDGE, GAP, isLandscape, LOGO_ROW_HEIGHT, ornamentPositions, TOOLBAR_HEIGHT } from './layout';
+import {
+  ATTRIBUTION_RAISE,
+  ATTRIBUTION_WIDTH,
+  EDGE,
+  GAP,
+  isLandscape,
+  LOGO_ROW_HEIGHT,
+  ornamentPositions,
+  ornamentRowTop,
+  TOOLBAR_HEIGHT,
+} from './layout';
 
-const insets = { top: 47, right: 0, bottom: 34, left: 0 };
+const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
 
 describe('map layout', () => {
   it('detects landscape', () => {
@@ -8,17 +18,24 @@ describe('map layout', () => {
     expect(isLandscape(390, 844)).toBe(false);
   });
 
-  it('keeps the logo below the full-width toolbar in portrait', () => {
-    const p = ornamentPositions({ landscape: false, insets });
-    const top = insets.top + EDGE + TOOLBAR_HEIGHT + GAP;
+  it('puts the (i) button left of the logo and raised by ATTRIBUTION_RAISE, under the toolbar in portrait', () => {
+    const p = ornamentPositions({ landscape: false, insets: NO_INSETS });
+    const top = EDGE + TOOLBAR_HEIGHT + GAP;
     expect(p.attribution).toEqual({ top: top - ATTRIBUTION_RAISE, left: EDGE });
     expect(p.logo).toEqual({ top, left: EDGE + ATTRIBUTION_WIDTH });
   });
 
-  it('puts the logo top-left in landscape (toolbar is top-right)', () => {
-    const p = ornamentPositions({ landscape: true, insets: { top: 0, right: 47, bottom: 21, left: 47 } });
-    expect(p.attribution).toEqual({ top: 0, left: 47 + EDGE });
-    expect(p.logo).toEqual({ top: EDGE, left: 47 + EDGE + ATTRIBUTION_WIDTH });
+  it('keeps the raised (i) button on screen at the top edge in landscape', () => {
+    const p = ornamentPositions({ landscape: true, insets: NO_INSETS });
+    expect(p.attribution.top).toBeGreaterThanOrEqual(0);
+    expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE);
+    expect(p.attribution.left).toBe(EDGE);
+  });
+
+  it('adds device insets when the platform measures from the map edges', () => {
+    const insets = { top: 47, right: 0, bottom: 34, left: 10 };
+    const p = ornamentPositions({ landscape: false, insets });
+    expect(p.logo).toEqual({ top: 47 + ornamentRowTop(false), left: 10 + EDGE + ATTRIBUTION_WIDTH });
   });
 
   it('exposes the logo row height for the location banner', () => {

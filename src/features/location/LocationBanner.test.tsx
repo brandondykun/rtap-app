@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
-import { EDGE, GAP, LOGO_ROW_HEIGHT, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { EDGE, GAP, LOGO_ROW_HEIGHT, ornamentRowTop, TOOLBAR_HEIGHT } from '@/features/map/layout';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -29,7 +29,7 @@ describe('LocationBanner', () => {
 
   it.each([
     [false, EDGE + TOOLBAR_HEIGHT + GAP + LOGO_ROW_HEIGHT],
-    [true, EDGE + LOGO_ROW_HEIGHT],
+    [true, ornamentRowTop(true) + LOGO_ROW_HEIGHT],
   ])('sits below the Mapbox logo row (landscape=%s)', async (landscape, top) => {
     await renderWithProviders(<LocationBanner landscape={landscape} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));

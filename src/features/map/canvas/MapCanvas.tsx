@@ -1,15 +1,18 @@
 import { Camera, Images, MapView, type MapState } from '@rnmapbox/maps';
 import { useEffect, useMemo, type ReactNode, type Ref } from 'react';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MissionCamera } from '@/features/missions/repository';
 import { useInteraction } from '@/stores/interaction';
 
 import { MAP_IMAGES } from '../images/map-images';
-import { ornamentPositions } from '../layout';
+import { ornamentPositions, type Insets } from '../layout';
 import { cameraFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { MAP_STYLE_URL } from './mapbox';
+
+const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 type Props = {
   cameraRef: Ref<Camera>;
@@ -24,7 +27,8 @@ type Props = {
 
 export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, landscape, children }: Props) {
   const insets = useSafeAreaInsets();
-  const ornaments = ornamentPositions({ landscape, insets });
+  // Mapbox on iOS measures ornament margins from the safe area already.
+  const ornaments = ornamentPositions({ landscape, insets: Platform.OS === 'ios' ? NO_INSETS : insets });
   const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
-import { CONTROL_SIZE, EDGE, GAP, LOGO_ROW_HEIGHT, ornamentTop } from '@/features/map/layout';
+import { CONTROL_SIZE, EDGE, GAP, LOGO_ROW_HEIGHT, ornamentRowTop } from '@/features/map/layout';
 import { usePresence } from '@/stores/presence';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -20,7 +20,7 @@ export function LocationBanner({ landscape }: { landscape: boolean }) {
       className="absolute flex-row items-center gap-3 rounded-2xl border border-border bg-surface-chrome px-4 py-3"
       style={{
         // Directly below the Mapbox logo/attribution row, which must stay visible.
-        top: ornamentTop({ landscape, insets }) + LOGO_ROW_HEIGHT,
+        top: insets.top + ornamentRowTop(landscape) + LOGO_ROW_HEIGHT,
         left: insets.left + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>

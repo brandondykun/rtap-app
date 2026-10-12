@@ -73,3 +73,4 @@ Fallbacks if a check fails:
 Plan 2 device findings (iOS):
 - Label chip: rnmapbox multiplies `stretchX`/`stretchY`/`content` by the image entry's `scale` (RNMBXUtils.swift), so they must be given in points. Pixel values triggered "expected stretchX area lies within an image (width 72)". Fixed by expressing them in points.
 - Scale bar removed at the user's request (too much screen space).
+- Ornament margins: on iOS Mapbox measures logo/attribution margins from the safe area, so adding safe-area insets double-counted them (logo too far right in landscape, too low in portrait). MapCanvas now passes zero insets on iOS. Android is assumed to measure from the map view edges (device insets added) — verify when Android is un-deferred.
