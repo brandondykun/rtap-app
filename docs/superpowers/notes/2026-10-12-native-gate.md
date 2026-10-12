@@ -56,6 +56,14 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 11 | Seed 5k → panning/zooming smooth for 30 s in both orientations | PENDING |
 | 12 | Background the app on the map, kill it, reopen the mission: same camera | PENDING |
 | 13 | Deny location (Settings → RTAP → Location → Never): banner shows, Settings button opens Settings, map still usable | PENDING |
+| 14 | Pan, then within ~1 s swipe to the app switcher and kill the app; reopen the mission: camera is where you left it | PENDING |
+| 15 | Pan/rotate, then rotate the device both ways: the camera never jumps back to the opening view | PENDING |
+| 16 | Deny location in portrait: banner does not cover the Mapbox logo/attribution | PENDING |
+| 17 | Pan above 84°N (lat/lon fallback) in portrait: readout card does not overlap zoom/recenter; scale bar clears the card | PENDING |
+| 18 | Follow: tap recenter and walk — camera follows, button highlighted; pinch/pan turns follow off; recenter keeps zoom ≥ 15 | PENDING |
+| 19 | Turn the phone through north: the view cone crosses north smoothly (no 358° spin) | PENDING |
+| 20 | First launch: grant location on the map → centers once; leave and reopen → opens at that saved view without a jump | PENDING |
+| 21 | Android (when un-deferred): deny location once, background/foreground: no double prompt | PENDING |
 
 Fallbacks if a check fails:
 - 9: drop `stretchX`/`stretchY`/`content` from `LABEL_CHIP_IMAGE_OPTIONS` (whole-image stretch) or render chips at `scale: 1`.
