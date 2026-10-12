@@ -1,6 +1,6 @@
 import type { Camera } from '@rnmapbox/maps';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { LocationBanner } from '@/features/location/LocationBanner';
@@ -8,6 +8,7 @@ import { useSelfLocation } from '@/features/location/use-self-location';
 import type { MissionCamera } from '@/features/missions/repository';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useCommandContext } from '@/lib/db/command-context-provider';
+import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
 
@@ -34,45 +35,63 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const centeredOnSelf = useRef(savedCamera !== null);
   const followMode = useInteraction((s) => s.followMode);
   const setFollowMode = useInteraction((s) => s.setFollowMode);
-  const selfPosition = usePresence((s) => s.selfPosition?.position ?? null);
+  // Boolean selector: a GPS fix must not re-render the map tree; fixes are handled in a store subscription.
+  const hasSelfPosition = usePresence((s) => s.selfPosition !== null);
   // Only a camera the app or user actually moved is worth persisting (not the untouched open).
   const cameraMoved = useRef(false);
-  const saver = useCameraPersistence(ctx, missionId);
+  // Backgrounded between a gesture and map idle: fall back to the latest live camera.
+  const liveCamera = useCallback(() => {
+    if (!cameraMoved.current) return null;
+    const { cameraCenter, cameraZoom, cameraBearing } = useInteraction.getState();
+    return cameraCenter ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing } : null;
+  }, []);
+  const saver = useCameraPersistence(ctx, missionId, liveCamera);
+  const markMoved = useCallback(() => {
+    cameraMoved.current = true;
+    saver.touch();
+  }, [saver]);
   useSelfLocation();
 
   useEffect(() => () => useInteraction.getState().reset(), []);
 
   useEffect(() => {
-    if (!selfPosition) return;
-    const centerCoordinate: [number, number] = [selfPosition.lon, selfPosition.lat];
-    if (!centeredOnSelf.current) {
-      centeredOnSelf.current = true;
-      cameraMoved.current = true;
-      cameraRef.current?.setCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
-    } else if (useInteraction.getState().followMode) {
-      cameraRef.current?.setCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
-    }
-  }, [selfPosition]);
+    const onFix = ({ lat, lon }: LatLon) => {
+      const centerCoordinate: [number, number] = [lon, lat];
+      if (!centeredOnSelf.current) {
+        centeredOnSelf.current = true;
+        markMoved();
+        cameraRef.current?.setCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
+      } else if (useInteraction.getState().followMode) {
+        cameraRef.current?.setCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
+      }
+    };
+    const current = usePresence.getState().selfPosition;
+    if (current) onFix(current.position);
+    return usePresence.subscribe((state, prev) => {
+      if (state.selfPosition && state.selfPosition !== prev.selfPosition) onFix(state.selfPosition.position);
+    });
+  }, [markMoved]);
 
   const onUserGesture = () => {
-    cameraMoved.current = true;
+    markMoved();
     if (useInteraction.getState().followMode) setFollowMode(false);
   };
   const zoomBy = (delta: number) => {
-    cameraMoved.current = true;
+    markMoved();
     const zoomLevel = clampZoom(useInteraction.getState().cameraZoom + delta);
     cameraRef.current?.setCamera({ zoomLevel, ...EASE, animationDuration: 250 });
   };
   const northUp = () => {
-    cameraMoved.current = true;
+    markMoved();
     cameraRef.current?.setCamera({ heading: 0, ...EASE, animationDuration: 300 });
   };
   const recenter = () => {
-    if (!selfPosition) return;
-    cameraMoved.current = true;
+    const self = usePresence.getState().selfPosition?.position;
+    if (!self) return;
+    markMoved();
     setFollowMode(true);
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
-    cameraRef.current?.setCamera({ centerCoordinate: [selfPosition.lon, selfPosition.lat], zoomLevel, ...EASE, animationDuration: 500 });
+    cameraRef.current?.setCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
   };
   // Interim "Switch mission" until Plan 3's app menu.
   const switchMission = () => {
@@ -98,14 +117,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Toolbar landscape={landscape} activeTool={null} onMenu={switchMission} />
       <MapControls
         following={followMode}
-        canRecenter={selfPosition !== null}
+        canRecenter={hasSelfPosition}
         onNorthUp={northUp}
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
       />
       <ReadoutCard />
-      <LocationBanner />
+      <LocationBanner landscape={landscape} />
     </View>
   );
 }

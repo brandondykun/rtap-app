@@ -42,6 +42,52 @@ describe('createCameraSaver', () => {
   });
 });
 
+describe('createCameraSaver fallback', () => {
+  it('saves the fallback camera when nothing is pending, and prefers pending', () => {
+    const save = jest.fn();
+    const saver = createCameraSaver(save, 1000, () => B);
+    saver.touch();
+    saver.flush();
+    expect(save).toHaveBeenCalledWith(B);
+    save.mockClear();
+    saver.touch();
+    saver.schedule(A);
+    saver.flush();
+    expect(save).toHaveBeenCalledWith(A);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write the same camera twice across repeated flushes', () => {
+    const save = jest.fn();
+    const saver = createCameraSaver(save, 1000, () => B);
+    saver.touch();
+    saver.flush();
+    saver.touch();
+    saver.flush();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores the fallback unless the camera was touched since the last save', () => {
+    const save = jest.fn();
+    const saver = createCameraSaver(save, 1000, () => B);
+    saver.flush();
+    saver.touch();
+    saver.schedule(A);
+    saver.flush();
+    saver.flush();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(A);
+  });
+
+  it('saves nothing when the fallback has no camera', () => {
+    const save = jest.fn();
+    const saver = createCameraSaver(save, 1000, () => null);
+    saver.touch();
+    saver.flush();
+    expect(save).not.toHaveBeenCalled();
+  });
+});
+
 describe('useCameraPersistence', () => {
   it('saves the pending camera when the app goes to the background', async () => {
     let onChange: (s: AppStateStatus) => void = () => {};

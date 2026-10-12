@@ -3,12 +3,12 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
-import { CONTROL_SIZE, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { CONTROL_SIZE, EDGE, GAP, LOGO_ROW_HEIGHT, ornamentTop } from '@/features/map/layout';
 import { usePresence } from '@/stores/presence';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /** One dismissible notice when location is denied or unavailable; the map stays fully usable. */
-export function LocationBanner() {
+export function LocationBanner({ landscape }: { landscape: boolean }) {
   const status = usePresence((s) => s.locationStatus);
   const [dismissed, setDismissed] = useState(false);
   const insets = useSafeAreaInsets();
@@ -16,9 +16,11 @@ export function LocationBanner() {
   if (dismissed || (status !== 'denied' && status !== 'unavailable')) return null;
   return (
     <View
+      testID="location-banner"
       className="absolute flex-row items-center gap-3 rounded-2xl border border-border bg-surface-chrome px-4 py-3"
       style={{
-        top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP,
+        // Directly below the Mapbox logo/attribution row, which must stay visible.
+        top: ornamentTop({ landscape, insets }) + LOGO_ROW_HEIGHT,
         left: insets.left + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
