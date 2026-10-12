@@ -36,3 +36,28 @@ EAS dev build findings (iOS):
 - Bundling failed: "Class private methods are not enabled" in RN's `GlobalStateObserver.js`. The explicit loose class-properties plugin requires the private-methods transforms in the same mode. Fixed in 260c0a9.
 - Runtime red screen: "Cannot assign to read-only property 'NONE'" (RN `Event.js`). Running the decorator/class-properties plugins over node_modules turned Flow-only field declarations into real assignments. Fixed in 49e725b by scoping those plugins to app code (Babel `overrides` with a filename `test`; a RegExp `exclude` breaks Metro's transformer construction).
 - Rotation re-layout works with the map mounted.
+
+## Plan 2 device checks (iOS dev build)
+
+Run `npx expo start --dev-client --clear`, open the app on the device.
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Missions list: empty state → Create mission sheet (keyboard does not cover the field) → lands on the new mission's map | PENDING |
+| 2 | Map opens on the user's position (first fix) or world view without a fix; no jump when reopening a mission with a saved camera; opening and leaving a mission without moving the map saves nothing (next open still centers on you) | PENDING |
+| 3 | Fonts: readout MGRS renders in JetBrains Mono | PENDING |
+| 4 | Self icon: sky disc, white ring, dark arrow; view cone rotates with the phone; no arrow when the compass is unavailable | PENDING |
+| 5 | Crosshair centered; readout MGRS changes while panning; tapping the bearing switches GRID ↔ MAG | PENDING |
+| 6 | North-up needle follows map rotation; tap resets north. Zoom ± and recenter work; panning turns follow off | PENDING |
+| 7 | Toolbar: full width in portrait, top-right in landscape; POINT and gear dimmed; hamburger returns to missions | PENDING |
+| 8 | Mapbox logo/attribution visible top-left; scale bar above the readout | PENDING |
+| 9 | Label chips: dark rounded chips under symbols, text readable, corners not distorted (stretch zones work) | PENDING |
+| 10 | Map label glyphs load (DIN Pro). Monospace map labels need JetBrains Mono glyphs uploaded to Mapbox — decide | PENDING |
+| 11 | Seed 5k → panning/zooming smooth for 30 s in both orientations | PENDING |
+| 12 | Background the app on the map, kill it, reopen the mission: same camera | PENDING |
+| 13 | Deny location (Settings → RTAP → Location → Never): banner shows, Settings button opens Settings, map still usable | PENDING |
+
+Fallbacks if a check fails:
+- 9: drop `stretchX`/`stretchY`/`content` from `LABEL_CHIP_IMAGE_OPTIONS` (whole-image stretch) or render chips at `scale: 1`.
+- 10: keep DIN Pro (proportional) until JetBrains Mono glyphs are uploaded; switch `MAP_LABEL_FONT`.
+- 2 (visible jump): keep `defaultSettings` and add `animationDuration: 0`; report to the controller.
