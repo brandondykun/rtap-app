@@ -109,4 +109,13 @@ describe('missions', () => {
     await createMission(ctx, { name: 'Whatever' });
     expect(await suggestMissionName(ctx.db)).toBe('Mission 2');
   });
+
+  it('treats a soft-deleted mission as missing', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Gone' });
+    if (!r.ok) throw new Error('setup');
+    const mission = await findMission(ctx.db, r.value.id);
+    await ctx.db.write(() => mission!.markAsDeleted());
+    expect(await findMission(ctx.db, r.value.id)).toBeNull();
+  });
 });

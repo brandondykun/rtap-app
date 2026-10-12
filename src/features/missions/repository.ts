@@ -52,12 +52,16 @@ export function observeMissionItemCount(db: Database, missionId: string): Observ
   return db.get<MapItem>(Tables.mapItems).query(Q.where('mission_id', missionId)).observeCount();
 }
 
+/** Returns null for unknown ids and for soft-deleted (markAsDeleted) missions. */
 export async function findMission(db: Database, id: string): Promise<Mission | null> {
+  let mission: Mission;
   try {
-    return await db.get<Mission>(Tables.missions).find(id);
+    mission = await db.get<Mission>(Tables.missions).find(id);
   } catch {
     return null;
   }
+  if (mission._raw._status === 'deleted') return null;
+  return mission;
 }
 
 export async function findMissionViewState(db: Database, missionId: string): Promise<MissionViewState | null> {
