@@ -1,6 +1,6 @@
 # Native dependency gate — 2026-10-12
 
-Device verification was NOT run locally (disk space exhausted). The user built an EAS development client. iOS checks passed on device on 2026-10-12 (spike screen: Mapbox satellite, semantic NativeWind classes, `createMission` against the real app database, relaunch persistence, rotation). Android is still PENDING.
+Device verification was NOT run locally (disk space exhausted). The user built an EAS development client. iOS checks passed on device on 2026-10-12 (spike screen: Mapbox satellite, semantic NativeWind classes, `createMission` against the real app database, relaunch persistence, rotation). Android is still PENDING: the user has no Android device yet, so it is deferred. Re-run the same checks on the first Android build (watch the async-adapter database path).
 
 | Check | iOS | Android |
 |-------|-----|---------|
