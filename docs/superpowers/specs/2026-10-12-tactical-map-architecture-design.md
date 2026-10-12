@@ -334,7 +334,7 @@ lib/geo/
 - **Auto-names:** `<PREFIX>-<n>` with `FRD`, `HOS`, `NEU`, `UNK` prefixes; `n` is one more
   than the highest existing number for that prefix in the mission.
 - **SIDC:** built from affiliation × unit type (`symbology/presets.ts`). MVP unit types:
-  Unspecified, Infantry, Armor, Reconnaissance, Medical, Observer (2525C function IDs;
+  Unspecified, Infantry, Armor, Reconnaissance, Medical, Engineer (2525C function IDs;
   2525C has no distinct "dismounted infantry" code, so the mockup's example maps to
   Infantry).
 - **Editing:** tapping a point opens `point.edit` — the same form component prefilled,

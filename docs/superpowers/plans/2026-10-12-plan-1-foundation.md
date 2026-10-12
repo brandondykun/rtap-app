@@ -2899,7 +2899,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `mapColors` (Task 9).
 - Produces:
   - `type Affiliation = 'friend' | 'hostile' | 'neutral' | 'unknown'`, `AFFILIATIONS`
-  - `type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'observer'`, `UNIT_TYPES: readonly { id: UnitType; label: string }[]`
+  - `type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'engineer'`, `UNIT_TYPES: readonly { id: UnitType; label: string }[]`
   - `composeSidc(affiliation, unitType): string` (2525C, 15 chars)
   - `decomposeSidc(sidc): { affiliation: Affiliation; unitType: UnitType } | null`
   - `PRESET_SIDCS: readonly string[]` (24), `DEFAULT_SIDC`
@@ -2919,7 +2919,7 @@ describe('SIDC presets (MIL-STD-2525C)', () => {
     ['neutral', 'armor', 'SNGPUCA--------'],
     ['unknown', 'unspecified', 'SUGPU----------'],
     ['friend', 'medical', 'SFGPUSM--------'],
-    ['hostile', 'observer', 'SHGPUCFO-------'],
+    ['hostile', 'engineer', 'SHGPUCE--------'],
   ] as const)('%s %s → %s', (affiliation, unitType, sidc) => {
     expect(composeSidc(affiliation, unitType)).toBe(sidc);
     expect(composeSidc(affiliation, unitType)).toHaveLength(15);
@@ -2971,7 +2971,7 @@ Expected: FAIL — modules not found.
 export type Affiliation = 'friend' | 'hostile' | 'neutral' | 'unknown';
 export const AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'neutral', 'unknown'];
 
-export type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'observer';
+export type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'engineer';
 
 /** MVP unit types with their 2525C ground-unit function IDs (6 chars). */
 const UNIT_FUNCTIONS: Record<UnitType, { label: string; functionId: string }> = {
@@ -2980,7 +2980,7 @@ const UNIT_FUNCTIONS: Record<UnitType, { label: string; functionId: string }> = 
   armor: { label: 'Armor', functionId: 'UCA---' },
   recon: { label: 'Reconnaissance', functionId: 'UCR---' },
   medical: { label: 'Medical', functionId: 'USM---' },
-  observer: { label: 'Observer', functionId: 'UCFO--' },
+  engineer: { label: 'Engineer', functionId: 'UCE---' },
 };
 
 export const UNIT_TYPES: readonly { id: UnitType; label: string }[] = (
