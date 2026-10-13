@@ -29,7 +29,10 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
   const heights = detentHeights(metrics);
   const ordered = [...detents].sort((a, b) => heights[a] - heights[b]);
   const stops = ordered.map((d) => heights[d]);
-  const [detent, setDetent] = useState<Detent>(initialDetent);
+  const [chosen, setDetent] = useState<Detent>(initialDetent);
+  // MenuHost reuses this Panel when the menu changes: a detent the new menu does not allow (Add at
+  // peek → Settings) falls back to the new menu's initial detent; an allowed one (Add → Edit) stays.
+  const detent = detents.includes(chosen) ? chosen : initialDetent;
   const target = landscape ? drawerWidth(metrics) : heights[detent];
   const detentRef = useRef(detent);
   const restore = useRef<Detent | null>(null);

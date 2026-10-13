@@ -44,6 +44,19 @@ describe('Panel', () => {
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
   });
 
+  it('falls back to the new initial detent when the menu changes to one without the current detent', async () => {
+    const onFrameChange = jest.fn();
+    const ui = (detents: ('peek' | 'half' | 'full')[], initialDetent: 'peek' | 'half') => (
+      <Panel landscape={false} detents={detents} initialDetent={initialDetent} topReserved={TOP_RESERVED} onFrameChange={onFrameChange}>
+        <Text>content</Text>
+      </Panel>
+    );
+    const { rerender } = await render(ui(['peek', 'half', 'full'], 'peek'));
+    expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).peek });
+    await rerender(ui(['half', 'full'], 'half'));
+    expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
+  });
+
   it('keeps its content mounted when the orientation changes', async () => {
     const onMount = jest.fn();
     const onFrameChange = jest.fn();
