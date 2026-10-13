@@ -4,6 +4,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
 import { useInteraction } from '@/stores/interaction';
+import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
@@ -25,6 +26,7 @@ jest.mock('expo-router', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockToken = 'pk.test';
+  useMenu.setState(INITIAL_MENU);
 });
 
 describe('MapScreen', () => {
@@ -65,12 +67,13 @@ describe('MapScreen', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it('switches mission from the toolbar menu button', async () => {
+  it('opens the app menu from the toolbar and switches mission from it', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('Menu'));
+    await fireEvent.press(await screen.findByText('Switch mission'));
     expect(mockRouter.back).toHaveBeenCalled();
   });
 

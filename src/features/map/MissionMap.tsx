@@ -1,5 +1,4 @@
 import type { Camera } from '@rnmapbox/maps';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,10 +7,12 @@ import { Toast } from '@/components/ui/Toast';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import type { MissionCamera } from '@/features/missions/repository';
+import { MenuHost } from '@/features/menus/MenuHost';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
+import { useMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
 
 import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
@@ -28,7 +29,6 @@ const EASE = { animationMode: 'easeTo' as const };
 
 export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {
   const ctx = useCommandContext();
-  const router = useRouter();
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
   const insets = useSafeAreaInsets();
@@ -56,6 +56,13 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useSelfLocation();
 
   useEffect(() => () => useInteraction.getState().reset(), []);
+  useEffect(
+    () => () => {
+      useMenu.getState().closeMenu();
+      useMenu.getState().setPanelFrame(null);
+    },
+    [],
+  );
 
   useEffect(() => {
     const onFix = ({ lat, lon }: LatLon) => {
@@ -96,12 +103,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
     cameraRef.current?.setCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
   };
-  // Interim "Switch mission" until Plan 3's app menu.
-  const switchMission = () => {
-    saver.flush();
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
-  };
 
   return (
     <View className="flex-1 bg-surface">
@@ -117,7 +118,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <SelfLayer />
       </MapCanvas>
       <Crosshair />
-      <Toolbar landscape={landscape} activeTool={null} onMenu={switchMission} />
+      <Toolbar landscape={landscape} activeTool={null} onMenu={() => useMenu.getState().openMenu('app.root', {})} />
       <MapControls
         following={followMode}
         canRecenter={hasSelfPosition}
@@ -128,6 +129,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       />
       <ReadoutCard />
       <LocationBanner landscape={landscape} />
+      <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />
     </View>
   );
