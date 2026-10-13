@@ -1,4 +1,4 @@
-import { DEFAULT_SIDC } from '@/features/symbology/presets';
+import { composeSidc, DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { pointGeometry } from './geometry';
 import { layerRows } from './layer-rows';
@@ -39,5 +39,13 @@ describe('layerRows', () => {
 
   it('falls back to the default symbol for unknown SIDCs', () => {
     expect(layerRows(items, [], 'obj').rows[0].sidc).toBe(DEFAULT_SIDC);
+  });
+
+  it('counts units and points and searches type labels too', () => {
+    const items = [item('a', 'CP-1', 'GFGPGPPK------X'), item('b', 'HOS-1', composeSidc('hostile', 'infantry')), item('c', 'BRAVO', null)];
+    expect(layerRows(items, [], '')).toMatchObject({ units: 2, points: 1, total: 3 });
+    expect(layerRows(items, [], 'checkpoint').rows.map((r) => r.id)).toEqual(['a']);
+    expect(layerRows(items, [], 'infantry').rows.map((r) => r.id)).toEqual(['b']);
+    expect(layerRows(items, [], 'brav').rows.map((r) => r.id)).toEqual(['c']);
   });
 });

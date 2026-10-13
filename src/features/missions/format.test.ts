@@ -1,4 +1,4 @@
-import { formatItemCount, formatLastOpened } from './format';
+import { formatCategoryCounts, formatLastOpened } from './format';
 
 const NOW = Date.UTC(2026, 9, 12, 12, 0, 0);
 const MIN = 60_000;
@@ -17,12 +17,9 @@ describe('formatLastOpened', () => {
   });
 });
 
-describe('formatItemCount', () => {
-  it.each([
-    [0, '0 items'],
-    [1, '1 item'],
-    [5000, '5000 items'],
-  ])('%p → %p', (n, expected) => {
-    expect(formatItemCount(n)).toBe(expected);
+describe('formatCategoryCounts', () => {
+  it('names both parts with singular and plural', () => {
+    expect(formatCategoryCounts({ units: 2, points: 0 })).toBe('2 units · 0 points');
+    expect(formatCategoryCounts({ units: 1, points: 1 }, ' and ')).toBe('1 unit and 1 point');
   });
 });

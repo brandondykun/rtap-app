@@ -1,6 +1,7 @@
 import { Q, type Database } from '@nozbe/watermelondb';
 import { combineLatest, map, type Observable } from 'rxjs';
 
+import { POINT_SIDCS } from '@/features/symbology/point-types';
 import type { MapItem } from '@/lib/db/models/MapItem';
 import type { Mission } from '@/lib/db/models/Mission';
 import type { MissionViewState } from '@/lib/db/models/MissionViewState';
@@ -48,8 +49,13 @@ export function observeMissionSummaries(db: Database): Observable<MissionSummary
   );
 }
 
-export function observeMissionItemCount(db: Database, missionId: string): Observable<number> {
-  return db.get<MapItem>(Tables.mapItems).query(Q.where('mission_id', missionId)).observeCount();
+/** Units and points in a mission, by symbol code (see itemCategory). */
+export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<{ units: number; points: number }> {
+  const items = db.get<MapItem>(Tables.mapItems);
+  return combineLatest([
+    items.query(Q.where('mission_id', missionId)).observeCount(),
+    items.query(Q.where('mission_id', missionId), Q.where('sidc', Q.oneOf([...POINT_SIDCS]))).observeCount(),
+  ]).pipe(map(([all, points]) => ({ units: all - points, points })));
 }
 
 /** Returns null for unknown ids and for soft-deleted (markAsDeleted) missions. */

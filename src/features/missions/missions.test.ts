@@ -12,7 +12,7 @@ import { createMission, deleteMission, markMissionOpened, renameMission, saveMis
 import {
   findMission,
   getMissionCamera,
-  observeMissionItemCount,
+  observeMissionCategoryCounts,
   observeMissionSummaries,
   suggestMissionName,
 } from './repository';
@@ -102,7 +102,7 @@ describe('missions', () => {
         });
       }
     });
-    expect(await firstValueFrom(observeMissionItemCount(ctx.db, a.value.id))).toBe(2);
+    expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, a.value.id))).toEqual({ units: 2, points: 0 });
   });
 
   it('suggests the next mission name', async () => {
@@ -142,8 +142,8 @@ describe('missions', () => {
 
       expect(await findMission(ctx.db, iron.value.id)).toBeNull();
       expect((await firstValueFrom(observeMissionSummaries(ctx.db))).map((m) => m.name)).toEqual(['Op Cobra']);
-      expect(await firstValueFrom(observeMissionItemCount(ctx.db, iron.value.id))).toBe(0);
-      expect(await firstValueFrom(observeMissionItemCount(ctx.db, cobra.value.id))).toBe(1);
+      expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, iron.value.id))).toEqual({ units: 0, points: 0 });
+      expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, cobra.value.id))).toEqual({ units: 1, points: 0 });
       const deleted = await ctx.db.get<MapItem>(Tables.mapItems).find(a.value.id);
       expect(deleted._raw._status).toBe('deleted');
       const views = await ctx.db.get<ItemViewState>(Tables.itemViewState).query().fetch();
@@ -170,7 +170,7 @@ describe('missions', () => {
       await placePoint(ctx, { missionId: iron.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
       expect(await renameMission(ctx, iron.value.id, { name: '  Op Steel ' })).toEqual({ ok: true, value: undefined });
       expect((await findMission(ctx.db, iron.value.id))?.name).toBe('Op Steel');
-      expect(await firstValueFrom(observeMissionItemCount(ctx.db, iron.value.id))).toBe(1);
+      expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, iron.value.id))).toEqual({ units: 1, points: 0 });
     });
 
     it('rejects a blank name and reports an unknown or deleted mission', async () => {
@@ -183,5 +183,14 @@ describe('missions', () => {
       await deleteMission(ctx, iron.value.id);
       expect(await renameMission(ctx, iron.value.id, { name: 'X' })).toMatchObject({ ok: false, error: 'not_found' });
     });
+  });
+
+  it('counts units and points per mission', async () => {
+    const ctx = makeTestContext();
+    const iron = await createMission(ctx, { name: 'Op Iron' });
+    if (!iron.ok) throw new Error('setup');
+    await placePoint(ctx, { missionId: iron.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    await placePoint(ctx, { missionId: iron.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'GFGPGPPK------X', name: 'CP-1' });
+    expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, iron.value.id))).toEqual({ units: 1, points: 1 });
   });
 });

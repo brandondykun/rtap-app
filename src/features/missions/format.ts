@@ -13,6 +13,9 @@ export function formatLastOpened(ts: number | null, now: number): string {
   return `Opened ${new Date(ts).toISOString().slice(0, 10)}`;
 }
 
-export function formatItemCount(n: number): string {
-  return n === 1 ? '1 item' : `${n} items`;
+const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
+
+/** "2 units · 1 point" (row) or "2 units and 1 point" (sentence). */
+export function formatCategoryCounts(c: { units: number; points: number }, joiner = ' · '): string {
+  return `${plural(c.units, 'unit')}${joiner}${plural(c.points, 'point')}`;
 }

@@ -39,7 +39,7 @@ describe('LayersMenu', () => {
 
   it('explains an empty mission', async () => {
     await openLayers();
-    expect(screen.getByText('No points yet. Use POINT or long-press the map.')).toBeTruthy();
+    expect(screen.getByText('Nothing on the map yet. Use UNIT, POINT or long-press the map.')).toBeTruthy();
     expect(screen.getByLabelText('Show all')).toBeDisabled();
   });
 
@@ -52,15 +52,15 @@ describe('LayersMenu', () => {
     await setItemHidden(ctx, b.value.id, true);
     await openLayers(ctx);
 
-    expect(await screen.findByText('2 points · 1 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 1 hidden')).toBeTruthy();
     expect(screen.queryByText('ELSEWHERE')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Hide HOS-1'));
     await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
-    expect(await screen.findByText('2 points · 2 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 2 hidden')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]));
-    expect(await screen.findByText('2 points · 0 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 0 hidden')).toBeTruthy();
   });
 
   it('searches and caps long lists', async () => {
@@ -69,11 +69,11 @@ describe('LayersMenu', () => {
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'OBJ IRON' });
     await openLayers(ctx);
     expect(await screen.findByTestId('layers-more')).toHaveTextContent('Showing 100 of 106 — refine your search');
-    await fireEvent.changeText(screen.getByLabelText('Search points'), 'iron');
+    await fireEvent.changeText(screen.getByLabelText('Search'), 'iron');
     expect(await screen.findByText('OBJ IRON')).toBeTruthy();
     expect(screen.queryByTestId('layers-more')).toBeNull();
-    await fireEvent.changeText(screen.getByLabelText('Search points'), 'zzz');
-    expect(screen.getByText('No points match.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Search'), 'zzz');
+    expect(screen.getByText('Nothing matches.')).toBeTruthy();
   });
 
   it('opens a point when its row is tapped, even a hidden one', async () => {

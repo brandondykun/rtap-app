@@ -13,8 +13,11 @@ import { useCommandContext } from '@/lib/db/command-context-provider';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { deleteMission } from './commands';
-import { formatItemCount, formatLastOpened } from './format';
-import { observeMissionItemCount, observeMissionSummaries, type MissionSummary } from './repository';
+import { formatCategoryCounts, formatLastOpened } from './format';
+import { observeMissionCategoryCounts, observeMissionSummaries, type MissionSummary } from './repository';
+
+type Counts = { units: number; points: number };
+const NO_COUNTS: Counts = { units: 0, points: 0 };
 
 export function MissionsScreen() {
   const ctx = useCommandContext();
@@ -34,7 +37,7 @@ export function MissionsScreen() {
 
   // Swipe-to-delete: one row open at a time, and every delete goes through the confirmation.
   const openRow = useRef<SwipeableMethods | null>(null);
-  const [pending, setPending] = useState<{ id: string; name: string; count: number } | null>(null);
+  const [pending, setPending] = useState<{ id: string; name: string; counts: Counts } | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleting = useRef(false);
   const rowOpened = (row: SwipeableMethods) => {
@@ -45,10 +48,10 @@ export function MissionsScreen() {
     openRow.current?.close();
     router.push({ pathname: '/missions/rename/[missionId]', params: { missionId } });
   };
-  const askDelete = (mission: MissionSummary, count: number) => {
+  const askDelete = (mission: MissionSummary, counts: Counts) => {
     openRow.current?.close();
     setDeleteError(null);
-    setPending({ id: mission.id, name: mission.name, count });
+    setPending({ id: mission.id, name: mission.name, counts });
   };
   const confirmDelete = async () => {
     if (!pending || deleting.current) return;
@@ -102,7 +105,7 @@ export function MissionsScreen() {
               now={now}
               onPress={() => openMission(item.id)}
               onRename={() => openRename(item.id)}
-              onDelete={(count) => askDelete(item, count)}
+              onDelete={(counts) => askDelete(item, counts)}
               onOpenActions={rowOpened}
             />
           )}
@@ -111,7 +114,7 @@ export function MissionsScreen() {
       <ConfirmDialog
         visible={pending !== null}
         title="Delete mission?"
-        message={pending ? `Delete ${pending.name} and its ${formatItemCount(pending.count)}? This can't be undone.` : ''}
+        message={pending ? `Delete ${pending.name} and its ${formatCategoryCounts(pending.counts, ' and ')}? This can't be undone.` : ''}
         confirmLabel="Delete"
         onConfirm={() => void confirmDelete()}
         onCancel={() => setPending(null)}
@@ -126,13 +129,13 @@ type MissionRowProps = {
   now: number;
   onPress: () => void;
   onRename: () => void;
-  onDelete: (count: number) => void;
+  onDelete: (counts: Counts) => void;
   onOpenActions: (row: SwipeableMethods) => void;
 };
 
 function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }: MissionRowProps) {
   const ctx = useCommandContext();
-  const count = useObservable(() => observeMissionItemCount(ctx.db, mission.id), 0, [ctx, mission.id]);
+  const counts = useObservable(() => observeMissionCategoryCounts(ctx.db, mission.id), NO_COUNTS, [ctx, mission.id]);
   const row = useRef<SwipeableMethods>(null);
   const { colors } = useTheme();
   return (
@@ -157,7 +160,7 @@ function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Delete ${mission.name}`}
-            onPress={() => onDelete(count)}
+            onPress={() => onDelete(counts)}
             className="w-20 items-center justify-center gap-1 rounded-2xl bg-danger active:opacity-60">
             <Icon name="trash-can-outline" size={20} color={colors.text} />
             <Text className="font-bold text-text">Delete</Text>
@@ -174,7 +177,7 @@ function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }
         ]}
         onAccessibilityAction={(e) => {
           if (e.nativeEvent.actionName === 'rename') onRename();
-          if (e.nativeEvent.actionName === 'delete') onDelete(count);
+          if (e.nativeEvent.actionName === 'delete') onDelete(counts);
         }}
         onPress={onPress}
         className="flex-row items-center gap-2 rounded-2xl border border-border bg-surface-raised py-3 pl-4 pr-3 active:opacity-80">
@@ -183,7 +186,7 @@ function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }
             {mission.name}
           </Text>
           <Text className="mt-1 text-sm text-text-muted">
-            {`${formatItemCount(count)} · ${formatLastOpened(mission.lastOpenedAt, now)}`}
+            {`${formatCategoryCounts(counts)} · ${formatLastOpened(mission.lastOpenedAt, now)}`}
           </Text>
         </View>
         <Icon name="chevron-right" size={24} color={colors['text-muted']} />

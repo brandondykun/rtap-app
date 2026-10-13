@@ -41,7 +41,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const [query, setQuery] = useState('');
-  const { rows, matched, total, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
+  const { rows, matched, total, units, points, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -50,7 +50,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   };
   const showAll = () => {
     void setItemsHidden(ctx, hiddenIds, false).then((r) => {
-      if (!r.ok) notifyError('Could not show the points.');
+      if (!r.ok) notifyError('Could not show the hidden items.');
     });
   };
 
@@ -61,18 +61,18 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
         <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
-      <MenuSection label="Points">
+      <MenuSection label="Units and points">
         <View className="flex-row items-center justify-between gap-3">
           <Text testID="layers-summary" className="text-sm text-text-muted">
-            {`${count(total)} ${total === 1 ? 'point' : 'points'} · ${count(hiddenIds.length)} hidden`}
+            {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(hiddenIds.length)} hidden`}
           </Text>
           <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         </View>
         {total > 0 ? (
-          <TextField accessibilityLabel="Search points" value={query} onChangeText={setQuery} placeholder="Search points" autoCapitalize="characters" autoCorrect={false} />
+          <TextField accessibilityLabel="Search" value={query} onChangeText={setQuery} placeholder="Search names or types" autoCapitalize="characters" autoCorrect={false} />
         ) : null}
-        {total === 0 ? <Text className="text-sm text-text-muted">No points yet. Use POINT or long-press the map.</Text> : null}
-        {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">No points match.</Text> : null}
+        {total === 0 ? <Text className="text-sm text-text-muted">Nothing on the map yet. Use UNIT, POINT or long-press the map.</Text> : null}
+        {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
         {rows.map((row) => (
           <MenuListItem
             key={row.id}
