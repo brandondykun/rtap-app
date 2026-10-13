@@ -38,4 +38,11 @@ describe('MgrsInput', () => {
     );
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent('Grid zone does not match the square and digits');
   });
+
+  it('submits from the northing field', async () => {
+    const onSubmit = jest.fn();
+    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} onSubmit={onSubmit} />);
+    await fireEvent(screen.getByLabelText('Northing'), 'submitEditing');
+    expect(onSubmit).toHaveBeenCalled();
+  });
 });

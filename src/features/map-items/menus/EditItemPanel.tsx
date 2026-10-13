@@ -7,43 +7,24 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
-import { pointTypeForSidc } from '@/features/symbology/point-types';
-import { decomposeSidc } from '@/features/symbology/presets';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { useDraft } from '@/stores/draft';
 import { useMenu } from '@/stores/menu';
 
-import { deleteItem, setItemHidden, updateItem } from '../commands';
-import { draftSidc } from '../draft-sidc';
-import { pointCoord } from '../geometry';
+import { deleteItem, setItemHidden } from '../commands';
 import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repository';
+import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
 
-/** Loads an item into the draft, selected and read-only. False when its geometry is unreadable. */
-function selectItem(item: MapItemSnapshot): boolean {
-  const at = pointCoord(item.geometry);
-  if (!at) return false;
-  const unit = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
-  useDraft.getState().startEdit({
-    itemId: item.id,
-    coord: at,
-    category: itemCategory(item),
-    affiliation: unit.affiliation,
-    unitType: unit.unitType,
-    pointType: pointTypeForSidc(item.sidc) ?? 'checkpoint',
-    name: item.name,
-    notes: item.notes ?? '',
-  });
-  return true;
-}
 const NO_IDS: string[] = [];
 
 type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
 
-/** Unit / Point view: opens read-only; Edit unlocks the form, Save or Cancel locks it again. */
+/** Unit / Point / Line view: opens read-only; Edit unlocks the form, Save or Cancel locks it again. */
 export function EditItemPanel({ category, itemId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
+  const adapter = ITEM_ADAPTERS[category];
   const GONE = `That ${noun} no longer exists.`;
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
@@ -51,9 +32,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
   const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, itemId), undefined, [ctx, itemId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const ready = useDraft((s) => s.mode === 'edit' && s.itemId === itemId);
-  const coord = useDraft((s) => s.coord);
-  const name = useDraft((s) => s.name);
-  const coordInputValid = useDraft((s) => s.coordInputValid);
+  const valid = useDraft((s) => adapter.canSave(s));
   // Opens view-only; Edit unlocks the form, Save or Cancel locks it again.
   const locked = useDraft((s) => s.locked);
   const started = useRef(false);
@@ -63,8 +42,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
 
   useEffect(() => {
     if (item === undefined || leaving.current) return;
-    const at = item ? pointCoord(item.geometry) : null;
-    if (!item || !at) {
+    if (!item) {
       leaving.current = true;
       notifyError(GONE);
       close();
@@ -78,12 +56,17 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     }
     if (started.current) return;
     started.current = true;
-    selectItem(item);
-  }, [item, close, category, GONE]);
+    // Unreadable geometry: report it like a missing item.
+    if (!adapter.select(item)) {
+      leaving.current = true;
+      notifyError(GONE);
+      close();
+    }
+  }, [item, close, category, GONE, adapter]);
 
   useEffect(() => () => useDraft.getState().clear(), []);
 
-  const canSave = ready && !locked && coord !== null && coordInputValid && name.trim() !== '';
+  const canSave = ready && !locked && valid;
 
   const save = async () => {
     if (busy.current || !canSave) return;
@@ -91,12 +74,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     const d = useDraft.getState();
     let result;
     try {
-      result = await updateItem(ctx, itemId, {
-        coord: d.coord!,
-        name: d.name,
-        notes: d.notes.trim() || null,
-        sidc: draftSidc(d),
-      });
+      result = await adapter.update(ctx, itemId, d);
     } finally {
       busy.current = false;
     }
@@ -134,7 +112,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
 
   /** Cancel editing: drop the changes and show the saved item again, read-only. */
   const cancelEdit = () => {
-    if (item && !selectItem(item)) close();
+    if (item && !adapter.select(item)) close();
   };
 
   const setHidden = (hidden: boolean) => {

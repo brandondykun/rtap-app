@@ -12,6 +12,6 @@ export const ITEM_COPY: Record<ItemCategory, { noun: string; title: string }> = 
 export function openItemMenu(itemId: string, item: ItemRef): void {
   const category = itemCategory(item);
   if (category === 'point') useMenu.getState().openMenu('point.edit', { itemId });
-  // Task 7: 'line.edit'
+  else if (category === 'line') useMenu.getState().openMenu('line.edit', { itemId });
   else useMenu.getState().openMenu('unit.edit', { itemId });
 }

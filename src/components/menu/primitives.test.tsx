@@ -132,4 +132,21 @@ describe('menu primitives', () => {
     expect(onPress).toHaveBeenCalled();
     expect(onRemove).not.toHaveBeenCalled();
   });
+
+  it('MenuSection: shows a trailing note on the label row', async () => {
+    await renderWithProviders(
+      <MenuSection label="Points · 2" trailing="2.03 km total">
+        <Text>row</Text>
+      </MenuSection>,
+    );
+    expect(screen.getByText('2.03 km total')).toBeTruthy();
+  });
+
+  it('MenuButton: iconOnly hides the text but keeps the label for accessibility', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<MenuButton label="Undo" icon="undo" iconOnly onPress={onPress} />);
+    expect(screen.queryByText('Undo')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Undo'));
+    expect(onPress).toHaveBeenCalled();
+  });
 });

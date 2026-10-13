@@ -16,6 +16,8 @@ type Props = {
   validDetail?: string;
   /** Read-only: the fields show the reference but cannot be edited. */
   disabled?: boolean;
+  /** Return in the northing field (e.g. add the typed point). */
+  onSubmit?: () => void;
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
@@ -26,7 +28,7 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail, disabled = false }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit }: Props) {
   const { colors } = useTheme();
   const square = useRef<TextInput>(null);
   const easting = useRef<TextInput>(null);
@@ -72,7 +74,7 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
           <TextField editable={!disabled} ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
         </View>
       </View>
       <View className="flex-row items-center gap-1">
