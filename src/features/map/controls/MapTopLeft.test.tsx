@@ -4,7 +4,7 @@ import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { bannerTop, EDGE } from '../layout';
+import { EDGE, LOGO_WORDMARK_HEIGHT, ornamentRowTop, topLeftStackTop } from '../layout';
 import { MapTopLeft } from './MapTopLeft';
 
 beforeEach(() => {
@@ -13,9 +13,10 @@ beforeEach(() => {
 });
 
 describe('MapTopLeft', () => {
-  it.each([[false], [true]])('sits just under the logo row and below the toolbar (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('sits right under the Mapbox wordmark (landscape=%s)', async (landscape) => {
     await renderWithProviders(<MapTopLeft landscape={landscape} panel={null} />);
-    expect(screen.getByTestId('map-top-left')).toHaveStyle({ top: bannerTop(landscape), left: EDGE });
+    expect(topLeftStackTop(landscape)).toBe(ornamentRowTop(landscape) + LOGO_WORDMARK_HEIGHT);
+    expect(screen.getByTestId('map-top-left')).toHaveStyle({ top: topLeftStackTop(landscape), left: EDGE });
   });
 
   it('shows the GPS readout only while the toggle is on', async () => {

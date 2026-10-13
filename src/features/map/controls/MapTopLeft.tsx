@@ -6,7 +6,7 @@ import { GpsReadout } from '@/features/location/GpsReadout';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSettings } from '@/stores/settings';
 
-import { bannerTop, CONTROL_SIZE, EDGE, GAP } from '../layout';
+import { bannerTop, CONTROL_SIZE, EDGE, GAP, topLeftStackTop } from '../layout';
 
 /**
  * The top-left stack under the Mapbox logo row: the location-off notice, then the GPS readout.
@@ -16,18 +16,24 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
   const insets = useSafeAreaInsets();
   const showGps = useSettings((s) => s.showGps);
   const drawer = panel?.side === 'left' ? panel.size : 0;
+  const top = topLeftStackTop(landscape);
   return (
     <View
       testID="map-top-left"
       pointerEvents="box-none"
       className="absolute gap-2"
       style={{
-        top: insets.top + bannerTop(landscape),
+        top: insets.top + top,
         left: Math.max(insets.left, drawer) + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
       {/* The notice hides while a panel is open, as before; the GPS readout stays. */}
-      {panel ? null : <LocationBanner />}
+      {/* The wide notice keeps its old place below the toolbar (it would reach under it in landscape). */}
+      {panel ? null : (
+        <View style={{ marginTop: Math.max(0, bannerTop(landscape) - top) }}>
+          <LocationBanner />
+        </View>
+      )}
       {showGps ? <GpsReadout /> : null}
     </View>
   );

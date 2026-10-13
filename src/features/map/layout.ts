@@ -39,6 +39,14 @@ export function ornamentRowTop(landscape: boolean): number {
   return landscape ? LANDSCAPE_LOGO_TOP : EDGE + TOOLBAR_HEIGHT + GAP;
 }
 
+/** Height of the Mapbox wordmark itself (the logo row reserves more). */
+export const LOGO_WORDMARK_HEIGHT = 22;
+
+/** Top of the top-left stack (GPS readout, location notice), from the safe area: right under the wordmark. */
+export function topLeftStackTop(landscape: boolean): number {
+  return ornamentRowTop(landscape) + LOGO_WORDMARK_HEIGHT;
+}
+
 /**
  * Location banner top (from the safe area): below the Mapbox logo row and below the toolbar,
  * whichever is lower. In landscape the toolbar is top-right, so the logo row alone is too high.
