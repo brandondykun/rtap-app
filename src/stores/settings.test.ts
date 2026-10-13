@@ -22,6 +22,16 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state.basemap).toBe('topo');
   });
 
+  it('toggles and persists the GPS readout and altitude unit (off and meters by default)', () => {
+    expect(useSettings.getState()).toMatchObject({ showGps: false, altitudeUnit: 'm' });
+    useSettings.getState().toggleShowGps();
+    useSettings.getState().setAltitudeUnit('ft');
+    expect(useSettings.getState()).toMatchObject({ showGps: true, altitudeUnit: 'ft' });
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showGps: true, altitudeUnit: 'ft' });
+    useSettings.getState().toggleShowGps();
+    expect(useSettings.getState().showGps).toBe(false);
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');
@@ -57,9 +67,11 @@ describe('settings store', () => {
     const seed = (state: unknown) => Storage.setItemSync('settings', JSON.stringify({ state, version: 1 }));
 
     it('loads valid persisted values, including ±180 declination', async () => {
-      seed({ coordinateFormat: 'latlon', angleUnit: 'mil', northRef: 'magnetic', declinationOverrideDeg: 180, basemap: 'dark' });
+      seed({ coordinateFormat: 'latlon', angleUnit: 'mil', northRef: 'magnetic', declinationOverrideDeg: 180, basemap: 'dark', showGps: true, altitudeUnit: 'ft' });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({
+        showGps: true,
+        altitudeUnit: 'ft',
         coordinateFormat: 'latlon',
         angleUnit: 'mil',
         northRef: 'magnetic',
@@ -72,9 +84,11 @@ describe('settings store', () => {
     });
 
     it('falls back per field for corrupt values', async () => {
-      seed({ coordinateFormat: 'utm', angleUnit: 'mil', northRef: 42, declinationOverrideDeg: 181, basemap: 'streets' });
+      seed({ coordinateFormat: 'utm', angleUnit: 'mil', northRef: 42, declinationOverrideDeg: 181, basemap: 'streets', showGps: 'yes', altitudeUnit: 'yd' });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({
+        showGps: false,
+        altitudeUnit: 'm',
         coordinateFormat: 'mgrs',
         angleUnit: 'mil',
         northRef: 'grid',

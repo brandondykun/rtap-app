@@ -11,7 +11,7 @@ import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type CoordinateFormat } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type CoordinateFormat } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatEastWest, formatEastWestBoth } from './settings-format';
@@ -58,6 +58,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const override = useSettings((s) => s.declinationOverrideDeg);
   const setCoordinateFormat = useSettings((s) => s.setCoordinateFormat);
   const setAngleUnit = useSettings((s) => s.setAngleUnit);
+  const altitudeUnit = useSettings((s) => s.altitudeUnit);
+  const setAltitudeUnit = useSettings((s) => s.setAltitudeUnit);
   const setNorthRef = useSettings((s) => s.setNorthRef);
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
   const [text, setText] = useState(override === null ? '' : String(override));
@@ -122,6 +124,16 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           ]}
           value={angleUnit}
           onChange={setAngleUnit}
+        />
+      </MenuSection>
+      <MenuSection label="Altitude">
+        <MenuSegmented<AltitudeUnit>
+          options={[
+            { value: 'm', label: 'Meters' },
+            { value: 'ft', label: 'Feet' },
+          ]}
+          value={altitudeUnit}
+          onChange={setAltitudeUnit}
         />
       </MenuSection>
       <MenuSection label="North reference">

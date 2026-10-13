@@ -2,7 +2,13 @@ import { create } from 'zustand';
 
 import type { LatLon } from '@/lib/geo/types';
 
-export type SelfPosition = { position: LatLon; accuracyM: number | null; timestamp: number };
+export type SelfPosition = {
+  position: LatLon;
+  accuracyM: number | null;
+  timestamp: number;
+  /** Altitude in meters (iOS: above sea level; Android: above the WGS84 ellipsoid), if known. */
+  altitudeM?: number | null;
+};
 export type LocationStatus = 'unknown' | 'granted' | 'denied' | 'unavailable';
 
 type PresenceValues = {

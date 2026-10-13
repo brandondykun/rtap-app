@@ -1,7 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
-import { bannerTop } from '@/features/map/layout';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -11,13 +10,13 @@ beforeEach(() => usePresence.setState(INITIAL_PRESENCE));
 
 describe('LocationBanner', () => {
   it('is hidden while location is unknown or granted', async () => {
-    await renderWithProviders(<LocationBanner landscape={false} />);
+    await renderWithProviders(<LocationBanner />);
     expect(screen.queryByText(/Location is off/)).toBeNull();
   });
 
   it('offers Settings and can be dismissed when location is denied', async () => {
     const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
-    await renderWithProviders(<LocationBanner landscape={false} />);
+    await renderWithProviders(<LocationBanner />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByText(/Location is off/)).toBeTruthy();
 
@@ -25,11 +24,5 @@ describe('LocationBanner', () => {
     expect(open).toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText('Dismiss'));
     expect(screen.queryByText(/Location is off/)).toBeNull();
-  });
-
-  it.each([[false], [true]])('sits below the toolbar and logo row (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<LocationBanner landscape={landscape} />);
-    await act(async () => usePresence.getState().setLocationStatus('denied'));
-    expect(screen.getByTestId('location-banner')).toHaveStyle({ top: bannerTop(landscape) });
   });
 });

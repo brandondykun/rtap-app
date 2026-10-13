@@ -8,6 +8,7 @@ export type CoordinateFormat = 'mgrs' | 'latlon';
 /** Mapbox basemap styles offered in the Layers panel. */
 export type Basemap = 'satellite' | 'hybrid' | 'topo' | 'dark';
 export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dark'];
+export type AltitudeUnit = 'm' | 'ft';
 
 type SettingsValues = {
   coordinateFormat: CoordinateFormat;
@@ -16,6 +17,9 @@ type SettingsValues = {
   /** Manual declination in degrees (east positive); null = use the WMM model. */
   declinationOverrideDeg: number | null;
   basemap: Basemap;
+  /** The GPS toolbar toggle: show the user's position and altitude top-left. */
+  showGps: boolean;
+  altitudeUnit: AltitudeUnit;
 };
 
 type SettingsActions = {
@@ -23,6 +27,8 @@ type SettingsActions = {
   setAngleUnit: (unit: AngleUnit) => void;
   setNorthRef: (ref: NorthRef) => void;
   setBasemap: (basemap: Basemap) => void;
+  toggleShowGps: () => void;
+  setAltitudeUnit: (unit: AltitudeUnit) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -37,6 +43,8 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   northRef: 'grid',
   declinationOverrideDeg: null,
   basemap: 'satellite',
+  showGps: false,
+  altitudeUnit: 'm',
 };
 
 const syncStorage: StateStorage = {
@@ -63,6 +71,8 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
         ? decl
         : current.declinationOverrideDeg,
     basemap: pick(p.basemap, BASEMAPS, current.basemap),
+    showGps: typeof p.showGps === 'boolean' ? p.showGps : current.showGps,
+    altitudeUnit: pick(p.altitudeUnit, ['m', 'ft'], current.altitudeUnit),
   };
 }
 
@@ -74,6 +84,8 @@ export const useSettings = create<SettingsState>()(
       setAngleUnit: (angleUnit) => set({ angleUnit }),
       setNorthRef: (northRef) => set({ northRef }),
       setBasemap: (basemap) => set({ basemap }),
+      toggleShowGps: () => set({ showGps: !get().showGps }),
+      setAltitudeUnit: (altitudeUnit) => set({ altitudeUnit }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -86,12 +98,14 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, showGps, altitudeUnit }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
         declinationOverrideDeg,
         basemap,
+        showGps,
+        altitudeUnit,
       }),
     },
   ),

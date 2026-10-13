@@ -114,6 +114,14 @@ describe('SettingsMenu', () => {
     expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+ mils [EW]$/);
   });
 
+  it('switches the altitude unit between meters and feet', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Meters')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Feet'));
+    expect(useSettings.getState().altitudeUnit).toBe('ft');
+    expect(screen.getByLabelText('Feet')).toBeSelected();
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

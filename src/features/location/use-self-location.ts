@@ -24,6 +24,7 @@ export function useSelfLocation(): void {
         position: { lat: loc.coords.latitude, lon: loc.coords.longitude },
         accuracyM: loc.coords.accuracy ?? null,
         timestamp: loc.timestamp,
+        altitudeM: Number.isFinite(loc.coords.altitude) ? loc.coords.altitude : null,
       });
     };
 

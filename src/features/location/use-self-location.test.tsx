@@ -13,7 +13,7 @@ function Probe() {
   return null;
 }
 
-type PositionCb = (loc: { coords: { latitude: number; longitude: number; accuracy: number | null }; timestamp: number }) => void;
+type PositionCb = (loc: { coords: { latitude: number; longitude: number; accuracy: number | null; altitude?: number | null }; timestamp: number }) => void;
 type HeadingCb = (h: { trueHeading: number; magHeading: number; accuracy: number }) => void;
 
 function grant() {
@@ -44,8 +44,10 @@ describe('useSelfLocation', () => {
     await render(<Probe />);
     expect(usePresence.getState().locationStatus).toBe('granted');
 
-    await act(async () => fake.position({ coords: { latitude: 38.9, longitude: -77, accuracy: 4 }, timestamp: 10 }));
-    expect(usePresence.getState().selfPosition).toEqual({ position: { lat: 38.9, lon: -77 }, accuracyM: 4, timestamp: 10 });
+    await act(async () => fake.position({ coords: { latitude: 38.9, longitude: -77, accuracy: 4, altitude: 142.4 }, timestamp: 10 }));
+    expect(usePresence.getState().selfPosition).toEqual({ position: { lat: 38.9, lon: -77 }, accuracyM: 4, timestamp: 10, altitudeM: 142.4 });
+    await act(async () => fake.position({ coords: { latitude: 38.9, longitude: -77, accuracy: 4, altitude: null }, timestamp: 11 }));
+    expect(usePresence.getState().selfPosition?.altitudeM).toBeNull();
 
     await act(async () => fake.heading({ trueHeading: 45, magHeading: 50, accuracy: 3 }));
     expect(usePresence.getState().selfHeading).toBe(45);

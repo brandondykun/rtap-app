@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
-import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
@@ -17,11 +16,13 @@ import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
+import { useSettings } from '@/stores/settings';
 
 import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { MapControls } from './controls/MapControls';
+import { MapTopLeft } from './controls/MapTopLeft';
 import { ReadoutCard } from './controls/ReadoutCard';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
@@ -48,6 +49,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const centeredOnSelf = useRef(savedCamera !== null);
   const followMode = useInteraction((s) => s.followMode);
   const setFollowMode = useInteraction((s) => s.setFollowMode);
+  const showGps = useSettings((s) => s.showGps);
+  const toggleShowGps = useSettings((s) => s.toggleShowGps);
   // Boolean selector: a GPS fix must not re-render the map tree; fixes are handled in a store subscription.
   const hasSelfPosition = usePresence((s) => s.selfPosition !== null);
   // Only a camera the app or user actually moved is worth persisting (not the untouched open).
@@ -203,6 +206,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         activeTool={topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
         onPoint={togglePoint}
         onLayers={toggleLayers}
+        gpsOn={showGps}
+        onGps={toggleShowGps}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
       />
@@ -216,7 +221,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         panel={panel}
       />
       {panel ? null : <ReadoutCard />}
-      {panel ? null : <LocationBanner landscape={landscape} />}
+      <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />
     </View>

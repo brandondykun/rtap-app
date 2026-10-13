@@ -10,6 +10,7 @@ import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
@@ -253,6 +254,25 @@ describe('MapScreen', () => {
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.queryByTestId('menu-panel')).toBeNull();
+  });
+
+  it('the GPS button shows and hides the GPS readout without touching the menus', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    await fireEvent.press(await screen.findByLabelText('LAYERS'));
+    await fireEvent.press(screen.getByLabelText('GPS'));
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByLabelText('GPS')).toBeSelected();
+    expect(screen.getByLabelText('LAYERS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('GPS'));
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByLabelText('GPS')).not.toBeSelected();
   });
 
   it('toggles Add Point from the toolbar', async () => {
