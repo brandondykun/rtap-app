@@ -49,7 +49,7 @@ export function AddItemPanel({ category, at, missionId, form }: { category: Item
     notifySuccess();
     // Hand over to the new item, shown selected (the menu is replaced, so the lock stays on).
     // Skip if the user cancelled or switched menus while the write was in flight.
-    if (useDraft.getState().mode === 'add') openItemMenu(result.value.id, sidc);
+    if (useDraft.getState().mode === 'add') openItemMenu(result.value.id, { kind: 'point', sidc });
   };
 
   return (

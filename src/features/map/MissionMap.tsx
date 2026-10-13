@@ -10,6 +10,7 @@ import { useSelfLocation } from '@/features/location/use-self-location';
 import { openItemMenu } from '@/features/map-items/menus/item-menus';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
+import type { ItemRef } from '@/features/symbology/categories';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
@@ -144,11 +145,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const onMapPress = (coord: LatLon) => {
     if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
-  const onItemPress = (itemId: string, at: LatLon, sidc: string | null) => {
+  const onItemPress = (itemId: string, at: LatLon, item: ItemRef) => {
     if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
-      openItemMenu(itemId, sidc);
+      openItemMenu(itemId, item);
     }
   };
   const onLongPress = (coord: LatLon) => {

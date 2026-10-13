@@ -39,7 +39,7 @@ export function createPointFeatureSelector(): (items: readonly MapItemSnapshot[]
             id: item.id,
             sidc: item.sidc && KNOWN_SIDCS.has(item.sidc) ? item.sidc : DEFAULT_SIDC,
             name: item.name,
-            category: itemCategory(item.sidc),
+            category: itemCategory(item),
           },
         };
       }

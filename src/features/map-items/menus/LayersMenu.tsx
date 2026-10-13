@@ -82,7 +82,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             leading={<Image source={symbolThumbnail(row.sidc)} style={{ width: 28, height: 20 }} resizeMode="contain" />}
             onPress={() => {
               Keyboard.dismiss();
-              openItemMenu(row.id, row.sidc);
+              openItemMenu(row.id, { kind: row.kind, sidc: row.sidc });
             }}
             trailing={{
               icon: row.hidden ? 'eye-off-outline' : 'eye-outline',

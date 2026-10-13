@@ -9,6 +9,7 @@ function item(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     kind: 'point',
     geometry: '{"type":"Point","coordinates":[-77,38.9]}',
     sidc: 'SHGPUCI--------',
+    style: null,
     name: id.toUpperCase(),
     notes: null,
     updatedAt,

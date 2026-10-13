@@ -2,8 +2,17 @@ import { firstValueFrom } from 'rxjs';
 
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { deleteItem, placePoint, setItemHidden, setItemsHidden, toggleItemVisibility, updateItem } from './commands';
-import { pointCoord } from './geometry';
+import {
+  deleteItem,
+  placeLine,
+  placePoint,
+  setItemHidden,
+  setItemsHidden,
+  toggleItemVisibility,
+  updateItem,
+  updateLine,
+} from './commands';
+import { parseLineGeometry, pointCoord } from './geometry';
 import {
   findItem,
   getMissionItemNames,
@@ -177,5 +186,38 @@ describe('map items', () => {
     const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
     if (!r.ok) throw new Error('setup');
     expect(await updateItem(ctx, r.value.id, { sidc: 'garbage' })).toMatchObject({ ok: false, error: 'invalid_symbol' });
+  });
+
+  describe('lines', () => {
+    const P = [at, { lat: at.lat + 0.01, lon: at.lon }];
+
+    it('places a line with its type in style and reads it back', async () => {
+      const ctx = makeTestContext();
+      const r = await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'route', name: ' PL RED ' });
+      if (!r.ok) throw new Error('setup');
+      const item = await findItem(ctx.db, r.value.id);
+      expect(item).toMatchObject({ kind: 'line', name: 'PL RED', sidc: null, style: '{"lineType":"route"}' });
+      expect(parseLineGeometry(item!.geometry)).toEqual(P);
+    });
+
+    it('validates points, name and existence', async () => {
+      const ctx = makeTestContext();
+      expect(await placeLine(ctx, { missionId: 'm1', points: [at], lineType: 'phase-line', name: 'X' })).toMatchObject({ ok: false, error: 'too_few_points' });
+      expect(await placeLine(ctx, { missionId: 'm1', points: [at, { lat: 99, lon: 0 }], lineType: 'phase-line', name: 'X' })).toMatchObject({ ok: false, error: 'invalid_coordinate' });
+      expect(await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'phase-line', name: '  ' })).toMatchObject({ ok: false, error: 'invalid_name' });
+      expect(await updateLine(ctx, 'nope', { name: 'X' })).toMatchObject({ ok: false, error: 'not_found' });
+    });
+
+    it('updates points, type, name and notes', async () => {
+      const ctx = makeTestContext();
+      const r = await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'phase-line', name: 'RED' });
+      if (!r.ok) throw new Error('setup');
+      const Q3 = [...P, { lat: at.lat + 0.02, lon: at.lon }];
+      expect(await updateLine(ctx, r.value.id, { points: Q3, lineType: 'boundary', name: 'NORTH', notes: 'n' })).toEqual({ ok: true, value: undefined });
+      const item = await findItem(ctx.db, r.value.id);
+      expect(item).toMatchObject({ name: 'NORTH', notes: 'n', style: '{"lineType":"boundary"}' });
+      expect(parseLineGeometry(item!.geometry)).toEqual(Q3);
+      expect(await updateLine(ctx, r.value.id, { points: [at] })).toMatchObject({ ok: false, error: 'too_few_points' });
+    });
   });
 });

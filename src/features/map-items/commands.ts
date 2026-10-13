@@ -1,6 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 
 import { KNOWN_SIDCS } from '@/features/symbology/categories';
+import { lineStyle, type LineType } from '@/features/symbology/line-types';
 import type { CommandContext } from '@/lib/db/command-context';
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -8,7 +9,7 @@ import { Tables } from '@/lib/db/schema';
 import type { LatLon } from '@/lib/geo/types';
 import { err, ok, type Result } from '@/lib/result';
 
-import { isValidLatLon, pointGeometry } from './geometry';
+import { isValidLatLon, lineGeometry, pointGeometry } from './geometry';
 import { findItem, findItemViewState } from './repository';
 
 export type PlacePointInput = {
@@ -156,4 +157,69 @@ export async function setItemsHidden(ctx: CommandContext, ids: readonly string[]
 /** Sets per-device visibility (local-only view state). Showing an item with no view state is a no-op. */
 export async function setItemHidden(ctx: CommandContext, id: string, hidden: boolean): Promise<Result<void, 'write_failed'>> {
   return setItemsHidden(ctx, [id], hidden);
+}
+
+export type PlaceLineInput = { missionId: string; points: LatLon[]; lineType: LineType; name: string; notes?: string | null };
+
+function checkLinePoints(points: LatLon[]): 'invalid_coordinate' | 'too_few_points' | null {
+  if (points.length < 2) return 'too_few_points';
+  return points.every(isValidLatLon) ? null : 'invalid_coordinate';
+}
+
+export async function placeLine(
+  ctx: CommandContext,
+  input: PlaceLineInput,
+): Promise<Result<{ id: string }, 'invalid_coordinate' | 'too_few_points' | 'invalid_name' | 'write_failed'>> {
+  const bad = checkLinePoints(input.points);
+  if (bad) return err(bad, bad === 'too_few_points' ? 'A line needs at least 2 points' : 'Coordinate is out of range');
+  const name = input.name.trim();
+  if (!name) return err('invalid_name', 'Name is required');
+  try {
+    const item = await ctx.db.write(() =>
+      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
+        i.missionId = input.missionId;
+        i.kind = 'line';
+        i.geometry = lineGeometry(input.points);
+        i.sidc = null;
+        i.name = name;
+        i.notes = input.notes ?? null;
+        i.style = lineStyle(input.lineType);
+        i.createdBy = ctx.actorId();
+        i.updatedBy = ctx.actorId();
+      }),
+    );
+    return ok({ id: item.id });
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
+export type UpdateLinePatch = { points?: LatLon[]; lineType?: LineType; name?: string; notes?: string | null };
+
+export async function updateLine(
+  ctx: CommandContext,
+  id: string,
+  patch: UpdateLinePatch,
+): Promise<Result<void, 'not_found' | 'invalid_coordinate' | 'too_few_points' | 'invalid_name' | 'write_failed'>> {
+  if (patch.points) {
+    const bad = checkLinePoints(patch.points);
+    if (bad) return err(bad, bad === 'too_few_points' ? 'A line needs at least 2 points' : 'Coordinate is out of range');
+  }
+  if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
+  const item = await findItem(ctx.db, id);
+  if (!item || item.kind !== 'line') return err('not_found', `No line ${id}`);
+  try {
+    await ctx.db.write(() =>
+      item.update((i) => {
+        if (patch.points) i.geometry = lineGeometry(patch.points);
+        if (patch.lineType) i.style = lineStyle(patch.lineType);
+        if (patch.name !== undefined) i.name = patch.name.trim();
+        if (patch.notes !== undefined) i.notes = patch.notes;
+        i.updatedBy = ctx.actorId();
+      }),
+    );
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
 }

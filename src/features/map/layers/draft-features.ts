@@ -18,7 +18,7 @@ const lonLat = (p: LatLon): [number, number] => [p.lon, p.lat];
 export function draftFeatureCollection(input: DraftFeatureInput | null): DraftFeatureCollection {
   if (!input) return { type: 'FeatureCollection', features: [] };
   const features: DraftFeature[] = [
-    { type: 'Feature', id: 'draft', geometry: { type: 'Point', coordinates: lonLat(input.coord) }, properties: { role: 'draft', sidc: input.sidc, label: input.label, category: itemCategory(input.sidc) } },
+    { type: 'Feature', id: 'draft', geometry: { type: 'Point', coordinates: lonLat(input.coord) }, properties: { role: 'draft', sidc: input.sidc, label: input.label, category: itemCategory({ kind: 'point', sidc: input.sidc }) } },
   ];
   if (input.self && input.rangeLabel) {
     features.push(

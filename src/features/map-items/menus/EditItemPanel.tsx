@@ -28,7 +28,7 @@ function selectItem(item: MapItemSnapshot): boolean {
   useDraft.getState().startEdit({
     itemId: item.id,
     coord: at,
-    category: itemCategory(item.sidc),
+    category: itemCategory(item),
     affiliation: unit.affiliation,
     unitType: unit.unitType,
     pointType: pointTypeForSidc(item.sidc) ?? 'checkpoint',
@@ -71,9 +71,9 @@ export function EditItemPanel({ category, itemId, form }: Props) {
       return;
     }
     // Opened in the other category's menu (a stale link): hand over to the right one.
-    if (itemCategory(item.sidc) !== category) {
+    if (itemCategory(item) !== category) {
       leaving.current = true;
-      openItemMenu(item.id, item.sidc);
+      openItemMenu(item.id, item);
       return;
     }
     if (started.current) return;

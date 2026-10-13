@@ -64,6 +64,6 @@ describe('PointsLayer', () => {
     await act(async () =>
       (props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
     );
-    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9, lon: -77 }, HOSTILE_INF);
+    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9, lon: -77 }, { kind: 'point', sidc: HOSTILE_INF });
   });
 });

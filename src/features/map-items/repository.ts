@@ -2,16 +2,17 @@ import { Q, type Database } from '@nozbe/watermelondb';
 import { map, type Observable } from 'rxjs';
 
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
-import type { MapItem } from '@/lib/db/models/MapItem';
+import type { MapItem, MapItemKind } from '@/lib/db/models/MapItem';
 import { Tables } from '@/lib/db/schema';
 
 import { nextNameForPrefix } from './naming';
 
 export type MapItemSnapshot = {
   id: string;
-  kind: 'point';
+  kind: MapItemKind;
   geometry: string;
   sidc: string | null;
+  style: string | null;
   name: string;
   notes: string | null;
   updatedAt: number;
@@ -23,6 +24,7 @@ function snapshot(item: MapItem): MapItemSnapshot {
     kind: item.kind,
     geometry: item.geometry,
     sidc: item.sidc,
+    style: item.style ?? null,
     name: item.name,
     notes: item.notes ?? null,
     updatedAt: item.updatedAt.getTime(),
@@ -35,7 +37,7 @@ function missionQuery(db: Database, missionId: string) {
 
 export function observeMissionItems(db: Database, missionId: string): Observable<MapItemSnapshot[]> {
   return missionQuery(db, missionId)
-    .observeWithColumns(['geometry', 'sidc', 'name', 'notes', 'updated_at'])
+    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
     .pipe(map((items) => items.map(snapshot)));
 }
 
@@ -44,7 +46,7 @@ export function observeItem(db: Database, id: string): Observable<MapItemSnapsho
   return db
     .get<MapItem>(Tables.mapItems)
     .query(Q.where('id', id))
-    .observeWithColumns(['geometry', 'sidc', 'name', 'notes', 'updated_at'])
+    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
     .pipe(map((items) => (items[0] ? snapshot(items[0]) : null)));
 }
 

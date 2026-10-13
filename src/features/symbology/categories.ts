@@ -1,12 +1,15 @@
 import { POINT_SIDCS, POINT_TYPES, pointTypeForSidc } from './point-types';
 import { decomposeSidc, PRESET_SIDCS, UNIT_TYPES } from './presets';
 
-/** Units carry an affiliation and unit type; points are control measures (checkpoint, LZ, …). */
-export type ItemCategory = 'unit' | 'point';
+/** Units carry an affiliation and unit type; points are control measures (checkpoint, LZ, …); lines are control lines. */
+export type ItemCategory = 'unit' | 'point' | 'line';
+/** What decides unit vs point vs line: the item's kind, then its symbol code. */
+export type ItemRef = { kind: string; sidc: string | null };
 
-/** The only place that decides unit vs point. Unknown, null and all pre-existing codes are units. */
-export function itemCategory(sidc: string | null): ItemCategory {
-  return pointTypeForSidc(sidc) ? 'point' : 'unit';
+/** The only place that decides unit vs point vs line. Unknown, null and all pre-existing point-kind codes are units. */
+export function itemCategory(item: ItemRef): ItemCategory {
+  if (item.kind === 'line') return 'line';
+  return pointTypeForSidc(item.sidc) ? 'point' : 'unit';
 }
 
 /** Every SIDC the app has an image for; anything else draws as DEFAULT_SIDC. */

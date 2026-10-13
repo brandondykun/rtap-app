@@ -1,14 +1,17 @@
-import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
+import { itemCategory, type ItemCategory, type ItemRef } from '@/features/symbology/categories';
 import { useMenu } from '@/stores/menu';
 
 /** Words the shared item menus use per category. */
 export const ITEM_COPY: Record<ItemCategory, { noun: string; title: string }> = {
   unit: { noun: 'unit', title: 'Unit' },
   point: { noun: 'point', title: 'Point' },
+  line: { noun: 'line', title: 'Line' },
 };
 
 /** Open the right view for a map item (tap on the map or a Layers row). */
-export function openItemMenu(itemId: string, sidc: string | null): void {
-  if (itemCategory(sidc) === 'point') useMenu.getState().openMenu('point.edit', { itemId });
+export function openItemMenu(itemId: string, item: ItemRef): void {
+  const category = itemCategory(item);
+  if (category === 'point') useMenu.getState().openMenu('point.edit', { itemId });
+  // Task 7: 'line.edit'
   else useMenu.getState().openMenu('unit.edit', { itemId });
 }

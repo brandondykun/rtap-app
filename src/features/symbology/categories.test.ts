@@ -3,11 +3,11 @@ import { POINT_TYPES } from './point-types';
 import { composeSidc, PRESET_SIDCS } from './presets';
 
 describe('itemCategory', () => {
-  it('is point for every point type and unit for everything else', () => {
-    for (const t of POINT_TYPES) expect(itemCategory(t.sidc)).toBe('point');
-    for (const sidc of PRESET_SIDCS) expect(itemCategory(sidc)).toBe('unit');
-    expect(itemCategory(null)).toBe('unit');
-    expect(itemCategory('garbage')).toBe('unit');
+  it('is line for line items, point for point types and unit for everything else', () => {
+    for (const t of POINT_TYPES) expect(itemCategory({ kind: 'point', sidc: t.sidc })).toBe('point');
+    for (const sidc of PRESET_SIDCS) expect(itemCategory({ kind: 'point', sidc })).toBe('unit');
+    expect(itemCategory({ kind: 'point', sidc: null })).toBe('unit');
+    expect(itemCategory({ kind: 'line', sidc: null })).toBe('line');
   });
 
   it('knows every unit preset and point SIDC', () => {
