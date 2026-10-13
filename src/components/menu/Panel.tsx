@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Keyboard, ScrollView, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Keyboard, Platform, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,27 +31,34 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
   const stops = ordered.map((d) => heights[d]);
   const [detent, setDetent] = useState<Detent>(initialDetent);
   const target = landscape ? drawerWidth(metrics) : heights[detent];
+  const detentRef = useRef(detent);
+  const restore = useRef<Detent | null>(null);
+  const onFrameRef = useRef(onFrameChange);
   const size = useSharedValue(0);
   const dragStart = useSharedValue(0);
 
   useEffect(() => {
+    detentRef.current = detent;
+    onFrameRef.current = onFrameChange;
+  });
+
+  useEffect(() => {
     size.set(withTiming(target, { duration: 220 }));
-    onFrameChange({ side: landscape ? 'left' : 'bottom', size: target });
-  }, [target, landscape, onFrameChange, size]);
+    onFrameRef.current({ side: landscape ? 'left' : 'bottom', size: target });
+  }, [target, landscape, size]);
 
   // Keep a focused field visible: the sheet opens fully while the keyboard is up.
   useEffect(() => {
     if (landscape || !detents.includes('full')) return;
-    let before: Detent | null = null;
-    const show = Keyboard.addListener('keyboardWillShow', () =>
-      setDetent((current) => {
-        before = current;
-        return 'full';
-      }),
-    );
-    const hide = Keyboard.addListener('keyboardWillHide', () => {
-      if (before) setDetent(before);
-      before = null;
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, () => {
+      if (restore.current === null) restore.current = detentRef.current;
+      setDetent('full');
+    });
+    const hide = Keyboard.addListener(hideEvent, () => {
+      if (restore.current !== null) setDetent(restore.current);
+      restore.current = null;
     });
     return () => {
       show.remove();
@@ -74,7 +81,7 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
     });
 
   const animated = useAnimatedStyle(
-    () => (landscape ? { width: size.value, height: '100%' } : { width: '100%', height: size.get() }),
+    () => (landscape ? { width: size.get(), height: '100%' } : { width: '100%', height: size.get() }),
     [landscape],
   );
 

@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
-import { Dimensions, Text } from 'react-native';
+import { Dimensions, Keyboard, Text } from 'react-native';
 
 import { Panel } from './Panel';
 import { detentHeights, drawerWidth } from './panel-geometry';
@@ -56,5 +56,27 @@ describe('Panel', () => {
     await rerender(ui(true));
     expect(onMount).toHaveBeenCalledTimes(1);
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
+  });
+
+  it('returns to the user detent after repeated keyboard shows', async () => {
+    const handlers: Record<string, () => void> = {};
+    const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: () => void) => {
+      handlers[event] = cb;
+      return { remove: jest.fn() };
+    }) as never);
+    const onFrameChange = jest.fn();
+    await render(
+      <Panel landscape={false} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={onFrameChange}>
+        <Text>content</Text>
+      </Panel>,
+    );
+    const show = handlers.keyboardWillShow ?? handlers.keyboardDidShow;
+    const hide = handlers.keyboardWillHide ?? handlers.keyboardDidHide;
+    await act(async () => show());
+    await act(async () => show());
+    expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).full });
+    await act(async () => hide());
+    expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
+    spy.mockRestore();
   });
 });
