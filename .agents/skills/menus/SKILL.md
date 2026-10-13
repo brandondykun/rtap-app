@@ -33,6 +33,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.
 - **Draft state** (points being added or edited) lives in `stores/draft.ts`, never the DB.
   Clear it in the menu's unmount cleanup.
+- **Measure is not a menu.** MEASURE closes the open menu; opening any menu stops measuring
+  (MissionMap). Keep it that way so the map stays clear while aiming.
 - Menu content must not depend on orientation for its own state: the Panel keeps it mounted
   across rotation.
 

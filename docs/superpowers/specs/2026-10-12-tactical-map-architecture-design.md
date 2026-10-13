@@ -217,6 +217,11 @@ Military control lines (10 types) are `kind = 'line'` items: GeoJSON LineString 
 Drawing, editing (select/move/insert/remove/undo), the Line menus and Layers rows are specified in
 `2026-10-13-lines-design.md`.
 
+### 5.4c Measure
+The MEASURE tool is a map mode, not a menu or a stored item: `stores/measure.ts` (start, end or
+live at the crosshair), `MeasureLayer`, and `MeasureCard` in the top-left stack. Taps snap to
+units, points and the user's marker. See `2026-10-13-measure-design.md`.
+
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
