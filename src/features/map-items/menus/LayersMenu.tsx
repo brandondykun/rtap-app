@@ -68,12 +68,10 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Map items">
-        <View className="flex-row items-center justify-between gap-3">
-          <Text testID="layers-summary" className="text-sm text-text-muted">
-            {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(lines)} ${lines === 1 ? 'line' : 'lines'} · ${count(polygons)} ${polygons === 1 ? 'polygon' : 'polygons'} · ${count(hiddenIds.length)} hidden`}
-          </Text>
-          <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
-        </View>
+        <Text testID="layers-summary" className="text-sm text-text-muted">
+          {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(lines)} ${lines === 1 ? 'line' : 'lines'} · ${count(polygons)} ${polygons === 1 ? 'polygon' : 'polygons'} · ${count(hiddenIds.length)} hidden`}
+        </Text>
+        <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         {total > 0 ? (
           <TextField accessibilityLabel="Search" value={query} onChangeText={setQuery} placeholder="Search names or types" autoCapitalize="characters" autoCorrect={false} />
         ) : null}
