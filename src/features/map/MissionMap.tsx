@@ -16,6 +16,7 @@ import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
+import { useMeasure } from '@/stores/measure';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
@@ -31,6 +32,7 @@ import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
 import { LinesLayer } from './layers/LinesLayer';
+import { MeasureLayer } from './layers/MeasureLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
@@ -82,6 +84,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const editingId = useDraft((s) => (s.mode === 'edit' ? s.itemId : null));
   const drawingLine = useDraft((s) => s.mode !== null && s.category === 'line');
   const draftActive = useDraft((s) => s.mode !== null);
+  const measuring = useMeasure((s) => s.active);
   const lineDrawing = useDraft((s) => s.category === 'line' && s.mode !== null && !s.locked);
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
@@ -269,6 +272,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
         {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
+        {measuring ? <MeasureLayer /> : null}
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />

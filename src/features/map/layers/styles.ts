@@ -148,3 +148,18 @@ export const LINE_FLOT_STYLE: SymbolLayerStyle = {
 export function makeLineLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
   return { ...makePointLabelStyle(colors), textField: ['get', 'label'], textAnchor: 'left', textOffset: [0.9, 0] };
 }
+
+/** Measure readout chip: dark text on an amber chip at the line's midpoint. */
+export function makeMeasureChipStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return {
+    textField: ['get', 'label'],
+    textFont: MAP_LABEL_FONT,
+    textSize: 13,
+    textColor: colors['on-accent'],
+    iconImage: MAP_IMAGE_IDS.labelChipAccent,
+    iconTextFit: 'both',
+    iconTextFitPadding: LABEL_CHIP_PADDING,
+    textAllowOverlap: true,
+    iconAllowOverlap: true,
+  };
+}
