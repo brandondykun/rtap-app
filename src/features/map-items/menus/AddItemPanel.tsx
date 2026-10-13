@@ -24,6 +24,7 @@ export function AddItemPanel({ category, at, missionId, form }: { category: Item
 
   useEffect(() => {
     if (category === 'line') useDraft.getState().startAddLine();
+    else if (category === 'polygon') useDraft.getState().startAddPolygon();
     else {
       const start = at ?? useInteraction.getState().cameraCenter;
       useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category });
@@ -56,7 +57,7 @@ export function AddItemPanel({ category, at, missionId, form }: { category: Item
       <MenuHeader
         title={`Add ${noun}`}
         leading={{ label: 'Cancel', onPress: close }}
-        trailing={{ label: category === 'line' ? 'Save' : 'Add', icon: 'check', onPress: () => void add(), disabled: !canAdd }}
+        trailing={{ label: category === 'line' || category === 'polygon' ? 'Save' : 'Add', icon: 'check', onPress: () => void add(), disabled: !canAdd }}
       />
       {form}
     </View>

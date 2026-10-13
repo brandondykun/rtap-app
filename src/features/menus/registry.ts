@@ -1,8 +1,10 @@
 import { addLineMenu } from '@/features/map-items/menus/AddLineMenu';
 import { addPointMenu } from '@/features/map-items/menus/AddPointMenu';
+import { addPolygonMenu } from '@/features/map-items/menus/AddPolygonMenu';
 import { addUnitMenu } from '@/features/map-items/menus/AddUnitMenu';
 import { editLineMenu } from '@/features/map-items/menus/EditLineMenu';
 import { editPointMenu } from '@/features/map-items/menus/EditPointMenu';
+import { editPolygonMenu } from '@/features/map-items/menus/EditPolygonMenu';
 import { editUnitMenu } from '@/features/map-items/menus/EditUnitMenu';
 import { layersMenu } from '@/features/map-items/menus/LayersMenu';
 
@@ -21,6 +23,8 @@ export const MENU_REGISTRY: MenuRegistry = {
   'line.edit': editLineMenu,
   'point.add': addPointMenu,
   'point.edit': editPointMenu,
+  'polygon.add': addPolygonMenu,
+  'polygon.edit': editPolygonMenu,
   settings: settingsMenu,
   'unit.add': addUnitMenu,
   'unit.edit': editUnitMenu,

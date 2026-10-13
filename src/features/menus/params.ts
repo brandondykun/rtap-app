@@ -12,6 +12,8 @@ export const MENU_PARAMS = {
   layers: z.object({}),
   'line.add': z.object({}),
   'line.edit': z.object({ itemId: z.string().min(1) }),
+  'polygon.add': z.object({}),
+  'polygon.edit': z.object({ itemId: z.string().min(1) }),
   'point.add': z.object({ at: latLon.optional() }),
   'point.edit': z.object({ itemId: z.string().min(1) }),
   'unit.add': z.object({ at: latLon.optional() }),

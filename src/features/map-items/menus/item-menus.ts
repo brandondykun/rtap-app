@@ -14,5 +14,6 @@ export function openItemMenu(itemId: string, item: ItemRef): void {
   const category = itemCategory(item);
   if (category === 'point') useMenu.getState().openMenu('point.edit', { itemId });
   else if (category === 'line') useMenu.getState().openMenu('line.edit', { itemId });
+  else if (category === 'polygon') useMenu.getState().openMenu('polygon.edit', { itemId });
   else useMenu.getState().openMenu('unit.edit', { itemId });
 }

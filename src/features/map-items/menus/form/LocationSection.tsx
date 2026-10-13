@@ -22,7 +22,7 @@ export function LocationSection() {
   const coordSource = useDraft((s) => s.coordSource);
   const locked = useDraft((s) => s.locked);
   const picking = useDraft((s) => s.picking);
-  const noun = useDraft((s) => (s.category === 'point' ? 'point' : 'unit'));
+  const noun = useDraft((s) => (s.category === 'point' ? 'point' : s.category === 'polygon' ? 'center' : 'unit'));
   const setPicking = useDraft((s) => s.setPicking);
   const setCoord = useDraft((s) => s.setCoord);
   const setCoordInputValid = useDraft((s) => s.setCoordInputValid);
