@@ -7,6 +7,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { useSelfLocation } from '@/features/location/use-self-location';
+import { openItemMenu } from '@/features/map-items/menus/item-menus';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { Toolbar } from '@/features/toolbar/Toolbar';
@@ -134,26 +135,30 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (topId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
   };
-  const togglePoint = () => {
-    if (topId === 'unit.add') useMenu.getState().closeMenu();
-    else useMenu.getState().openMenu('unit.add', {});
+  const toggleAdd = (id: 'unit.add' | 'point.add') => {
+    if (topId === id) useMenu.getState().closeMenu();
+    else if (id === 'unit.add') useMenu.getState().openMenu('unit.add', {});
+    else useMenu.getState().openMenu('point.add', {});
   };
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
     if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
-  const onItemPress = (itemId: string, at: LatLon) => {
+  const onItemPress = (itemId: string, at: LatLon, sidc: string | null) => {
     if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
-      useMenu.getState().openMenu('unit.edit', { itemId });
+      openItemMenu(itemId, sidc);
     }
   };
   const onLongPress = (coord: LatLon) => {
     notifyPlaced();
     const current = topMenu(useMenu.getState())?.id;
-    const viewing = current === 'unit.edit' && useDraft.getState().locked;
-    if ((current === 'unit.add' || current === 'unit.edit') && !viewing) useDraft.getState().setCoord(coord, 'press');
+    const adding = current === 'unit.add' || current === 'point.add';
+    const editing = (current === 'unit.edit' || current === 'point.edit') && !useDraft.getState().locked;
+    if (adding || editing) useDraft.getState().setCoord(coord, 'press');
+    // Otherwise start whichever Add was used last (units the first time).
+    else if (useDraft.getState().lastAddCategory === 'point') useMenu.getState().openMenu('point.add', { at: coord });
     else useMenu.getState().openMenu('unit.add', { at: coord });
   };
 
@@ -203,8 +208,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'unit.add' ? 'point' : topId === 'layers' ? 'layers' : null}
-        onPoint={togglePoint}
+        activeTool={topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
+        onUnit={() => toggleAdd('unit.add')}
+        onPoint={() => toggleAdd('point.add')}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}

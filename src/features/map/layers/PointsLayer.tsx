@@ -17,7 +17,7 @@ const NO_IDS: string[] = [];
 
 /** All mission points in one ShapeSource; hidden items are filtered out, never removed. */
 /** `at` is where the user tapped (used when picking a location on the map). */
-type Props = { missionId: string; excludeId?: string | null; onItemPress?: (id: string, at: LatLon) => void };
+type Props = { missionId: string; excludeId?: string | null; onItemPress?: (id: string, at: LatLon, sidc: string | null) => void };
 
 export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props) {
   const ctx = useCommandContext();
@@ -34,8 +34,10 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
       id="points"
       shape={shape}
       onPress={(e) => {
-        const id = e.features[0]?.properties?.id;
-        if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude });
+        const props = e.features[0]?.properties;
+        const id = props?.id;
+        const sidc = typeof props?.sidc === 'string' ? props.sidc : null;
+        if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude }, sidc);
       }}>
       <SymbolLayer id="points-symbols" style={POINT_SYMBOL_STYLE} filter={filter} />
       <SymbolLayer id="points-labels" style={labelStyle} filter={filter} />

@@ -44,4 +44,14 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(onLayers).toHaveBeenCalled();
   });
+
+  it('orders UNIT, POINT, LAYERS and marks the active one', async () => {
+    const onUnit = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool="unit" onUnit={onUnit} onPoint={jest.fn()} onLayers={jest.fn()} />);
+    const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LAYERS']);
+    expect(screen.getByLabelText('UNIT')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    expect(onUnit).toHaveBeenCalled();
+  });
 });

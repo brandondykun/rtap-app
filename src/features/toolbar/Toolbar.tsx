@@ -8,12 +8,13 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { ToolButton } from './ToolButton';
 
-export type ToolId = 'point' | 'layers';
+export type ToolId = 'unit' | 'point' | 'layers';
 
 type Props = {
   landscape: boolean;
   activeTool: ToolId | null;
   onMenu?: () => void;
+  onUnit?: () => void;
   onPoint?: () => void;
   onLayers?: () => void;
   onSettings?: () => void;
@@ -23,7 +24,7 @@ type Props = {
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onPoint, onLayers, onSettings }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLayers, onSettings }: Props) {
   const insets = useSafeAreaInsets();
   const position = landscape
     ? { top: insets.top + EDGE, right: insets.right + EDGE }
@@ -31,6 +32,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onPoint, onLayers, onSe
 
   const tools = (
     <>
+      <ToolButton icon="account-group-outline" label="UNIT" active={activeTool === 'unit'} onPress={onUnit} />
       <ToolButton icon="map-marker-outline" label="POINT" active={activeTool === 'point'} onPress={onPoint} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
     </>
