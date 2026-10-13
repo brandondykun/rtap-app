@@ -1,36 +1,48 @@
-import type { Camera } from '@rnmapbox/maps';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { Camera } from "@rnmapbox/maps";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { PanelFrame } from '@/components/menu/panel-geometry';
-import { Toast } from '@/components/ui/Toast';
-import { LocationBanner } from '@/features/location/LocationBanner';
-import { useSelfLocation } from '@/features/location/use-self-location';
-import type { MissionCamera } from '@/features/missions/repository';
-import { MenuHost } from '@/features/menus/MenuHost';
-import { Toolbar } from '@/features/toolbar/Toolbar';
-import { useCommandContext } from '@/lib/db/command-context-provider';
-import type { LatLon } from '@/lib/geo/types';
-import { useDraft } from '@/stores/draft';
-import { useInteraction } from '@/stores/interaction';
-import { useMenu, topMenu } from '@/stores/menu';
-import { usePresence } from '@/stores/presence';
+import type { PanelFrame } from "@/components/menu/panel-geometry";
+import { Toast } from "@/components/ui/Toast";
+import { LocationBanner } from "@/features/location/LocationBanner";
+import { useSelfLocation } from "@/features/location/use-self-location";
+import type { MissionCamera } from "@/features/missions/repository";
+import { MenuHost } from "@/features/menus/MenuHost";
+import { Toolbar } from "@/features/toolbar/Toolbar";
+import { useCommandContext } from "@/lib/db/command-context-provider";
+import type { LatLon } from "@/lib/geo/types";
+import { useDraft } from "@/stores/draft";
+import { useInteraction } from "@/stores/interaction";
+import { useMenu, topMenu } from "@/stores/menu";
+import { usePresence } from "@/stores/presence";
 
-import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
-import { useCameraPersistence } from './canvas/camera-persistence';
-import { MapCanvas } from './canvas/MapCanvas';
-import { MapControls } from './controls/MapControls';
-import { ReadoutCard } from './controls/ReadoutCard';
-import { Crosshair } from './interaction/Crosshair';
-import { DraftLayer } from './layers/DraftLayer';
-import { PointsLayer } from './layers/PointsLayer';
-import { SelfLayer } from './layers/SelfLayer';
-import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
+import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from "./canvas/camera";
+import { useCameraPersistence } from "./canvas/camera-persistence";
+import { MapCanvas } from "./canvas/MapCanvas";
+import { MapControls } from "./controls/MapControls";
+import { ReadoutCard } from "./controls/ReadoutCard";
+import { Crosshair } from "./interaction/Crosshair";
+import { DraftLayer } from "./layers/DraftLayer";
+import { PointsLayer } from "./layers/PointsLayer";
+import { SelfLayer } from "./layers/SelfLayer";
+import {
+  cameraPaddingFor,
+  EDGE,
+  GAP,
+  isLandscape,
+  TOOLBAR_HEIGHT,
+} from "./layout";
 
-const EASE = { animationMode: 'easeTo' as const };
+const EASE = { animationMode: "easeTo" as const };
 
-export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {
+export function MissionMap({
+  missionId,
+  savedCamera,
+}: {
+  missionId: string;
+  savedCamera: MissionCamera | null;
+}) {
   const ctx = useCommandContext();
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
@@ -48,8 +60,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   // Backgrounded between a gesture and map idle: fall back to the latest live camera.
   const liveCamera = useCallback(() => {
     if (!cameraMoved.current) return null;
-    const { cameraCenter, cameraZoom, cameraBearing } = useInteraction.getState();
-    return cameraCenter ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing } : null;
+    const { cameraCenter, cameraZoom, cameraBearing } =
+      useInteraction.getState();
+    return cameraCenter
+      ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing }
+      : null;
   }, []);
   const saver = useCameraPersistence(ctx, missionId, liveCamera);
   const markMoved = useCallback(() => {
@@ -59,13 +74,18 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useSelfLocation();
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
+  const editingId = useDraft((s) => (s.mode === "edit" ? s.itemId : null));
   const draftActive = useDraft((s) => s.mode !== null);
   // Pad the camera only when the panel frame changes (not on mount).
   const appliedPanel = useRef<PanelFrame | null>(null);
   useEffect(() => {
     if (panel === appliedPanel.current) return;
     appliedPanel.current = panel;
-    cameraRef.current?.setCamera({ padding: cameraPaddingFor(panel), ...EASE, animationDuration: 250 });
+    cameraRef.current?.setCamera({
+      padding: cameraPaddingFor(panel),
+      ...EASE,
+      animationDuration: 250,
+    });
   }, [panel]);
 
   useEffect(() => () => useInteraction.getState().reset(), []);
@@ -83,15 +103,24 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       if (!centeredOnSelf.current) {
         centeredOnSelf.current = true;
         markMoved();
-        cameraRef.current?.setCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
+        cameraRef.current?.setCamera({
+          centerCoordinate,
+          zoomLevel: SELF_ZOOM,
+          animationDuration: 0,
+        });
       } else if (useInteraction.getState().followMode) {
-        cameraRef.current?.setCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
+        cameraRef.current?.setCamera({
+          centerCoordinate,
+          ...EASE,
+          animationDuration: 500,
+        });
       }
     };
     const current = usePresence.getState().selfPosition;
     if (current) onFix(current.position);
     return usePresence.subscribe((state, prev) => {
-      if (state.selfPosition && state.selfPosition !== prev.selfPosition) onFix(state.selfPosition.position);
+      if (state.selfPosition && state.selfPosition !== prev.selfPosition)
+        onFix(state.selfPosition.position);
     });
   }, [markMoved]);
 
@@ -100,22 +129,32 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useEffect(
     () =>
       useDraft.subscribe((state, prev) => {
-        if (state.coordRev === prev.coordRev || !state.coord || state.coordSource === 'crosshair') return;
+        if (
+          state.coordRev === prev.coordRev ||
+          !state.coord ||
+          state.coordSource === "crosshair"
+        )
+          return;
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
-        cameraRef.current?.setCamera({ centerCoordinate: [state.coord.lon, state.coord.lat], ...EASE, animationDuration: 400 });
+        cameraRef.current?.setCamera({
+          centerCoordinate: [state.coord.lon, state.coord.lat],
+          ...EASE,
+          animationDuration: 400,
+        });
       }),
     [markMoved, setFollowMode],
   );
 
   const togglePoint = () => {
-    if (topId === 'point.add') useMenu.getState().closeMenu();
-    else useMenu.getState().openMenu('point.add', {});
+    if (topId === "point.add") useMenu.getState().closeMenu();
+    else useMenu.getState().openMenu("point.add", {});
   };
   const onLongPress = (coord: LatLon) => {
     const current = topMenu(useMenu.getState())?.id;
-    if (current === 'point.add' || current === 'point.edit') useDraft.getState().setCoord(coord, 'press');
-    else useMenu.getState().openMenu('point.add', { at: coord });
+    if (current === "point.add" || current === "point.edit")
+      useDraft.getState().setCoord(coord, "press");
+    else useMenu.getState().openMenu("point.add", { at: coord });
   };
 
   const onUserGesture = () => {
@@ -125,11 +164,19 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const zoomBy = (delta: number) => {
     markMoved();
     const zoomLevel = clampZoom(useInteraction.getState().cameraZoom + delta);
-    cameraRef.current?.setCamera({ zoomLevel, ...EASE, animationDuration: 250 });
+    cameraRef.current?.setCamera({
+      zoomLevel,
+      ...EASE,
+      animationDuration: 250,
+    });
   };
   const northUp = () => {
     markMoved();
-    cameraRef.current?.setCamera({ heading: 0, ...EASE, animationDuration: 300 });
+    cameraRef.current?.setCamera({
+      heading: 0,
+      ...EASE,
+      animationDuration: 300,
+    });
   };
   const recenter = () => {
     const self = usePresence.getState().selfPosition?.position;
@@ -137,7 +184,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     markMoved();
     setFollowMode(true);
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
-    cameraRef.current?.setCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
+    cameraRef.current?.setCamera({
+      centerCoordinate: [self.lon, self.lat],
+      zoomLevel,
+      ...EASE,
+      animationDuration: 500,
+    });
   };
 
   return (
@@ -151,18 +203,25 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           if (cameraMoved.current) saver.schedule(camera);
         }}
         onLongPress={onLongPress}
-        onUserGesture={onUserGesture}>
-        <PointsLayer missionId={missionId} />
+        onUserGesture={onUserGesture}
+      >
+        <PointsLayer
+          missionId={missionId}
+          excludeId={editingId}
+          onItemPress={(itemId) =>
+            useMenu.getState().openMenu("point.edit", { itemId })
+          }
+        />
         {draftActive ? <DraftLayer /> : null}
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'point.add' ? 'point' : null}
+        activeTool={topId === "point.add" ? "point" : null}
         onPoint={togglePoint}
-        onMenu={() => useMenu.getState().openMenu('app.root', {})}
-        onSettings={() => useMenu.getState().openMenu('settings', {})}
+        onMenu={() => useMenu.getState().openMenu("app.root", {})}
+        onSettings={() => useMenu.getState().openMenu("settings", {})}
       />
       <MapControls
         following={followMode}
