@@ -94,6 +94,14 @@ describe('SettingsMenu', () => {
     expect(screen.getByText(/^G-M angle here: \d+\.\d° [EW]$/)).toBeTruthy();
   });
 
+  it('shows the model and manual declination in degrees and mils', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText(/^Model \(WMM2025\) here: \d+\.\d° [EW] · \d+ mils [EW]$/)).toBeTruthy();
+    await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
+    await fireEvent.changeText(screen.getByLabelText('Declination degrees'), '-9.5');
+    expect(screen.getByText('Manual: 9.5° W · 169 mils W')).toBeTruthy();
+  });
+
   it('shows the G-M angle at the crosshair', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText(/^G-M angle here: \d+\.\d° [EW]$/)).toBeTruthy();

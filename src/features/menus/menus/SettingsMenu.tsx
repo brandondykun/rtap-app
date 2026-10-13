@@ -14,7 +14,7 @@ import { useMenu } from '@/stores/menu';
 import { useSettings, type CoordinateFormat } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
-import { formatEastWest } from './settings-format';
+import { formatEastWest, formatEastWestBoth } from './settings-format';
 
 const DECLINATION_ERROR = 'Enter a number from −180 to 180 (east positive)';
 
@@ -37,7 +37,7 @@ function GridMagneticLine() {
 function ModelDeclinationHint() {
   const center = useInteraction((s) => s.cameraCenter);
   const model = center ? declination(center, new Date()) : null;
-  return model !== null ? <Text className="text-sm text-text-muted">{`Model (WMM2025) here: ${formatEastWest(model, 'deg')}`}</Text> : null;
+  return model !== null ? <Text className="text-sm text-text-muted">{`Model (WMM2025) here: ${formatEastWestBoth(model)}`}</Text> : null;
 }
 
 export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
@@ -141,7 +141,11 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
               invalid={error !== null}
               placeholder="e.g. -10.6"
             />
-            {error ? <Text className="text-sm text-danger">{error}</Text> : null}
+            {error ? (
+              <Text className="text-sm text-danger">{error}</Text>
+            ) : parseDeclination(text) !== null ? (
+              <Text className="text-sm text-text-muted">{`Manual: ${formatEastWestBoth(parseDeclination(text))}`}</Text>
+            ) : null}
           </>
         ) : null}
         <ModelDeclinationHint />

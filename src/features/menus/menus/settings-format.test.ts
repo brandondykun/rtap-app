@@ -1,4 +1,4 @@
-import { formatEastWest } from './settings-format';
+import { formatEastWest, formatEastWestBoth } from './settings-format';
 
 describe('formatEastWest', () => {
   it.each([
@@ -11,5 +11,12 @@ describe('formatEastWest', () => {
     [Number.NaN, 'mil', '—'],
   ] as const)('%p %s → %s', (deg, unit, expected) => {
     expect(formatEastWest(deg, unit)).toBe(expected);
+  });
+});
+
+describe('formatEastWestBoth', () => {
+  it('shows degrees and mils', () => {
+    expect(formatEastWestBoth(-10.64)).toBe('10.6° W · 189 mils W');
+    expect(formatEastWestBoth(null)).toBe('—');
   });
 });

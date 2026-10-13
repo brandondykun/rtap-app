@@ -8,3 +8,9 @@ export function formatEastWest(deg: number | null, unit: AngleUnit): string {
   const abs = Math.abs(deg);
   return unit === 'mil' ? `${Math.round(degToMils(abs))} mils ${side}` : `${abs.toFixed(1)}° ${side}`;
 }
+
+/** Declination in both units: "10.6° W · 188 mils W". */
+export function formatEastWestBoth(deg: number | null): string {
+  if (deg === null || !Number.isFinite(deg)) return '—';
+  return `${formatEastWest(deg, 'deg')} · ${formatEastWest(deg, 'mil')}`;
+}
