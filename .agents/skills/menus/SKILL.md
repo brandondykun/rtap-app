@@ -45,8 +45,8 @@ Reset `useMenu`, `useDraft`, `useToast` in `beforeEach`.
 
 ## Item menus
 
-Units, points and lines each have an Add and an Edit menu (`unit.add`, `unit.edit`,
-`point.add`, `point.edit`, `line.add`, `line.edit`). They share `AddItemPanel` / `EditItemPanel`
+Units, points, lines and polygons each have an Add and an Edit menu (`unit.add`, `unit.edit`,
+`point.add`, `point.edit`, `line.add`, `line.edit`, `polygon.add`, `polygon.edit`). They share `AddItemPanel` / `EditItemPanel`
 (header, Add/Save/Cancel, Hidden, Delete) and differ only in the form passed in and the
 category's adapter in `ITEM_ADAPTERS` (`item-adapters.ts`: can it save, place, update, load a
 saved item into the draft). Open an existing item with `openItemMenu(itemId, { kind, sidc })`,
@@ -56,3 +56,6 @@ which picks the right menu by `itemCategory`.
 typed-point row (`MgrsInput` + an icon-only `MenuButton`). While a line is drawn (`line.add` or an
 unlocked `line.edit`), `MissionMap` shows `LineDrawBar` and routes map taps, long-presses and
 symbol taps to the line draft.
+
+`PolygonForm` switches between the points list (as `LineForm`) and a circle (`LocationSection` for
+the center, a radius field with m/km).

@@ -154,3 +154,9 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 71 | Tap a unit / point: the end snaps onto the symbol and its menu does not open; tap my blue marker: snaps to me | PENDING |
 | 72 | Readout matches the range/bearing elsewhere (deg/mils, GRID/TRUE/MAG from Settings); chip at the line's middle is readable on Satellite, Topo and Dark | PENDING |
 | 73 | Set at crosshair and × (Stop measuring) behave; opening Layers or Menu stops measuring; long-press does nothing while measuring | PENDING |
+| 74 | Toolbar reads UNIT · POINT · LINE · POLYGON · MEASURE · LAYERS; POLYGON opens "Add polygon" with the draw bar | PENDING |
+| 75 | Points: tap/Add at center/typed grids build a closed, lightly filled shape; side distances (incl. the closing side) and perimeter · area in the header; × disabled at 3 | PENDING |
+| 76 | Circle: Set center at crosshair / map tap / typed center, then Set edge at crosshair / map tap or a typed radius (m or km); ring, "r 500 m" chip and area update | PENDING |
+| 77 | Each polygon type's look on Satellite, Topo and Dark (dashed FFA/NFA/RFA/ACA); "OBJ IRON" label centered | PENDING |
+| 78 | Tap a saved polygon's outline or label: the map fits it and "Polygon" opens; a tap inside its fill does not open it; Edit / Save / Cancel; edit a circle's radius; Hidden; Delete polygon | PENDING |
+| 79 | Layers: polygon rows with a swatch and "Objective · 0.42 km²" / "No fire area · r 500 m"; search by type; summary and mission rows count polygons | PENDING |

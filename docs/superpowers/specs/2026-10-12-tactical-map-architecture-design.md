@@ -222,6 +222,12 @@ The MEASURE tool is a map mode, not a menu or a stored item: `stores/measure.ts`
 live at the crosshair), `MeasureLayer`, and `MeasureCard` in the top-left stack. Taps snap to
 units, points and the user's marker. See `2026-10-13-measure-design.md`.
 
+### 5.4d Polygons
+Military areas (10 types) are `kind = 'polygon'` items: a closed GeoJSON Polygon in `geometry`
+(a circle is a 64-point ring) and `{ polygonType, shape, center?, radiusM? }` in `style`. They are
+drawn point by point or as a circle (center + radius); only their outline and label are tappable.
+See `2026-10-13-polygons-design.md`.
+
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.

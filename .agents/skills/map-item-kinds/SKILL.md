@@ -48,3 +48,11 @@ Lines (`kind = 'line'`) follow the recipe end to end: `line-types.ts` (types and
 FLOT bumps, labels), images in `build-map-images.ts`, `line-draft.ts` + the draft store's
 vertices/undo, `DraftLineLayer`, `LineDrawBar`, and `ITEM_ADAPTERS.line` so `AddItemPanel` /
 `EditItemPanel` host `LineForm`. New kinds add an adapter rather than new panels.
+
+## Worked example: polygons
+
+Polygons reuse the line recipe: `polygon-types.ts`, `polygonGeometry` / `parsePolygonGeometry`,
+`placePolygon` / `updatePolygon`, `polygon-selectors.ts` (fills + outlines/labels), `PolygonsLayer`
+(fill in its own non-touchable source), the draft store (line vertices with a 3-point minimum;
+the circle center is the draft `coord`), `DraftPolygonLayer`, and `ITEM_ADAPTERS.polygon` so the
+shared panels host `PolygonForm`.
