@@ -44,14 +44,4 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(onLayers).toHaveBeenCalled();
   });
-
-  it('has a GPS toggle that is highlighted only while on', async () => {
-    const onGps = jest.fn();
-    await renderWithProviders(<Toolbar landscape={false} activeTool="layers" onGps={onGps} />);
-    expect(screen.getByLabelText('GPS')).not.toBeSelected();
-    await fireEvent.press(screen.getByLabelText('GPS'));
-    expect(onGps).toHaveBeenCalledTimes(1);
-    await renderWithProviders(<Toolbar landscape={false} activeTool={null} gpsOn onGps={onGps} />);
-    expect(screen.getByLabelText('GPS')).toBeSelected();
-  });
 });

@@ -206,8 +206,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         activeTool={topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
         onPoint={togglePoint}
         onLayers={toggleLayers}
-        gpsOn={showGps}
-        onGps={toggleShowGps}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
       />
@@ -218,6 +216,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
+        gpsOn={showGps}
+        onGps={toggleShowGps}
         panel={panel}
       />
       {panel ? null : <MapBottomLeft />}

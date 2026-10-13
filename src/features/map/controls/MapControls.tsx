@@ -15,24 +15,29 @@ type Props = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onRecenter: () => void;
+  /** The GPS readout toggle, under north-up: independent of the tools and menus, highlighted while on. */
+  gpsOn: boolean;
+  onGps: () => void;
   panel: PanelFrame | null;
 };
 
-/** Right-edge controls: north-up under the toolbar; zoom and recenter at the bottom. */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel }: Props) {
+/** Right-edge controls: north-up and the GPS toggle under the toolbar; zoom and recenter at the bottom. */
+export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, gpsOn, onGps, panel }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
-  // A tall bottom sheet (full detent) can leave no room below the north-up button: hide recenter rather than overlap.
+  // A tall bottom sheet (full detent) can leave no room below the top buttons (north-up, GPS):
+  // hide recenter rather than overlap.
   const noRoom =
     panel?.side === 'bottom' &&
-    height - panel.size < insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + CONTROL_SIZE + EDGE;
+    height - panel.size < insets.top + EDGE + TOOLBAR_HEIGHT + GAP + 2 * (CONTROL_SIZE + GAP) + CONTROL_SIZE + EDGE;
   return (
     <>
-      <View className="absolute" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, right }}>
+      <View className="absolute" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, right, gap: GAP }}>
         <MapButton label="North up" onPress={onNorthUp}>
           <NorthNeedle />
         </MapButton>
+        <MapButton label="GPS" icon="navigation-outline" active={gpsOn} onPress={onGps} />
       </View>
       <View
         testID="map-controls-bottom"

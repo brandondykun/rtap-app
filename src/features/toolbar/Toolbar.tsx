@@ -16,9 +16,6 @@ type Props = {
   onMenu?: () => void;
   onPoint?: () => void;
   onLayers?: () => void;
-  /** The GPS readout toggle: independent of the tools and menus, highlighted while on. */
-  gpsOn?: boolean;
-  onGps?: () => void;
   onSettings?: () => void;
 };
 
@@ -26,7 +23,7 @@ type Props = {
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onPoint, onLayers, gpsOn = false, onGps, onSettings }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onPoint, onLayers, onSettings }: Props) {
   const insets = useSafeAreaInsets();
   const position = landscape
     ? { top: insets.top + EDGE, right: insets.right + EDGE }
@@ -36,7 +33,6 @@ export function Toolbar({ landscape, activeTool, onMenu, onPoint, onLayers, gpsO
     <>
       <ToolButton icon="map-marker-outline" label="POINT" active={activeTool === 'point'} onPress={onPoint} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
-      <ToolButton icon="crosshairs-gps" label="GPS" active={gpsOn} onPress={onGps} />
     </>
   );
 

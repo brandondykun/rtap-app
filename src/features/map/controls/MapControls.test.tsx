@@ -10,7 +10,7 @@ import { MapControls } from './MapControls';
 beforeEach(() => useInteraction.setState(INITIAL_INTERACTION));
 
 function handlers() {
-  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn() };
+  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn(), gpsOn: false, onGps: jest.fn() };
 }
 
 describe('MapControls', () => {
@@ -55,5 +55,18 @@ describe('MapControls', () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} />);
     expect(screen.queryByLabelText('Recenter on me')).toBeNull();
+  });
+
+  it('has a GPS toggle under north-up that is highlighted only while on', async () => {
+    const h = handlers();
+    await renderWithProviders(<MapControls following={false} canRecenter {...h} panel={null} />);
+    const north = screen.getByLabelText('North up');
+    const gps = screen.getByLabelText('GPS');
+    expect(gps.parent?.parent).toBe(north.parent?.parent);
+    expect(gps).not.toBeSelected();
+    await fireEvent.press(gps);
+    expect(h.onGps).toHaveBeenCalledTimes(1);
+    await renderWithProviders(<MapControls following={false} canRecenter {...h} gpsOn panel={null} />);
+    expect(screen.getByLabelText('GPS')).toBeSelected();
   });
 });
