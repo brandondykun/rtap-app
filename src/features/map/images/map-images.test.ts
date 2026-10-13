@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { PRESET_SIDCS } from '@/features/symbology/presets';
+import { KNOWN_SIDCS } from '@/features/symbology/categories';
 
 import { LABEL_CHIP_IMAGE_OPTIONS, LABEL_CHIP_SPEC } from './map-image-specs';
 import { MAP_IMAGE_IDS, MAP_IMAGES } from './map-images';
@@ -9,8 +9,8 @@ import { MAP_IMAGE_IDS, MAP_IMAGES } from './map-images';
 const ASSETS = join(__dirname, '../../../../assets/map');
 
 describe('map images', () => {
-  it('registers every preset symbol and the map images', () => {
-    expect(Object.keys(MAP_IMAGES).sort()).toEqual([...PRESET_SIDCS, ...Object.values(MAP_IMAGE_IDS)].sort());
+  it('registers every unit and point symbol and the map images', () => {
+    expect(Object.keys(MAP_IMAGES).sort()).toEqual([...KNOWN_SIDCS, ...Object.values(MAP_IMAGE_IDS)].sort());
   });
 
   it('has the generated files on disk', () => {

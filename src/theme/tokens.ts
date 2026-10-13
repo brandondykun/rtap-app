@@ -43,6 +43,9 @@ const dark = {
   self: 'sky-400',
   'map-label-bg': { color: 'neutral-950', alpha: 0.85 },
   'map-label-text': 'stone-50',
+  /** Control-measure point symbols (build-time only): white lines with a dark halo. */
+  'point-symbol': 'stone-50',
+  'point-symbol-halo': 'neutral-950',
 } as const satisfies Record<string, TokenValue>;
 
 export type SemanticToken = keyof typeof dark;

@@ -24,4 +24,12 @@ export const SYMBOL_IMAGES: Record<string, number> = {
   'SUGPUCR--------': require('../../../assets/symbols/SUGPUCR--------.png'),
   'SUGPUSM--------': require('../../../assets/symbols/SUGPUSM--------.png'),
   'SUGPUCE--------': require('../../../assets/symbols/SUGPUCE--------.png'),
+  'GFGPGPPK------X': require('../../../assets/symbols/GFGPGPPK------X.png'),
+  'GFGPDPO-------X': require('../../../assets/symbols/GFGPDPO-------X.png'),
+  'GFGPAAL-------X': require('../../../assets/symbols/GFGPAAL-------X.png'),
+  'GFGPGPPS------X': require('../../../assets/symbols/GFGPGPPS------X.png'),
+  'GFGPGPPE------X': require('../../../assets/symbols/GFGPGPPE------X.png'),
+  'GFGPGPPR------X': require('../../../assets/symbols/GFGPGPPR------X.png'),
+  'GFGPGPPL------X': require('../../../assets/symbols/GFGPGPPL------X.png'),
+  'GFGPDPT-------X': require('../../../assets/symbols/GFGPDPT-------X.png'),
 };

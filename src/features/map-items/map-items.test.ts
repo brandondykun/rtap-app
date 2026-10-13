@@ -169,4 +169,13 @@ describe('map items', () => {
     expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([ids[1]]);
     expect(await setItemsHidden(ctx, [], true)).toEqual({ ok: true, value: undefined });
   });
+
+  it('accepts unit and point symbols and rejects unknown ones', async () => {
+    const ctx = makeTestContext();
+    expect((await placePoint(ctx, { missionId: 'm1', coord: at, sidc: 'GFGPGPPK------X', name: 'CP-1' })).ok).toBe(true);
+    expect(await placePoint(ctx, { missionId: 'm1', coord: at, sidc: 'garbage', name: 'X' })).toMatchObject({ ok: false, error: 'invalid_symbol' });
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!r.ok) throw new Error('setup');
+    expect(await updateItem(ctx, r.value.id, { sidc: 'garbage' })).toMatchObject({ ok: false, error: 'invalid_symbol' });
+  });
 });

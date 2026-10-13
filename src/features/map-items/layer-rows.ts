@@ -1,4 +1,5 @@
-import { DEFAULT_SIDC, PRESET_SIDCS } from '@/features/symbology/presets';
+import { KNOWN_SIDCS } from '@/features/symbology/categories';
+import { DEFAULT_SIDC } from '@/features/symbology/presets';
 import type { LatLon } from '@/lib/geo/types';
 
 import { pointCoord } from './geometry';
@@ -7,7 +8,6 @@ import type { MapItemSnapshot } from './repository';
 /** The Layers list shows at most this many rows; search narrows the rest. */
 export const LAYER_ROW_LIMIT = 100;
 
-const KNOWN_SIDCS: ReadonlySet<string> = new Set(PRESET_SIDCS);
 // One shared collator: localeCompare with options rebuilds collation per comparison (slow for 5k names).
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 

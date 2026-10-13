@@ -1,9 +1,8 @@
-import { DEFAULT_SIDC, PRESET_SIDCS } from '@/features/symbology/presets';
+import { KNOWN_SIDCS } from '@/features/symbology/categories';
+import { DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { parsePointGeometry, type PointGeometry } from './geometry';
 import type { MapItemSnapshot } from './repository';
-
-const KNOWN_SIDCS: ReadonlySet<string> = new Set(PRESET_SIDCS);
 
 export type PointFeature = {
   type: 'Feature';

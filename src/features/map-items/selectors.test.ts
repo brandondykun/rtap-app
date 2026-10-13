@@ -17,6 +17,12 @@ function item(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
 }
 
 describe('createPointFeatureSelector', () => {
+  it('keeps point SIDCs and falls back to the default symbol for null or unknown codes', () => {
+    const select = createPointFeatureSelector();
+    const fc = select([item('p', 1, { sidc: 'GFGPGPPK------X' }), item('n', 1, { sidc: null }), item('u', 1, { sidc: 'garbage' })]);
+    expect(fc.features.map((f) => f.properties.sidc)).toEqual(['GFGPGPPK------X', DEFAULT_SIDC, DEFAULT_SIDC]);
+  });
+
   it('builds a FeatureCollection with id, sidc and name properties', () => {
     const select = createPointFeatureSelector();
     const fc = select([item('a', 1)]);
