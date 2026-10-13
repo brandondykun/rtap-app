@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
@@ -75,5 +75,29 @@ describe('menu primitives', () => {
     expect(onConfirm).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Tap again to delete'));
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('MenuActions disarms after a pause and after confirming', async () => {
+    jest.useFakeTimers();
+    try {
+      const onConfirm = jest.fn();
+      await renderWithProviders(
+        <MenuActions destructive={{ label: 'Delete point', confirmLabel: 'Tap again to delete', onConfirm }} />,
+      );
+      await fireEvent.press(screen.getByText('Delete point'));
+      expect(screen.getByText('Tap again to delete')).toBeTruthy();
+      await act(async () => {
+        jest.advanceTimersByTime(4000);
+      });
+      expect(screen.getByText('Delete point')).toBeTruthy();
+      expect(onConfirm).not.toHaveBeenCalled();
+
+      await fireEvent.press(screen.getByText('Delete point'));
+      await fireEvent.press(screen.getByText('Tap again to delete'));
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Delete point')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
