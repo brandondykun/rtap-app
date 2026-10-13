@@ -15,6 +15,7 @@ export const palette = {
   'green-500': '#22c55e',
   'red-400': '#f87171',
   'red-500': '#ef4444',
+  'blue-400': '#60a5fa',
   'sky-300': '#7dd3fc',
   'sky-400': '#38bdf8',
   'yellow-300': '#fde047',
@@ -43,8 +44,8 @@ const dark = {
   self: 'sky-400',
   'map-label-bg': { color: 'neutral-950', alpha: 0.85 },
   'map-label-text': 'stone-50',
-  /** Control-measure point symbols (build-time only): white lines with a dark halo. */
-  'point-symbol': 'stone-50',
+  /** Control-measure point symbols (build-time only): blue lines with a dark halo. */
+  'point-symbol': 'blue-400',
   'point-symbol-halo': 'neutral-950',
 } as const satisfies Record<string, TokenValue>;
 
