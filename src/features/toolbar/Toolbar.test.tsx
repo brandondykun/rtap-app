@@ -74,4 +74,16 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('MEASURE'));
     expect(onMeasure).toHaveBeenCalled();
   });
+
+  it('orders UNIT, POINT, LINE, POLYGON, MEASURE, LAYERS and marks POLYGON active', async () => {
+    const onPolygon = jest.fn();
+    await renderWithProviders(
+      <Toolbar landscape={false} activeTool="polygon" onUnit={jest.fn()} onPoint={jest.fn()} onLine={jest.fn()} onPolygon={onPolygon} onMeasure={jest.fn()} onLayers={jest.fn()} />,
+    );
+    const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE', 'LAYERS']);
+    expect(screen.getByLabelText('POLYGON')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('POLYGON'));
+    expect(onPolygon).toHaveBeenCalled();
+  });
 });

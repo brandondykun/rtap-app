@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { placeLine, placePoint } from '@/features/map-items/commands';
+import { placeLine, placePoint, placePolygon } from '@/features/map-items/commands';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
@@ -424,6 +424,39 @@ describe('MapScreen', () => {
     );
     expect(useDraft.getState().vertices).toHaveLength(4);
     expect(screen.getByRole('header')).toHaveTextContent('Add line');
+  });
+
+  it('POLYGON: taps add points, a unit tap adds a point, Circle takes center then edge, and a saved fill is not tappable', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const u = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.95, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    const saved = await placePolygon(ctx, { missionId: r.value.id, polygonType: 'objective', name: 'IRON', shape: { kind: 'points', points: [{ lat: 39, lon: -77 }, { lat: 39.01, lon: -77 }, { lat: 39, lon: -76.99 }] } });
+    if (!u.ok || !saved.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await waitFor(() => expect(mapboxMock().__props.ShapeSource['polygon-fills']).toBeDefined());
+    expect(mapboxMock().__props.ShapeSource['polygon-fills'].onPress).toBeUndefined();
+    await fireEvent.press(await screen.findByLabelText('POLYGON'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Add polygon');
+    expect(screen.getByLabelText('POLYGON')).toBeSelected();
+    const tap = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    await tap(-77.01, 38.91);
+    await tap(-77.02, 38.92);
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({
+        features: [{ properties: { id: u.value.id, sidc: 'SHGPUCI--------' } }],
+        coordinates: { latitude: 38.95, longitude: -77 },
+        point: {},
+      }),
+    );
+    expect(useDraft.getState().vertices).toHaveLength(3);
+    expect(screen.getByRole('header')).toHaveTextContent('Add polygon');
+    await fireEvent.press(screen.getByLabelText('Circle'));
+    await tap(-77, 38.9);
+    expect(useDraft.getState().coord).toEqual({ lat: 38.9, lon: -77 });
+    await tap(-77, 38.9045);
+    expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
   });
 
   describe('measure', () => {

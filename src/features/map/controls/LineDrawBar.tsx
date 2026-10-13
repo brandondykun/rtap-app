@@ -11,7 +11,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { CONTROL_SIZE, EDGE, GAP } from '../layout';
 
-/** While drawing a line: what the next map tap does, plus Add/Move at center and Undo/Done. */
+/** While drawing a line or polygon: Add/Move at center and Undo/Done; for a circle, Set center / Set edge at the crosshair. */
 export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -19,13 +19,20 @@ export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
   const insertAfter = useDraft((s) => s.insertAfter);
   const canUndo = useDraft((s) => s.history.length > 0);
   const moving = selected !== null && insertAfter === null;
+  const circle = useDraft((s) => s.category === 'polygon' && s.polygonShape === 'circle');
+  const hasCenter = useDraft((s) => s.coord !== null);
 
   const atCenter = () => {
     const center = useInteraction.getState().cameraCenter;
     if (!center) return;
-    if (moving) useDraft.getState().moveVertex(selected!, center);
-    else useDraft.getState().addVertex(center);
+    const d = useDraft.getState();
+    if (circle) {
+      if (d.coord === null) d.setCoord(center, 'crosshair');
+      else d.setCircleEdge(center);
+    } else if (moving) d.moveVertex(selected!, center);
+    else d.addVertex(center);
   };
+  const centerLabel = circle ? (hasCenter ? 'Set edge at crosshair' : 'Set center at crosshair') : moving ? 'Move to center' : 'Add at center';
 
   return (
     <View
@@ -41,8 +48,8 @@ export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
         Tap map
       </Text>
       <View className="ml-auto flex-row gap-2">
-        <MenuButton label={moving ? 'Move to center' : 'Add at center'} icon={<CrosshairGlyph size={16} color={colors.text} />} onPress={atCenter} />
-        {moving ? (
+        <MenuButton label={centerLabel} icon={<CrosshairGlyph size={16} color={colors.text} />} onPress={atCenter} />
+        {circle ? null : moving ? (
           <MenuButton label="Done" icon="check" onPress={() => useDraft.getState().selectVertex(null)} />
         ) : (
           <MenuButton label="Undo" icon="undo" iconOnly onPress={() => useDraft.getState().undo()} disabled={!canUndo} />

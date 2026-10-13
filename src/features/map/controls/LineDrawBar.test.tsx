@@ -42,4 +42,18 @@ describe('LineDrawBar', () => {
     await act(async () => useDraft.getState().startInsertAfter(0));
     expect(screen.getByText('Tap map')).toBeTruthy();
   });
+
+  it('guides a circle: center at the crosshair, then the edge', async () => {
+    await act(async () => {
+      useDraft.getState().startAddPolygon();
+      useDraft.getState().setPolygonShape('circle');
+    });
+    await renderWithProviders(<LineDrawBar panel={null} />);
+    await fireEvent.press(screen.getByLabelText('Set center at crosshair'));
+    expect(useDraft.getState().coord).toEqual(C);
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9045, lon: -77 }, zoom: 14, bearing: 0 }));
+    await fireEvent.press(screen.getByLabelText('Set edge at crosshair'));
+    expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
+    expect(screen.queryByLabelText('Undo')).toBeNull();
+  });
 });

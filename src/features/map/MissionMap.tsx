@@ -31,6 +31,7 @@ import { MapTopLeft } from './controls/MapTopLeft';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
+import { DraftPolygonLayer } from './layers/DraftPolygonLayer';
 import { LinesLayer } from './layers/LinesLayer';
 import { MeasureLayer } from './layers/MeasureLayer';
 import { PointsLayer } from './layers/PointsLayer';
@@ -86,7 +87,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const drawingLine = useDraft((s) => s.mode !== null && s.category === 'line');
   const draftActive = useDraft((s) => s.mode !== null);
   const measuring = useMeasure((s) => s.active);
-  const lineDrawing = useDraft((s) => s.category === 'line' && s.mode !== null && !s.locked);
+  const lineDrawing = useDraft((s) => (s.category === 'line' || s.category === 'polygon') && s.mode !== null && !s.locked);
+  const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
   // A line fit still in flight: a padding change re-issues it instead of cancelling it.
@@ -200,32 +202,36 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (topId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
   };
-  const toggleAdd = (id: 'unit.add' | 'point.add' | 'line.add') => {
+  const toggleAdd = (id: 'unit.add' | 'point.add' | 'line.add' | 'polygon.add') => {
     if (topId === id) useMenu.getState().closeMenu();
     else if (id === 'unit.add') useMenu.getState().openMenu('unit.add', {});
     else if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
+    else if (id === 'polygon.add') useMenu.getState().openMenu('polygon.add', {});
     else useMenu.getState().openMenu('point.add', {});
   };
-  const isDrawingLine = () => {
+  const isDrawing = () => {
     const d = useDraft.getState();
-    return d.category === 'line' && d.mode !== null && !d.locked;
+    return (d.category === 'line' || d.category === 'polygon') && d.mode !== null && !d.locked;
   };
-  /** While a line is being drawn, map taps (and long-presses, and taps on symbols) place line points. */
-  const placeLinePoint = (at: LatLon) => {
+  /** While a line or polygon is being drawn, map taps (and long-presses, and taps on symbols) go to it. */
+  const placeDraftPoint = (at: LatLon) => {
     const d = useDraft.getState();
-    if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
+    if (d.category === 'polygon' && d.polygonShape === 'circle') {
+      if (d.coord === null) d.setCoord(at, 'press');
+      else d.setCircleEdge(at);
+    } else if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
     else d.addVertex(at);
   };
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
     if (useMeasure.getState().active) useMeasure.getState().place(coord);
-    else if (isDrawingLine()) placeLinePoint(coord);
+    else if (isDrawing()) placeDraftPoint(coord);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
     // Measuring snaps to the symbol itself (lines pass no itemAt: the tap point is used).
     if (useMeasure.getState().active) useMeasure.getState().place(itemAt ?? at);
-    else if (isDrawingLine()) placeLinePoint(at);
+    else if (isDrawing()) placeDraftPoint(at);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
@@ -235,8 +241,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const onLongPress = (coord: LatLon) => {
     if (useMeasure.getState().active) return;
     notifyPlaced();
-    if (isDrawingLine()) {
-      placeLinePoint(coord);
+    if (isDrawing()) {
+      placeDraftPoint(coord);
       return;
     }
     const current = topMenu(useMenu.getState())?.id;
@@ -295,16 +301,18 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
         {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
+        {drawingPolygon ? <DraftPolygonLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         {measuring ? <MeasureLayer /> : null}
         <SelfLayer onPress={measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={measuring ? 'measure' : topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'layers' ? 'layers' : null}
+        activeTool={measuring ? 'measure' : topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : topId === 'layers' ? 'layers' : null}
         onUnit={() => toggleAdd('unit.add')}
         onPoint={() => toggleAdd('point.add')}
         onLine={() => toggleAdd('line.add')}
+        onPolygon={() => toggleAdd('polygon.add')}
         onMeasure={toggleMeasure}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
