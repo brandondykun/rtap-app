@@ -10,7 +10,7 @@ import {
   observeHiddenItemIds,
   observeItem,
   observeMissionItems,
-  suggestPointName,
+  suggestName,
 } from './repository';
 
 const HOSTILE_INF = 'SHGPUCI--------';
@@ -120,7 +120,7 @@ describe('map items', () => {
     if (!five.ok) throw new Error('setup failed');
     await deleteItem(ctx, five.value.id);
     await placePoint(ctx, { missionId: 'm2', coord: at, sidc: HOSTILE_INF, name: 'HOS-9' });
-    expect(await suggestPointName(ctx.db, 'm1', 'hostile')).toBe('HOS-5');
+    expect(await suggestName(ctx.db, 'm1', 'HOS')).toBe('HOS-5');
   });
 
   it('treats deleted items as not found', async () => {

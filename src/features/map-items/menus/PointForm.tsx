@@ -20,7 +20,8 @@ import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { suggestPointName } from '../repository';
+import { NAME_PREFIX } from '../naming';
+import { suggestName } from '../repository';
 
 const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
 const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label }));
@@ -76,7 +77,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   useEffect(() => {
     if (!needsName) return;
     let live = true;
-    void suggestPointName(ctx.db, missionId, affiliation).then((suggestion) => {
+    void suggestName(ctx.db, missionId, NAME_PREFIX[affiliation]).then((suggestion) => {
       if (live && useDraft.getState().affiliation === affiliation) useDraft.getState().setAutoName(suggestion);
     });
     return () => {

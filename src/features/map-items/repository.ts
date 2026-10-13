@@ -1,12 +1,11 @@
 import { Q, type Database } from '@nozbe/watermelondb';
 import { map, type Observable } from 'rxjs';
 
-import type { Affiliation } from '@/features/symbology/presets';
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
 import { Tables } from '@/lib/db/schema';
 
-import { nextAutoName } from './naming';
+import { nextNameForPrefix } from './naming';
 
 export type MapItemSnapshot = {
   id: string;
@@ -78,6 +77,6 @@ export async function findItemViewState(db: Database, mapItemId: string): Promis
   return rows[0] ?? null;
 }
 
-export async function suggestPointName(db: Database, missionId: string, affiliation: Affiliation): Promise<string> {
-  return nextAutoName(affiliation, await getMissionItemNames(db, missionId));
+export async function suggestName(db: Database, missionId: string, prefix: string): Promise<string> {
+  return nextNameForPrefix(prefix, await getMissionItemNames(db, missionId));
 }

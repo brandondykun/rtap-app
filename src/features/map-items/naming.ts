@@ -6,8 +6,7 @@ export const NAME_PREFIX = { friend: 'FRD', hostile: 'HOS', neutral: 'NEU', unkn
 >;
 
 /** `<PREFIX>-<n>` where n is one more than the highest existing number for that prefix. */
-export function nextAutoName(affiliation: Affiliation, existingNames: readonly string[]): string {
-  const prefix = NAME_PREFIX[affiliation];
+export function nextNameForPrefix(prefix: string, existingNames: readonly string[]): string {
   const pattern = new RegExp(`^${prefix}-(\\d+)$`, 'i');
   let max = 0;
   for (const name of existingNames) {
@@ -15,4 +14,8 @@ export function nextAutoName(affiliation: Affiliation, existingNames: readonly s
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
   return `${prefix}-${max + 1}`;
+}
+
+export function nextAutoName(affiliation: Affiliation, existingNames: readonly string[]): string {
+  return nextNameForPrefix(NAME_PREFIX[affiliation], existingNames);
 }
