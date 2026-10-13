@@ -119,7 +119,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 36 | Tapping a Layers row while the search keyboard is up dismisses the keyboard before the point opens | PASS (iOS, 2026-10-13) |
 | 37 | Landscape: the basemap segments fit the drawer and the points list scrolls to the last row | PASS (iOS, 2026-10-13) |
 | 38 | VoiceOver: rows read the point name, then "Hidden" and the coordinate as the hint; the eye button reads "Hide …"/"Show …" | PENDING |
-| 39 | Settings → manual declination: type 200 and tap Close — the old value stays; type -9.5 and tap Close with the keyboard up — -9.5 is kept | PENDING |
-| 40 | Drag Add Point to peek, open Settings, close it, tap POINT: Add Point opens at half, not peek | PENDING |
-| 41 | Recenter (follow on), then open Settings or Layers: the map re-centers on you above the panel right away, not a second later | PENDING |
-| 42 | Long-press one spot, then quickly long-press another while the map is still moving: the map ends with the second spot centered above the panel | PENDING |
+| 39 | Settings → manual declination: type 200 and tap Close — the old value stays; type -9.5 and tap Close with the keyboard up — -9.5 is kept | PASS (iOS, 2026-10-13) |
+| 40 | Drag Add Point to peek, open Settings, close it, tap POINT: Add Point opens at half, not peek | PASS (iOS, 2026-10-13) |
+| 41 | Recenter (follow on), then open Settings or Layers: the map re-centers on you above the panel right away, not a second later | PASS (iOS, 2026-10-13) |
+| 42 | Long-press one spot, then quickly long-press another while the map is still moving: the map ends with the second spot centered above the panel | N/A (iOS, 2026-10-13): the move ends before a second long-press is possible; covered by the MapScreen test instead |
