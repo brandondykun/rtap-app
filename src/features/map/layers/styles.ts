@@ -12,9 +12,15 @@ import { MAP_IMAGE_IDS } from '../images/map-images';
  */
 export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
 
+/** Scale for mission symbols (the generated PNGs are ~32 pt tall at 1). */
+export const MARKER_ICON_SIZE = 0.8;
+/** Chip padding around label text, [top, right, bottom, left] in pt. */
+const LABEL_CHIP_PADDING: [number, number, number, number] = [1, 4, 1, 4];
+
 /** Symbol icons: every point always shows; collisions never hide a symbol. */
 export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
   iconImage: ['get', 'sidc'],
+  iconSize: MARKER_ICON_SIZE,
   iconAllowOverlap: true,
   iconIgnorePlacement: true,
 };
@@ -27,10 +33,11 @@ export function makePointLabelStyle(colors: Record<SemanticToken, string>): Symb
     textSize: 12,
     textColor: colors['map-label-text'],
     textAnchor: 'top',
-    textOffset: [0, 1.7],
+    // Just below the scaled symbol (half its height ≈ 13 pt).
+    textOffset: [0, 1.3],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
-    iconTextFitPadding: [2, 6, 2, 6],
+    iconTextFitPadding: LABEL_CHIP_PADDING,
   };
 }
 
@@ -56,6 +63,7 @@ export const DRAFT_RING_STYLE: SymbolLayerStyle = {
 
 export const DRAFT_SYMBOL_STYLE: SymbolLayerStyle = {
   iconImage: ['get', 'sidc'],
+  iconSize: MARKER_ICON_SIZE,
   iconAllowOverlap: true,
   iconIgnorePlacement: true,
 };
@@ -71,7 +79,7 @@ export function makeDraftLabelStyle(colors: Record<SemanticToken, string>): Symb
     textOffset: [0, 3.3],
     iconImage: MAP_IMAGE_IDS.labelChipAccent,
     iconTextFit: 'both',
-    iconTextFitPadding: [2, 6, 2, 6],
+    iconTextFitPadding: LABEL_CHIP_PADDING,
     textAllowOverlap: true,
     iconAllowOverlap: true,
   };
@@ -91,7 +99,7 @@ export function makeRangeLabelStyle(colors: Record<SemanticToken, string>): Symb
     textColor: colors.accent,
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
-    iconTextFitPadding: [2, 6, 2, 6],
+    iconTextFitPadding: LABEL_CHIP_PADDING,
     textAllowOverlap: true,
     iconAllowOverlap: true,
   };
