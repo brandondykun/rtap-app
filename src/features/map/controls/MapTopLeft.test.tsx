@@ -43,4 +43,10 @@ describe('MapTopLeft', () => {
     await renderWithProviders(<MapTopLeft landscape panel={{ side: 'left', size: 320 }} />);
     expect(screen.getByTestId('map-top-left')).toHaveStyle({ left: 320 + EDGE });
   });
+
+  it('reserves no space for the location notice when it is not showing', async () => {
+    useSettings.setState({ showGps: true });
+    await renderWithProviders(<MapTopLeft landscape={false} panel={null} />);
+    expect(screen.getByTestId('map-top-left').children).toEqual([screen.getByTestId('gps-readout')]);
+  });
 });

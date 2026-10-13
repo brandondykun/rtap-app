@@ -29,11 +29,7 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
       }}>
       {/* The notice hides while a panel is open, as before; the GPS readout stays. */}
       {/* The wide notice keeps its old place below the toolbar (it would reach under it in landscape). */}
-      {panel ? null : (
-        <View style={{ marginTop: Math.max(0, bannerTop(landscape) - top) }}>
-          <LocationBanner />
-        </View>
-      )}
+      {panel ? null : <LocationBanner marginTop={Math.max(0, bannerTop(landscape) - top)} />}
       {showGps ? <GpsReadout /> : null}
     </View>
   );
