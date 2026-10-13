@@ -1,11 +1,12 @@
 import { midpoint } from '@/lib/geo/measure/geodesic';
+import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
 import type { LatLon } from '@/lib/geo/types';
 
 export type DraftRole = 'draft' | 'range' | 'range-label';
 
 type DraftFeature =
-  | { type: 'Feature'; id: string; geometry: { type: 'Point'; coordinates: [number, number] }; properties: { role: DraftRole; sidc?: string; label?: string } }
-  | { type: 'Feature'; id: string; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: { role: DraftRole; sidc?: string; label?: string } };
+  | { type: 'Feature'; id: string; geometry: { type: 'Point'; coordinates: [number, number] }; properties: { role: DraftRole; sidc?: string; label?: string; category?: ItemCategory } }
+  | { type: 'Feature'; id: string; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: { role: DraftRole; sidc?: string; label?: string; category?: ItemCategory } };
 
 export type DraftFeatureCollection = { type: 'FeatureCollection'; features: DraftFeature[] };
 
@@ -17,7 +18,7 @@ const lonLat = (p: LatLon): [number, number] => [p.lon, p.lat];
 export function draftFeatureCollection(input: DraftFeatureInput | null): DraftFeatureCollection {
   if (!input) return { type: 'FeatureCollection', features: [] };
   const features: DraftFeature[] = [
-    { type: 'Feature', id: 'draft', geometry: { type: 'Point', coordinates: lonLat(input.coord) }, properties: { role: 'draft', sidc: input.sidc, label: input.label } },
+    { type: 'Feature', id: 'draft', geometry: { type: 'Point', coordinates: lonLat(input.coord) }, properties: { role: 'draft', sidc: input.sidc, label: input.label, category: itemCategory(input.sidc) } },
   ];
   if (input.self && input.rangeLabel) {
     features.push(

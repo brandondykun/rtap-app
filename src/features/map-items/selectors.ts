@@ -1,4 +1,4 @@
-import { KNOWN_SIDCS } from '@/features/symbology/categories';
+import { itemCategory, KNOWN_SIDCS, type ItemCategory } from '@/features/symbology/categories';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { parsePointGeometry, type PointGeometry } from './geometry';
@@ -8,7 +8,7 @@ export type PointFeature = {
   type: 'Feature';
   id: string;
   geometry: PointGeometry;
-  properties: { id: string; sidc: string; name: string };
+  properties: { id: string; sidc: string; name: string; category: ItemCategory };
 };
 
 export type PointFeatureCollection = { type: 'FeatureCollection'; features: PointFeature[] };
@@ -35,7 +35,12 @@ export function createPointFeatureSelector(): (items: readonly MapItemSnapshot[]
           type: 'Feature',
           id: item.id,
           geometry,
-          properties: { id: item.id, sidc: item.sidc && KNOWN_SIDCS.has(item.sidc) ? item.sidc : DEFAULT_SIDC, name: item.name },
+          properties: {
+            id: item.id,
+            sidc: item.sidc && KNOWN_SIDCS.has(item.sidc) ? item.sidc : DEFAULT_SIDC,
+            name: item.name,
+            category: itemCategory(item.sidc),
+          },
         };
       }
       next.set(item.id, { updatedAt: item.updatedAt, feature });

@@ -12,15 +12,19 @@ import { MAP_IMAGE_IDS } from '../images/map-images';
  */
 export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
 
-/** Scale for mission symbols (the generated PNGs are ~32 pt tall at 1). */
+/** Scale for unit symbols (the generated PNGs are ~32 pt tall at 1). */
 export const MARKER_ICON_SIZE = 0.8;
+/** Scale for point (control-measure overlay) symbols: a little smaller than units. */
+export const POINT_ICON_SIZE = 0.6;
+/** Per-feature size from its `category` property (set by the selectors from itemCategory). */
+const ICON_SIZE_BY_CATEGORY: SymbolLayerStyle['iconSize'] = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE, MARKER_ICON_SIZE];
 /** Chip padding around label text, [top, right, bottom, left] in pt. */
 const LABEL_CHIP_PADDING: [number, number, number, number] = [0, 2, 0, 2];
 
 /** Symbol icons: every point always shows; collisions never hide a symbol. */
 export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
   iconImage: ['get', 'sidc'],
-  iconSize: MARKER_ICON_SIZE,
+  iconSize: ICON_SIZE_BY_CATEGORY,
   iconAllowOverlap: true,
   iconIgnorePlacement: true,
 };
@@ -63,7 +67,7 @@ export const DRAFT_RING_STYLE: SymbolLayerStyle = {
 
 export const DRAFT_SYMBOL_STYLE: SymbolLayerStyle = {
   iconImage: ['get', 'sidc'],
-  iconSize: MARKER_ICON_SIZE,
+  iconSize: ICON_SIZE_BY_CATEGORY,
   iconAllowOverlap: true,
   iconIgnorePlacement: true,
 };

@@ -21,6 +21,7 @@ describe('createPointFeatureSelector', () => {
     const select = createPointFeatureSelector();
     const fc = select([item('p', 1, { sidc: 'GFGPGPPK------X' }), item('n', 1, { sidc: null }), item('u', 1, { sidc: 'garbage' })]);
     expect(fc.features.map((f) => f.properties.sidc)).toEqual(['GFGPGPPK------X', DEFAULT_SIDC, DEFAULT_SIDC]);
+    expect(fc.features.map((f) => f.properties.category)).toEqual(['point', 'unit', 'unit']);
   });
 
   it('builds a FeatureCollection with id, sidc and name properties', () => {
@@ -33,7 +34,7 @@ describe('createPointFeatureSelector', () => {
           type: 'Feature',
           id: 'a',
           geometry: { type: 'Point', coordinates: [-77, 38.9] },
-          properties: { id: 'a', sidc: 'SHGPUCI--------', name: 'A' },
+          properties: { id: 'a', sidc: 'SHGPUCI--------', name: 'A', category: 'unit' },
         },
       ],
     });

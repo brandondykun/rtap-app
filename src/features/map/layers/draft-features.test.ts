@@ -15,7 +15,7 @@ describe('draftFeatureCollection', () => {
     expect(fc.features).toHaveLength(1);
     expect(fc.features[0]).toMatchObject({
       geometry: { type: 'Point', coordinates: [DRAFT.lon, DRAFT.lat] },
-      properties: { role: 'draft', sidc: 'SHGPU----------', label: 'HOS-4 · NEW' },
+      properties: { role: 'draft', sidc: 'SHGPU----------', label: 'HOS-4 · NEW', category: 'unit' },
     });
   });
 
