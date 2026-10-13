@@ -8,6 +8,8 @@ describe('SIDC presets (MIL-STD-2525C)', () => {
     ['unknown', 'unspecified', 'SUGPU----------'],
     ['friend', 'medical', 'SFGPUSM--------'],
     ['hostile', 'engineer', 'SHGPUCE--------'],
+    ['friend', 'artillery', 'SFGPUCF--------'],
+    ['hostile', 'air-defense', 'SHGPUCD--------'],
   ] as const)('%s %s → %s', (affiliation, unitType, sidc) => {
     expect(composeSidc(affiliation, unitType)).toBe(sidc);
     expect(composeSidc(affiliation, unitType)).toHaveLength(15);
@@ -26,8 +28,12 @@ describe('SIDC presets (MIL-STD-2525C)', () => {
     expect(decomposeSidc('nope')).toBeNull();
   });
 
-  it('lists 24 unique presets including the default', () => {
-    expect(new Set(PRESET_SIDCS).size).toBe(24);
+  it('lists 32 unique presets including the default', () => {
+    expect(new Set(PRESET_SIDCS).size).toBe(32);
     expect(PRESET_SIDCS).toContain(DEFAULT_SIDC);
+  });
+
+  it('offers Artillery and Air defense', () => {
+    expect(UNIT_TYPES.map((t) => t.label)).toEqual(expect.arrayContaining(['Artillery', 'Air defense']));
   });
 });
