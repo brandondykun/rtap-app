@@ -68,7 +68,7 @@ export function makeDraftLabelStyle(colors: Record<SemanticToken, string>): Symb
     textSize: 12,
     textColor: colors['on-accent'],
     textAnchor: 'top',
-    textOffset: [0, 2.6],
+    textOffset: [0, 3.3],
     iconImage: MAP_IMAGE_IDS.labelChipAccent,
     iconTextFit: 'both',
     iconTextFitPadding: [2, 6, 2, 6],

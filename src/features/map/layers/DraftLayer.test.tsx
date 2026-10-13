@@ -27,6 +27,8 @@ describe('DraftLayer', () => {
     expect(shape.features[0].properties).toMatchObject({ role: 'draft', label: 'HOS-4 · NEW', sidc: composeSidc('hostile', 'unspecified') });
     expect(mapboxMock().__props.SymbolLayer['draft-ring']).toBeDefined();
     expect(mapboxMock().__props.LineLayer['draft-range-line']).toBeDefined();
+    // The chip sits clear of the ring's bottom tick.
+    expect(mapboxMock().__props.SymbolLayer['draft-label'].style).toMatchObject({ textOffset: [0, 3.3] });
   });
 
   it('adds the range line once there is a fix and keeps styles stable', async () => {
