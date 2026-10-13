@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import type { MissionCamera } from '@/features/missions/repository';
+import type { LatLon } from '@/lib/geo/types';
+import { wrapLon } from '@/lib/geo/units/angle';
 import { useInteraction } from '@/stores/interaction';
 
 import { MAP_IMAGES } from '../images/map-images';
@@ -22,12 +24,14 @@ type Props = {
   onCameraIdle: (camera: MissionCamera) => void;
   /** Called while the user drags/pinches the map (turns follow mode off). */
   onUserGesture: () => void;
+  /** A long press on the map at this coordinate. */
+  onLongPress?: (coord: LatLon) => void;
   landscape: boolean;
   panel: PanelFrame | null;
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, landscape, panel, children }: Props) {
+export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, landscape, panel, children }: Props) {
   const insets = useSafeAreaInsets();
   // Mapbox on iOS measures ornament margins from the safe area already.
   // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
@@ -66,7 +70,11 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
       logoPosition={ornaments.logo}
       attributionPosition={ornaments.attribution}
       onCameraChanged={onCameraChanged}
-      onMapIdle={onMapIdle}>
+      onMapIdle={onMapIdle}
+      onLongPress={(feature) => {
+        const [lon, lat] = (feature.geometry as { coordinates: number[] }).coordinates;
+        if (Number.isFinite(lat) && Number.isFinite(lon)) onLongPress?.({ lat, lon: lon >= -180 && lon < 180 ? lon : wrapLon(lon) });
+      }}>
       <Camera ref={cameraRef} defaultSettings={toCameraStop(initialCamera)} />
       <Images images={MAP_IMAGES} />
       {children}

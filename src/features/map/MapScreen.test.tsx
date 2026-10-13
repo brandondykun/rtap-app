@@ -3,6 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
+import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
@@ -27,6 +28,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockToken = 'pk.test';
   useMenu.setState(INITIAL_MENU);
+  useDraft.setState(INITIAL_DRAFT);
 });
 
 describe('MapScreen', () => {
@@ -180,5 +182,43 @@ describe('MapScreen', () => {
       spy.mockImplementation(() => ({ remove: jest.fn() }));
       await unmount();
     });
+  });
+
+  it('toggles Add Point from the toolbar', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(screen.getByLabelText('POINT')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('POINT'));
+    expect(screen.queryByTestId('menu-panel')).toBeNull();
+  });
+
+  it('long-press opens Add Point there, and a second long-press moves the draft and the map', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    const longPress = (lon: number, lat: number) =>
+      act(async () =>
+        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: {},
+        }),
+      );
+
+    await longPress(-77.03, 38.9);
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(useDraft.getState().coord).toEqual({ lat: 38.9, lon: -77.03 });
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
+
+    mapboxMock().__camera.setCamera.mockClear();
+    await longPress(-77.1, 38.95);
+    expect(useDraft.getState()).toMatchObject({ coord: { lat: 38.95, lon: -77.1 }, name: 'OBJ IRON' });
+    expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ centerCoordinate: [-77.1, 38.95] }));
   });
 });

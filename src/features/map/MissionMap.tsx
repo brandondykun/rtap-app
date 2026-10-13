@@ -12,8 +12,9 @@ import { MenuHost } from '@/features/menus/MenuHost';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
+import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
-import { useMenu } from '@/stores/menu';
+import { useMenu, topMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
 
 import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
@@ -22,6 +23,7 @@ import { MapCanvas } from './canvas/MapCanvas';
 import { MapControls } from './controls/MapControls';
 import { ReadoutCard } from './controls/ReadoutCard';
 import { Crosshair } from './interaction/Crosshair';
+import { DraftLayer } from './layers/DraftLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
@@ -56,6 +58,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   }, [saver]);
   useSelfLocation();
   const panel = useMenu((s) => s.panelFrame);
+  const topId = useMenu((s) => topMenu(s)?.id ?? null);
+  const draftActive = useDraft((s) => s.mode !== null);
   // Pad the camera only when the panel frame changes (not on mount).
   const appliedPanel = useRef<PanelFrame | null>(null);
   useEffect(() => {
@@ -91,6 +95,29 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     });
   }, [markMoved]);
 
+  // The map follows the draft when typing, Me, a long-press or an item moves it — never for Center
+  // (already under the crosshair) and never when the user pans (the draft stays put).
+  useEffect(
+    () =>
+      useDraft.subscribe((state, prev) => {
+        if (state.coordRev === prev.coordRev || !state.coord || state.coordSource === 'crosshair') return;
+        markMoved();
+        if (useInteraction.getState().followMode) setFollowMode(false);
+        cameraRef.current?.setCamera({ centerCoordinate: [state.coord.lon, state.coord.lat], ...EASE, animationDuration: 400 });
+      }),
+    [markMoved, setFollowMode],
+  );
+
+  const togglePoint = () => {
+    if (topId === 'point.add') useMenu.getState().closeMenu();
+    else useMenu.getState().openMenu('point.add', {});
+  };
+  const onLongPress = (coord: LatLon) => {
+    const current = topMenu(useMenu.getState())?.id;
+    if (current === 'point.add' || current === 'point.edit') useDraft.getState().setCoord(coord, 'press');
+    else useMenu.getState().openMenu('point.add', { at: coord });
+  };
+
   const onUserGesture = () => {
     markMoved();
     if (useInteraction.getState().followMode) setFollowMode(false);
@@ -123,14 +150,17 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onCameraIdle={(camera) => {
           if (cameraMoved.current) saver.schedule(camera);
         }}
+        onLongPress={onLongPress}
         onUserGesture={onUserGesture}>
         <PointsLayer missionId={missionId} />
+        {draftActive ? <DraftLayer /> : null}
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={null}
+        activeTool={topId === 'point.add' ? 'point' : null}
+        onPoint={togglePoint}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
       />
