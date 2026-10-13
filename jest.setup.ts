@@ -26,3 +26,8 @@ jest.mock('expo-location', () => ({
   watchPositionAsync: jest.fn(async () => ({ remove: jest.fn() })),
   watchHeadingAsync: jest.fn(async () => ({ remove: jest.fn() })),
 }));
+
+jest.mock('expo-haptics', () => ({
+  notificationAsync: jest.fn(async () => {}),
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+}));

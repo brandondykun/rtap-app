@@ -2,7 +2,9 @@ import type { Camera } from '@rnmapbox/maps';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Toast } from '@/components/ui/Toast';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import type { MissionCamera } from '@/features/missions/repository';
@@ -20,7 +22,7 @@ import { ReadoutCard } from './controls/ReadoutCard';
 import { Crosshair } from './interaction/Crosshair';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { isLandscape } from './layout';
+import { EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
 
 const EASE = { animationMode: 'easeTo' as const };
 
@@ -29,6 +31,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
+  const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [initialCamera] = useState(() => savedCamera ?? WORLD_CAMERA);
   // With a saved camera the map opens where the user left it; otherwise the first fix centers it.
@@ -125,6 +128,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       />
       <ReadoutCard />
       <LocationBanner landscape={landscape} />
+      <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />
     </View>
   );
 }
