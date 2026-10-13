@@ -5,10 +5,12 @@ import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Icon } from '@/components/ui/Icon';
 import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
 import { notifySuccess } from '@/features/feedback/feedback';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { deleteMission } from './commands';
 import { formatItemCount, formatLastOpened } from './format';
@@ -126,6 +128,7 @@ function MissionRow({ mission, now, onPress, onDelete, onOpenActions }: MissionR
   const ctx = useCommandContext();
   const count = useObservable(() => observeMissionItemCount(ctx.db, mission.id), 0, [ctx, mission.id]);
   const row = useRef<SwipeableMethods>(null);
+  const { colors } = useTheme();
   return (
     <ReanimatedSwipeable
       ref={row}
@@ -153,13 +156,16 @@ function MissionRow({ mission, now, onPress, onDelete, onOpenActions }: MissionR
           if (e.nativeEvent.actionName === 'delete') onDelete(count);
         }}
         onPress={onPress}
-        className="rounded-2xl border border-border bg-surface-raised px-4 py-3 active:opacity-80">
-        <Text numberOfLines={1} className="text-base font-semibold text-text">
-          {mission.name}
-        </Text>
-        <Text className="mt-1 text-sm text-text-muted">
-          {`${formatItemCount(count)} · ${formatLastOpened(mission.lastOpenedAt, now)}`}
-        </Text>
+        className="flex-row items-center gap-2 rounded-2xl border border-border bg-surface-raised py-3 pl-4 pr-3 active:opacity-80">
+        <View className="flex-1">
+          <Text numberOfLines={1} className="text-base font-semibold text-text">
+            {mission.name}
+          </Text>
+          <Text className="mt-1 text-sm text-text-muted">
+            {`${formatItemCount(count)} · ${formatLastOpened(mission.lastOpenedAt, now)}`}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size={24} color={colors['text-muted']} />
       </Pressable>
     </ReanimatedSwipeable>
   );
