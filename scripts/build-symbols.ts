@@ -26,6 +26,9 @@ const fill: Record<Affiliation, string> = {
 
 mkdirSync(OUT_DIR, { recursive: true });
 
+/** Point symbols use the friendly-unit blue, so the two always match. */
+const POINT_COLOR = colors.friendly;
+
 /** milsymbol halo width for point symbols, in its drawing units. */
 const POINT_OUTLINE_WIDTH = 2;
 /** milsymbol draws tactical points with 3-unit lines and ignores `strokeWidth` for them. */
@@ -81,9 +84,9 @@ function landingZoneSvg(): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
     stroke(colors['point-symbol-halo'], POINT_LINE_PX + 2 * POINT_HALO_PX) +
-    stroke(colors['point-symbol'], POINT_LINE_PX) +
+    stroke(POINT_COLOR, POINT_LINE_PX) +
     `<text x="${c}" y="${c + 4.5}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" ` +
-    `fill="${colors['point-symbol']}" stroke="${colors['point-symbol-halo']}" stroke-width="${2 * POINT_HALO_PX}" paint-order="stroke">LZ</text>` +
+    `fill="${POINT_COLOR}" stroke="${colors['point-symbol-halo']}" stroke-width="${2 * POINT_HALO_PX}" paint-order="stroke">LZ</text>` +
     `</svg>`
   );
 }
@@ -101,7 +104,7 @@ for (const type of POINT_TYPES) {
       : centeredOnAnchor(
           new ms.Symbol(type.sidc, {
             size: SYMBOL_SIZE,
-            monoColor: colors['point-symbol'],
+            monoColor: POINT_COLOR,
             outlineColor: colors['point-symbol-halo'],
             outlineWidth: POINT_OUTLINE_WIDTH,
           }),
