@@ -2,6 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 
 import { KNOWN_SIDCS } from '@/features/symbology/categories';
 import { lineStyle, type LineType } from '@/features/symbology/line-types';
+import { MAX_RADIUS_M, polygonStyle, polygonStyleOf, type PolygonType } from '@/features/symbology/polygon-types';
 import type { CommandContext } from '@/lib/db/command-context';
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -9,7 +10,8 @@ import { Tables } from '@/lib/db/schema';
 import type { LatLon } from '@/lib/geo/types';
 import { err, ok, type Result } from '@/lib/result';
 
-import { isValidLatLon, lineGeometry, pointGeometry } from './geometry';
+import { isValidLatLon, lineGeometry, pointGeometry, polygonGeometry } from './geometry';
+import { circleRing } from './polygon-measure';
 import { findItem, findItemViewState } from './repository';
 
 export type PlacePointInput = {
@@ -213,6 +215,86 @@ export async function updateLine(
       item.update((i) => {
         if (patch.points) i.geometry = lineGeometry(patch.points);
         if (patch.lineType) i.style = lineStyle(patch.lineType);
+        if (patch.name !== undefined) i.name = patch.name.trim();
+        if (patch.notes !== undefined) i.notes = patch.notes;
+        i.updatedBy = ctx.actorId();
+      }),
+    );
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
+export type PolygonShapeInput = { kind: 'points'; points: LatLon[] } | { kind: 'circle'; center: LatLon; radiusM: number };
+type PolygonShapeError = 'invalid_coordinate' | 'too_few_points' | 'invalid_radius';
+
+/** The stored geometry and style shape for a shape input, or why it is invalid. */
+function polygonParts(shape: PolygonShapeInput): { geometry: string; shape: { kind: 'points' } | { kind: 'circle'; center: LatLon; radiusM: number } } | PolygonShapeError {
+  if (shape.kind === 'points') {
+    if (shape.points.length < 3) return 'too_few_points';
+    if (!shape.points.every(isValidLatLon)) return 'invalid_coordinate';
+    return { geometry: polygonGeometry(shape.points), shape: { kind: 'points' } };
+  }
+  if (!isValidLatLon(shape.center)) return 'invalid_coordinate';
+  if (!Number.isFinite(shape.radiusM) || shape.radiusM <= 0 || shape.radiusM > MAX_RADIUS_M) return 'invalid_radius';
+  return { geometry: polygonGeometry(circleRing(shape.center, shape.radiusM)), shape: { kind: 'circle', center: shape.center, radiusM: shape.radiusM } };
+}
+
+const SHAPE_MESSAGES: Record<PolygonShapeError, string> = {
+  invalid_coordinate: 'Coordinate is out of range',
+  too_few_points: 'A polygon needs at least 3 points',
+  invalid_radius: 'Radius must be more than 0 and at most 500 km',
+};
+
+export type PlacePolygonInput = { missionId: string; polygonType: PolygonType; name: string; notes?: string | null; shape: PolygonShapeInput };
+
+export async function placePolygon(
+  ctx: CommandContext,
+  input: PlacePolygonInput,
+): Promise<Result<{ id: string }, PolygonShapeError | 'invalid_name' | 'write_failed'>> {
+  const parts = polygonParts(input.shape);
+  if (typeof parts === 'string') return err(parts, SHAPE_MESSAGES[parts]);
+  const name = input.name.trim();
+  if (!name) return err('invalid_name', 'Name is required');
+  try {
+    const item = await ctx.db.write(() =>
+      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
+        i.missionId = input.missionId;
+        i.kind = 'polygon';
+        i.geometry = parts.geometry;
+        i.sidc = null;
+        i.name = name;
+        i.notes = input.notes ?? null;
+        i.style = polygonStyle(input.polygonType, parts.shape);
+        i.createdBy = ctx.actorId();
+        i.updatedBy = ctx.actorId();
+      }),
+    );
+    return ok({ id: item.id });
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
+export type UpdatePolygonPatch = { polygonType?: PolygonType; name?: string; notes?: string | null; shape?: PolygonShapeInput };
+
+export async function updatePolygon(
+  ctx: CommandContext,
+  id: string,
+  patch: UpdatePolygonPatch,
+): Promise<Result<void, 'not_found' | PolygonShapeError | 'invalid_name' | 'write_failed'>> {
+  const parts = patch.shape ? polygonParts(patch.shape) : null;
+  if (typeof parts === 'string') return err(parts, SHAPE_MESSAGES[parts]);
+  if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
+  const item = await findItem(ctx.db, id);
+  if (!item || item.kind !== 'polygon') return err('not_found', `No polygon ${id}`);
+  const current = polygonStyleOf(item.style ?? null);
+  try {
+    await ctx.db.write(() =>
+      item.update((i) => {
+        if (parts) i.geometry = parts.geometry;
+        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape);
         if (patch.name !== undefined) i.name = patch.name.trim();
         if (patch.notes !== undefined) i.notes = patch.notes;
         i.updatedBy = ctx.actorId();

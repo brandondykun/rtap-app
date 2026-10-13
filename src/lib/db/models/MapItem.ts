@@ -3,7 +3,7 @@ import { date, field, readonly, text } from '@nozbe/watermelondb/decorators';
 
 import { Tables } from '../schema';
 
-export type MapItemKind = 'point' | 'line';
+export type MapItemKind = 'point' | 'line' | 'polygon';
 
 export class MapItem extends Model {
   static table = Tables.mapItems;

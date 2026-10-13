@@ -6,13 +6,15 @@ import {
   deleteItem,
   placeLine,
   placePoint,
+  placePolygon,
   setItemHidden,
   setItemsHidden,
   toggleItemVisibility,
   updateItem,
   updateLine,
+  updatePolygon,
 } from './commands';
-import { parseLineGeometry, pointCoord } from './geometry';
+import { parseLineGeometry, parsePolygonGeometry, pointCoord } from './geometry';
 import {
   findItem,
   getMissionItemNames,
@@ -218,6 +220,48 @@ describe('map items', () => {
       expect(item).toMatchObject({ name: 'NORTH', notes: 'n', style: '{"lineType":"boundary"}' });
       expect(parseLineGeometry(item!.geometry)).toEqual(Q3);
       expect(await updateLine(ctx, r.value.id, { points: [at] })).toMatchObject({ ok: false, error: 'too_few_points' });
+    });
+  });
+
+  describe('polygons', () => {
+    const tri = [at, { lat: at.lat + 0.01, lon: at.lon }, { lat: at.lat, lon: at.lon + 0.01 }];
+
+    it('places a points polygon and a circle', async () => {
+      const ctx = makeTestContext();
+      const a = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: ' IRON ', shape: { kind: 'points', points: tri } });
+      if (!a.ok) throw new Error('setup');
+      const pa = await findItem(ctx.db, a.value.id);
+      expect(pa).toMatchObject({ kind: 'polygon', name: 'IRON', sidc: null, style: '{"polygonType":"objective","shape":"points"}' });
+      expect(parsePolygonGeometry(pa!.geometry)).toEqual(tri);
+      const c = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: '1', shape: { kind: 'circle', center: at, radiusM: 500 } });
+      if (!c.ok) throw new Error('setup');
+      const pc = await findItem(ctx.db, c.value.id);
+      expect(JSON.parse(pc!.style!)).toEqual({ polygonType: 'no-fire-area', shape: 'circle', center: at, radiusM: 500 });
+      expect(parsePolygonGeometry(pc!.geometry)).toHaveLength(64);
+    });
+
+    it('validates points, radius, name and existence', async () => {
+      const ctx = makeTestContext();
+      const place = (shape: Parameters<typeof placePolygon>[1]['shape'], name = 'X') => placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name, shape });
+      expect(await place({ kind: 'points', points: tri.slice(0, 2) })).toMatchObject({ ok: false, error: 'too_few_points' });
+      expect(await place({ kind: 'points', points: [...tri.slice(0, 2), { lat: 99, lon: 0 }] })).toMatchObject({ ok: false, error: 'invalid_coordinate' });
+      expect(await place({ kind: 'circle', center: at, radiusM: 0 })).toMatchObject({ ok: false, error: 'invalid_radius' });
+      expect(await place({ kind: 'circle', center: at, radiusM: 600_000 })).toMatchObject({ ok: false, error: 'invalid_radius' });
+      expect(await place({ kind: 'circle', center: { lat: 99, lon: 0 }, radiusM: 5 })).toMatchObject({ ok: false, error: 'invalid_coordinate' });
+      expect(await place({ kind: 'points', points: tri }, '  ')).toMatchObject({ ok: false, error: 'invalid_name' });
+      expect(await updatePolygon(ctx, 'nope', { name: 'X' })).toMatchObject({ ok: false, error: 'not_found' });
+    });
+
+    it('updates the type alone (keeping the circle) and the shape', async () => {
+      const ctx = makeTestContext();
+      const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: '1', shape: { kind: 'circle', center: at, radiusM: 500 } });
+      if (!r.ok) throw new Error('setup');
+      expect(await updatePolygon(ctx, r.value.id, { polygonType: 'free-fire-area', notes: 'n' })).toEqual({ ok: true, value: undefined });
+      expect(JSON.parse((await findItem(ctx.db, r.value.id))!.style!)).toEqual({ polygonType: 'free-fire-area', shape: 'circle', center: at, radiusM: 500 });
+      await updatePolygon(ctx, r.value.id, { shape: { kind: 'points', points: tri } });
+      const item = await findItem(ctx.db, r.value.id);
+      expect(item).toMatchObject({ notes: 'n', style: '{"polygonType":"free-fire-area","shape":"points"}' });
+      expect(parsePolygonGeometry(item!.geometry)).toEqual(tri);
     });
   });
 });
