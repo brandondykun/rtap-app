@@ -153,4 +153,4 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 70 | Tap the map to set the start (dot only, card says "Set end"); panning does not move anything; tap to set the end: solid amber line and readout; tap again moves the end | PENDING |
 | 71 | Tap a unit / point: the end snaps onto the symbol and its menu does not open; tap my blue marker: snaps to me | PENDING |
 | 72 | Readout matches the range/bearing elsewhere (deg/mils, GRID/TRUE/MAG from Settings); chip at the line's middle is readable on Satellite, Topo and Dark | PENDING |
-| 73 | Set at crosshair, Restart and × (Stop measuring) behave; opening Layers or Menu stops measuring; long-press does nothing while measuring | PENDING |
+| 73 | Set at crosshair and × (Stop measuring) behave; opening Layers or Menu stops measuring; long-press does nothing while measuring | PENDING |

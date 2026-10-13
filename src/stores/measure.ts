@@ -8,7 +8,6 @@ type MeasureActions = {
   startMeasure: () => void;
   stopMeasure: () => void;
   place: (p: LatLon) => void;
-  restart: () => void;
 };
 
 export const INITIAL_MEASURE: MeasureValues = { active: false, ...EMPTY_MEASURE };
@@ -21,5 +20,4 @@ export const useMeasure = create<MeasureValues & MeasureActions>()((set) => ({
   startMeasure: () => set({ active: true, ...EMPTY_MEASURE }),
   stopMeasure: () => set(INITIAL_MEASURE),
   place: (p) => set((s) => (s.active && valid(p) ? placePoint(s, p) : {})),
-  restart: () => set((s) => (s.active ? EMPTY_MEASURE : {})),
 }));

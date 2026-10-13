@@ -44,7 +44,7 @@ State: `start: LatLon | null`, `end: LatLon | null` (null until set).
 | Start, no end | end = p | end = c |
 | Start and end | end = p | end = c |
 
-- **Restart** clears both points (back to "No start").
+- To start over, stop measuring (× or MEASURE) and turn it on again. (**Restart** was removed 2026-10-13 at the user's request.)
 - While measuring, a tap on a unit/point or the self marker snaps instead of opening a menu;
   long-press does nothing; line drawing and item menus are not reachable (menus are closed).
 
@@ -62,10 +62,10 @@ Top-left in the `MapTopLeft` stack (below the Mapbox logo row, as in the mockup)
 `surface-chrome` style with an `accent` border:
 
 - Label **MEASURE** (small, accent, uppercase) above the readout (mono) or **Set start** / **Set end**.
-- One line (the readout shrinks to fit). Buttons: **Restart** (disabled with no start),
+- One line (the readout shrinks to fit). Buttons:
   **×** (turns measuring off), and the amber primary **Set** (crosshair glyph; sets the next
   point at the crosshair as in §3.2).
-- Accessibility labels: "Restart", "Stop measuring", "Set at crosshair". (**From me** was removed
+- Accessibility labels: "Stop measuring", "Set at crosshair". (**From me** was removed
   2026-10-13 at the user's request; tapping the self marker snaps to the user instead.)
 
 ### 4.2 Map — `MeasureLayer`
@@ -87,8 +87,8 @@ is tapped; `MissionMap` passes it only while measuring.
 
 | Unit | Responsibility |
 |---|---|
-| `src/features/measure/measure-step.ts` | Pure rules of §3.2: `placePoint(m, p)`, `restart()`. |
-| `src/stores/measure.ts` | `active`, `start`, `end`; `startMeasure()`, `stopMeasure()`, `place(p)`, `restart()`. |
+| `src/features/measure/measure-step.ts` | Pure rules of §3.2: `placePoint(m, p)`. |
+| `src/stores/measure.ts` | `active`, `start`, `end`; `startMeasure()`, `stopMeasure()`, `place(p)`. |
 | `src/features/measure/measure-readout.ts` | `measureReadout(start, end, settings)` → label text. |
 | `src/features/measure/MeasureCard.tsx` | The card. |
 | `src/features/map/layers/MeasureLayer.tsx` | The map layer. |
@@ -97,11 +97,11 @@ is tapped; `MissionMap` passes it only while measuring.
 
 ## 6. Testing
 
-- `measure-step`: every row of the §3.2 table; restart.
+- `measure-step`: every row of the §3.2 table.
 - Store: start/stop clear state; actions follow the step rules.
 - Readout: uses the angle unit and north reference; "Set start" with no start.
 - `MeasureLayer`: no features without a start; only the start dot until the end is set; chip text.
-- `MeasureCard`: buttons call the right actions; Restart disabled with no start; one line.
+- `MeasureCard`: buttons call the right actions; one line.
 - MapScreen: MEASURE toggles on/off and closes an open menu; a map tap sets start then end; a
   unit tap snaps to the unit and does not open its menu; a
   self-marker tap snaps to the self position; opening Layers turns measuring off; long-press

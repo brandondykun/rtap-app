@@ -24,13 +24,11 @@ describe('MeasureCard', () => {
     await renderWithProviders(<MeasureCard />);
     expect(screen.getByText('Measure')).toBeTruthy();
     expect(screen.getByText('Set start')).toBeTruthy();
-    expect(screen.getByLabelText('Restart')).toBeDisabled();
+    expect(screen.queryByLabelText('Restart')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(useMeasure.getState().start).toEqual(C);
     // No live end: the card asks for the end instead of measuring to the crosshair.
     expect(screen.getByText('Set end')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Restart'));
-    expect(useMeasure.getState().start).toBeNull();
   });
 
   it('has no From me button; measures and stops', async () => {

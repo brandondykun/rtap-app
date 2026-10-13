@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { measureReadout } from './measure-readout';
 
-/** Top-left while measuring, on one line: the readout, Restart, Stop (×) and the amber Set. */
+/** Top-left while measuring, on one line: the readout, Stop (×) and the amber Set. */
 export function MeasureCard() {
   const { colors } = useTheme();
   const start = useMeasure((s) => s.start);
@@ -24,7 +24,7 @@ export function MeasureCard() {
     if (c) useMeasure.getState().place(c);
   };
 
-  // One line: title over the readout (shrinks to fit), then Restart, Stop and the amber Set.
+  // One line: title over the readout (shrinks to fit), then Stop and the amber Set.
   return (
     <View testID="measure-card" className="self-start rounded-2xl border border-accent bg-surface-chrome px-2 py-1">
       <View testID="measure-row" className="flex-row items-center gap-1" style={{ flexDirection: 'row' }}>
@@ -34,7 +34,6 @@ export function MeasureCard() {
             {readout}
           </Text>
         </View>
-        <MapButton grouped label="Restart" icon="restore" onPress={() => useMeasure.getState().restart()} disabled={!start} />
         <MapButton grouped label="Stop measuring" icon="close" onPress={() => useMeasure.getState().stopMeasure()} />
         <Pressable
           accessibilityRole="button"

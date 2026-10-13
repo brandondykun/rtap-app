@@ -13,9 +13,6 @@ describe('measure store', () => {
     m().place(A);
     m().place(B);
     expect(m()).toMatchObject({ start: A, end: B });
-    m().restart();
-    expect(m()).toMatchObject({ active: true, start: null, end: null });
-    m().place(A);
     m().stopMeasure();
     expect(m()).toMatchObject({ active: false, start: null, end: null });
   });
