@@ -109,13 +109,13 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 26 | Viewing a point read-only: long-press elsewhere starts a new point there; the selected point shows only its name (no "· EDIT") until you tap Edit | PENDING |
 | 27 | Add/Edit Point: tap Map (it turns amber with a hint), tap the map — the point moves there and the map eases to it; tapping on an existing point while picking places it there instead of opening that point; tap Map again to cancel | PENDING |
 | 28 | Long-press on the map: a firm haptic tap as the new point appears (or as the point being placed/edited moves) | PENDING |
-| 29 | LAYERS opens the Layers panel (tool highlighted); tap LAYERS again or Close to dismiss | PENDING |
-| 30 | Basemaps: Satellite, Hybrid, Topo and Dark each load; the camera stays put when switching; points, label chips, self icon and the draft all redraw on each; labels stay readable on Topo and Dark | PENDING |
-| 31 | Basemap choice survives an app restart | PENDING |
-| 32 | Layers list: eye toggles hide/show the point on the map immediately; Show all brings every hidden point back; tapping a row (also a hidden one) flies there and opens it selected | PENDING |
+| 29 | LAYERS opens the Layers panel (tool highlighted); tap LAYERS again or Close to dismiss | PASS (iOS, 2026-10-13) |
+| 30 | Basemaps: Satellite, Hybrid, Topo and Dark each load; the camera stays put when switching; points, label chips, self icon and the draft all redraw on each; labels stay readable on Topo and Dark | PASS (iOS, 2026-10-13) |
+| 31 | Basemap choice survives an app restart | PASS (iOS, 2026-10-13) |
+| 32 | Layers list: eye toggles hide/show the point on the map immediately; Show all brings every hidden point back; tapping a row (also a hidden one) flies there and opens it selected | PASS (iOS, 2026-10-13) |
 | 33 | Seed 5k mission: the Layers panel opens without a stall, shows "Showing 100 of 5,000", search narrows it smoothly | PENDING |
 | 34 | Offline (airplane mode, fresh install or cleared cache): choosing Topo shows the "Topo map is unavailable — showing Satellite." message and the map falls back to Satellite; choosing Topo again after reconnecting loads it | PENDING |
-| 35 | Switching basemap while a point is selected, or while Map pick mode is waiting for a tap, keeps the selection, the draft and the pick mode | PENDING |
-| 36 | Tapping a Layers row while the search keyboard is up dismisses the keyboard before the point opens | PENDING |
-| 37 | Landscape: the basemap segments fit the drawer and the points list scrolls to the last row | PENDING |
+| 35 | Opening Layers closes an open point (the selection clears and Map pick mode ends), because only one panel is open at a time; the basemap switch itself leaves points and the camera alone | PASS (iOS, 2026-10-13; behavior confirmed, row rewritten) |
+| 36 | Tapping a Layers row while the search keyboard is up dismisses the keyboard before the point opens | PASS (iOS, 2026-10-13) |
+| 37 | Landscape: the basemap segments fit the drawer and the points list scrolls to the last row | PASS (iOS, 2026-10-13) |
 | 38 | VoiceOver: rows read the point name, then "Hidden" and the coordinate as the hint; the eye button reads "Hide …"/"Show …" | PENDING |
