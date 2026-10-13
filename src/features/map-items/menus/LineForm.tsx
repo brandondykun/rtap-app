@@ -101,7 +101,7 @@ export function LineForm() {
       </MenuSection>
       {/* A display preference, not part of the line: it works while viewing too. */}
       <MenuSection>
-        <MenuToggle label="Show distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
+        <MenuToggle label="Show point distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
       </MenuSection>
     </View>
   );
