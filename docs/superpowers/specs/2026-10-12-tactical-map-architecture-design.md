@@ -479,7 +479,7 @@ stretchable chip image with `iconTextFit: 'both'`, offset below the symbol.
 - `MenuHeader` — leading text action (`Cancel` / back), centered uppercase title, trailing
   primary button (amber, e.g. `✓ Add`).
 - `MenuSection` — uppercase muted label above content.
-- `MenuRow`, `MenuToggle`, `MenuTextField`, `MenuSegmented`, `MenuSelect` (dropdown),
+- `MenuRow`, `MenuToggle`, `TextField` (shared, in `src/components/ui`), `MenuSegmented`, `MenuSelect` (dropdown),
   `MenuButton` (secondary: icon + label, e.g. Center / Me), `MenuActions`
   (primary / destructive), `MgrsInput` (the four-field MGRS entry with validation line).
 - Menus compose only these primitives; primitives use only semantic tokens and may wrap

@@ -6,7 +6,7 @@ import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuListItem } from '@/components/menu/MenuListItem';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
-import { MenuTextField } from '@/components/menu/MenuTextField';
+import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
@@ -69,7 +69,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         </View>
         {total > 0 ? (
-          <MenuTextField accessibilityLabel="Search points" value={query} onChangeText={setQuery} placeholder="Search points" autoCapitalize="characters" autoCorrect={false} />
+          <TextField accessibilityLabel="Search points" value={query} onChangeText={setQuery} placeholder="Search points" autoCapitalize="characters" autoCorrect={false} />
         ) : null}
         {total === 0 ? <Text className="text-sm text-text-muted">No points yet. Use POINT or long-press the map.</Text> : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">No points match.</Text> : null}

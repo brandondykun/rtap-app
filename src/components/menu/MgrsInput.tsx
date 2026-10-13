@@ -2,11 +2,11 @@ import { useRef } from 'react';
 import { Text, View, type TextInput } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
+import { TextField } from '@/components/ui/TextField';
 import { splitMgrs, type MgrsParts } from '@/lib/geo/coords/mgrs';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import type { MgrsFieldStatus } from './mgrs-fields';
-import { MenuTextField } from './MenuTextField';
 
 type Props = {
   value: MgrsParts;
@@ -63,16 +63,16 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
       <View className="flex-row gap-2">
         {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
         <View style={{ width: ZONE_WIDTH }}>
-          <MenuTextField editable={!disabled} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+          <TextField editable={!disabled} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
-          <MenuTextField editable={!disabled} ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+          <TextField editable={!disabled} ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
         <View style={{ flex: 1 }}>
-          <MenuTextField editable={!disabled} ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField editable={!disabled} ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <MenuTextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
       </View>
       <View className="flex-row items-center gap-1">

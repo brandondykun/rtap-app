@@ -37,6 +37,20 @@ function restrict({ geo = true, db = true, mapbox = true, upper = false, react =
   return { 'no-restricted-imports': ['error', { patterns }] };
 }
 
+const NO_HEX = {
+  selector: 'Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]',
+  message: 'No hex colors outside src/theme. Use a semantic token (className or useTheme().colors).',
+};
+const NO_PALETTE = {
+  selector:
+    'Literal[value=/\\b(?:bg|text|border|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d{2,3}\\b/]',
+  message: 'No raw Tailwind palette classes. Use semantic classes (bg-surface, text-accent, ...).',
+};
+const NO_RAW_TEXT_INPUT = {
+  selector: "JSXOpeningElement[name.name='TextInput']",
+  message: 'Use TextField from @/components/ui/TextField so every text input looks and aligns the same.',
+};
+
 module.exports = defineConfig([
   expoConfig,
   { ignores: ['dist/*', 'scripts/*'] },
@@ -50,22 +64,7 @@ module.exports = defineConfig([
     files: ['src/features/*/repository.ts', 'src/features/*/commands.ts', 'src/features/*/*.test.{ts,tsx}'],
     rules: restrict({ db: false }),
   },
-  {
-    files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/theme/**'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]',
-          message: 'No hex colors outside src/theme. Use a semantic token (className or useTheme().colors).',
-        },
-        {
-          selector:
-            'Literal[value=/\\b(?:bg|text|border|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\\d{2,3}\\b/]',
-          message: 'No raw Tailwind palette classes. Use semantic classes (bg-surface, text-accent, ...).',
-        },
-      ],
-    },
-  },
+  // One no-restricted-syntax list per zone (flat config replaces rule options, it does not merge).
+  { files: ['src/**/*.{ts,tsx}'], ignores: ['src/theme/**'], rules: { 'no-restricted-syntax': ['error', NO_HEX, NO_PALETTE, NO_RAW_TEXT_INPUT] } },
+  { files: ['src/components/ui/TextField.tsx'], rules: { 'no-restricted-syntax': ['error', NO_HEX, NO_PALETTE] } },
 ]);

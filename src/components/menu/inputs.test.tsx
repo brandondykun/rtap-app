@@ -1,15 +1,15 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 
+import { TextField } from '@/components/ui/TextField';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MenuSegmented } from './MenuSegmented';
 import { MenuSelect } from './MenuSelect';
-import { MenuTextField } from './MenuTextField';
 
 describe('menu inputs', () => {
-  it('MenuTextField passes text through', async () => {
+  it('TextField passes text through', async () => {
     const onChangeText = jest.fn();
-    await renderWithProviders(<MenuTextField accessibilityLabel="Name" value="HOS-1" onChangeText={onChangeText} />);
+    await renderWithProviders(<TextField accessibilityLabel="Name" value="HOS-1" onChangeText={onChangeText} />);
     expect(screen.getByDisplayValue('HOS-1')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     expect(onChangeText).toHaveBeenCalledWith('OBJ IRON');

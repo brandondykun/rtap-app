@@ -11,8 +11,11 @@ type Props = Omit<TextInputProps, 'style'> & {
   ref?: Ref<TextInput>;
 };
 
-/** Dark input with an amber border while focused and a red border when invalid. */
-export function MenuTextField({ invalid = false, mono = false, dense = false, ref, onFocus, onBlur, multiline, ...rest }: Props) {
+/**
+ * The app's one text input (menus, forms, screens): dark field, amber border while focused, red
+ * when invalid, and single-line text vertically centred. Lint rejects a raw <TextInput> elsewhere.
+ */
+export function TextField({ invalid = false, mono = false, dense = false, ref, onFocus, onBlur, multiline, ...rest }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const border = invalid ? 'border-danger' : focused ? 'border-accent' : 'border-border';

@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import { TextField } from '@/components/ui/TextField';
 import { useCommandContext } from '@/lib/db/command-context-provider';
-import { useTheme } from '@/theme/ThemeProvider';
 
 import { createMission } from './commands';
 import { suggestMissionName } from './repository';
@@ -11,7 +11,6 @@ import { suggestMissionName } from './repository';
 export function CreateMissionScreen() {
   const ctx = useCommandContext();
   const router = useRouter();
-  const { colors } = useTheme();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   // A ref, not state: a second tap in the same frame must see the first tap's lock.
@@ -45,7 +44,7 @@ export function CreateMissionScreen() {
   return (
     <View className="gap-4 bg-surface px-4 pb-8 pt-6">
       <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">New mission</Text>
-      <TextInput
+      <TextField
         accessibilityLabel="Mission name"
         value={name}
         onChangeText={setName}
@@ -54,8 +53,7 @@ export function CreateMissionScreen() {
         returnKeyType="done"
         onSubmitEditing={() => void submit()}
         placeholder="Mission name"
-        placeholderTextColor={colors['text-muted']}
-        className="rounded-xl border border-border bg-surface-input px-4 py-3 text-base text-text"
+        invalid={error !== null}
       />
       {error ? <Text className="text-sm text-danger">{error}</Text> : null}
       <View className="flex-row gap-3">

@@ -4,8 +4,8 @@ import { Text, View } from 'react-native';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
-import { MenuTextField } from '@/components/menu/MenuTextField';
 import { MenuToggle } from '@/components/menu/MenuToggle';
+import { TextField } from '@/components/ui/TextField';
 import { gridMagneticAngle } from '@/lib/geo/north/convert';
 import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
@@ -140,7 +140,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuToggle label="Manual declination" value={override !== null} onValueChange={toggleManual} />
         {override !== null ? (
           <>
-            <MenuTextField
+            <TextField
               mono
               accessibilityLabel="Declination degrees"
               value={text}

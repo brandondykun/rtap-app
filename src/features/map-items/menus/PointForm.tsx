@@ -5,10 +5,10 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
-import { MenuTextField } from '@/components/menu/MenuTextField';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { TextField } from '@/components/ui/TextField';
 import { AFFILIATIONS, composeSidc, UNIT_TYPES, type Affiliation, type UnitType } from '@/features/symbology/presets';
 import { SYMBOL_IMAGES } from '@/features/symbology/symbol-images.generated';
 import { useCommandContext } from '@/lib/db/command-context-provider';
@@ -119,14 +119,14 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
         />
       </MenuSection>
       <MenuSection label="Name">
-        <MenuTextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <MenuSection label="Unit type">
         <View className="flex-row items-start gap-2">
           <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
           <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
-        {showNotes ? <MenuTextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
+        {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
       </MenuSection>
     </View>
   );
