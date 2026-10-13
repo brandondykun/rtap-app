@@ -12,7 +12,7 @@ crosshair or by tapping the map; tapping a unit, a point or the user's own marke
 exact coordinate.
 
 Success: with MEASURE on, a user taps their own marker, then taps HOS-1, and reads
-`1.29 km · 039° G` (in their angle unit and north reference); tapping HOS-2 next moves the end
+`1.29 km · 039° GRID` (in their angle unit and north reference); tapping HOS-2 next moves the end
 there while the start stays on them.
 
 ## 2. Decisions (from the conversation)
@@ -52,7 +52,7 @@ State: `start: LatLon | null`, `end: LatLon | null` (null = following the crossh
 ### 3.3 Readout
 
 `describeVector(start, end ?? cameraCenter, { unit, ref, declinationOverrideDeg, date })` →
-`"<distanceLabel> · <bearingLabel> <refLabel>"`, e.g. `1.29 km · 039° G`. With no start the card
+`"<distanceLabel> · <bearingLabel> <refLabel>"`, e.g. `1.29 km · 039° GRID`. With no start the card
 reads **Set start** and no line is drawn.
 
 ## 4. UI
