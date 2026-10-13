@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 
+import * as lineDraft from '@/features/map-items/line-draft';
+import type { LineEdit } from '@/features/map-items/line-draft';
 import type { ItemCategory } from '@/features/symbology/categories';
+import type { LineType } from '@/features/symbology/line-types';
 import type { PointType } from '@/features/symbology/point-types';
 import type { Affiliation, UnitType } from '@/features/symbology/presets';
 import type { LatLon } from '@/lib/geo/types';
@@ -31,8 +34,15 @@ type DraftValues = {
   locked: boolean;
   /** Waiting for the user to tap the map where the point should go (the Map button). */
   picking: boolean;
+  /** Line drafts (category 'line'): the points, the selected point, and where the next one goes. */
+  vertices: LatLon[];
+  selectedVertex: number | null;
+  insertAfter: number | null;
+  lineType: LineType;
+  /** Undo stack of earlier vertex states (most recent last), at most HISTORY_LIMIT. */
+  history: LineEdit[];
   /** Last affiliation and types used for adding (rapid entry, and the next time Add opens). */
-  remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType };
+  remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType };
   /** The most recent Add opened (long-press starts it again). Not persisted. */
   lastAddCategory: ItemCategory;
 };
@@ -59,6 +69,15 @@ type DraftActions = {
   setNotes: (notes: string) => void;
   setLocked: (locked: boolean) => void;
   setPicking: (picking: boolean) => void;
+  startAddLine: () => void;
+  startEditLine: (line: { itemId: string; points: LatLon[]; lineType: LineType; name: string; notes: string }) => void;
+  addVertex: (p: LatLon) => void;
+  moveVertex: (i: number, p: LatLon) => void;
+  removeVertex: (i: number) => void;
+  selectVertex: (i: number | null) => void;
+  startInsertAfter: (i: number) => void;
+  undo: () => void;
+  setLineType: (lineType: LineType) => void;
   clear: () => void;
 };
 
@@ -78,13 +97,28 @@ export const INITIAL_DRAFT: DraftValues = {
   notes: '',
   locked: false,
   picking: false,
-  remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint' },
+  vertices: [],
+  selectedVertex: null,
+  insertAfter: null,
+  lineType: 'phase-line',
+  history: [],
+  remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line' },
   lastAddCategory: 'unit',
 };
+
+export const HISTORY_LIMIT = 50;
 
 function isValid(p: LatLon | null): p is LatLon {
   return !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
 }
+
+const edit = (s: DraftValues): LineEdit => ({ vertices: s.vertices, selected: s.selectedVertex, insertAfter: s.insertAfter });
+const apply = (e: LineEdit) => ({ vertices: e.vertices, selectedVertex: e.selected, insertAfter: e.insertAfter });
+/** Applies a vertex change and records the previous state for undo (no-ops record nothing). */
+const record = (s: DraftValues, next: LineEdit) =>
+  next.vertices === s.vertices && next.selected === s.selectedVertex && next.insertAfter === s.insertAfter
+    ? {}
+    : { ...apply(next), history: [...s.history, edit(s)].slice(-HISTORY_LIMIT) };
 
 /** The in-progress point (add or edit). Lives only in memory; commands write it on Add/Save. */
 export const useDraft = create<DraftValues & DraftActions>()((set) => ({
@@ -146,6 +180,43 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setNotes: (notes) => set({ notes }),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
+  // Lines are never started by long-press, so lastAddCategory is left alone.
+  startAddLine: () =>
+    set((s) => ({
+      ...INITIAL_DRAFT,
+      remembered: s.remembered,
+      lastAddCategory: s.lastAddCategory,
+      mode: 'add',
+      category: 'line',
+      lineType: s.remembered.lineType,
+      coordRev: s.coordRev,
+    })),
+  startEditLine: ({ itemId, points, lineType, name, notes }) =>
+    set((s) => ({
+      ...INITIAL_DRAFT,
+      remembered: s.remembered,
+      lastAddCategory: s.lastAddCategory,
+      mode: 'edit',
+      category: 'line',
+      itemId,
+      vertices: points,
+      lineType,
+      name,
+      nameEdited: true,
+      notes,
+      locked: true,
+      coordRev: s.coordRev,
+    })),
+  addVertex: (p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.addVertex(edit(s), p)))),
+  moveVertex: (i, p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.moveVertex(edit(s), i, p)))),
+  removeVertex: (i) => set((s) => (s.locked ? {} : record(s, lineDraft.removeVertex(edit(s), i)))),
+  // Selection and insert mode are not undoable on their own.
+  startInsertAfter: (i) => set((s) => (s.locked ? {} : apply(lineDraft.startInsertAfter(edit(s), i)))),
+  selectVertex: (i) => set((s) => (s.locked ? {} : apply(lineDraft.selectVertex(edit(s), i)))),
+  undo: () =>
+    set((s) => (s.history.length === 0 ? {} : { ...apply(s.history[s.history.length - 1]), history: s.history.slice(0, -1) })),
+  setLineType: (lineType) =>
+    set((s) => ({ lineType, remembered: s.mode === 'add' ? { ...s.remembered, lineType } : s.remembered })),
   clear: () =>
     set((s) => ({
       ...INITIAL_DRAFT,

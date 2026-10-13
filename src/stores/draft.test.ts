@@ -95,3 +95,45 @@ describe('categories', () => {
     expect(useDraft.getState().remembered.pointType).toBe('checkpoint');
   });
 });
+
+describe('line drafts', () => {
+  const p = (n: number) => ({ lat: 38.9 + n / 100, lon: -77 });
+  beforeEach(() => useDraft.setState(INITIAL_DRAFT));
+
+  it('starts an empty line add and undoes each kind of change exactly', () => {
+    const d = () => useDraft.getState();
+    d().startAddLine();
+    expect(d()).toMatchObject({ mode: 'add', category: 'line', vertices: [], lineType: 'phase-line', locked: false });
+    d().addVertex(p(1));
+    d().addVertex(p(2));
+    d().addVertex(p(3));
+    d().selectVertex(0);
+    d().startInsertAfter(0);
+    d().addVertex(p(9));
+    expect(d().vertices).toEqual([p(1), p(9), p(2), p(3)]);
+    d().undo();
+    expect(d()).toMatchObject({ vertices: [p(1), p(2), p(3)], selectedVertex: 0 });
+    d().removeVertex(1);
+    d().undo();
+    expect(d().vertices).toEqual([p(1), p(2), p(3)]);
+    d().moveVertex(2, p(7));
+    d().undo();
+    expect(d().vertices[2]).toEqual(p(3));
+  });
+
+  it('caps history and does not record type changes or selection', () => {
+    const d = () => useDraft.getState();
+    d().startAddLine();
+    for (let i = 0; i < 60; i++) d().addVertex(p(i));
+    expect(d().history).toHaveLength(50);
+    const before = d().history.length;
+    d().setLineType('route');
+    d().selectVertex(3);
+    expect(d().history).toHaveLength(before);
+  });
+
+  it('opens a saved line locked with its points', () => {
+    useDraft.getState().startEditLine({ itemId: 'l1', points: [p(1), p(2)], lineType: 'boundary', name: 'NORTH', notes: '' });
+    expect(useDraft.getState()).toMatchObject({ mode: 'edit', category: 'line', itemId: 'l1', locked: true, vertices: [p(1), p(2)], lineType: 'boundary', history: [] });
+  });
+});
