@@ -15,7 +15,7 @@ export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
 /** Scale for unit symbols (the generated PNGs are ~32 pt tall at 1). */
 export const MARKER_ICON_SIZE = 0.8;
 /** Scale for point (control-measure overlay) symbols: a little smaller than units. */
-export const POINT_ICON_SIZE = 0.68;
+export const POINT_ICON_SIZE = 0.76;
 /** Per-feature size from its `category` property (set by the selectors from itemCategory). */
 const ICON_SIZE_BY_CATEGORY: SymbolLayerStyle['iconSize'] = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE, MARKER_ICON_SIZE];
 /** Chip padding around label text, [top, right, bottom, left] in pt. */

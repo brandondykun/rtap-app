@@ -28,7 +28,9 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 const POINT_OUTLINE_PX = 2;
 /** milsymbol line weight for point symbols (its default is 4); thicker reads better on imagery. */
-const POINT_STROKE_WIDTH = 7;
+const POINT_STROKE_WIDTH = 10;
+/** milsymbol line weight for unit frames and icons (default 4). */
+const UNIT_STROKE_WIDTH = 6;
 /** The same line weight in px at @1x (milsymbol draws on a 100-unit grid scaled to SYMBOL_SIZE). */
 const POINT_LINE_PX = (POINT_STROKE_WIDTH * SYMBOL_SIZE) / 100;
 
@@ -75,7 +77,7 @@ function landingZoneSvg(): string {
 for (const sidc of PRESET_SIDCS) {
   const parts = decomposeSidc(sidc);
   if (!parts) throw new Error(`Unknown preset ${sidc}`);
-  writePng(sidc, new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: fill[parts.affiliation] }).asSVG());
+  writePng(sidc, new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: fill[parts.affiliation], strokeWidth: UNIT_STROKE_WIDTH }).asSVG());
 }
 
 for (const type of POINT_TYPES) {
