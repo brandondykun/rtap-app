@@ -217,7 +217,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const placeDraftPoint = (at: LatLon) => {
     const d = useDraft.getState();
     if (d.category === 'polygon' && d.polygonShape === 'circle') {
-      if (d.coord === null) d.setCoord(at, 'press');
+      // The Map button (picking) moves the center; otherwise the first tap sets it and later taps the edge.
+      if (d.coord === null || d.picking) d.setCoord(at, 'press');
       else d.setCircleEdge(at);
     } else if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
     else d.addVertex(at);

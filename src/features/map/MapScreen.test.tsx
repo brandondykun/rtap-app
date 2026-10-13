@@ -459,6 +459,23 @@ describe('MapScreen', () => {
     expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
   });
 
+  it('POLYGON circle: the Map button moves the center instead of setting the edge', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POLYGON'));
+    await fireEvent.press(await screen.findByLabelText('Circle'));
+    const tap = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    await tap(-77, 38.9);
+    await tap(-77, 38.9045);
+    await fireEvent.press(screen.getByLabelText('Map'));
+    await tap(-77.01, 38.95);
+    expect(useDraft.getState().coord).toEqual({ lat: 38.95, lon: -77.01 });
+    expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
+  });
+
   describe('measure', () => {
     const mapTap = (lon: number, lat: number) =>
       act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
