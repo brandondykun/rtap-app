@@ -39,3 +39,12 @@ run `npm run build:symbols` (a custom SVG in `scripts/build-symbols.ts` if milsy
 it; point images are padded so the symbol's anchor is the image center), and extend
 `point-types.test.ts`. Add/Edit menus are `AddItemPanel` / `EditItemPanel` with a category and a
 form (`UnitForm`, `PointForm`) built from `form/LocationSection` and `useAutoName`.
+
+## Worked example: lines
+
+Lines (`kind = 'line'`) follow the recipe end to end: `line-types.ts` (types and styles),
+`geometry.ts` (`lineGeometry` / `parseLineGeometry`), `placeLine` / `updateLine`,
+`line-selectors.ts` (cached features + end features), `LinesLayer` (halo, solid, dashed, arrows,
+FLOT bumps, labels), images in `build-map-images.ts`, `line-draft.ts` + the draft store's
+vertices/undo, `DraftLineLayer`, `LineDrawBar`, and `ITEM_ADAPTERS.line` so `AddItemPanel` /
+`EditItemPanel` host `LineForm`. New kinds add an adapter rather than new panels.

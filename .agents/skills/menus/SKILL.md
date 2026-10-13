@@ -43,7 +43,14 @@ Reset `useMenu`, `useDraft`, `useToast` in `beforeEach`.
 
 ## Item menus
 
-Units and points each have an Add and an Edit menu (`unit.add`, `unit.edit`, `point.add`,
-`point.edit`). They share `AddItemPanel` / `EditItemPanel` (header, Add/Save/Cancel, Hidden,
-Delete) and differ only in the form passed in. Open an existing item with
-`openItemMenu(itemId, sidc)`, which picks the right menu by category.
+Units, points and lines each have an Add and an Edit menu (`unit.add`, `unit.edit`,
+`point.add`, `point.edit`, `line.add`, `line.edit`). They share `AddItemPanel` / `EditItemPanel`
+(header, Add/Save/Cancel, Hidden, Delete) and differ only in the form passed in and the
+category's adapter in `ITEM_ADAPTERS` (`item-adapters.ts`: can it save, place, update, load a
+saved item into the draft). Open an existing item with `openItemMenu(itemId, { kind, sidc })`,
+which picks the right menu by `itemCategory`.
+
+`LineForm` lists the points with `MenuVertexRow` (number, grid, distance, ×, Insert after) and a
+typed-point row (`MgrsInput` + an icon-only `MenuButton`). While a line is drawn (`line.add` or an
+unlocked `line.edit`), `MissionMap` shows `LineDrawBar` and routes map taps, long-presses and
+symbol taps to the line draft.

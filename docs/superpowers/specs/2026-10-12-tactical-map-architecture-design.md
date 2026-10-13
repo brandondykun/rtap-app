@@ -211,6 +211,12 @@ place that tells them apart. Section 8.5's Add/Edit Point flow is now **Add/Edit
 (`unit.add` / `unit.edit`); points have their own `point.add` / `point.edit` with location, type,
 name and notes. Design: `2026-10-13-units-and-points-design.md`.
 
+### 5.4b Lines
+Military control lines (10 types) are `kind = 'line'` items: GeoJSON LineString in `geometry`,
+`{"lineType": …}` in `style`, no SIDC. `itemCategory({ kind, sidc })` returns `'line'` for them.
+Drawing, editing (select/move/insert/remove/undo), the Line menus and Layers rows are specified in
+`2026-10-13-lines-design.md`.
+
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
