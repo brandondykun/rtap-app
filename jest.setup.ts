@@ -30,6 +30,8 @@ jest.mock('expo-location', () => ({
 jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(async () => {}),
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  impactAsync: jest.fn(async () => {}),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
 }));
 
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));

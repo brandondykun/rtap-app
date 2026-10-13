@@ -7,6 +7,11 @@ function haptic(type: Haptics.NotificationFeedbackType): void {
   void Haptics.notificationAsync(type).catch(() => {});
 }
 
+/** A long-press placed or moved a point on the map: a firm tap so the user feels it land. */
+export function notifyPlaced(): void {
+  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+}
+
 /** A write succeeded (Add, Save, Delete). */
 export function notifySuccess(): void {
   haptic(Haptics.NotificationFeedbackType.Success);

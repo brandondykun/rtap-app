@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 
 import { useToast } from '@/stores/toast';
 
-import { notifyError, notifyInfo, notifySuccess } from './feedback';
+import { notifyError, notifyInfo, notifyPlaced, notifySuccess } from './feedback';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -10,6 +10,11 @@ beforeEach(() => {
 });
 
 describe('feedback', () => {
+  it('plays a medium impact when a point is placed by long-press', () => {
+    notifyPlaced();
+    expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
+  });
+
   it('plays a success haptic without a toast', () => {
     notifySuccess();
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);

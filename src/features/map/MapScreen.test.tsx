@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { placePoint } from '@/features/map-items/commands';
@@ -271,6 +272,7 @@ describe('MapScreen', () => {
 
     await longPress(-77.03, 38.9);
     expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
     expect(useDraft.getState().coord).toEqual({ lat: 38.9, lon: -77.03 });
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
 

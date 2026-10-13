@@ -108,3 +108,4 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 25 | Add Point / Name inputs: the typed text is vertically centred in each field; the Center button shows the same crosshair as the map | PENDING |
 | 26 | Viewing a point read-only: long-press elsewhere starts a new point there; the selected point shows only its name (no "· EDIT") until you tap Edit | PENDING |
 | 27 | Add/Edit Point: tap Map (it turns amber with a hint), tap the map — the point moves there and the map eases to it; tapping on an existing point while picking places it there instead of opening that point; tap Map again to cancel | PENDING |
+| 28 | Long-press on the map: a firm haptic tap as the new point appears (or as the point being placed/edited moves) | PENDING |
