@@ -440,12 +440,19 @@ describe('MapScreen', () => {
         (mapboxMock().__props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: l.value.id } }], coordinates: { latitude: 38.92, longitude: -76.98 }, point: {} }),
       );
       expect(await screen.findByDisplayValue('RED')).toBeTruthy();
-      type BoundsStop = { bounds?: { ne: [number, number]; sw: [number, number] } };
-      const all = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as BoundsStop);
-      await waitFor(() => expect(all().some((s) => s.bounds)).toBe(true));
+      type FitStop = { bounds?: unknown; centerCoordinate?: [number, number]; zoomLevel?: number; padding?: { paddingBottom: number } };
+      const all = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as FitStop);
+      const isFit = (s: FitStop | undefined) => !!s?.zoomLevel && !!s.centerCoordinate && Math.abs(s.centerCoordinate[0] + 76.975) < 1e-6;
+      await waitFor(() => expect(all().some(isFit)).toBe(true));
       mapboxMock().__camera.setCamera.mockClear();
       await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 380 }));
-      expect(all().at(-1)?.bounds).toBeDefined();
+      // Re-issued with the new panel padding, as a padded center + zoom (never Mapbox \`bounds\`, which drops
+      // the padding and puts the camera center — and Move to center — behind the panel).
+      const last = all().at(-1);
+      expect(isFit(last)).toBe(true);
+      expect(last?.padding?.paddingBottom).toBe(useMenu.getState().panelFrame?.size);
+      expect(last?.padding?.paddingBottom).toBeGreaterThan(0);
+      expect(all().some((s) => s.bounds)).toBe(false);
     });
 
     it('a light haptic confirms tapping a point', async () => {

@@ -1,6 +1,6 @@
 import type { Camera, CameraStop } from '@rnmapbox/maps';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { Dimensions, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
@@ -20,7 +20,7 @@ import { useMenu, topMenu } from '@/stores/menu';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
-import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
+import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { MapBottomLeft } from './controls/MapBottomLeft';
@@ -92,6 +92,17 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const moveCamera = useCallback((stop: Omit<CameraStop, 'padding'>) => {
     cameraRef.current?.setCamera({ ...stop, padding: cameraPaddingFor(useMenu.getState().panelFrame) });
   }, []);
+  // Fit a line into the map area the panel leaves visible, as a padded center + zoom move.
+  const fitCamera = useCallback(
+    (bounds: { sw: LatLon; ne: LatLon }, animationDuration: number) => {
+      const window = Dimensions.get('window');
+      const pad = cameraPaddingFor(useMenu.getState().panelFrame);
+      const visible = { width: window.width - pad.paddingLeft - pad.paddingRight, height: window.height - pad.paddingTop - pad.paddingBottom };
+      const { center, zoom } = fitBounds(bounds, visible);
+      moveCamera({ centerCoordinate: [center.lon, center.lat], zoomLevel: zoom, ...EASE, animationDuration });
+    },
+    [moveCamera],
+  );
   // Pad the camera only when the panel frame changes (not on mount).
   const appliedPanel = useRef<PanelFrame | null>(null);
   useEffect(() => {
@@ -101,12 +112,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const self = useInteraction.getState().followMode ? (usePresence.getState().selfPosition?.position ?? null) : null;
     const fit = fitTarget.current;
     if (fit) {
-      moveCamera({ bounds: { ne: [fit.ne.lon, fit.ne.lat], sw: [fit.sw.lon, fit.sw.lat] }, ...EASE, animationDuration: 250 });
+      fitCamera(fit, 250);
       return;
     }
     const target = followTarget.current ?? self;
     moveCamera({ ...(target ? { centerCoordinate: [target.lon, target.lat] } : {}), ...EASE, animationDuration: 250 });
-  }, [panel, moveCamera]);
+  }, [panel, moveCamera, fitCamera]);
 
   useEffect(() => () => useInteraction.getState().reset(), []);
   useEffect(
@@ -157,12 +168,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         if (state.focusRev === prev.focusRev || !state.focusBounds) return;
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
-        const { sw, ne } = state.focusBounds;
         followTarget.current = null;
         fitTarget.current = state.focusBounds;
-        moveCamera({ bounds: { ne: [ne.lon, ne.lat], sw: [sw.lon, sw.lat] }, ...EASE, animationDuration: 500 });
+        fitCamera(state.focusBounds, 500);
       }),
-    [markMoved, setFollowMode, moveCamera],
+    [markMoved, setFollowMode, fitCamera],
   );
 
   const toggleLayers = () => {
