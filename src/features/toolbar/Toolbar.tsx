@@ -65,12 +65,12 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
       disabled={disabled}
       onPress={onPress}
       hitSlop={6}
-      className={`h-11 w-11 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
-      <Icon name={icon} size={24} color={colors.text} />
+      className={`h-10 w-10 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
+      <Icon name={icon} size={22} color={colors.text} />
     </Pressable>
   );
 }
 
 function Divider() {
-  return <View className="mx-2 h-8 w-px bg-border" />;
+  return <View className="mx-1.5 h-7 w-px bg-border" />;
 }
