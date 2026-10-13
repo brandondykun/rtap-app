@@ -59,18 +59,12 @@ export function LineForm() {
 
   return (
     <View>
-      <View className="flex-row gap-3 px-4">
-        <View className="flex-1">
-          <MenuSection label="Name">
-            <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
-          </MenuSection>
-        </View>
-        <View className="flex-1">
-          <MenuSection label="Line type">
-            <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
-          </MenuSection>
-        </View>
-      </View>
+      <MenuSection label="Name">
+        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+      </MenuSection>
+      <MenuSection label="Line type">
+        <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
+      </MenuSection>
       <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? `${formatDistance(totalLength(vertices))} total` : undefined}>
         {vertices.map((v, i) => (
           <MenuVertexRow
@@ -90,18 +84,13 @@ export function LineForm() {
       </MenuSection>
       {locked ? null : (
         <MenuSection label={moving ? `Move point ${selected! + 1}` : 'Type a point'}>
-          <View className="flex-row items-start gap-2">
-            <View className="flex-1">
-              <MgrsInput value={parts} onChange={setParts} status={status} onSubmit={submitTyped} />
-            </View>
-            <MenuButton
-              iconOnly
-              label={moving ? `Move point ${selected! + 1} to typed grid` : 'Add typed point'}
-              icon={moving ? 'check' : 'plus'}
-              onPress={submitTyped}
-              disabled={status.status !== 'valid'}
-            />
-          </View>
+          <MgrsInput value={parts} onChange={setParts} status={status} onSubmit={submitTyped} />
+          <MenuButton
+            label={moving ? `Move point ${selected! + 1} to typed grid` : 'Add typed point'}
+            icon={moving ? 'check' : 'plus'}
+            onPress={submitTyped}
+            disabled={status.status !== 'valid'}
+          />
         </MenuSection>
       )}
       <MenuSection>
