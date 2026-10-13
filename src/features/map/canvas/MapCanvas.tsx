@@ -8,12 +8,13 @@ import type { MissionCamera } from '@/features/missions/repository';
 import type { LatLon } from '@/lib/geo/types';
 import { wrapLon } from '@/lib/geo/units/angle';
 import { useInteraction } from '@/stores/interaction';
+import { useSettings } from '@/stores/settings';
 
 import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
 import { cameraFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
-import { MAP_STYLE_URL } from './mapbox';
+import { BASEMAP_STYLE_URLS } from './mapbox';
 
 /** The pressed position from a Mapbox press feature; null when not finite. */
 function pressCoord(geometry: unknown): LatLon | null {
@@ -41,6 +42,7 @@ type Props = {
 };
 
 export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
+  const basemap = useSettings((s) => s.basemap);
   const insets = useSafeAreaInsets();
   // Mapbox on iOS measures ornament margins from the safe area already.
   // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
@@ -72,7 +74,7 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
   return (
     <MapView
       style={{ flex: 1 }}
-      styleURL={MAP_STYLE_URL}
+      styleURL={BASEMAP_STYLE_URLS[basemap]}
       compassEnabled={false}
       pitchEnabled={false}
       scaleBarEnabled={false}

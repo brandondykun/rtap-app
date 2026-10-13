@@ -36,4 +36,12 @@ describe('Toolbar', () => {
     expect(screen.getByLabelText('POINT')).toBeSelected();
     expect(screen.getByLabelText('POINT')).not.toBeDisabled();
   });
+
+  it('has a LAYERS tool that runs its handler and shows when active', async () => {
+    const onLayers = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool="layers" onLayers={onLayers} />);
+    expect(screen.getByLabelText('LAYERS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
+    expect(onLayers).toHaveBeenCalled();
+  });
 });

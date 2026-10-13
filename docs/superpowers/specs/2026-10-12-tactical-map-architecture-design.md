@@ -33,8 +33,8 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Lines, polygons, and other map item kinds.
 - Remote sync, authentication, paid tier, live teammate locations.
 - Runtime rasterization of arbitrary SIDCs.
-- Shown in mockups but not designed yet (left out of MVP): LINE, POLYGON, MEASURE and LAYERS
-  tools; routes; MGRS grid overlay with grid labels; the "Share" toggle; mesh status, GPS
+- Shown in mockups but not designed yet (left out of MVP): LINE, POLYGON and MEASURE
+  tools (LAYERS was added after the MVP — Section 11.4); routes; MGRS grid overlay with grid labels; the "Share" toggle; mesh status, GPS
   accuracy, altitude and Zulu-time readouts; callsigns (e.g. "2-1").
 - Day and night/red-light themes (MVP ships the mockup dark theme; theming is wired so
   more themes are data-only additions).
@@ -384,7 +384,7 @@ Default tile behavior is online with Mapbox's ambient cache.
     overlaps it.
 - Layout: hamburger (app menu) · divider · tool buttons (icon over uppercase label) ·
   divider · gear (settings menu).
-- **MVP tools:** POINT only. LINE, POLYGON, MEASURE, LAYERS are added later through the
+- **Tools:** POINT and LAYERS. LINE, POLYGON and MEASURE are added later through the
   same `ToolButton` component.
 - **Active tool:** amber icon and label on a dark amber tinted background (POINT while the
   Add Point panel is open).
@@ -490,6 +490,14 @@ stretchable chip image with `iconTextFit: 'both'`, offset below the symbol.
   - `settings` (gear) → coordinate format, angle unit (degrees / mils), north reference
     (grid / magnetic / true), declination override.
 - **Action family:** `point.add`, `point.edit` (Section 8.5).
+- **`layers`** (LAYERS tool, app family; added 2026-10-12): basemap choice — Satellite,
+  Hybrid (satellite + streets), Topo (Mapbox Outdoors), Dark — one per-device setting
+  (`settings.basemap`, default Satellite); and the mission's points: "N points · M hidden",
+  **Show all**, name search, rows (symbol, name, coordinate) with an eye toggle that
+  hides/shows immediately (view state, no Edit step), tapping a row flies to the point and
+  opens it selected (hidden points too). The list shows at most 100 matches, with "Showing
+  100 of N — refine your search". Not yet: filters by affiliation, overlays, basemap for
+  offline downloads.
 
 ### 11.5 Visual design
 Mockups live in `docs/design/mockups/` and are the visual reference for MVP UI:

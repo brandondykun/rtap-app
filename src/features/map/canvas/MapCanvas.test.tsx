@@ -4,16 +4,19 @@ import { Text } from 'react-native';
 
 import { MAP_IMAGES } from '@/features/map/images/map-images';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { WORLD_CAMERA } from './camera';
+import { BASEMAP_STYLE_URLS } from './mapbox';
 import { MapCanvas } from './MapCanvas';
 
 jest.mock('@rnmapbox/maps');
 
 const rafQueue: (() => void)[] = [];
 beforeEach(() => {
+  useSettings.setState(DEFAULT_SETTINGS);
   useInteraction.setState(INITIAL_INTERACTION);
   rafQueue.length = 0;
   jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => {
@@ -87,5 +90,13 @@ describe('MapCanvas', () => {
       onMapIdle({ properties: { center: [-77, 38.9], zoom: 11, heading: 10 }, gestures: { isGestureActive: false } }),
     );
     expect(props.onCameraIdle).toHaveBeenCalledWith({ center: { lat: 38.9, lon: -77 }, zoom: 11, bearing: 10 });
+  });
+
+  it('uses the basemap from settings and switches without remounting the camera', async () => {
+    await renderCanvas();
+    expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.satellite);
+    await act(async () => useSettings.getState().setBasemap('topo'));
+    expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.topo);
+    expect(new Set(Object.values(BASEMAP_STYLE_URLS)).size).toBe(4);
   });
 });

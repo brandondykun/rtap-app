@@ -243,6 +243,18 @@ describe('MapScreen', () => {
     expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.9001, lon: -77.0001 } });
   });
 
+  it('toggles the Layers panel from the toolbar', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('LAYERS'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Layers');
+    expect(screen.getByLabelText('LAYERS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
+    expect(screen.queryByTestId('menu-panel')).toBeNull();
+  });
+
   it('toggles Add Point from the toolbar', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

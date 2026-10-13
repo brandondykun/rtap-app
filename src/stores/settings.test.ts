@@ -13,6 +13,13 @@ describe('settings store', () => {
     expect(s.angleUnit).toBe('deg');
     expect(s.northRef).toBe('grid');
     expect(s.declinationOverrideDeg).toBeNull();
+    expect(s.basemap).toBe('satellite');
+  });
+
+  it('sets and persists the basemap', () => {
+    useSettings.getState().setBasemap('topo');
+    expect(useSettings.getState().basemap).toBe('topo');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state.basemap).toBe('topo');
   });
 
   it('toggles grid ↔ magnetic', () => {
@@ -50,13 +57,14 @@ describe('settings store', () => {
     const seed = (state: unknown) => Storage.setItemSync('settings', JSON.stringify({ state, version: 1 }));
 
     it('loads valid persisted values, including ±180 declination', async () => {
-      seed({ coordinateFormat: 'latlon', angleUnit: 'mil', northRef: 'magnetic', declinationOverrideDeg: 180 });
+      seed({ coordinateFormat: 'latlon', angleUnit: 'mil', northRef: 'magnetic', declinationOverrideDeg: 180, basemap: 'dark' });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({
         coordinateFormat: 'latlon',
         angleUnit: 'mil',
         northRef: 'magnetic',
         declinationOverrideDeg: 180,
+        basemap: 'dark',
       });
       seed({ declinationOverrideDeg: -180 });
       await useSettings.persist.rehydrate();
@@ -64,13 +72,14 @@ describe('settings store', () => {
     });
 
     it('falls back per field for corrupt values', async () => {
-      seed({ coordinateFormat: 'utm', angleUnit: 'mil', northRef: 42, declinationOverrideDeg: 181 });
+      seed({ coordinateFormat: 'utm', angleUnit: 'mil', northRef: 42, declinationOverrideDeg: 181, basemap: 'streets' });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({
         coordinateFormat: 'mgrs',
         angleUnit: 'mil',
         northRef: 'grid',
         declinationOverrideDeg: null,
+        basemap: 'satellite',
       });
     });
 

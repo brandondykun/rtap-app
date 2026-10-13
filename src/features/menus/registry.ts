@@ -1,5 +1,6 @@
-import { editPointMenu } from '@/features/map-items/menus/EditPointMenu';
 import { addPointMenu } from '@/features/map-items/menus/AddPointMenu';
+import { editPointMenu } from '@/features/map-items/menus/EditPointMenu';
+import { layersMenu } from '@/features/map-items/menus/LayersMenu';
 
 import type { MenuDefinition } from './define-menu';
 import { appRootMenu } from './menus/AppRootMenu';
@@ -11,6 +12,7 @@ export type MenuRegistry = { [I in MenuId]: MenuDefinition<I> };
 
 export const MENU_REGISTRY: MenuRegistry = {
   'app.root': appRootMenu,
+  layers: layersMenu,
   'point.add': addPointMenu,
   'point.edit': editPointMenu,
   settings: settingsMenu,

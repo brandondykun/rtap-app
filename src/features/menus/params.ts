@@ -9,6 +9,7 @@ const latLon = z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(
 export const MENU_PARAMS = {
   'app.root': z.object({}),
   settings: z.object({}),
+  layers: z.object({}),
   'point.add': z.object({ at: latLon.optional() }),
   'point.edit': z.object({ itemId: z.string().min(1) }),
 } as const;

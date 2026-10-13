@@ -119,6 +119,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     [markMoved, setFollowMode, moveCamera],
   );
 
+  const toggleLayers = () => {
+    if (topId === 'layers') useMenu.getState().closeMenu();
+    else useMenu.getState().openMenu('layers', {});
+  };
   const togglePoint = () => {
     if (topId === 'point.add') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('point.add', {});
@@ -184,8 +188,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'point.add' ? 'point' : null}
+        activeTool={topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
         onPoint={togglePoint}
+        onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
       />

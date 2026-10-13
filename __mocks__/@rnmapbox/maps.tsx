@@ -46,7 +46,12 @@ export function LineLayer(props: Props) {
   return null;
 }
 
-export const StyleURL = { Satellite: 'mapbox://styles/mapbox/satellite-v9' };
+export const StyleURL = {
+  Satellite: 'mapbox://styles/mapbox/satellite-v9',
+  SatelliteStreet: 'mapbox://styles/mapbox/satellite-streets-v12',
+  Outdoors: 'mapbox://styles/mapbox/outdoors-v12',
+  Dark: 'mapbox://styles/mapbox/dark-v11',
+};
 export const offlineManager = { createPack: jest.fn(), getPacks: jest.fn(async () => []), deletePack: jest.fn() };
 export const setAccessToken = jest.fn();
 

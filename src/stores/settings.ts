@@ -5,6 +5,9 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 
 export type CoordinateFormat = 'mgrs' | 'latlon';
+/** Mapbox basemap styles offered in the Layers panel. */
+export type Basemap = 'satellite' | 'hybrid' | 'topo' | 'dark';
+export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dark'];
 
 type SettingsValues = {
   coordinateFormat: CoordinateFormat;
@@ -12,12 +15,14 @@ type SettingsValues = {
   northRef: NorthRef;
   /** Manual declination in degrees (east positive); null = use the WMM model. */
   declinationOverrideDeg: number | null;
+  basemap: Basemap;
 };
 
 type SettingsActions = {
   setCoordinateFormat: (format: CoordinateFormat) => void;
   setAngleUnit: (unit: AngleUnit) => void;
   setNorthRef: (ref: NorthRef) => void;
+  setBasemap: (basemap: Basemap) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -31,6 +36,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   angleUnit: 'deg',
   northRef: 'grid',
   declinationOverrideDeg: null,
+  basemap: 'satellite',
 };
 
 const syncStorage: StateStorage = {
@@ -56,6 +62,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
       decl === null || (typeof decl === 'number' && Number.isFinite(decl) && Math.abs(decl) <= 180)
         ? decl
         : current.declinationOverrideDeg,
+    basemap: pick(p.basemap, BASEMAPS, current.basemap),
   };
 }
 
@@ -66,6 +73,7 @@ export const useSettings = create<SettingsState>()(
       setCoordinateFormat: (coordinateFormat) => set({ coordinateFormat }),
       setAngleUnit: (angleUnit) => set({ angleUnit }),
       setNorthRef: (northRef) => set({ northRef }),
+      setBasemap: (basemap) => set({ basemap }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -78,11 +86,12 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
         declinationOverrideDeg,
+        basemap,
       }),
     },
   ),
