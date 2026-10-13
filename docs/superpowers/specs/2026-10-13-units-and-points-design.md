@@ -114,8 +114,8 @@ The existing `PointForm` splits into shared sections:
 
 - `LocationSection`: MGRS fields, **Center**, **Map** (with the pick hint), shared by both.
 - Name and Notes fields are written in each form (the unit form places Notes beside Unit type, the point form beside Point type), so they are not a shared section.
-- `UnitForm` = Location + Affiliation + Name + Unit type/Notes (today's layout, unchanged).
-- `PointForm` (new) = Location + **Type**/Notes + Name.
+- `UnitForm` = Name + Location + Affiliation + Unit type/Notes (Name moved to the top 2026-10-13, matching the Line menu).
+- `PointForm` (new) = Name + Location + **Type**/Notes.
 
 **Type** is a `MenuSelect` whose options show each type's symbol and label, defaulting to the
 type used last (`remembered.pointType`, default Checkpoint). Read-only (locked) disables every

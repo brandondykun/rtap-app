@@ -33,6 +33,9 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
 
   return (
     <View>
+      <MenuSection label="Name">
+        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+      </MenuSection>
       <LocationSection />
       <MenuSection label="Affiliation">
         <MenuSegmented<Affiliation>
@@ -45,9 +48,6 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
           onChange={setAffiliation}
           disabled={locked}
         />
-      </MenuSection>
-      <MenuSection label="Name">
-        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <MenuSection label="Unit type">
         <View className="flex-row items-start gap-2">

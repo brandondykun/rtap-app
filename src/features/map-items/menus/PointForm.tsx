@@ -32,6 +32,9 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
 
   return (
     <View>
+      <MenuSection label="Name">
+        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+      </MenuSection>
       <LocationSection />
       <MenuSection label="Point type">
         <View className="flex-row items-start gap-2">
@@ -41,9 +44,6 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
           <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
         {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
-      </MenuSection>
-      <MenuSection label="Name">
-        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
     </View>
   );
