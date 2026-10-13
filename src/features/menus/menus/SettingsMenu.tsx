@@ -35,7 +35,7 @@ function GridMagneticLine() {
   // The number a user sets on a compass against the map grid, so it stands out by size alone: no
   // border or fill, which would make it look like the selectable options above it.
   return (
-    <View accessible accessibilityLabel={`G-M angle here, grid to magnetic: ${value}`} className="py-2">
+    <View accessible accessibilityLabel={`G-M angle here, grid to magnetic: ${value}`} className="pb-2 pt-4">
       <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">G-M angle here · grid → magnetic</Text>
       <Text testID="gm-angle" className="font-mono-bold text-2xl text-text">
         {value}
