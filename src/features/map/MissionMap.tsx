@@ -28,6 +28,7 @@ import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
+import { DraftLineLayer } from './layers/DraftLineLayer';
 import { LinesLayer } from './layers/LinesLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
@@ -73,6 +74,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   const editingId = useDraft((s) => (s.mode === 'edit' ? s.itemId : null));
+  const drawingLine = useDraft((s) => s.mode !== null && s.category === 'line');
   const draftActive = useDraft((s) => s.mode !== null);
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
@@ -206,6 +208,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
+        {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} /> : null}
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />

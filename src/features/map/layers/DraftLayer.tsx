@@ -42,7 +42,7 @@ export function DraftLayer() {
   const rangeLabelStyle = useMemo(() => makeRangeLabelStyle(colors), [colors]);
 
   const shape = useMemo(() => {
-    if (!mode || !coord) return draftFeatureCollection(null);
+    if (!mode || !coord || category === 'line') return draftFeatureCollection(null);
     const v = self ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
     return draftFeatureCollection({
       coord,

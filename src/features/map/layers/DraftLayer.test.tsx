@@ -65,4 +65,12 @@ describe('DraftLayer', () => {
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
     expect(shape.features[0].properties.label).toBe('FRD-2 · EDIT');
   });
+
+  it('draws nothing for a line draft', async () => {
+    useDraft.getState().startAddLine();
+    // A stray coordinate (e.g. from a map tap) must still not draw a unit/point symbol.
+    useDraft.getState().setCoord({ lat: 38.9, lon: -77 }, 'press');
+    await renderWithProviders(<DraftLayer />);
+    expect((mapboxMock().__props.ShapeSource.draft.shape as Shape).features).toEqual([]);
+  });
 });
