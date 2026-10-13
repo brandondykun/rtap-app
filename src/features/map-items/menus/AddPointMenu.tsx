@@ -49,8 +49,9 @@ export function AddPointMenu({ params, missionId }: MenuComponentProps<'point.ad
       return;
     }
     notifySuccess();
-    // Rapid entry: keep affiliation and type, start the next point at the crosshair.
-    useDraft.getState().resetAfterAdd(useInteraction.getState().cameraCenter);
+    // Rapid entry: keep affiliation and type, start the next point at the crosshair — unless the
+    // user cancelled or switched to Edit while the write was in flight.
+    if (useDraft.getState().mode === 'add') useDraft.getState().resetAfterAdd(useInteraction.getState().cameraCenter);
   };
 
   return (
