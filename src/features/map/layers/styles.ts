@@ -15,7 +15,7 @@ export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
 /** Scale for mission symbols (the generated PNGs are ~32 pt tall at 1). */
 export const MARKER_ICON_SIZE = 0.8;
 /** Chip padding around label text, [top, right, bottom, left] in pt. */
-const LABEL_CHIP_PADDING: [number, number, number, number] = [1, 4, 1, 4];
+const LABEL_CHIP_PADDING: [number, number, number, number] = [0, 2, 0, 2];
 
 /** Symbol icons: every point always shows; collisions never hide a symbol. */
 export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {

@@ -12,7 +12,7 @@ export const DRAFT_RING_RADIUS = 24;
  * rnmapbox multiplies stretch/content values by `scale` before handing them to Mapbox, so the
  * options below are in points (image pixels ÷ scale).
  */
-export const LABEL_CHIP_SPEC = { sizePx: 72, radiusPx: 12, insetPx: 18, scale: 3 } as const;
+export const LABEL_CHIP_SPEC = { sizePx: 72, radiusPx: 9, insetPx: 9, scale: 3 } as const;
 
 const { sizePx, insetPx, scale } = LABEL_CHIP_SPEC;
 const inset = insetPx / scale;
