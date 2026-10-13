@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
 import { TextField } from '@/components/ui/TextField';
 import { renderWithProviders } from '@/test-utils/render';
@@ -46,5 +47,14 @@ describe('menu inputs', () => {
     await fireEvent.press(screen.getByText('Infantry'));
     expect(onChange).toHaveBeenCalledWith('infantry');
     expect(screen.queryByText('Infantry')).toBeNull();
+  });
+
+  it('MenuSelect shows option icons in the list and the selected value', async () => {
+    await renderWithProviders(
+      <MenuSelect label="Type" options={[{ value: 'a', label: 'Alpha', icon: <Text>ICON-A</Text> }, { value: 'b', label: 'Bravo' }]} value="a" onChange={jest.fn()} />,
+    );
+    expect(screen.getByText('ICON-A')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Type: Alpha'));
+    expect(screen.getAllByText('ICON-A')).toHaveLength(2);
   });
 });

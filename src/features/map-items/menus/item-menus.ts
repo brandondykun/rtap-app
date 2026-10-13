@@ -9,7 +9,6 @@ export const ITEM_COPY: Record<ItemCategory, { noun: string; title: string }> = 
 
 /** Open the right view for a map item (tap on the map or a Layers row). */
 export function openItemMenu(itemId: string, sidc: string | null): void {
-  // Task 5: 'point.edit'
-  if (itemCategory(sidc) === 'point') useMenu.getState().openMenu('unit.edit', { itemId });
+  if (itemCategory(sidc) === 'point') useMenu.getState().openMenu('point.edit', { itemId });
   else useMenu.getState().openMenu('unit.edit', { itemId });
 }

@@ -161,8 +161,7 @@ describe('EditUnitMenu', () => {
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: b.value.id });
   });
 
-  // enabled in Task 5 (point.edit exists then)
-  it.skip('opens a point in the point menu instead', async () => {
+  it('opens a point in the point menu instead', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: 'GFGPGPPK------X', name: 'CP-1' });
     if (!r.ok) throw new Error('setup');
