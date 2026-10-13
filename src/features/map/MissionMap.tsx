@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
-import { notifyPlaced } from '@/features/feedback/feedback';
+import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import type { MissionCamera } from '@/features/missions/repository';
@@ -141,7 +141,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   const onItemPress = (itemId: string, at: LatLon) => {
     if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
-    else useMenu.getState().openMenu('point.edit', { itemId });
+    else {
+      notifySelected();
+      useMenu.getState().openMenu('point.edit', { itemId });
+    }
   };
   const onLongPress = (coord: LatLon) => {
     notifyPlaced();

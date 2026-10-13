@@ -12,6 +12,11 @@ export function notifyPlaced(): void {
   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 }
 
+/** A tap selected a point on the map: a light tap, since the panel takes a moment to open. */
+export function notifySelected(): void {
+  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+}
+
 /** A write succeeded (Add, Save, Delete). */
 export function notifySuccess(): void {
   haptic(Haptics.NotificationFeedbackType.Success);

@@ -334,6 +334,20 @@ describe('MapScreen', () => {
     const calls = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as Stop);
     const fullyPadded = (stop: Stop) => (stop.padding?.paddingBottom ?? 0) + (stop.padding?.paddingLeft ?? 0) > 0;
 
+    it('a light haptic confirms tapping a point', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      if (!p.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
+      );
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+    });
+
     it('tapping a point keeps every camera move fully padded and ends on the item', async () => {
       const ctx = makeTestContext();
       const r = await createMission(ctx, { name: 'Op Iron' });

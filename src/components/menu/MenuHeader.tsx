@@ -5,15 +5,19 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 export type MenuHeaderAction = { label: string; onPress: () => void; disabled?: boolean; icon?: IconName };
 
-/** Leading text action (Cancel / Close), centered uppercase title, trailing amber primary button. */
+/** Leading outlined action (Cancel / Close), centered uppercase title, trailing amber primary button. */
 export function MenuHeader({ title, leading, trailing }: { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction }) {
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center px-4 pb-3">
       <View className="min-w-20 items-start">
         {leading ? (
-          <Pressable accessibilityRole="button" onPress={leading.onPress} hitSlop={8}>
-            <Text className="text-base text-text-muted">{leading.label}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={leading.onPress}
+            hitSlop={8}
+            className="rounded-xl border border-border bg-surface-raised px-4 py-2 active:opacity-60">
+            <Text className="font-semibold text-text">{leading.label}</Text>
           </Pressable>
         ) : null}
       </View>
