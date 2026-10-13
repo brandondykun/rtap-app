@@ -24,4 +24,29 @@ describe('DraftLineLayer', () => {
     await act(async () => (props.ShapeSource['draft-line'].onPress as (e: unknown) => void)({ features: [{ properties: { role: 'vertex', index: 1 } }], coordinates: {}, point: {} }));
     expect(onVertexPress).toHaveBeenCalledWith(1);
   });
+
+
+  it('finds the vertex among overlapping features, and passes other taps on as map taps', async () => {
+    const onVertexPress = jest.fn();
+    const onPress = jest.fn();
+    useDraft.getState().startAddLine();
+    useDraft.getState().addVertex({ lat: 38.9, lon: -77 });
+    useDraft.getState().addVertex({ lat: 38.91, lon: -77 });
+    await renderWithProviders(<DraftLineLayer onVertexPress={onVertexPress} onPress={onPress} />);
+    const press = mapboxMock().__props.ShapeSource['draft-line'].onPress as (e: unknown) => void;
+    await act(async () =>
+      press({ features: [{ properties: { role: 'label' } }, { properties: { role: 'vertex', index: 1 } }], coordinates: { latitude: 38.91, longitude: -77 }, point: {} }),
+    );
+    expect(onVertexPress).toHaveBeenCalledWith(1);
+    await act(async () => press({ features: [{ properties: { role: 'segment' } }], coordinates: { latitude: 38.905, longitude: -77.001 }, point: {} }));
+    expect(onPress).toHaveBeenCalledWith({ lat: 38.905, lon: -77.001 });
+    expect(onVertexPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the end arrow and FLOT bumps of the line type', async () => {
+    useDraft.getState().startAddLine();
+    await renderWithProviders(<DraftLineLayer />);
+    const props = mapboxMock().__props;
+    for (const id of ['draft-line-arrow', 'draft-line-flot']) expect(props.SymbolLayer[id]).toBeDefined();
+  });
 });

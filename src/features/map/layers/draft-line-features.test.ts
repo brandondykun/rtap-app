@@ -21,4 +21,15 @@ describe('draftLineFeatures', () => {
     expect(draftLineFeatures({ vertices: [p(0)], selected: null, lineType: 'route', name: '' }).features.map((f) => f.properties.role)).toEqual(['vertex']);
     expect(draftLineFeatures({ vertices: [], selected: null, lineType: 'route', name: '' }).features).toEqual([]);
   });
+
+
+  it('adds an end feature with the outward bearing for arrowed types, and the decoration on the line', () => {
+    const route = draftLineFeatures({ vertices: [p(0), p(1)], selected: null, lineType: 'route', name: '' });
+    const end = route.features.find((f) => f.properties.role === 'end')!;
+    expect(end.properties.bearing).toBeCloseTo(0, 0);
+    expect(end.geometry.coordinates).toEqual([-77, p(1).lat]);
+    const flot = draftLineFeatures({ vertices: [p(0), p(1)], selected: null, lineType: 'flot', name: '' });
+    expect(flot.features.find((f) => f.properties.role === 'line')!.properties.decoration).toBe('flot-arcs');
+    expect(flot.features.some((f) => f.properties.role === 'end')).toBe(false);
+  });
 });

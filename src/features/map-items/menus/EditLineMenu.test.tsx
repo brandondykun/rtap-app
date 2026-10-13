@@ -75,4 +75,17 @@ describe('EditLineMenu', () => {
     await act(async () => useMenu.getState().openMenu('line.edit', { itemId: unit.value.id }));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([{ id: 'unit.edit', params: { itemId: unit.value.id } }]));
   });
+
+
+  it('does not show the 2-point hint while only viewing a 2-point line', async () => {
+    const ctx = makeTestContext();
+    const r = await placeLine(ctx, { missionId: 'm1', points: [p(0), p(1)], lineType: 'phase-line', name: 'TWO' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('line.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('TWO');
+    expect(screen.queryByText('A line needs at least 2 points')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    expect(screen.getByText('A line needs at least 2 points')).toBeTruthy();
+  });
 });

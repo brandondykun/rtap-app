@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { placePoint } from '@/features/map-items/commands';
+import { placeLine, placePoint } from '@/features/map-items/commands';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
@@ -427,6 +427,26 @@ describe('MapScreen', () => {
     type Stop = { centerCoordinate?: [number, number]; padding?: { paddingBottom: number; paddingLeft: number } };
     const calls = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as Stop);
     const fullyPadded = (stop: Stop) => (stop.padding?.paddingBottom ?? 0) + (stop.padding?.paddingLeft ?? 0) > 0;
+
+    it('opening a line fits the camera to it, and a later panel move keeps that fit', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const l = await placeLine(ctx, { missionId: r.value.id, points: [{ lat: 38.9, lon: -77 }, { lat: 38.95, lon: -76.95 }], lineType: 'phase-line', name: 'RED' });
+      if (!l.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: l.value.id } }], coordinates: { latitude: 38.92, longitude: -76.98 }, point: {} }),
+      );
+      expect(await screen.findByDisplayValue('RED')).toBeTruthy();
+      type BoundsStop = { bounds?: { ne: [number, number]; sw: [number, number] } };
+      const all = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as BoundsStop);
+      await waitFor(() => expect(all().some((s) => s.bounds)).toBe(true));
+      mapboxMock().__camera.setCamera.mockClear();
+      await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 380 }));
+      expect(all().at(-1)?.bounds).toBeDefined();
+    });
 
     it('a light haptic confirms tapping a point', async () => {
       const ctx = makeTestContext();

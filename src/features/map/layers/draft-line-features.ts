@@ -1,11 +1,11 @@
 import { segmentLengths } from '@/features/map-items/line-measure';
 import { lineLabel, lineTypeInfo, type LineType } from '@/features/symbology/line-types';
 import { formatDistance } from '@/lib/geo/format/measure';
-import { midpoint } from '@/lib/geo/measure/geodesic';
+import { inverse, midpoint } from '@/lib/geo/measure/geodesic';
 import type { LatLon } from '@/lib/geo/types';
 
-type Role = 'line' | 'segment' | 'vertex' | 'label';
-type Props = { role: Role; label?: string; number?: string; index?: number; selected?: boolean; dash?: string; width?: string };
+type Role = 'line' | 'segment' | 'vertex' | 'label' | 'end';
+type Props = { role: Role; label?: string; number?: string; index?: number; selected?: boolean; dash?: string; width?: string; decoration?: string; bearing?: number };
 type Feature =
   | { type: 'Feature'; id: string; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: Props }
   | { type: 'Feature'; id: string; geometry: { type: 'Point'; coordinates: [number, number] }; properties: Props };
@@ -18,7 +18,7 @@ export function draftLineFeatures(d: { vertices: LatLon[]; selected: number | nu
   const features: Feature[] = [];
   if (vertices.length >= 2) {
     const info = lineTypeInfo(d.lineType);
-    features.push({ type: 'Feature', id: 'line', geometry: { type: 'LineString', coordinates: vertices.map(lonLat) }, properties: { role: 'line', dash: info.dash, width: info.width } });
+    features.push({ type: 'Feature', id: 'line', geometry: { type: 'LineString', coordinates: vertices.map(lonLat) }, properties: { role: 'line', dash: info.dash, width: info.width, decoration: info.decoration } });
     segmentLengths(vertices).forEach((m, i) =>
       features.push({
         type: 'Feature',
@@ -27,6 +27,15 @@ export function draftLineFeatures(d: { vertices: LatLon[]; selected: number | nu
         properties: { role: 'segment', label: formatDistance(m) },
       }),
     );
+  }
+  if (vertices.length >= 2 && lineTypeInfo(d.lineType).endArrow) {
+    const last = vertices.length - 1;
+    features.push({
+      type: 'Feature',
+      id: 'end',
+      geometry: { type: 'Point', coordinates: lonLat(vertices[last]) },
+      properties: { role: 'end', bearing: inverse(vertices[last - 1], vertices[last]).azimuthTrue ?? 0 },
+    });
   }
   vertices.forEach((v, i) =>
     features.push({ type: 'Feature', id: `vertex-${i}`, geometry: { type: 'Point', coordinates: lonLat(v) }, properties: { role: 'vertex', number: String(i + 1), index: i, selected: d.selected === i } }),

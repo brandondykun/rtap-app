@@ -39,6 +39,11 @@ const EASE = { animationMode: 'easeTo' as const };
 /** ~5 m: the idle camera center counts as the move's target. */
 const ARRIVED_DEG = 5e-5;
 
+/** The camera reached a line fit once its center is inside the fitted bounds. */
+function isInside(p: LatLon, b: { sw: LatLon; ne: LatLon }) {
+  return p.lat >= b.sw.lat && p.lat <= b.ne.lat && p.lon >= b.sw.lon && p.lon <= b.ne.lon;
+}
+
 function isNear(a: LatLon, b: LatLon) {
   return Math.abs(a.lat - b.lat) < ARRIVED_DEG && Math.abs(a.lon - b.lon) < ARRIVED_DEG / Math.max(Math.cos((b.lat * Math.PI) / 180), 0.01);
 }
@@ -80,6 +85,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const lineDrawing = useDraft((s) => s.category === 'line' && s.mode !== null && !s.locked);
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
+  // A line fit still in flight: a padding change re-issues it instead of cancelling it.
+  const fitTarget = useRef<{ sw: LatLon; ne: LatLon } | null>(null);
   // Every camera move carries the panel's full padding: a move without it targets the padding of the
   // moment (possibly mid-animation) and replaces the running padding ease (rnmapbox 10 iOS).
   const moveCamera = useCallback((stop: Omit<CameraStop, 'padding'>) => {
@@ -92,6 +99,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     appliedPanel.current = panel;
     // Following the user: re-center on them now rather than at the next GPS fix.
     const self = useInteraction.getState().followMode ? (usePresence.getState().selfPosition?.position ?? null) : null;
+    const fit = fitTarget.current;
+    if (fit) {
+      moveCamera({ bounds: { ne: [fit.ne.lon, fit.ne.lat], sw: [fit.sw.lon, fit.sw.lat] }, ...EASE, animationDuration: 250 });
+      return;
+    }
     const target = followTarget.current ?? self;
     moveCamera({ ...(target ? { centerCoordinate: [target.lon, target.lat] } : {}), ...EASE, animationDuration: 250 });
   }, [panel, moveCamera]);
@@ -132,6 +144,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
         followTarget.current = state.coord;
+        fitTarget.current = null;
         moveCamera({ centerCoordinate: [state.coord.lon, state.coord.lat], ...EASE, animationDuration: 400 });
       }),
     [markMoved, setFollowMode, moveCamera],
@@ -145,6 +158,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
         const { sw, ne } = state.focusBounds;
+        followTarget.current = null;
+        fitTarget.current = state.focusBounds;
         moveCamera({ bounds: { ne: [ne.lon, ne.lat], sw: [sw.lon, sw.lat] }, ...EASE, animationDuration: 500 });
       }),
     [markMoved, setFollowMode, moveCamera],
@@ -200,6 +215,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
 
   const onUserGesture = () => {
     followTarget.current = null;
+    fitTarget.current = null;
     markMoved();
     if (useInteraction.getState().followMode) setFollowMode(false);
   };
@@ -217,6 +233,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (!self) return;
     markMoved();
     followTarget.current = null;
+    fitTarget.current = null;
     setFollowMode(true);
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
     moveCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
@@ -232,6 +249,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onCameraIdle={(camera) => {
           // Only arriving ends a draft-follow move: an idle from an earlier move must not drop it.
           if (followTarget.current && isNear(camera.center, followTarget.current)) followTarget.current = null;
+          if (fitTarget.current && isInside(camera.center, fitTarget.current)) fitTarget.current = null;
           if (cameraMoved.current) saver.schedule(camera);
         }}
         onLongPress={onLongPress}
@@ -240,7 +258,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
-        {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} /> : null}
+        {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />

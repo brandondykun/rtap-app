@@ -54,7 +54,8 @@ export function LineForm() {
     setParts(selected === i ? EMPTY_MGRS : mgrsFieldsFor(vertices[i]));
   };
 
-  const blocked = vertices.length === 2;
+  // Only while editing: a saved 2-point line being viewed is fine as it is.
+  const blocked = !locked && vertices.length === 2;
 
   return (
     <View>
