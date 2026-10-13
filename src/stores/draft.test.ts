@@ -39,16 +39,6 @@ describe('draft store', () => {
     expect(useDraft.getState().nameEdited).toBe(false);
   });
 
-  it('resets after an add, keeping affiliation and type', () => {
-    useDraft.getState().startAdd({ coord: A, source: 'crosshair' });
-    useDraft.getState().setAffiliation('friend');
-    useDraft.getState().setUnitType('armor');
-    useDraft.getState().setName('FRD-7');
-    useDraft.getState().setNotes('dug in');
-    useDraft.getState().resetAfterAdd(B);
-    expect(useDraft.getState()).toMatchObject({ coord: B, coordSource: 'crosshair', affiliation: 'friend', unitType: 'armor', name: '', nameEdited: false, notes: '' });
-  });
-
   it('remembers add choices across clear, but not edit values', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair' });
     useDraft.getState().setAffiliation('friend');

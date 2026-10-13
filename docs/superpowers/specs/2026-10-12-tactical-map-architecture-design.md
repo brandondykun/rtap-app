@@ -328,9 +328,10 @@ lib/geo/
   (draft ← own position); affiliation segmented control (friendly / hostile / neutral /
   unknown, shown as frame icons); **Name** (auto, e.g. `HOS-4`, editable); **unit type**
   dropdown; **notes** button that reveals a notes field.
-- **Add** → `placePoint({ missionId, coord, sidc, name, notes })`, success haptic. The panel
-  stays open for rapid entry: affiliation and type are kept, the name increments, and the
-  draft resets to the crosshair. **Cancel** closes the panel and clears the draft.
+- **Add** → `placePoint({ missionId, coord, sidc, name, notes })`, success haptic, then the
+  panel switches to `point.edit` for the new point, shown selected (user decision 2026-10-12:
+  no second draft dropped on top of the new point). The next Add Point remembers the last
+  affiliation and type, and its name increments. **Cancel** closes the panel and clears the draft.
 - **Auto-names:** `<PREFIX>-<n>` with `FRD`, `HOS`, `NEU`, `UNK` prefixes; `n` is one more
   than the highest existing number for that prefix in the mission.
 - **SIDC:** built from affiliation × unit type (`symbology/presets.ts`). MVP unit types:

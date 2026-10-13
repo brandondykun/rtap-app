@@ -18,7 +18,7 @@ export function MenuSelect<T extends string>({ label, options, value, onChange }
         accessibilityLabel={`${label}: ${current}`}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((o) => !o)}
-        className="flex-row items-center justify-between rounded-xl border-2 border-border bg-surface-input px-3 py-3">
+        className="h-12 flex-row items-center justify-between rounded-xl border-2 border-border bg-surface-input px-3">
         <Text numberOfLines={1} className="shrink text-lg text-text">
           {current}
         </Text>

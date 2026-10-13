@@ -7,6 +7,7 @@ import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { MenuTextField } from '@/components/menu/MenuTextField';
 import { MgrsInput } from '@/components/menu/MgrsInput';
+import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { AFFILIATIONS, composeSidc, UNIT_TYPES, type Affiliation, type UnitType } from '@/features/symbology/presets';
 import { SYMBOL_IMAGES } from '@/features/symbology/symbol-images.generated';
@@ -17,6 +18,7 @@ import { useDraft, type DraftMode } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { suggestPointName } from '../repository';
 
@@ -26,6 +28,7 @@ const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label }));
 /** The shared Add/Edit point form. It edits only the draft store; the menu decides when to write. */
 export function PointForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const ctx = useCommandContext();
+  const { colors } = useTheme();
   const coord = useDraft((s) => s.coord);
   const coordRev = useDraft((s) => s.coordRev);
   const coordSource = useDraft((s) => s.coordSource);
@@ -95,7 +98,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
         <MgrsInput value={parts} onChange={onPartsChange} status={status} validDetail={validDetail} />
         <View className="flex-row gap-2">
           <View className="flex-1">
-            <MenuButton label="Center" icon="crosshairs" onPress={toCrosshair} />
+            <MenuButton label="Center" icon={<CrosshairGlyph size={18} color={colors.text} />} onPress={toCrosshair} />
           </View>
           <View className="flex-1">
             <MenuButton label="Me" icon="crosshairs-gps" onPress={toMe} disabled={!self} />

@@ -43,15 +43,15 @@ export function AddPointMenu({ params, missionId }: MenuComponentProps<'point.ad
       name: d.name,
       notes: d.notes.trim() || null,
     });
-    busy.current = false;
     if (!result.ok) {
+      busy.current = false;
       notifyError(result.error === 'invalid_name' ? 'Enter a name.' : 'Could not add the point.');
       return;
     }
     notifySuccess();
-    // Rapid entry: keep affiliation and type, start the next point at the crosshair — unless the
-    // user cancelled or switched to Edit while the write was in flight.
-    if (useDraft.getState().mode === 'add') useDraft.getState().resetAfterAdd(useInteraction.getState().cameraCenter);
+    // Hand over to the new point, shown selected in Edit Point (the menu is replaced, so the lock
+    // stays on). Skip if the user cancelled or switched menus while the write was in flight.
+    if (useDraft.getState().mode === 'add') useMenu.getState().openMenu('point.edit', { itemId: result.value.id });
   };
 
   return (

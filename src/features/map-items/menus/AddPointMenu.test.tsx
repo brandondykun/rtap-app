@@ -43,25 +43,22 @@ describe('AddPointMenu', () => {
     expect(screen.getByLabelText('Hostile')).toBeSelected();
   });
 
-  it('adds the point, plays a success haptic and stays open for the next one', async () => {
+  it('adds the point, plays a success haptic and selects it in Edit Point', async () => {
     const ctx = await open();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     const [item] = await items(ctx);
     expect(item).toMatchObject({ name: 'HOS-1', sidc: composeSidc('hostile', 'unspecified') });
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
-    expect(await screen.findByDisplayValue('HOS-2')).toBeTruthy();
-    expect(useDraft.getState()).toMatchObject({ mode: 'add', affiliation: 'hostile', coord: CENTER });
+    expect(useMenu.getState().stack).toEqual([{ id: 'point.edit', params: { itemId: item.id } }]);
   });
 
-  it('never gives two points the same name when Add is tapped twice quickly', async () => {
+  it('adds only one point when Add is tapped twice', async () => {
     const ctx = await open();
     await fireEvent.press(screen.getByLabelText('Add'));
     await fireEvent.press(screen.getByLabelText('Add'));
-    await waitFor(async () => expect((await items(ctx)).length).toBeGreaterThanOrEqual(1));
-    const names = (await items(ctx)).map((i) => i.name);
-    expect(names.length).toBeLessThanOrEqual(2);
-    expect(new Set(names).size).toBe(names.length);
+    await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
+    expect(await items(ctx)).toHaveLength(1);
   });
 
   it('keeps the map still and disables Add while the MGRS is partial', async () => {

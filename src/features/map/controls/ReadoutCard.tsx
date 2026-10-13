@@ -1,7 +1,7 @@
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components/ui/Icon';
+import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
@@ -35,7 +35,7 @@ export function ReadoutCard() {
         maxWidth: width - insets.left - insets.right - 2 * EDGE - CONTROL_SIZE - GAP,
       }}>
       <View className="flex-row items-center gap-2">
-        <Icon name="crosshairs" size={18} color={colors['text-muted']} />
+        <CrosshairGlyph size={18} color={colors['text-muted']} />
         <Text testID="readout-coordinate" className="shrink font-mono-bold text-xl text-text" adjustsFontSizeToFit numberOfLines={1}>
           {r.coordinate}
         </Text>

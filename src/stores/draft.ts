@@ -36,7 +36,6 @@ type DraftActions = {
   setName: (name: string) => void;
   setAutoName: (name: string) => void;
   setNotes: (notes: string) => void;
-  resetAfterAdd: (coord: LatLon | null) => void;
   clear: () => void;
 };
 
@@ -102,16 +101,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setName: (name) => set({ name, nameEdited: name.trim() !== '' }),
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
-  resetAfterAdd: (coord) =>
-    set((s) => ({
-      coord: isValid(coord) ? coord : s.coord,
-      coordSource: 'crosshair',
-      coordRev: s.coordRev + 1,
-      coordInputValid: true,
-      name: '',
-      nameEdited: false,
-      notes: '',
-    })),
   clear: () =>
     set((s) => ({
       ...INITIAL_DRAFT,

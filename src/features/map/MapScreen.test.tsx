@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { placePoint } from '@/features/map-items/commands';
+import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
@@ -183,6 +184,20 @@ describe('MapScreen', () => {
       spy.mockImplementation(() => ({ remove: jest.fn() }));
       await unmount();
     });
+  });
+
+  it('selects the new point in Edit Point after Add, without a second draft on top', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    await screen.findByDisplayValue('HOS-1');
+    await fireEvent.press(screen.getByLabelText('Add'));
+    expect(await screen.findByText('Edit point')).toBeTruthy();
+    const itemId = useDraft.getState().itemId;
+    expect(useDraft.getState().mode).toBe('edit');
+    await waitFor(() => expect(mapboxMock().__props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([itemId!])));
   });
 
   it('toggles Add Point from the toolbar', async () => {
