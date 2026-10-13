@@ -128,7 +128,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <SelfLayer />
       </MapCanvas>
       <Crosshair panel={panel} />
-      <Toolbar landscape={landscape} activeTool={null} onMenu={() => useMenu.getState().openMenu('app.root', {})} />
+      <Toolbar
+        landscape={landscape}
+        activeTool={null}
+        onMenu={() => useMenu.getState().openMenu('app.root', {})}
+        onSettings={() => useMenu.getState().openMenu('settings', {})}
+      />
       <MapControls
         following={followMode}
         canRecenter={hasSelfPosition}
