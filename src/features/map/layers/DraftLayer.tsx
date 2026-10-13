@@ -1,7 +1,7 @@
 import { LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
-import { composeSidc } from '@/features/symbology/presets';
+import { draftSidc } from '@/features/map-items/draft-sidc';
 import { describeVector } from '@/lib/geo/vector';
 import { useDraft } from '@/stores/draft';
 import { usePresence } from '@/stores/presence';
@@ -28,6 +28,8 @@ export function DraftLayer() {
   const coord = useDraft((s) => s.coord);
   const affiliation = useDraft((s) => s.affiliation);
   const unitType = useDraft((s) => s.unitType);
+  const category = useDraft((s) => s.category);
+  const pointType = useDraft((s) => s.pointType);
   const name = useDraft((s) => s.name);
   const locked = useDraft((s) => s.locked);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
@@ -44,13 +46,13 @@ export function DraftLayer() {
     const v = self ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
     return draftFeatureCollection({
       coord,
-      sidc: composeSidc(affiliation, unitType),
+      sidc: draftSidc({ category, affiliation, unitType, pointType }),
       // A selected (view-only) point shows just its name; drafts being placed or edited are tagged.
       label: locked ? name.trim() || '…' : `${name.trim() || '…'} · ${mode === 'add' ? 'NEW' : 'EDIT'}`,
       self,
       rangeLabel: v ? `${v.distanceLabel} · ${v.bearingLabel}` : null,
     });
-  }, [mode, coord, affiliation, unitType, name, locked, self, angleUnit, northRef, declinationOverrideDeg]);
+  }, [mode, coord, category, affiliation, unitType, pointType, name, locked, self, angleUnit, northRef, declinationOverrideDeg]);
 
   return (
     <ShapeSource id="draft" shape={shape}>

@@ -25,7 +25,7 @@ function selectItem(item: MapItemSnapshot): boolean {
   const at = pointCoord(item.geometry);
   if (!at) return false;
   const kind = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
-  useDraft.getState().startEdit({ itemId: item.id, coord: at, affiliation: kind.affiliation, unitType: kind.unitType, name: item.name, notes: item.notes ?? '' });
+  useDraft.getState().startEdit({ itemId: item.id, coord: at, category: 'unit', pointType: 'checkpoint', affiliation: kind.affiliation, unitType: kind.unitType, name: item.name, notes: item.notes ?? '' });
   return true;
 }
 const NO_IDS: string[] = [];

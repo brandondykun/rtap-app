@@ -24,7 +24,7 @@ export function AddPointMenu({ params, missionId }: MenuComponentProps<'point.ad
 
   useEffect(() => {
     const at = params.at ?? useInteraction.getState().cameraCenter;
-    useDraft.getState().startAdd({ coord: at, source: params.at ? 'press' : 'crosshair' });
+    useDraft.getState().startAdd({ coord: at, source: params.at ? 'press' : 'crosshair', category: 'unit' });
     return () => useDraft.getState().clear();
     // Opened once per panel; later long-presses move the draft instead of reopening.
     // eslint-disable-next-line react-hooks/exhaustive-deps

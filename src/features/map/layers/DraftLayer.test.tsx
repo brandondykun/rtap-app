@@ -19,8 +19,18 @@ beforeEach(() => {
 });
 
 describe('DraftLayer', () => {
+  it('draws the point type symbol and follows type changes', async () => {
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
+    useDraft.getState().setAutoName('CP-1');
+    await renderWithProviders(<DraftLayer />);
+    const sidc = () => (mapboxMock().__props.ShapeSource.draft.shape as Shape).features[0].properties.sidc;
+    expect(sidc()).toBe('GFGPGPPK------X');
+    await act(async () => useDraft.getState().setPointType('observation-post'));
+    expect(sidc()).toBe('GFGPDPO-------X');
+  });
+
   it('draws the draft symbol and its NEW label', async () => {
-    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair' });
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'unit' });
     useDraft.getState().setAutoName('HOS-4');
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
@@ -32,7 +42,7 @@ describe('DraftLayer', () => {
   });
 
   it('adds the range line once there is a fix and keeps styles stable', async () => {
-    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair' });
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'unit' });
     await renderWithProviders(<DraftLayer />);
     const labelStyle = mapboxMock().__props.SymbolLayer['draft-label'].style;
     await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 5, timestamp: 1 }));
@@ -42,14 +52,14 @@ describe('DraftLayer', () => {
   });
 
   it('labels a selected point with its name only', async () => {
-    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
     expect(shape.features[0].properties.label).toBe('FRD-2');
   });
 
   it('labels an edit draft EDIT', async () => {
-    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
     useDraft.getState().setLocked(false);
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
