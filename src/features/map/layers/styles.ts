@@ -1,4 +1,4 @@
-import type { SymbolLayerStyle } from '@rnmapbox/maps';
+import type { LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
 import type { SemanticToken } from '@/theme/tokens';
 
@@ -42,3 +42,57 @@ export const SELF_STYLE: SymbolLayerStyle = {
   iconAllowOverlap: true,
   iconIgnorePlacement: true,
 };
+
+const role = (r: string) => ['==', ['get', 'role'], r];
+
+/** Layer filters for the draft source's three feature roles. */
+export const DRAFT_FILTERS = { draft: role('draft'), range: role('range'), rangeLabel: role('range-label') };
+
+export const DRAFT_RING_STYLE: SymbolLayerStyle = {
+  iconImage: MAP_IMAGE_IDS.draftRing,
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
+
+export const DRAFT_SYMBOL_STYLE: SymbolLayerStyle = {
+  iconImage: ['get', 'sidc'],
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
+
+/** Amber "HOS-4 · NEW" chip below the draft; always shown. */
+export function makeDraftLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return {
+    textField: ['get', 'label'],
+    textFont: MAP_LABEL_FONT,
+    textSize: 12,
+    textColor: colors['on-accent'],
+    textAnchor: 'top',
+    textOffset: [0, 2.6],
+    iconImage: MAP_IMAGE_IDS.labelChipAccent,
+    iconTextFit: 'both',
+    iconTextFitPadding: [2, 6, 2, 6],
+    textAllowOverlap: true,
+    iconAllowOverlap: true,
+  };
+}
+
+/** Dashed amber range line from the user to the draft. */
+export function makeRangeLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { lineColor: colors.accent, lineWidth: 2, lineDasharray: [2, 2] };
+}
+
+/** "1.15 km · 103°" on a dark chip at the line's midpoint. */
+export function makeRangeLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return {
+    textField: ['get', 'label'],
+    textFont: MAP_LABEL_FONT,
+    textSize: 12,
+    textColor: colors.accent,
+    iconImage: MAP_IMAGE_IDS.labelChip,
+    iconTextFit: 'both',
+    iconTextFitPadding: [2, 6, 2, 6],
+    textAllowOverlap: true,
+    iconAllowOverlap: true,
+  };
+}

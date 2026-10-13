@@ -6,7 +6,7 @@ import { Resvg } from '@resvg/resvg-js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LABEL_CHIP_SPEC, SELF_ICON_SIZE } from '../src/features/map/images/map-image-specs';
+import { DRAFT_RING_RADIUS, DRAFT_RING_SIZE, LABEL_CHIP_SPEC, SELF_ICON_SIZE } from '../src/features/map/images/map-image-specs';
 import { mapColors } from '../src/theme/tokens';
 
 const OUT_DIR = join(__dirname, '..', 'assets/map');
@@ -40,5 +40,26 @@ writeScaled('self-no-heading', svg(disc + dot));
 const { sizePx, radiusPx } = LABEL_CHIP_SPEC;
 const chip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" rx="${radiusPx}" fill="${colors['map-label-bg']}"/></svg>`;
 writeFileSync(join(OUT_DIR, 'label-chip.png'), new Resvg(chip).render().asPng());
+
+// Draft selection ring: dashed amber circle with four tick marks (mockup "HOS-4 · NEW").
+const D = DRAFT_RING_SIZE;
+const DC = D / 2;
+const ticks = [0, 90, 180, 270]
+  .map((a) => {
+    const r = (a * Math.PI) / 180;
+    const [sx, sy] = [Math.sin(r), -Math.cos(r)];
+    const x1 = DC + sx * (DRAFT_RING_RADIUS + 3);
+    const y1 = DC + sy * (DRAFT_RING_RADIUS + 3);
+    const x2 = DC + sx * (DRAFT_RING_RADIUS + 11);
+    const y2 = DC + sy * (DRAFT_RING_RADIUS + 11);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colors.accent}" stroke-width="2.5" stroke-linecap="round"/>`;
+  })
+  .join('');
+const ring = `<svg xmlns="http://www.w3.org/2000/svg" width="${D}" height="${D}" viewBox="0 0 ${D} ${D}"><circle cx="${DC}" cy="${DC}" r="${DRAFT_RING_RADIUS}" fill="${colors.accent}" fill-opacity="0.15" stroke="${colors.accent}" stroke-width="2" stroke-dasharray="5 4"/>${ticks}</svg>`;
+writeScaled('draft-ring', ring);
+
+// Accent label chip for the draft ("HOS-4 · NEW"): same geometry as the dark chip.
+const accentChip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" rx="${radiusPx}" fill="${colors.accent}"/></svg>`;
+writeFileSync(join(OUT_DIR, 'label-chip-accent.png'), new Resvg(accentChip).render().asPng());
 
 console.log(`Wrote map images to ${OUT_DIR}`);

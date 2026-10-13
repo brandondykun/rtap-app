@@ -11,6 +11,7 @@ export const __props: Record<string, Record<string, Props>> = {
   Images: {},
   ShapeSource: {},
   SymbolLayer: {},
+  LineLayer: {},
 };
 export const __camera = { setCamera: jest.fn() };
 
@@ -37,6 +38,11 @@ export function ShapeSource(props: Props) {
 
 export function SymbolLayer(props: Props) {
   __props.SymbolLayer[props.id ?? 'main'] = props;
+  return null;
+}
+
+export function LineLayer(props: Props) {
+  __props.LineLayer[props.id ?? 'main'] = props;
   return null;
 }
 

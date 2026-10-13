@@ -18,6 +18,8 @@ describe('map images', () => {
       for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `${name}${suffix}.png`))).toBe(true);
     }
     expect(existsSync(join(ASSETS, 'label-chip.png'))).toBe(true);
+    for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `draft-ring${suffix}.png`))).toBe(true);
+    expect(existsSync(join(ASSETS, 'label-chip-accent.png'))).toBe(true);
   });
 
   it('keeps the chip stretch zone inside the image and clear of the rounded corners', () => {

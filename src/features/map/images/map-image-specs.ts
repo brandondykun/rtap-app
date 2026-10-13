@@ -3,6 +3,10 @@
 /** Self icon canvas at @1x, in px (generated at @1x/@2x/@3x). The icon points north; the layer rotates it. */
 export const SELF_ICON_SIZE = 64;
 
+/** Draft selection ring canvas at @1x, in px (generated at @1x/@2x/@3x). */
+export const DRAFT_RING_SIZE = 72;
+export const DRAFT_RING_RADIUS = 24;
+
 /**
  * Label chip: one image rendered at 3× pixel density, shipped as a single file with `scale: 3`.
  * rnmapbox multiplies stretch/content values by `scale` before handing them to Mapbox, so the
