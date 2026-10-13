@@ -15,8 +15,11 @@ type Props = {
 /** The mission name sheet shared by New mission and Rename mission. */
 export function MissionNameForm({ title, name, onChangeName, submitLabel, onSubmit, onCancel, error }: Props) {
   return (
-    <View className="gap-4 bg-surface px-4 pb-8 pt-6">
-      <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">{title}</Text>
+    <View className="gap-4 bg-surface px-4 pb-8 pt-10">
+      {/* Same title style as the map menus' headers. */}
+      <Text accessibilityRole="header" className="text-base font-bold uppercase tracking-widest text-text">
+        {title}
+      </Text>
       <TextField
         accessibilityLabel="Mission name"
         value={name}
