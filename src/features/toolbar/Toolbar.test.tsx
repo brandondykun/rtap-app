@@ -64,4 +64,14 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('LINE'));
     expect(onLine).toHaveBeenCalled();
   });
+
+  it('orders UNIT, POINT, LINE, MEASURE, LAYERS and marks MEASURE active', async () => {
+    const onMeasure = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool="measure" onUnit={jest.fn()} onPoint={jest.fn()} onLine={jest.fn()} onMeasure={onMeasure} onLayers={jest.fn()} />);
+    const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LINE', 'MEASURE', 'LAYERS']);
+    expect(screen.getByLabelText('MEASURE')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('MEASURE'));
+    expect(onMeasure).toHaveBeenCalled();
+  });
 });

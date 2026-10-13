@@ -62,8 +62,13 @@ describe('PointsLayer', () => {
     const props = mapboxMock().__props;
     await waitFor(() => expect(props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([a.value.id])));
     await act(async () =>
-      (props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
+      (props.ShapeSource.points.onPress as (e: unknown) => void)({
+        features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF }, geometry: { type: 'Point', coordinates: [-77, 38.9] } }],
+        coordinates: { latitude: 38.9001, longitude: -77.0001 },
+        point: {},
+      }),
     );
-    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9, lon: -77 }, { kind: 'point', sidc: HOSTILE_INF });
+    // `at` is the finger; the last argument is the symbol's own coordinate (for snapping).
+    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9001, lon: -77.0001 }, { kind: 'point', sidc: HOSTILE_INF }, { lat: 38.9, lon: -77 });
   });
 });

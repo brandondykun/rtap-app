@@ -178,6 +178,23 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     [markMoved, setFollowMode, fitCamera],
   );
 
+  // Any menu opening (a tool, Menu, Settings, a Layers row…) ends measuring.
+  useEffect(
+    () =>
+      useMenu.subscribe((state, prev) => {
+        if (state.stack.length > 0 && state.stack !== prev.stack && useMeasure.getState().active) useMeasure.getState().stopMeasure();
+      }),
+    [],
+  );
+  useEffect(() => () => useMeasure.getState().stopMeasure(), []);
+  const toggleMeasure = () => {
+    if (useMeasure.getState().active) useMeasure.getState().stopMeasure();
+    else {
+      useMenu.getState().closeMenu();
+      useMeasure.getState().startMeasure();
+    }
+  };
+
   const toggleLayers = () => {
     if (topId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
@@ -200,11 +217,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
-    if (isDrawingLine()) placeLinePoint(coord);
+    if (useMeasure.getState().active) useMeasure.getState().place(coord);
+    else if (isDrawingLine()) placeLinePoint(coord);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
-  const onItemPress = (itemId: string, at: LatLon, item: ItemRef) => {
-    if (isDrawingLine()) placeLinePoint(at);
+  const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
+    // Measuring snaps to the symbol itself (lines pass no itemAt: the tap point is used).
+    if (useMeasure.getState().active) useMeasure.getState().place(itemAt ?? at);
+    else if (isDrawingLine()) placeLinePoint(at);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
@@ -212,6 +232,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     }
   };
   const onLongPress = (coord: LatLon) => {
+    if (useMeasure.getState().active) return;
     notifyPlaced();
     if (isDrawingLine()) {
       placeLinePoint(coord);
@@ -273,15 +294,16 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         {draftActive ? <DraftLayer /> : null}
         {drawingLine ? <DraftLineLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         {measuring ? <MeasureLayer /> : null}
-        <SelfLayer />
+        <SelfLayer onPress={measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'layers' ? 'layers' : null}
+        activeTool={measuring ? 'measure' : topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'layers' ? 'layers' : null}
         onUnit={() => toggleAdd('unit.add')}
         onPoint={() => toggleAdd('point.add')}
         onLine={() => toggleAdd('line.add')}
+        onMeasure={toggleMeasure}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}

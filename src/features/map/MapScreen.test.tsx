@@ -8,6 +8,7 @@ import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
+import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
@@ -33,6 +34,8 @@ beforeEach(() => {
   mockToken = 'pk.test';
   useMenu.setState(INITIAL_MENU);
   useDraft.setState(INITIAL_DRAFT);
+  useMeasure.setState(INITIAL_MEASURE);
+  usePresence.setState(INITIAL_PRESENCE);
 });
 
 describe('MapScreen', () => {
@@ -421,6 +424,66 @@ describe('MapScreen', () => {
     );
     expect(useDraft.getState().vertices).toHaveLength(4);
     expect(screen.getByRole('header')).toHaveTextContent('Add line');
+  });
+
+  describe('measure', () => {
+    const mapTap = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+
+    async function openMap() {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const u = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.95, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      if (!u.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      return { unitId: u.value.id };
+    }
+
+    it('MEASURE closes an open menu and toggles the card', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('LAYERS'));
+      expect(await screen.findByText('Layers')).toBeTruthy();
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      expect(useMenu.getState().stack).toEqual([]);
+      expect(screen.getByTestId('measure-card')).toBeTruthy();
+      expect(screen.getByLabelText('MEASURE')).toBeSelected();
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      expect(screen.queryByTestId('measure-card')).toBeNull();
+    });
+
+    it('a map tap sets the start; a unit tap snaps the end without opening the unit; long-press does nothing', async () => {
+      const { unitId } = await openMap();
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      await mapTap(-77, 38.9);
+      expect(useMeasure.getState().start).toEqual({ lat: 38.9, lon: -77 });
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({
+          features: [{ properties: { id: unitId, sidc: 'SHGPUCI--------' }, geometry: { type: 'Point', coordinates: [-77, 38.95] } }],
+          coordinates: { latitude: 38.9502, longitude: -77.0003 },
+          point: {},
+        }),
+      );
+      expect(useMeasure.getState().end).toEqual({ lat: 38.95, lon: -77 });
+      expect(useMenu.getState().stack).toEqual([]);
+      await act(async () =>
+        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.8] }, properties: {} }),
+      );
+      expect(useMenu.getState().stack).toEqual([]);
+      expect(useMeasure.getState().end).toEqual({ lat: 38.95, lon: -77 });
+    });
+
+    it('a tap on my marker snaps to my position, and opening a menu stops measuring', async () => {
+      await openMap();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      await act(async () => (mapboxMock().__props.ShapeSource.self.onPress as (e: unknown) => void)({ features: [{ properties: {} }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }));
+      expect(useMeasure.getState().start).toEqual({ lat: 38.9, lon: -77 });
+      await fireEvent.press(screen.getByLabelText('LAYERS'));
+      expect(useMeasure.getState().active).toBe(false);
+      expect(screen.queryByTestId('measure-card')).toBeNull();
+    });
   });
 
   describe('camera padding during panel moves', () => {

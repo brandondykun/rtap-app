@@ -8,7 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { ToolButton } from './ToolButton';
 
-export type ToolId = 'unit' | 'point' | 'line' | 'layers';
+export type ToolId = 'unit' | 'point' | 'line' | 'measure' | 'layers';
 
 type Props = {
   landscape: boolean;
@@ -17,6 +17,7 @@ type Props = {
   onUnit?: () => void;
   onPoint?: () => void;
   onLine?: () => void;
+  onMeasure?: () => void;
   onLayers?: () => void;
   onSettings?: () => void;
 };
@@ -25,7 +26,7 @@ type Props = {
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onLayers, onSettings }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onMeasure, onLayers, onSettings }: Props) {
   const insets = useSafeAreaInsets();
   const position = landscape
     ? { top: insets.top + EDGE, right: insets.right + EDGE }
@@ -36,6 +37,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       <ToolButton icon="rhombus-outline" label="UNIT" active={activeTool === 'unit'} onPress={onUnit} />
       <ToolButton icon="map-marker-outline" label="POINT" active={activeTool === 'point'} onPress={onPoint} />
       <ToolButton icon="vector-polyline" label="LINE" active={activeTool === 'line'} onPress={onLine} />
+      <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
     </>
   );
