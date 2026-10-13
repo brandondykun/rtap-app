@@ -41,6 +41,9 @@ type DraftValues = {
   lineType: LineType;
   /** Undo stack of earlier vertex states (most recent last), at most HISTORY_LIMIT. */
   history: LineEdit[];
+  /** Bounds to fit the camera to (a saved line opened); `focusRev` increments with each new request. */
+  focusBounds: { sw: LatLon; ne: LatLon } | null;
+  focusRev: number;
   /** Last affiliation and types used for adding (rapid entry, and the next time Add opens). */
   remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType };
   /** The most recent Add opened (long-press starts it again). Not persisted. */
@@ -102,6 +105,8 @@ export const INITIAL_DRAFT: DraftValues = {
   insertAfter: null,
   lineType: 'phase-line',
   history: [],
+  focusBounds: null,
+  focusRev: 0,
   remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line' },
   lastAddCategory: 'unit',
 };
@@ -110,6 +115,19 @@ export const HISTORY_LIMIT = 50;
 
 function isValid(p: LatLon | null): p is LatLon {
   return !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
+}
+
+/** The points' bounds padded by 15 % (at least ~200 m), for fitting the camera. */
+function boundsAround(points: LatLon[]): { sw: LatLon; ne: LatLon } | null {
+  if (points.length === 0) return null;
+  const lats = points.map((p) => p.lat);
+  const lons = points.map((p) => p.lon);
+  const padLat = Math.max((Math.max(...lats) - Math.min(...lats)) * 0.15, 0.002);
+  const padLon = Math.max((Math.max(...lons) - Math.min(...lons)) * 0.15, 0.002);
+  return {
+    sw: { lat: Math.min(...lats) - padLat, lon: Math.min(...lons) - padLon },
+    ne: { lat: Math.max(...lats) + padLat, lon: Math.max(...lons) + padLon },
+  };
 }
 
 const edit = (s: DraftValues): LineEdit => ({ vertices: s.vertices, selected: s.selectedVertex, insertAfter: s.insertAfter });
@@ -136,6 +154,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coord: isValid(coord) ? coord : null,
       coordSource: source,
       coordRev: s.coordRev + 1,
+      focusRev: s.focusRev,
     })),
   startEdit: ({ itemId, coord, category, affiliation, unitType, pointType, name, notes }) =>
     set((s) => ({
@@ -149,6 +168,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coord: isValid(coord) ? coord : null,
       coordSource: 'item',
       coordRev: s.coordRev + 1,
+      focusRev: s.focusRev,
       affiliation,
       unitType,
       name,
@@ -190,6 +210,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       category: 'line',
       lineType: s.remembered.lineType,
       coordRev: s.coordRev,
+      focusRev: s.focusRev,
     })),
   startEditLine: ({ itemId, points, lineType, name, notes }) =>
     set((s) => ({
@@ -206,6 +227,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       notes,
       locked: true,
       coordRev: s.coordRev,
+      focusBounds: boundsAround(points),
+      focusRev: s.focusRev + 1,
     })),
   addVertex: (p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.addVertex(edit(s), p)))),
   moveVertex: (i, p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.moveVertex(edit(s), i, p)))),
@@ -226,5 +249,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       unitType: s.remembered.unitType,
       pointType: s.remembered.pointType,
       coordRev: s.coordRev,
+      focusRev: s.focusRev,
     })),
 }));

@@ -392,6 +392,37 @@ describe('MapScreen', () => {
     expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.95, lon: -77.1 } });
   });
 
+  it('LINE: map taps add points, a marker tap selects, long-press adds, and a unit tap adds a point there', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const u = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!u.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('LINE'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Add line');
+    expect(screen.getByLabelText('LINE')).toBeSelected();
+    const tap = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    await tap(-77.01, 38.91);
+    await tap(-77.02, 38.92);
+    expect(useDraft.getState().vertices).toEqual([{ lat: 38.91, lon: -77.01 }, { lat: 38.92, lon: -77.02 }]);
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource['draft-line'].onPress as (e: unknown) => void)({ features: [{ properties: { role: 'vertex', index: 0 } }], coordinates: {}, point: {} }),
+    );
+    expect(useDraft.getState().selectedVertex).toBe(0);
+    await act(async () => useDraft.getState().selectVertex(0));
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.03, 38.93] }, properties: {} }),
+    );
+    expect(useDraft.getState().vertices).toHaveLength(3);
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: u.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
+    );
+    expect(useDraft.getState().vertices).toHaveLength(4);
+    expect(screen.getByRole('header')).toHaveTextContent('Add line');
+  });
+
   describe('camera padding during panel moves', () => {
     type Stop = { centerCoordinate?: [number, number]; padding?: { paddingBottom: number; paddingLeft: number } };
     const calls = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as Stop);

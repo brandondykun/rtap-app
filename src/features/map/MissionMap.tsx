@@ -24,6 +24,7 @@ import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { MapBottomLeft } from './controls/MapBottomLeft';
+import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { Crosshair } from './interaction/Crosshair';
@@ -76,6 +77,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const editingId = useDraft((s) => (s.mode === 'edit' ? s.itemId : null));
   const drawingLine = useDraft((s) => s.mode !== null && s.category === 'line');
   const draftActive = useDraft((s) => s.mode !== null);
+  const lineDrawing = useDraft((s) => s.category === 'line' && s.mode !== null && !s.locked);
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
   // Every camera move carries the panel's full padding: a move without it targets the padding of the
@@ -135,21 +137,47 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     [markMoved, setFollowMode, moveCamera],
   );
 
+  // Opening a saved line fits the camera to it.
+  useEffect(
+    () =>
+      useDraft.subscribe((state, prev) => {
+        if (state.focusRev === prev.focusRev || !state.focusBounds) return;
+        markMoved();
+        if (useInteraction.getState().followMode) setFollowMode(false);
+        const { sw, ne } = state.focusBounds;
+        moveCamera({ bounds: { ne: [ne.lon, ne.lat], sw: [sw.lon, sw.lat] }, ...EASE, animationDuration: 500 });
+      }),
+    [markMoved, setFollowMode, moveCamera],
+  );
+
   const toggleLayers = () => {
     if (topId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
   };
-  const toggleAdd = (id: 'unit.add' | 'point.add') => {
+  const toggleAdd = (id: 'unit.add' | 'point.add' | 'line.add') => {
     if (topId === id) useMenu.getState().closeMenu();
     else if (id === 'unit.add') useMenu.getState().openMenu('unit.add', {});
+    else if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
     else useMenu.getState().openMenu('point.add', {});
+  };
+  const isDrawingLine = () => {
+    const d = useDraft.getState();
+    return d.category === 'line' && d.mode !== null && !d.locked;
+  };
+  /** While a line is being drawn, map taps (and long-presses, and taps on symbols) place line points. */
+  const placeLinePoint = (at: LatLon) => {
+    const d = useDraft.getState();
+    if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
+    else d.addVertex(at);
   };
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
-    if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
+    if (isDrawingLine()) placeLinePoint(coord);
+    else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef) => {
-    if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
+    if (isDrawingLine()) placeLinePoint(at);
+    else if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
       openItemMenu(itemId, item);
@@ -157,6 +185,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   const onLongPress = (coord: LatLon) => {
     notifyPlaced();
+    if (isDrawingLine()) {
+      placeLinePoint(coord);
+      return;
+    }
     const current = topMenu(useMenu.getState())?.id;
     const adding = current === 'unit.add' || current === 'point.add';
     const editing = (current === 'unit.edit' || current === 'point.edit') && !useDraft.getState().locked;
@@ -214,9 +246,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
+        activeTool={topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'layers' ? 'layers' : null}
         onUnit={() => toggleAdd('unit.add')}
         onPoint={() => toggleAdd('point.add')}
+        onLine={() => toggleAdd('line.add')}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
@@ -232,6 +265,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onGps={toggleShowGps}
         panel={panel}
       />
+      {lineDrawing ? <LineDrawBar panel={panel} /> : null}
       {panel ? null : <MapBottomLeft />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />

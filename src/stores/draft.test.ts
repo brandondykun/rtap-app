@@ -136,4 +136,13 @@ describe('line drafts', () => {
     useDraft.getState().startEditLine({ itemId: 'l1', points: [p(1), p(2)], lineType: 'boundary', name: 'NORTH', notes: '' });
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', category: 'line', itemId: 'l1', locked: true, vertices: [p(1), p(2)], lineType: 'boundary', history: [] });
   });
+
+  it('frames a saved line for the camera', () => {
+    const rev = useDraft.getState().focusRev;
+    useDraft.getState().startEditLine({ itemId: 'l', points: [{ lat: 38.9, lon: -77 }, { lat: 39.0, lon: -76.9 }], lineType: 'phase-line', name: 'R', notes: '' });
+    const { focusBounds, focusRev } = useDraft.getState();
+    expect(focusRev).toBe(rev + 1);
+    expect(focusBounds!.sw.lat).toBeLessThan(38.9);
+    expect(focusBounds!.ne.lon).toBeGreaterThan(-76.9);
+  });
 });
