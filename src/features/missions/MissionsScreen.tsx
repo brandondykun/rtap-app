@@ -41,6 +41,10 @@ export function MissionsScreen() {
     if (openRow.current && openRow.current !== row) openRow.current.close();
     openRow.current = row;
   };
+  const openRename = (missionId: string) => {
+    openRow.current?.close();
+    router.push({ pathname: '/missions/rename/[missionId]', params: { missionId } });
+  };
   const askDelete = (mission: MissionSummary, count: number) => {
     openRow.current?.close();
     setDeleteError(null);
@@ -88,7 +92,7 @@ export function MissionsScreen() {
         <EmptyState onCreate={openCreate} />
       ) : (
         <FlatList
-          ListHeaderComponent={<Text className="text-sm text-text-muted">Swipe a mission left to delete it.</Text>}
+          ListHeaderComponent={<Text className="text-sm text-text-muted">Swipe a mission left to edit or delete it.</Text>}
           data={missions}
           keyExtractor={(m) => m.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 16, gap: 8 }}
@@ -97,6 +101,7 @@ export function MissionsScreen() {
               mission={item}
               now={now}
               onPress={() => openMission(item.id)}
+              onRename={() => openRename(item.id)}
               onDelete={(count) => askDelete(item, count)}
               onOpenActions={rowOpened}
             />
@@ -120,11 +125,12 @@ type MissionRowProps = {
   mission: MissionSummary;
   now: number;
   onPress: () => void;
+  onRename: () => void;
   onDelete: (count: number) => void;
   onOpenActions: (row: SwipeableMethods) => void;
 };
 
-function MissionRow({ mission, now, onPress, onDelete, onOpenActions }: MissionRowProps) {
+function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }: MissionRowProps) {
   const ctx = useCommandContext();
   const count = useObservable(() => observeMissionItemCount(ctx.db, mission.id), 0, [ctx, mission.id]);
   const row = useRef<SwipeableMethods>(null);
@@ -139,20 +145,35 @@ function MissionRow({ mission, now, onPress, onDelete, onOpenActions }: MissionR
         if (row.current) onOpenActions(row.current);
       }}
       renderRightActions={() => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${mission.name}`}
-          onPress={() => onDelete(count)}
-          className="ml-2 w-24 items-center justify-center rounded-2xl bg-danger active:opacity-60">
-          <Text className="font-bold text-text">Delete</Text>
-        </Pressable>
+        <View className="ml-2 flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${mission.name}`}
+            onPress={onRename}
+            className="w-20 items-center justify-center gap-1 rounded-2xl border border-border bg-surface-raised active:opacity-60">
+            <Icon name="pencil-outline" size={20} color={colors.text} />
+            <Text className="font-semibold text-text">Edit</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${mission.name}`}
+            onPress={() => onDelete(count)}
+            className="w-20 items-center justify-center gap-1 rounded-2xl bg-danger active:opacity-60">
+            <Icon name="trash-can-outline" size={20} color={colors.text} />
+            <Text className="font-bold text-text">Delete</Text>
+          </Pressable>
+        </View>
       )}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Open ${mission.name}`}
-        // Swiping is hard to find with VoiceOver, so Delete is also an accessibility action.
-        accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
+        // Swiping is hard to find with VoiceOver, so Rename and Delete are also accessibility actions.
+        accessibilityActions={[
+          { name: 'rename', label: 'Rename' },
+          { name: 'delete', label: 'Delete' },
+        ]}
         onAccessibilityAction={(e) => {
+          if (e.nativeEvent.actionName === 'rename') onRename();
           if (e.nativeEvent.actionName === 'delete') onDelete(count);
         }}
         onPress={onPress}

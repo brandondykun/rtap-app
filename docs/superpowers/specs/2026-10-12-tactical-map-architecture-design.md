@@ -198,9 +198,10 @@ author, etc.) follows the same pattern.
   the unit that is shared with other users.
 - "Last opened" and "last camera" are per-device view state (`mission_view_state`), not
   mission data, for the same reason as item visibility.
-- MVP mission operations: list, create (name), open, delete. Delete (`deleteMission`) is a
-  swipe-left action on the list behind a confirmation; it tombstones the mission and its items
-  and removes their local-only view state. Rename is a small later addition.
+- MVP mission operations: list, create (name), open, rename, delete. Swiping a mission row left
+  shows Edit and Delete. Edit opens the rename sheet (`renameMission`, the same form as New
+  mission). Delete (`deleteMission`) asks for confirmation, tombstones the mission and its items,
+  and removes their local-only view state.
 
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by

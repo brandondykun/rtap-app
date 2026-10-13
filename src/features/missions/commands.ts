@@ -29,6 +29,28 @@ export async function createMission(
   }
 }
 
+export async function renameMission(
+  ctx: CommandContext,
+  missionId: string,
+  input: { name: string },
+): Promise<Result<void, 'invalid_name' | 'not_found' | 'write_failed'>> {
+  const name = input.name.trim();
+  if (!name) return err('invalid_name', 'Mission name is required');
+  const mission = await findMission(ctx.db, missionId);
+  if (!mission) return err('not_found', `No mission ${missionId}`);
+  if (mission.name === name) return ok(undefined);
+  try {
+    await ctx.db.write(() =>
+      mission.update((m) => {
+        m.name = name;
+      }),
+    );
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
 async function upsertViewState(
   ctx: CommandContext,
   missionId: string,

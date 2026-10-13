@@ -126,3 +126,6 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 43 | Missions list: swiping a row left reveals a red Delete; swiping another row closes the first; vertical scrolling still works and a tap still opens the mission | PENDING |
 | 44 | Delete → confirmation shows the name and item count; Cancel or tapping outside keeps the mission; Delete removes it with a success haptic; the confirmation also works in landscape | PENDING |
 | 45 | VoiceOver: on a mission row, swipe up/down to the "Delete" action and activate it — the confirmation opens | PENDING |
+| 46 | Missions list: swiping a row left shows Edit (outlined, pencil) and Delete (red, trash); both buttons fit at a comfortable size; hint reads "Swipe a mission left to edit or delete it." | PENDING |
+| 47 | Edit opens a sheet titled "Rename mission" with the name prefilled and selected; Save updates the list immediately with a success haptic; a blank name turns the field red with "Enter a mission name."; Cancel and swiping the sheet down keep the old name | PENDING |
+| 48 | VoiceOver: a mission row offers "Rename" and "Delete" actions | PENDING |

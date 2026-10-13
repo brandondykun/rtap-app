@@ -37,7 +37,7 @@ describe('MissionsScreen', () => {
   it('shows an empty state that opens the create sheet', async () => {
     await renderWithProviders(<MissionsScreen />);
     expect(await screen.findByText('No missions yet')).toBeTruthy();
-    expect(screen.queryByText('Swipe a mission left to delete it.')).toBeNull();
+    expect(screen.queryByText('Swipe a mission left to edit or delete it.')).toBeNull();
     await fireEvent.press(screen.getByText('Create mission'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
@@ -70,7 +70,7 @@ describe('MissionsScreen', () => {
       pathname: '/missions/[missionId]',
       params: { missionId: iron.value.id },
     });
-    expect(screen.getByText('Swipe a mission left to delete it.')).toBeTruthy();
+    expect(screen.getByText('Swipe a mission left to edit or delete it.')).toBeTruthy();
     await fireEvent.press(screen.getByText('+ New'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
@@ -122,6 +122,30 @@ describe('MissionsScreen', () => {
       await setup();
       await fireEvent(screen.getByLabelText('Open Op Iron'), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
       expect(screen.getByText("Delete Op Iron and its 2 items? This can't be undone.")).toBeTruthy();
+    });
+  });
+
+  describe('renaming', () => {
+    async function setup() {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      if (!iron.ok) throw new Error('setup');
+      await renderWithProviders(<MissionsScreen />, ctx);
+      await screen.findByLabelText('Open Op Iron');
+      return iron.value.id;
+    }
+    const renameRoute = (missionId: string) => ({ pathname: '/missions/rename/[missionId]', params: { missionId } });
+
+    it('opens the rename sheet from the swipe Edit button', async () => {
+      const id = await setup();
+      await fireEvent.press(screen.getByLabelText('Edit Op Iron'));
+      expect(mockRouter.push).toHaveBeenCalledWith(renameRoute(id));
+    });
+
+    it('offers Rename as an accessibility action on the row', async () => {
+      const id = await setup();
+      await fireEvent(screen.getByLabelText('Open Op Iron'), 'accessibilityAction', { nativeEvent: { actionName: 'rename' } });
+      expect(mockRouter.push).toHaveBeenCalledWith(renameRoute(id));
     });
   });
 });

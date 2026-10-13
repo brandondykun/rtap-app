@@ -8,7 +8,7 @@ import type { MissionViewState } from '@/lib/db/models/MissionViewState';
 import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { createMission, deleteMission, markMissionOpened, saveMissionCamera } from './commands';
+import { createMission, deleteMission, markMissionOpened, renameMission, saveMissionCamera } from './commands';
 import {
   findMission,
   getMissionCamera,
@@ -159,6 +159,29 @@ describe('missions', () => {
       expect((await deleteMission(ctx, iron.value.id)).ok).toBe(true);
       expect(await deleteMission(ctx, iron.value.id)).toMatchObject({ ok: false, error: 'not_found' });
       expect(await deleteMission(ctx, 'nope')).toMatchObject({ ok: false, error: 'not_found' });
+    });
+  });
+
+  describe('renameMission', () => {
+    it('renames a mission, trimming spaces, and leaves its items alone', async () => {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      if (!iron.ok) throw new Error('setup');
+      await placePoint(ctx, { missionId: iron.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      expect(await renameMission(ctx, iron.value.id, { name: '  Op Steel ' })).toEqual({ ok: true, value: undefined });
+      expect((await findMission(ctx.db, iron.value.id))?.name).toBe('Op Steel');
+      expect(await firstValueFrom(observeMissionItemCount(ctx.db, iron.value.id))).toBe(1);
+    });
+
+    it('rejects a blank name and reports an unknown or deleted mission', async () => {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      if (!iron.ok) throw new Error('setup');
+      expect(await renameMission(ctx, iron.value.id, { name: '   ' })).toMatchObject({ ok: false, error: 'invalid_name' });
+      expect((await findMission(ctx.db, iron.value.id))?.name).toBe('Op Iron');
+      expect(await renameMission(ctx, 'nope', { name: 'X' })).toMatchObject({ ok: false, error: 'not_found' });
+      await deleteMission(ctx, iron.value.id);
+      expect(await renameMission(ctx, iron.value.id, { name: 'X' })).toMatchObject({ ok: false, error: 'not_found' });
     });
   });
 });

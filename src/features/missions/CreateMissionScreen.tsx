@@ -1,11 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-
-import { TextField } from '@/components/ui/TextField';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 
 import { createMission } from './commands';
+import { MissionNameForm } from './MissionNameForm';
 import { suggestMissionName } from './repository';
 
 export function CreateMissionScreen() {
@@ -42,34 +40,14 @@ export function CreateMissionScreen() {
   };
 
   return (
-    <View className="gap-4 bg-surface px-4 pb-8 pt-6">
-      <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">New mission</Text>
-      <TextField
-        accessibilityLabel="Mission name"
-        value={name}
-        onChangeText={setName}
-        autoFocus
-        selectTextOnFocus
-        returnKeyType="done"
-        onSubmitEditing={() => void submit()}
-        placeholder="Mission name"
-        invalid={error !== null}
-      />
-      {error ? <Text className="text-sm text-danger">{error}</Text> : null}
-      <View className="flex-row gap-3">
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.back()}
-          className="flex-1 items-center rounded-xl border border-border bg-surface-raised py-3">
-          <Text className="font-semibold text-text">Cancel</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void submit()}
-          className="flex-1 items-center rounded-xl bg-accent py-3">
-          <Text className="font-bold text-on-accent">Create</Text>
-        </Pressable>
-      </View>
-    </View>
+    <MissionNameForm
+      title="New mission"
+      name={name}
+      onChangeName={setName}
+      submitLabel="Create"
+      onSubmit={() => void submit()}
+      onCancel={() => router.back()}
+      error={error}
+    />
   );
 }
