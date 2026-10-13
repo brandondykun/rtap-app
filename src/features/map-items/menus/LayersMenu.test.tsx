@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { INITIAL_LAYERS_VIEW, useLayersView } from '@/stores/layers-view';
 import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
@@ -20,6 +21,7 @@ beforeEach(() => {
   useMenu.setState(INITIAL_MENU);
   useDraft.setState(INITIAL_DRAFT);
   useSettings.setState(DEFAULT_SETTINGS);
+  useLayersView.setState(INITIAL_LAYERS_VIEW);
 });
 
 async function openLayers(ctx = makeTestContext()) {
@@ -39,7 +41,12 @@ describe('LayersMenu', () => {
 
   it('explains an empty mission', async () => {
     await openLayers();
-    expect(screen.getByText('Nothing on the map yet. Use UNIT, POINT, LINE, POLYGON or long-press the map.')).toBeTruthy();
+    expect(screen.getByLabelText('Units')).toBeSelected();
+    expect(screen.getByText('No units yet. Use UNIT or long-press the map.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Lines'));
+    expect(screen.getByText('No lines yet. Use LINE to draw one.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Polygons'));
+    expect(screen.getByText('No polygons yet. Use POLYGON to draw one.')).toBeTruthy();
     expect(screen.getByLabelText('Show all')).toBeDisabled();
   });
 
@@ -52,15 +59,16 @@ describe('LayersMenu', () => {
     await setItemHidden(ctx, b.value.id, true);
     await openLayers(ctx);
 
-    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · 1 hidden')).toBeTruthy();
+    expect(await screen.findByTestId('layers-hidden')).toHaveTextContent('1 hidden');
+    expect(screen.getByTestId('layers-tab-unit')).toHaveTextContent(/^Units2$/);
     expect(screen.queryByText('ELSEWHERE')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Hide HOS-1'));
     await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
-    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · 2 hidden')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('2 hidden'));
 
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]));
-    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · 0 hidden')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('0 hidden'));
   });
 
   it('searches and caps long lists', async () => {
@@ -93,7 +101,9 @@ describe('LayersMenu', () => {
     const r = await placeLine(ctx, { missionId: 'm1', points: [{ lat: 38.9, lon: -77 }, { lat: 38.91, lon: -77 }], lineType: 'phase-line', name: 'RED' });
     if (!r.ok) throw new Error('setup');
     await openLayers(ctx);
-    expect(await screen.findByText('0 units · 0 points · 1 line · 0 polygons · 0 hidden')).toBeTruthy();
+    // The first tab with items opens.
+    expect(await screen.findByText('RED')).toBeTruthy();
+    expect(screen.getByLabelText('Lines')).toBeSelected();
     expect(screen.getByText('Phase line · 1.11 km')).toBeTruthy();
     await fireEvent.press(screen.getByText('RED'));
     await waitFor(() => expect(topMenu(useMenu.getState())).toEqual({ id: 'line.edit', params: { itemId: r.value.id } }));
@@ -101,12 +111,35 @@ describe('LayersMenu', () => {
 
   it('shows a polygon row with its type and radius, and opens the polygon when tapped', async () => {
     const ctx = makeTestContext();
-    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: '1', shape: { kind: 'circle', center: at, radiusM: 500 } });
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: 'NORTH', shape: { kind: 'circle', center: at, radiusM: 500 } });
     if (!r.ok) throw new Error('setup');
     await openLayers(ctx);
-    expect(await screen.findByText('0 units · 0 points · 0 lines · 1 polygon · 0 hidden')).toBeTruthy();
+    expect(await screen.findByText('NORTH')).toBeTruthy();
+    expect(screen.getByLabelText('Polygons')).toBeSelected();
     expect(screen.getByText('No fire area · r 500 m')).toBeTruthy();
-    await fireEvent.press(screen.getByText('1'));
+    await fireEvent.press(screen.getByText('NORTH'));
     await waitFor(() => expect(topMenu(useMenu.getState())).toEqual({ id: 'polygon.edit', params: { itemId: r.value.id } }));
+  });
+
+  it('keeps each category in its own tab, with search and Show all scoped to it, and remembers the tab', async () => {
+    const ctx = makeTestContext();
+    const u = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+    const l = await placeLine(ctx, { missionId: 'm1', points: [at, { lat: at.lat + 0.01, lon: at.lon }], lineType: 'phase-line', name: 'RED' });
+    if (!u.ok || !l.ok) throw new Error('setup');
+    await setItemHidden(ctx, u.value.id, true);
+    await setItemHidden(ctx, l.value.id, true);
+    await openLayers(ctx);
+    expect(await screen.findByText('HOS-1')).toBeTruthy();
+    expect(screen.queryByText('RED')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Lines'));
+    expect(screen.getByText('RED')).toBeTruthy();
+    expect(screen.queryByText('HOS-1')).toBeNull();
+    expect(screen.getByLabelText('Search')).toHaveProp('placeholder', 'Search lines…');
+    await fireEvent.press(screen.getByLabelText('Show all'));
+    await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([u.value.id]));
+    await act(async () => useMenu.getState().closeMenu());
+    await act(async () => useMenu.getState().openMenu('layers', {}));
+    expect(await screen.findByText('RED')).toBeTruthy();
+    expect(screen.getByLabelText('Lines')).toBeSelected();
   });
 });

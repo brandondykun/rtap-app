@@ -1,4 +1,4 @@
-import { itemCategory, KNOWN_SIDCS, typeLabel } from '@/features/symbology/categories';
+import { itemCategory, KNOWN_SIDCS, typeLabel, type ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo, lineTypeOf, type LineType } from '@/features/symbology/line-types';
 import { polygonStyleOf, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
@@ -37,23 +37,30 @@ export type LayerRows = {
   rows: LayerRow[];
   /** Items matching the search (may exceed rows.length). */
   matched: number;
-  /** All units, points and lines in the mission. */
+  /** Items in the chosen category (all items when none is chosen). */
   total: number;
   units: number;
   points: number;
   lines: number;
   polygons: number;
-  /** Items in this mission that are hidden. */
+  /** Hidden items in the chosen category (all categories when none is chosen). */
   hiddenIds: string[];
 };
 
 /**
- * Rows for the Layers list: the mission's units, points and lines matching `query` (name or type
+ * Rows for the Layers list: the mission's items (or one category's) matching `query` (name or type
  * label contains, any case),
  * sorted by name with numbers in order (HOS-2 before HOS-10), capped at `limit`.
  */
-export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly string[], query: string, limit = LAYER_ROW_LIMIT): LayerRows {
+export function layerRows(
+  items: readonly MapItemSnapshot[],
+  hiddenIds: readonly string[],
+  query: string,
+  limit = LAYER_ROW_LIMIT,
+  category: ItemCategory | null = null,
+): LayerRows {
   const hidden = new Set(hiddenIds);
+  const inTab = category ? items.filter((i) => itemCategory(i) === category) : items;
   const q = query.trim().toLowerCase();
   const label = (i: MapItemSnapshot) =>
     i.kind === 'line'
@@ -62,7 +69,7 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
         ? polygonTypeInfo(polygonStyleOf(i.style).polygonType).label
         : typeLabel(i.sidc);
   const matchesQuery = (i: MapItemSnapshot) => i.name.toLowerCase().includes(q) || (label(i)?.toLowerCase().includes(q) ?? false);
-  const matches = (q ? items.filter(matchesQuery) : [...items]).sort(
+  const matches = (q ? inTab.filter(matchesQuery) : [...inTab]).sort(
     // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
     (a, b) => collator.compare(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
@@ -90,11 +97,11 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
       };
     }),
     matched: matches.length,
-    total: items.length,
+    total: inTab.length,
     units: counts.unit,
     points: counts.point,
     lines: counts.line,
     polygons: counts.polygon,
-    hiddenIds: items.filter((i) => hidden.has(i.id)).map((i) => i.id),
+    hiddenIds: inTab.filter((i) => hidden.has(i.id)).map((i) => i.id),
   };
 }

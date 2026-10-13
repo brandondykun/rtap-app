@@ -160,3 +160,4 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 77 | Each polygon type's look on Satellite, Topo and Dark (dashed FFA/NFA/RFA/ACA); "OBJ IRON" label centered | PENDING |
 | 78 | Tap a saved polygon's outline or label: the map fits it and "Polygon" opens; a tap inside its fill does not open it; Edit / Save / Cancel; edit a circle's radius; Hidden; Delete polygon | PENDING |
 | 79 | Layers: polygon rows with a swatch and "Objective · 0.42 km²" / "No fire area · r 500 m"; search by type; summary and mission rows count polygons | PENDING |
+| 80 | Layers: Units · Points · Lines · Polygons tabs with counts fit on the phone in both orientations; each tab lists only its items; search, "N hidden" and Show all cover the current tab; the last tab reopens next time (first tab with items before that) | PENDING |

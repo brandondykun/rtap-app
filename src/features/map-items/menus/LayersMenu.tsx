@@ -10,12 +10,14 @@ import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
+import type { ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo } from '@/features/symbology/line-types';
 import { polygonTypeInfo } from '@/features/symbology/polygon-types';
 import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { formatDistance } from '@/lib/geo/format/measure';
+import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
 import { useSettings, type Basemap } from '@/stores/settings';
 
@@ -37,7 +39,14 @@ const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 const count = (n: number) => n.toLocaleString('en-US');
 
-/** Basemap choice and the mission's points: search, show/hide, tap to fly to and select. */
+const TABS: { id: ItemCategory; label: string; noun: string; empty: string }[] = [
+  { id: 'unit', label: 'Units', noun: 'units', empty: 'No units yet. Use UNIT or long-press the map.' },
+  { id: 'point', label: 'Points', noun: 'points', empty: 'No points yet. Use POINT or long-press the map.' },
+  { id: 'line', label: 'Lines', noun: 'lines', empty: 'No lines yet. Use LINE to draw one.' },
+  { id: 'polygon', label: 'Polygons', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
+];
+
+/** Basemap choice and the mission's items in one tab per category: search, show/hide, tap to open. */
 export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
@@ -47,7 +56,23 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const [query, setQuery] = useState('');
-  const { rows, matched, total, units, points, lines, polygons, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
+  const chosenTab = useLayersView((s) => s.tab);
+  const counts = useMemo(() => layerRows(items, hidden, '', 0), [items, hidden]);
+  const byTab: Record<ItemCategory, number> = { unit: counts.units, point: counts.points, line: counts.lines, polygon: counts.polygons };
+  // The tab chosen last; until then the first tab that has items.
+  const tab = chosenTab ?? TABS.find((t) => byTab[t.id] > 0)?.id ?? 'unit';
+  const tabInfo = TABS.find((t) => t.id === tab)!;
+  const { rows, matched, total, hiddenIds } = useMemo(() => layerRows(items, hidden, query, undefined, tab), [items, hidden, query, tab]);
+  const tabOptions = TABS.map((t) => ({
+    value: t.id,
+    label: t.label,
+    icon: (
+      <View testID={`layers-tab-${t.id}`} className="items-center">
+        <Text className={`text-sm font-semibold ${t.id === tab ? 'text-accent' : 'text-text'}`}>{t.label}</Text>
+        <Text className="font-mono text-xs text-text-muted">{count(byTab[t.id])}</Text>
+      </View>
+    ),
+  }));
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -68,14 +93,30 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Map items">
-        <Text testID="layers-summary" className="text-sm text-text-muted">
-          {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(lines)} ${lines === 1 ? 'line' : 'lines'} · ${count(polygons)} ${polygons === 1 ? 'polygon' : 'polygons'} · ${count(hiddenIds.length)} hidden`}
-        </Text>
-        <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
+        <MenuSegmented<ItemCategory>
+          options={tabOptions}
+          value={tab}
+          onChange={(t) => {
+            useLayersView.getState().setTab(t);
+            setQuery('');
+          }}
+        />
         {total > 0 ? (
-          <TextField accessibilityLabel="Search" value={query} onChangeText={setQuery} placeholder="Search names or types" autoCapitalize="characters" autoCorrect={false} />
+          <TextField
+            accessibilityLabel="Search"
+            value={query}
+            onChangeText={setQuery}
+            placeholder={`Search ${tabInfo.noun}…`}
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
         ) : null}
-        {total === 0 ? <Text className="text-sm text-text-muted">Nothing on the map yet. Use UNIT, POINT, LINE, POLYGON or long-press the map.</Text> : null}
+        {/* Hidden count and Show all cover this tab only. */}
+        <View className="flex-row items-center justify-between gap-3">
+          <Text testID="layers-hidden" className="text-sm text-text-muted">{`${count(hiddenIds.length)} hidden`}</Text>
+          <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
+        </View>
+        {total === 0 ? <Text className="text-sm text-text-muted">{tabInfo.empty}</Text> : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
         {rows.map((row) => (
           <MenuListItem

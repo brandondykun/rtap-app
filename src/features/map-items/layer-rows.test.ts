@@ -1,7 +1,7 @@
 import { composeSidc, DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { pointGeometry } from './geometry';
-import { layerRows } from './layer-rows';
+import { LAYER_ROW_LIMIT, layerRows } from './layer-rows';
 import type { MapItemSnapshot } from './repository';
 
 const at = { lat: 38.9, lon: -77 };
@@ -75,5 +75,19 @@ describe('layerRows', () => {
     expect(rows.rows.find((r) => r.id === 'a')!.areaM2).toBeGreaterThan(0);
     expect(rows.rows.find((r) => r.id === 'c')).toMatchObject({ polygonType: 'no-fire-area', radiusM: 500 });
     expect(layerRows([area, circle], [], 'no fire').rows.map((r) => r.id)).toEqual(['c']);
+  });
+
+  it('narrows rows, totals and hidden ids to one category while keeping every count', () => {
+    const line = {
+      ...item('l', 'RED', null),
+      kind: 'line' as const,
+      style: '{"lineType":"phase-line"}',
+      geometry: JSON.stringify({ type: 'LineString', coordinates: [[-77, 38.9], [-77, 38.91]] }),
+    };
+    const all = [item('a', 'HOS-1', composeSidc('hostile', 'infantry')), item('b', 'CP-1', 'GFGPGPPK------X'), line];
+    const r = layerRows(all, ['a', 'l'], '', LAYER_ROW_LIMIT, 'line');
+    expect(r.rows.map((x) => x.id)).toEqual(['l']);
+    expect(r).toMatchObject({ total: 1, matched: 1, hiddenIds: ['l'], units: 1, points: 1, lines: 1, polygons: 0 });
+    expect(layerRows(all, [], 'hos', LAYER_ROW_LIMIT, 'point').rows).toEqual([]);
   });
 });
