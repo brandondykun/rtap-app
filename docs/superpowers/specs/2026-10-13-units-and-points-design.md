@@ -52,6 +52,7 @@ export function sidcForPointType(type: PointType): string;
 | rally-point | Rally point | RLY | `GFGPGPPR------X` | milsymbol |
 | linkup-point | Linkup point | LU | `GFGPGPPL------X` | milsymbol |
 | target-reference-point | Target reference point | TRP | `GFGPDPT-------X` | milsymbol |
+| target | Target (artillery point target, added 2026-10-13) | TGT | `GFFPPTS-------X` | milsymbol, drawn with the TRP graphic for now (`drawAs`) |
 
 All milsymbol codes above were checked with `new ms.Symbol(code).isValid()`. The landing-zone
 code is the app's identifier for that type; milsymbol does not draw it, so it never goes

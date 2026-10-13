@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import ms from 'milsymbol';
 
-import { LANDING_ZONE_SIDC, POINT_TYPES } from '../src/features/symbology/point-types';
+import { drawSidcFor, LANDING_ZONE_SIDC, POINT_TYPES } from '../src/features/symbology/point-types';
 import { decomposeSidc, PRESET_SIDCS, type Affiliation } from '../src/features/symbology/presets';
 import { mapColors } from '../src/theme/tokens';
 
@@ -126,7 +126,7 @@ for (const type of POINT_TYPES) {
     writePng(`${type.sidc}-thumb`, trimmed(landingZoneSvg()));
     continue;
   }
-  const symbol = new ms.Symbol(type.sidc, {
+  const symbol = new ms.Symbol(drawSidcFor(type), {
     size: SYMBOL_SIZE,
     monoColor: POINT_COLOR,
     outlineColor: colors['point-symbol-halo'],

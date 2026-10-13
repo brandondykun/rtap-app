@@ -68,4 +68,11 @@ describe('AddPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Map'));
     expect(screen.getByText('Tap the map where the point should go')).toBeTruthy();
   });
+
+  it('names an artillery target TGT-1', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));
+    await fireEvent.press(screen.getByText('Target'));
+    expect(await screen.findByDisplayValue('TGT-1')).toBeTruthy();
+  });
 });

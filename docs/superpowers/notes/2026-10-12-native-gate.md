@@ -139,3 +139,4 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 56 | Point symbols (blue with dark outline) are readable on Satellite, Hybrid, Topo and Dark; the LZ symbol matches the others; a checkpoint's tip (not its middle) sits on the spot, under the crosshair | PENDING |
 | 57 | Long-press after using Add point starts Add point; after Add unit starts Add unit; first launch starts Add unit | PENDING |
 | 58 | Layers: summary "N units · M points · K hidden"; searching "checkpoint" or "infantry" finds by type; row taps open Unit or Point to match. Missions list shows "N units · M points" | PENDING |
+| 59 | Add point → Point type → Target: TRP-style symbol, default name TGT-1 (TGT-2 next); renaming it to a target number (e.g. AB1001) shows that number in the map label | PENDING |

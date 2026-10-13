@@ -32,6 +32,7 @@ export const SYMBOL_IMAGES: Record<string, number> = {
   'GFGPGPPR------X': require('../../../assets/symbols/GFGPGPPR------X.png'),
   'GFGPGPPL------X': require('../../../assets/symbols/GFGPGPPL------X.png'),
   'GFGPDPT-------X': require('../../../assets/symbols/GFGPDPT-------X.png'),
+  'GFFPPTS-------X': require('../../../assets/symbols/GFFPPTS-------X.png'),
 };
 
 /** Point symbols cropped to their own bounds, for menus and lists (map images are anchor-centered). */
@@ -44,4 +45,5 @@ export const SYMBOL_THUMBNAILS: Record<string, number> = {
   'GFGPGPPR------X': require('../../../assets/symbols/GFGPGPPR------X-thumb.png'),
   'GFGPGPPL------X': require('../../../assets/symbols/GFGPGPPL------X-thumb.png'),
   'GFGPDPT-------X': require('../../../assets/symbols/GFGPDPT-------X-thumb.png'),
+  'GFFPPTS-------X': require('../../../assets/symbols/GFFPPTS-------X-thumb.png'),
 };
