@@ -142,7 +142,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 59 | Add point → Point type → Target: TRP-style symbol, default name TGT-1 (TGT-2 next); renaming it to a target number (e.g. AB1001) shows that number in the map label | PENDING |
 | 60 | Toolbar reads UNIT · POINT · LINE · LAYERS; LINE opens "Add line" with the draw bar ("Tap map to add point 1", Add at center, Undo) | PENDING |
 | 61 | Draw a 4-point line by tapping and by Add at center; numbered white markers, segment distances and the total match; Undo steps back one change at a time | PENDING |
-| 62 | Type grids into "Type a point" (+ and return both add); a partial grid cannot be added; the map eases to typed points | PENDING |
+| 62 | Type grids under "New point" (Add new point and return both add); a partial grid cannot be added; the map eases to typed points | PENDING |
 | 63 | Select a point (row or marker): amber ring; map tap / Move to center / corrected grid moves it; Insert after puts the next point right after it; Done returns to adding | PENDING |
 | 64 | With 2 points the × buttons are disabled and "A line needs at least 2 points" shows; Save needs a name and 2 points | PENDING |
 | 65 | Each line type's look on Satellite, Topo and Dark: dashed RFL/CFL, heavy boundary, wide axis with arrow, route arrow, FLOT bumps; labels "PL RED" at both ends | PENDING |

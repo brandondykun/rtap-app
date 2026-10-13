@@ -28,7 +28,7 @@ async function open(ctx = makeTestContext()) {
 const typeGrid = async (at: { lat: number; lon: number }) => {
   const g = mgrsFieldsFor(at);
   await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${g.zoneBand} ${g.square} ${g.easting} ${g.northing}`);
-  await fireEvent.press(screen.getByLabelText('Add typed point'));
+  await fireEvent.press(screen.getByLabelText('Add new point'));
 };
 
 describe('AddLineMenu', () => {
@@ -54,11 +54,12 @@ describe('AddLineMenu', () => {
 
   it('adds typed grids, refuses partial ones, and moves a selected point', async () => {
     await open();
+    expect(screen.getByText('New point')).toBeTruthy();
     await typeGrid(p(0));
     await typeGrid(p(1));
     expect(useDraft.getState().vertices).toHaveLength(2);
     await fireEvent.changeText(screen.getByLabelText('Northing'), '07');
-    expect(screen.getByLabelText('Add typed point')).toBeDisabled();
+    expect(screen.getByLabelText('Add new point')).toBeDisabled();
     await fireEvent.press(screen.getByLabelText('Point 1'));
     expect(screen.getByLabelText('Move point 1 to typed grid')).toBeTruthy();
     await typeGridAs(p(5), 'Move point 1 to typed grid');

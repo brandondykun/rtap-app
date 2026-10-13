@@ -83,10 +83,10 @@ export function LineForm() {
         {blocked ? <Text className="text-sm text-text-muted">A line needs at least 2 points</Text> : null}
       </MenuSection>
       {locked ? null : (
-        <MenuSection label={moving ? `Move point ${selected! + 1}` : 'Type a point'}>
+        <MenuSection label={moving ? `Move point ${selected! + 1}` : 'New point'}>
           <MgrsInput value={parts} onChange={setParts} status={status} onSubmit={submitTyped} />
           <MenuButton
-            label={moving ? `Move point ${selected! + 1} to typed grid` : 'Add typed point'}
+            label={moving ? `Move point ${selected! + 1} to typed grid` : 'Add new point'}
             icon={moving ? 'check' : 'plus'}
             onPress={submitTyped}
             disabled={status.status !== 'valid'}

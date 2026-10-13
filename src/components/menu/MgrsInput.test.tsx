@@ -45,4 +45,11 @@ describe('MgrsInput', () => {
     await fireEvent(screen.getByLabelText('Northing'), 'submitEditing');
     expect(onSubmit).toHaveBeenCalled();
   });
+
+  it('shows no status line until the grid is valid or wrong', async () => {
+    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} />);
+    expect(screen.queryByTestId('mgrs-status')).toBeNull();
+    await renderWithProviders(<MgrsInput value={{ ...EMPTY_MGRS, zoneBand: '18S' }} onChange={jest.fn()} status={{ status: 'incomplete' }} />);
+    expect(screen.queryByTestId('mgrs-status')).toBeNull();
+  });
 });

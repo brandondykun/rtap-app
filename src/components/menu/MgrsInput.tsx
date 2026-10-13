@@ -77,22 +77,22 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
           <TextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
         </View>
       </View>
-      <View className="flex-row items-center gap-1">
-        {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
-        {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}
-        <Text testID="mgrs-status" className="shrink text-sm text-text-muted">
-          {status.status === 'valid' ? (
-            <>
-              <Text className="text-success">Valid</Text>
-              {validDetail ? ` · ${validDetail}` : ''}
-            </>
-          ) : status.status === 'invalid' ? (
-            <Text className="text-danger">{status.message}</Text>
-          ) : (
-            'Enter zone, square, easting and northing'
-          )}
-        </Text>
-      </View>
+      {status.status === 'valid' || status.status === 'invalid' ? (
+        <View className="flex-row items-center gap-1">
+          {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
+          {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}
+          <Text testID="mgrs-status" className="shrink text-sm text-text-muted">
+            {status.status === 'valid' ? (
+              <>
+                <Text className="text-success">Valid</Text>
+                {validDetail ? ` · ${validDetail}` : ''}
+              </>
+            ) : (
+              <Text className="text-danger">{status.message}</Text>
+            )}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
