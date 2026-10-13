@@ -12,6 +12,9 @@ The map is the product (spec §2, §8.8). Check every map change against these r
    kind with `SymbolLayer`/`LineLayer`s. Never `PointAnnotation` or `MarkerView` per item.
 2. **The camera is uncontrolled.** Never pass `centerCoordinate`/`zoomLevel` props to
    `Camera` from React state. Initial camera = `defaultSettings`; moves = `cameraRef.current.setCamera(...)`.
+   In `MissionMap` every move goes through `moveCamera`, which adds the open panel's full
+   padding: on iOS a `setCamera` without `padding` targets the padding of the moment and cancels
+   a running padding ease, leaving the crosshair off the camera center.
 3. **Stable style references.** Layer styles are module constants, or `useMemo` per theme
    (`makePointLabelStyle(colors)`). A new style object every render re-applies native styles.
 4. **Hide with filters, not data.** Visibility uses `hiddenFilter(ids)` on the layer `filter`;
