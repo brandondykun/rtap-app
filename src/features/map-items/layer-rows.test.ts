@@ -64,4 +64,16 @@ describe('layerRows', () => {
     expect(line.length).toBeGreaterThan(1000);
     expect(layerRows([lineItem], [], 'phase').rows.map((r) => r.id)).toEqual(['l']);
   });
+
+  it('lists polygons with type and area or radius, counts them, and searches their type', () => {
+    const tri = JSON.stringify({ type: 'Polygon', coordinates: [[[-77, 38.9], [-76.99, 38.9], [-76.99, 38.91], [-77, 38.9]]] });
+    const area = { ...item('a', 'IRON', null), kind: 'polygon' as const, style: '{"polygonType":"objective","shape":"points"}', geometry: tri };
+    const circle = { ...item('c', '1', null), kind: 'polygon' as const, style: '{"polygonType":"no-fire-area","shape":"circle","center":{"lat":38.9,"lon":-77},"radiusM":500}', geometry: tri };
+    const rows = layerRows([area, circle], [], '');
+    expect(rows).toMatchObject({ units: 0, points: 0, lines: 0, polygons: 2, total: 2 });
+    expect(rows.rows.find((r) => r.id === 'a')).toMatchObject({ kind: 'polygon', polygonType: 'objective', radiusM: null, coord: null });
+    expect(rows.rows.find((r) => r.id === 'a')!.areaM2).toBeGreaterThan(0);
+    expect(rows.rows.find((r) => r.id === 'c')).toMatchObject({ polygonType: 'no-fire-area', radiusM: 500 });
+    expect(layerRows([area, circle], [], 'no fire').rows.map((r) => r.id)).toEqual(['c']);
+  });
 });

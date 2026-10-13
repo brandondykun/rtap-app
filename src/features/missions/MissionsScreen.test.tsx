@@ -53,8 +53,8 @@ describe('MissionsScreen', () => {
 
     await renderWithProviders(<MissionsScreen />, ctx);
 
-    expect(await screen.findByText('2 units · 0 points · 0 lines · Never opened')).toBeTruthy();
-    expect(screen.getByText(/^0 units · 0 points · 0 lines · Opened /)).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · Never opened')).toBeTruthy();
+    expect(screen.getByText(/^0 units · 0 points · 0 lines · 0 polygons · Opened /)).toBeTruthy();
     const names = screen.getAllByText(/^Op /).map((node) => node.props.children);
     expect(names).toEqual(['Op Cobra', 'Op Iron']);
   });
@@ -91,14 +91,14 @@ describe('MissionsScreen', () => {
       await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
       await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc: HOSTILE_INF, name: 'HOS-2' });
       await renderWithProviders(<MissionsScreen />, ctx);
-      await screen.findByText('2 units · 0 points · 0 lines · Never opened');
+      await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · Never opened');
       return { ctx, ironId: iron.value.id };
     }
 
     it('confirms before deleting a mission from its swipe action', async () => {
       const { ctx, ironId } = await setup();
       await fireEvent.press(screen.getByLabelText('Delete Op Iron'));
-      expect(screen.getByText("Delete Op Iron and its 2 units, 0 points and 0 lines? This can't be undone.")).toBeTruthy();
+      expect(screen.getByText("Delete Op Iron and its 2 units, 0 points, 0 lines and 0 polygons? This can't be undone.")).toBeTruthy();
       expect(await findMission(ctx.db, ironId)).not.toBeNull();
 
       await fireEvent.press(screen.getByLabelText('Delete'));
@@ -121,7 +121,7 @@ describe('MissionsScreen', () => {
     it('offers Delete as an accessibility action on the row', async () => {
       await setup();
       await fireEvent(screen.getByLabelText('Open Op Iron'), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
-      expect(screen.getByText("Delete Op Iron and its 2 units, 0 points and 0 lines? This can't be undone.")).toBeTruthy();
+      expect(screen.getByText("Delete Op Iron and its 2 units, 0 points, 0 lines and 0 polygons? This can't be undone.")).toBeTruthy();
     });
   });
 

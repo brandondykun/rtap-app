@@ -16,8 +16,8 @@ import { deleteMission } from './commands';
 import { formatCategoryCounts, formatLastOpened } from './format';
 import { observeMissionCategoryCounts, observeMissionSummaries, type MissionSummary } from './repository';
 
-type Counts = { units: number; points: number; lines: number };
-const NO_COUNTS: Counts = { units: 0, points: 0, lines: 0 };
+type Counts = { units: number; points: number; lines: number; polygons: number };
+const NO_COUNTS: Counts = { units: 0, points: 0, lines: 0, polygons: 0 };
 
 export function MissionsScreen() {
   const ctx = useCommandContext();

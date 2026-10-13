@@ -19,7 +19,7 @@ describe('formatLastOpened', () => {
 
 describe('formatCategoryCounts', () => {
   it('names both parts with singular and plural', () => {
-    expect(formatCategoryCounts({ units: 2, points: 1, lines: 0 })).toBe('2 units · 1 point · 0 lines');
-    expect(formatCategoryCounts({ units: 2, points: 1, lines: 0 }, ' and ')).toBe('2 units, 1 point and 0 lines');
+    expect(formatCategoryCounts({ units: 2, points: 1, lines: 0, polygons: 3 })).toBe('2 units · 1 point · 0 lines · 3 polygons');
+    expect(formatCategoryCounts({ units: 2, points: 1, lines: 0, polygons: 3 }, ' and ')).toBe('2 units, 1 point, 0 lines and 3 polygons');
   });
 });

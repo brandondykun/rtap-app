@@ -1,10 +1,12 @@
 import { itemCategory, KNOWN_SIDCS, typeLabel } from '@/features/symbology/categories';
 import { lineTypeInfo, lineTypeOf, type LineType } from '@/features/symbology/line-types';
+import { polygonStyleOf, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
 import type { LatLon } from '@/lib/geo/types';
 
-import { parseLineGeometry, pointCoord } from './geometry';
+import { parseLineGeometry, parsePolygonGeometry, pointCoord } from './geometry';
 import { totalLength } from './line-measure';
+import { areaM2 } from './polygon-measure';
 import type { MapItemSnapshot } from './repository';
 
 /** The Layers list shows at most this many rows; search narrows the rest. */
@@ -25,6 +27,10 @@ export type LayerRow = {
   lineType: LineType | null;
   /** Lines: total length in meters (null when the geometry is unreadable). */
   length: number | null;
+  /** Polygons: their type, area (m², null when unreadable) and, for circles, the radius. */
+  polygonType: PolygonType | null;
+  areaM2: number | null;
+  radiusM: number | null;
 };
 
 export type LayerRows = {
@@ -36,6 +42,7 @@ export type LayerRows = {
   units: number;
   points: number;
   lines: number;
+  polygons: number;
   /** Items in this mission that are hidden. */
   hiddenIds: string[];
 };
@@ -48,7 +55,12 @@ export type LayerRows = {
 export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly string[], query: string, limit = LAYER_ROW_LIMIT): LayerRows {
   const hidden = new Set(hiddenIds);
   const q = query.trim().toLowerCase();
-  const label = (i: MapItemSnapshot) => (i.kind === 'line' ? lineTypeInfo(lineTypeOf(i.style)).label : typeLabel(i.sidc));
+  const label = (i: MapItemSnapshot) =>
+    i.kind === 'line'
+      ? lineTypeInfo(lineTypeOf(i.style)).label
+      : i.kind === 'polygon'
+        ? polygonTypeInfo(polygonStyleOf(i.style).polygonType).label
+        : typeLabel(i.sidc);
   const matchesQuery = (i: MapItemSnapshot) => i.name.toLowerCase().includes(q) || (label(i)?.toLowerCase().includes(q) ?? false);
   const matches = (q ? items.filter(matchesQuery) : [...items]).sort(
     // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
@@ -60,15 +72,21 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
     rows: matches.slice(0, limit).map((i): LayerRow => {
       const isLine = i.kind === 'line';
       const points = isLine ? parseLineGeometry(i.geometry) : null;
+      const isPolygon = i.kind === 'polygon';
+      const ring = isPolygon ? parsePolygonGeometry(i.geometry) : null;
+      const pstyle = isPolygon ? polygonStyleOf(i.style) : null;
       return {
         id: i.id,
         kind: i.kind,
         name: i.name,
-        sidc: !isLine && i.sidc && KNOWN_SIDCS.has(i.sidc) ? i.sidc : DEFAULT_SIDC,
+        sidc: !isLine && !isPolygon && i.sidc && KNOWN_SIDCS.has(i.sidc) ? i.sidc : DEFAULT_SIDC,
         hidden: hidden.has(i.id),
-        coord: isLine ? null : pointCoord(i.geometry),
+        coord: isLine || isPolygon ? null : pointCoord(i.geometry),
         lineType: isLine ? lineTypeOf(i.style) : null,
         length: points ? totalLength(points) : null,
+        polygonType: pstyle ? pstyle.polygonType : null,
+        areaM2: ring ? areaM2(ring) : null,
+        radiusM: pstyle && pstyle.shape.kind === 'circle' ? pstyle.shape.radiusM : null,
       };
     }),
     matched: matches.length,
@@ -76,6 +94,7 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
     units: counts.unit,
     points: counts.point,
     lines: counts.line,
+    polygons: counts.polygon,
     hiddenIds: items.filter((i) => hidden.has(i.id)).map((i) => i.id),
   };
 }

@@ -11,6 +11,7 @@ import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
 import { lineTypeInfo } from '@/features/symbology/line-types';
+import { polygonTypeInfo } from '@/features/symbology/polygon-types';
 import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
@@ -20,9 +21,11 @@ import { useSettings, type Basemap } from '@/stores/settings';
 
 import { setItemHidden, setItemsHidden } from '../commands';
 import { layerRows } from '../layer-rows';
+import { formatArea } from '../polygon-measure';
 import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '../repository';
 import { openItemMenu } from './item-menus';
 import { LineSample } from './LineSample';
+import { PolygonSample } from './PolygonSample';
 
 const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'satellite', label: 'Satellite' },
@@ -44,7 +47,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const [query, setQuery] = useState('');
-  const { rows, matched, total, units, points, lines, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
+  const { rows, matched, total, units, points, lines, polygons, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -67,14 +70,14 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
       <MenuSection label="Map items">
         <View className="flex-row items-center justify-between gap-3">
           <Text testID="layers-summary" className="text-sm text-text-muted">
-            {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(lines)} ${lines === 1 ? 'line' : 'lines'} · ${count(hiddenIds.length)} hidden`}
+            {`${count(units)} ${units === 1 ? 'unit' : 'units'} · ${count(points)} ${points === 1 ? 'point' : 'points'} · ${count(lines)} ${lines === 1 ? 'line' : 'lines'} · ${count(polygons)} ${polygons === 1 ? 'polygon' : 'polygons'} · ${count(hiddenIds.length)} hidden`}
           </Text>
           <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         </View>
         {total > 0 ? (
           <TextField accessibilityLabel="Search" value={query} onChangeText={setQuery} placeholder="Search names or types" autoCapitalize="characters" autoCorrect={false} />
         ) : null}
-        {total === 0 ? <Text className="text-sm text-text-muted">Nothing on the map yet. Use UNIT, POINT, LINE or long-press the map.</Text> : null}
+        {total === 0 ? <Text className="text-sm text-text-muted">Nothing on the map yet. Use UNIT, POINT, LINE, POLYGON or long-press the map.</Text> : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
         {rows.map((row) => (
           <MenuListItem
@@ -83,13 +86,21 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             subtitle={`${row.hidden ? 'Hidden · ' : ''}${
               row.lineType
                 ? `${lineTypeInfo(row.lineType).label} · ${formatDistance(row.length ?? 0)}`
-                : row.coord
-                  ? formatCoordinate(row.coord, coordinateFormat)
-                  : '—'
+                : row.polygonType
+                  ? `${polygonTypeInfo(row.polygonType).label} · ${
+                      row.radiusM !== null ? `r ${formatDistance(row.radiusM)}` : row.areaM2 !== null ? formatArea(row.areaM2) : '—'
+                    }`
+                  : row.coord
+                    ? formatCoordinate(row.coord, coordinateFormat)
+                    : '—'
             }`}
             dimmed={row.hidden}
             leading={
-              row.lineType ? (
+              row.polygonType ? (
+                <View style={{ width: 28, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                  <PolygonSample polygonType={row.polygonType} />
+                </View>
+              ) : row.lineType ? (
                 <View style={{ width: 28, height: 20, justifyContent: 'center' }}>
                   <LineSample lineType={row.lineType} />
                 </View>

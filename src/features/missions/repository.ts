@@ -49,15 +49,16 @@ export function observeMissionSummaries(db: Database): Observable<MissionSummary
   );
 }
 
-/** Units, points and lines in a mission: lines by kind, points by symbol code (see itemCategory). */
-export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<{ units: number; points: number; lines: number }> {
+/** Units, points, lines and polygons in a mission: lines and polygons by kind, points by symbol code (see itemCategory). */
+export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<{ units: number; points: number; lines: number; polygons: number }> {
   const items = db.get<MapItem>(Tables.mapItems);
   const inMission = Q.where('mission_id', missionId);
   return combineLatest([
     items.query(inMission, Q.where('kind', 'point')).observeCount(),
     items.query(inMission, Q.where('kind', 'point'), Q.where('sidc', Q.oneOf([...POINT_SIDCS]))).observeCount(),
     items.query(inMission, Q.where('kind', 'line')).observeCount(),
-  ]).pipe(map(([symbols, points, lines]) => ({ units: Math.max(0, symbols - points), points, lines })));
+    items.query(inMission, Q.where('kind', 'polygon')).observeCount(),
+  ]).pipe(map(([symbols, points, lines, polygons]) => ({ units: Math.max(0, symbols - points), points, lines, polygons })));
 }
 
 /** Returns null for unknown ids and for soft-deleted (markAsDeleted) missions. */
