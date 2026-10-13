@@ -90,7 +90,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 7 | With a panel open, the crosshair sits in the middle of the visible map and the readout (in the form) describes that point — risk 5: Mapbox reports the padded center. If not, read the center with `getCoordinateFromView` at the crosshair | PENDING |
 | 8 | POINT opens Add Point at the crosshair; the draft shows the amber dashed ring, `HOS-n · NEW` chip and, with a fix, the dashed range line and label | PENDING |
 | 9 | Typing MGRS: the map moves only when the reference becomes valid; partial input never jumps | PENDING |
-| 10 | Center / Me move the draft (Me eases the map); long-press moves the draft and keeps the form | PENDING |
+| 10 | Center moves the draft to the crosshair; long-press moves the draft and keeps the form (Me was replaced by Map — see row 27) | PENDING |
 | 11 | The keyboard never covers the focused field (sheet goes full while typing) | PENDING |
 | 12 | Add: success haptic; the panel switches to the new point, selected and read-only (one marker with the ring and its name, no second draft on top); the next POINT keeps the last affiliation/type and the name increments | PENDING |
 | 13 | Tap a point: it opens read-only (title "Point", Close + Edit, all fields disabled, Hidden/Delete disabled); Edit unlocks it; Save writes and returns to read-only; Cancel drops changes; Delete (in edit mode) needs a second tap | PENDING |
