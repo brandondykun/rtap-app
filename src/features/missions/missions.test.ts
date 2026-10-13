@@ -1,12 +1,14 @@
 import { Q } from '@nozbe/watermelondb';
 import { firstValueFrom } from 'rxjs';
 
+import { placePoint, setItemHidden } from '@/features/map-items/commands';
+import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
 import type { MissionViewState } from '@/lib/db/models/MissionViewState';
 import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { createMission, markMissionOpened, saveMissionCamera } from './commands';
+import { createMission, deleteMission, markMissionOpened, saveMissionCamera } from './commands';
 import {
   findMission,
   getMissionCamera,
@@ -117,5 +119,46 @@ describe('missions', () => {
     const mission = await findMission(ctx.db, r.value.id);
     await ctx.db.write(() => mission!.markAsDeleted());
     expect(await findMission(ctx.db, r.value.id)).toBeNull();
+  });
+
+  describe('deleteMission', () => {
+    const at = { lat: 38.8977, lon: -77.0365 };
+    const sidc = 'SHGPUCI--------';
+
+    it('removes the mission, its items and its view state, leaving other missions alone', async () => {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      const cobra = await createMission(ctx, { name: 'Op Cobra' });
+      if (!iron.ok || !cobra.ok) throw new Error('setup');
+      const a = await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc, name: 'HOS-1' });
+      const b = await placePoint(ctx, { missionId: cobra.value.id, coord: at, sidc, name: 'HOS-1' });
+      if (!a.ok || !b.ok) throw new Error('setup');
+      await setItemHidden(ctx, a.value.id, true);
+      await setItemHidden(ctx, b.value.id, true);
+      await markMissionOpened(ctx, iron.value.id);
+      await markMissionOpened(ctx, cobra.value.id);
+
+      expect(await deleteMission(ctx, iron.value.id)).toEqual({ ok: true, value: undefined });
+
+      expect(await findMission(ctx.db, iron.value.id)).toBeNull();
+      expect((await firstValueFrom(observeMissionSummaries(ctx.db))).map((m) => m.name)).toEqual(['Op Cobra']);
+      expect(await firstValueFrom(observeMissionItemCount(ctx.db, iron.value.id))).toBe(0);
+      expect(await firstValueFrom(observeMissionItemCount(ctx.db, cobra.value.id))).toBe(1);
+      const deleted = await ctx.db.get<MapItem>(Tables.mapItems).find(a.value.id);
+      expect(deleted._raw._status).toBe('deleted');
+      const views = await ctx.db.get<ItemViewState>(Tables.itemViewState).query().fetch();
+      expect(views.map((v) => v.mapItemId)).toEqual([b.value.id]);
+      const missionViews = await ctx.db.get<MissionViewState>(Tables.missionViewState).query().fetch();
+      expect(missionViews.map((v) => v.missionId)).toEqual([cobra.value.id]);
+    });
+
+    it('deletes an empty mission and reports an unknown or already deleted one', async () => {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      if (!iron.ok) throw new Error('setup');
+      expect((await deleteMission(ctx, iron.value.id)).ok).toBe(true);
+      expect(await deleteMission(ctx, iron.value.id)).toMatchObject({ ok: false, error: 'not_found' });
+      expect(await deleteMission(ctx, 'nope')).toMatchObject({ ok: false, error: 'not_found' });
+    });
   });
 });

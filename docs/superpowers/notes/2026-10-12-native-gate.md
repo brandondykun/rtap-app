@@ -123,3 +123,6 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 40 | Drag Add Point to peek, open Settings, close it, tap POINT: Add Point opens at half, not peek | PASS (iOS, 2026-10-13) |
 | 41 | Recenter (follow on), then open Settings or Layers: the map re-centers on you above the panel right away, not a second later | PASS (iOS, 2026-10-13) |
 | 42 | Long-press one spot, then quickly long-press another while the map is still moving: the map ends with the second spot centered above the panel | N/A (iOS, 2026-10-13): the move ends before a second long-press is possible; covered by the MapScreen test instead |
+| 43 | Missions list: swiping a row left reveals a red Delete; swiping another row closes the first; vertical scrolling still works and a tap still opens the mission | PENDING |
+| 44 | Delete → confirmation shows the name and item count; Cancel or tapping outside keeps the mission; Delete removes it with a success haptic; the confirmation also works in landscape | PENDING |
+| 45 | VoiceOver: on a mission row, swipe up/down to the "Delete" action and activate it — the confirmation opens | PENDING |

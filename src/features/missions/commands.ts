@@ -1,10 +1,14 @@
+import { Q } from '@nozbe/watermelondb';
+
 import type { CommandContext } from '@/lib/db/command-context';
+import type { ItemViewState } from '@/lib/db/models/ItemViewState';
+import type { MapItem } from '@/lib/db/models/MapItem';
 import type { Mission } from '@/lib/db/models/Mission';
 import type { MissionViewState } from '@/lib/db/models/MissionViewState';
 import { Tables } from '@/lib/db/schema';
 import { err, ok, type Result } from '@/lib/result';
 
-import { findMissionViewState, isValidCamera, type MissionCamera } from './repository';
+import { findMission, findMissionViewState, isValidCamera, type MissionCamera } from './repository';
 
 export async function createMission(
   ctx: CommandContext,
@@ -65,6 +69,37 @@ export async function saveMissionCamera(
   try {
     await upsertViewState(ctx, missionId, (s) => {
       s.camera = JSON.stringify(camera);
+    });
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
+/**
+ * Deletes a mission and every item in it in one write. Synced records are tombstoned (like
+ * deleteItem); local-only view state (last opened, camera, item visibility) is removed outright.
+ */
+export async function deleteMission(ctx: CommandContext, missionId: string): Promise<Result<void, 'not_found' | 'write_failed'>> {
+  const mission = await findMission(ctx.db, missionId);
+  if (!mission) return err('not_found', `No mission ${missionId}`);
+  try {
+    await ctx.db.write(async () => {
+      const items = await ctx.db.get<MapItem>(Tables.mapItems).query(Q.where('mission_id', missionId)).fetch();
+      const itemViews =
+        items.length === 0
+          ? []
+          : await ctx.db
+              .get<ItemViewState>(Tables.itemViewState)
+              .query(Q.where('map_item_id', Q.oneOf(items.map((i) => i.id))))
+              .fetch();
+      const missionViews = await ctx.db.get<MissionViewState>(Tables.missionViewState).query(Q.where('mission_id', missionId)).fetch();
+      await ctx.db.batch([
+        ...items.map((i) => i.prepareMarkAsDeleted()),
+        ...itemViews.map((v) => v.prepareDestroyPermanently()),
+        ...missionViews.map((v) => v.prepareDestroyPermanently()),
+        mission.prepareMarkAsDeleted(),
+      ]);
     });
     return ok(undefined);
   } catch (e) {
