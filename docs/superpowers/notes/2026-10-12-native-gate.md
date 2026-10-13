@@ -150,7 +150,7 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 67 | Layers: line rows with a line sample, "Phase line · 2.03 km"; search "phase"; summary and mission rows count lines | PENDING |
 | 68 | Line menu "Show point distances" toggle (works while viewing): off hides the segment distance chips on the map, stays off after relaunch | PENDING |
 | 69 | Toolbar reads UNIT · POINT · LINE · MEASURE · LAYERS; MEASURE closes an open panel and shows the Measure card ("Set start") | PENDING |
-| 70 | Tap the map to set the start; pan: the dashed amber line and the readout follow the crosshair; tap to fix the end (solid); tap again moves the end | PENDING |
+| 70 | Tap the map to set the start (dot only, card says "Set end"); panning does not move anything; tap to set the end: solid amber line and readout; tap again moves the end | PENDING |
 | 71 | Tap a unit / point: the end snaps onto the symbol and its menu does not open; tap my blue marker: snaps to me; From me sets the start to my GPS position | PENDING |
 | 72 | Readout matches the range/bearing elsewhere (deg/mils, GRID/TRUE/MAG from Settings); chip at the line's middle is readable on Satellite, Topo and Dark | PENDING |
 | 73 | Set at crosshair, Restart and × (Stop measuring) behave; opening Layers or Menu stops measuring; long-press does nothing while measuring | PENDING |

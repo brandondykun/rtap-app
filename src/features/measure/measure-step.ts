@@ -1,6 +1,6 @@
 import type { LatLon } from '@/lib/geo/types';
 
-/** A measurement: the start, and the end (null = following the crosshair). */
+/** A measurement: the start and the end (null until set). */
 export type Measure = { start: LatLon | null; end: LatLon | null };
 
 export const EMPTY_MEASURE: Measure = { start: null, end: null };

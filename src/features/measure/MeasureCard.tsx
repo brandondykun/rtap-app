@@ -15,24 +15,25 @@ export function MeasureCard() {
   const { colors } = useTheme();
   const start = useMeasure((s) => s.start);
   const end = useMeasure((s) => s.end);
-  const center = useInteraction((s) => s.cameraCenter);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
-  const to = end ?? center;
-  const readout = start && to ? measureReadout(start, to, { angleUnit, northRef, declinationOverrideDeg }) : 'Set start';
+  const readout = !start ? 'Set start' : !end ? 'Set end' : measureReadout(start, end, { angleUnit, northRef, declinationOverrideDeg });
 
   const setAtCrosshair = () => {
     const c = useInteraction.getState().cameraCenter;
     if (c) useMeasure.getState().place(c);
   };
 
-  // Compact: the readout with Stop beside it, then From me / Restart and the amber Set.
+  // Compact: title and readout with Stop beside them, then From me / Restart and the amber Set.
   return (
     <View testID="measure-card" className="gap-1 self-start rounded-2xl border border-accent bg-surface-chrome px-2 py-1">
       <View className="flex-row items-center gap-1">
-        <Text className="pl-1 font-mono text-lg font-semibold text-text">{readout}</Text>
+        <View className="pl-1">
+          <Text className="text-[10px] font-bold uppercase tracking-widest text-accent">Measure</Text>
+          <Text className="font-mono text-lg font-semibold text-text">{readout}</Text>
+        </View>
         <View className="ml-auto">
           <MapButton grouped label="Stop measuring" icon="close" onPress={() => useMeasure.getState().stopMeasure()} />
         </View>

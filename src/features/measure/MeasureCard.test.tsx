@@ -22,12 +22,14 @@ beforeEach(() => {
 describe('MeasureCard', () => {
   it('asks for a start, then sets points at the crosshair and shows the readout', async () => {
     await renderWithProviders(<MeasureCard />);
+    expect(screen.getByText('Measure')).toBeTruthy();
     expect(screen.getByText('Set start')).toBeTruthy();
     expect(screen.getByLabelText('From me')).toBeDisabled();
     expect(screen.getByLabelText('Restart')).toBeDisabled();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(useMeasure.getState().start).toEqual(C);
-    expect(screen.getByText('0 m · — TRUE')).toBeTruthy();
+    // No live end: the card asks for the end instead of measuring to the crosshair.
+    expect(screen.getByText('Set end')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Restart'));
     expect(useMeasure.getState().start).toBeNull();
   });
@@ -36,6 +38,8 @@ describe('MeasureCard', () => {
     usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 });
     await renderWithProviders(<MeasureCard />);
     await fireEvent.press(screen.getByLabelText('From me'));
+    expect(screen.getByText('Set end')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(screen.getByText('1.11 km · 000° TRUE')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Stop measuring'));
     expect(useMeasure.getState().active).toBe(false);

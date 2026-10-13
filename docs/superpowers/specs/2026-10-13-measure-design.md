@@ -20,7 +20,7 @@ there while the start stays on them.
 | Topic | Decision |
 |---|---|
 | Form | A map mode with a small floating card and a map layer — not a panel menu (the map stays unobstructed). |
-| Workflow | Live end at the crosshair: first tap / Set fixes the start; the end then follows the crosshair until a tap / Set fixes it; after that a tap / Set moves the end, the start stays. |
+| Workflow | First tap / Set fixes the start; the next tap / Set fixes the end; after that a tap / Set moves the end, the start stays. (The end following the crosshair live was removed 2026-10-13 at the user's request.) |
 | Snapping | Units, points (any `kind = 'point'` item) and the user's own location marker. Lines do not snap (tap location is used). |
 | Direction | From start to end, using the app's angle unit (deg/mil) and north reference (true/grid/magnetic) via `describeVector`. |
 | Saved | Never. Nothing is written to the mission. |
@@ -36,24 +36,23 @@ there while the start stays on them.
 
 ### 3.2 Steps
 
-State: `start: LatLon | null`, `end: LatLon | null` (null = following the crosshair).
+State: `start: LatLon | null`, `end: LatLon | null` (null until set).
 
 | State | Map tap / snap at `p` | **Set** (crosshair `c`) | **From me** (GPS `g`) |
 |---|---|---|---|
 | No start | start = p | start = c | start = g |
-| Start, end live | end = p | end = c | start = g |
+| Start, no end | end = p | end = c | start = g |
 | Start and end | end = p | end = c | start = g |
 
-- The live end is the camera center (`useInteraction.cameraCenter`), so it follows panning.
 - **Restart** clears both points (back to "No start").
 - While measuring, a tap on a unit/point or the self marker snaps instead of opening a menu;
   long-press does nothing; line drawing and item menus are not reachable (menus are closed).
 
 ### 3.3 Readout
 
-`describeVector(start, end ?? cameraCenter, { unit, ref, declinationOverrideDeg, date })` →
+`describeVector(start, end, { unit, ref, declinationOverrideDeg, date })` →
 `"<distanceLabel> · <bearingLabel> <refLabel>"`, e.g. `1.29 km · 039° GRID`. With no start the card
-reads **Set start** and no line is drawn.
+reads **Set start**, with a start but no end **Set end**; no line is drawn until both are set.
 
 ## 4. UI
 
@@ -62,7 +61,7 @@ reads **Set start** and no line is drawn.
 Top-left in the `MapTopLeft` stack (below the Mapbox logo row, as in the mockup), in the
 `surface-chrome` style with an `accent` border:
 
-- Label **MEASURE** (accent, uppercase) and the readout (large, mono) or **Set start**.
+- Label **MEASURE** (small, accent, uppercase) above the readout (mono) or **Set start** / **Set end**.
 - Buttons: **From me** (disabled without a GPS fix), **Restart** (disabled with no start),
   **×** (turns measuring off), and the amber primary **Set** (crosshair glyph; sets the next
   point at the crosshair as in §3.2).
@@ -72,8 +71,8 @@ Top-left in the `MapTopLeft` stack (below the Mapbox logo row, as in the mockup)
 
 One `ShapeSource` (`id="measure"`):
 
-- line start → end: `point-symbol-halo` halo under an `accent` line (3 pt); dashed while the end
-  is live;
+- line start → end (only once the end is set; until then just the start dot):
+  `point-symbol-halo` halo under a solid `accent` line (3 pt);
 - start and end dots (white disc with a dark ring, the `line-vertex` image);
 - a chip at the geodesic midpoint with the readout text (accent background, dark text — a new
   `label-chip-accent`-based style).
@@ -100,10 +99,10 @@ is tapped; `MissionMap` passes it only while measuring.
 - `measure-step`: every row of the §3.2 table; restart.
 - Store: start/stop clear state; actions follow the step rules.
 - Readout: uses the angle unit and north reference; "Set start" with no start.
-- `MeasureLayer`: no features without a start; dashed while live, solid when fixed; chip text.
+- `MeasureLayer`: no features without a start; only the start dot until the end is set; chip text.
 - `MeasureCard`: buttons call the right actions; From me disabled without GPS; Restart disabled with no start.
 - MapScreen: MEASURE toggles on/off and closes an open menu; a map tap sets start then end; a
-  unit tap snaps to the unit and does not open its menu; the live end follows the camera; a
+  unit tap snaps to the unit and does not open its menu; a
   self-marker tap snaps to the self position; opening Layers turns measuring off; long-press
   does nothing while measuring.
 
