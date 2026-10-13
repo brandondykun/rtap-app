@@ -33,3 +33,15 @@ export const SYMBOL_IMAGES: Record<string, number> = {
   'GFGPGPPL------X': require('../../../assets/symbols/GFGPGPPL------X.png'),
   'GFGPDPT-------X': require('../../../assets/symbols/GFGPDPT-------X.png'),
 };
+
+/** Point symbols cropped to their own bounds, for menus and lists (map images are anchor-centered). */
+export const SYMBOL_THUMBNAILS: Record<string, number> = {
+  'GFGPGPPK------X': require('../../../assets/symbols/GFGPGPPK------X-thumb.png'),
+  'GFGPDPO-------X': require('../../../assets/symbols/GFGPDPO-------X-thumb.png'),
+  'GFGPAAL-------X': require('../../../assets/symbols/GFGPAAL-------X-thumb.png'),
+  'GFGPGPPS------X': require('../../../assets/symbols/GFGPGPPS------X-thumb.png'),
+  'GFGPGPPE------X': require('../../../assets/symbols/GFGPGPPE------X-thumb.png'),
+  'GFGPGPPR------X': require('../../../assets/symbols/GFGPGPPR------X-thumb.png'),
+  'GFGPGPPL------X': require('../../../assets/symbols/GFGPGPPL------X-thumb.png'),
+  'GFGPDPT-------X': require('../../../assets/symbols/GFGPDPT-------X-thumb.png'),
+};

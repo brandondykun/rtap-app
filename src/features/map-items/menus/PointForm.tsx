@@ -6,7 +6,7 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
 import { POINT_TYPES, pointTypePrefix, type PointType } from '@/features/symbology/point-types';
-import { SYMBOL_IMAGES } from '@/features/symbology/symbol-images.generated';
+import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { LocationSection } from './form/LocationSection';
@@ -15,7 +15,7 @@ import { useAutoName } from './form/use-auto-name';
 const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
   value: t.id,
   label: t.label,
-  icon: <Image source={SYMBOL_IMAGES[t.sidc]} style={{ width: 28, height: 22 }} resizeMode="contain" />,
+  icon: <Image source={symbolThumbnail(t.sidc)} style={{ width: 32, height: 26 }} resizeMode="contain" />,
 }));
 
 /** Add/Edit point form: location, point type, name, notes. Edits only the draft store. */

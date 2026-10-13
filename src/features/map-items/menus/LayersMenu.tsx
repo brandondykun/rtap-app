@@ -10,7 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
-import { SYMBOL_IMAGES } from '@/features/symbology/symbol-images.generated';
+import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { useMenu } from '@/stores/menu';
@@ -79,7 +79,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             title={row.name}
             subtitle={`${row.hidden ? 'Hidden · ' : ''}${row.coord ? formatCoordinate(row.coord, coordinateFormat) : '—'}`}
             dimmed={row.hidden}
-            leading={<Image source={SYMBOL_IMAGES[row.sidc]} style={{ width: 28, height: 20 }} resizeMode="contain" />}
+            leading={<Image source={symbolThumbnail(row.sidc)} style={{ width: 28, height: 20 }} resizeMode="contain" />}
             onPress={() => {
               Keyboard.dismiss();
               openItemMenu(row.id, row.sidc);
