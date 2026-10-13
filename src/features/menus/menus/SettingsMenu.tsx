@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { MenuHeader } from '@/components/menu/MenuHeader';
@@ -52,9 +52,20 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
   const [text, setText] = useState(override === null ? '' : String(override));
   const [error, setError] = useState<string | null>(null);
+  // Text typed since the last commit; closing the menu with the keyboard up still saves it.
+  const pending = useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
+      const value = pending.current === null ? null : parseDeclination(pending.current);
+      if (value !== null) useSettings.getState().setDeclinationOverride(value);
+    },
+    [],
+  );
 
   const toggleManual = (on: boolean) => {
     setError(null);
+    pending.current = null;
     if (!on) {
       setDeclinationOverride(null);
       setText('');
@@ -67,15 +78,14 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
     setText(String(start));
   };
 
-  // Save every valid value as it is typed (Close with the keyboard up must not lose it); only
-  // finishing the edit reports an invalid one.
+  // Saved only when the edit finishes (or the menu closes), so typing 200 never stores 20 on the way.
   const change = (next: string) => {
     setText(next);
-    const value = parseDeclination(next);
-    if (value !== null) setDeclinationOverride(value);
+    pending.current = next;
   };
 
   const commit = () => {
+    pending.current = null;
     const value = parseDeclination(text);
     if (value === null || !setDeclinationOverride(value)) setError(DECLINATION_ERROR);
     else setError(null);

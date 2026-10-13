@@ -51,17 +51,39 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().declinationOverrideDeg).toBeNull();
   });
 
-  it('saves a valid typed declination without finishing the edit', async () => {
+  it('saves a typed declination only when the edit finishes, never the partial values', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
+    const start = useSettings.getState().declinationOverrideDeg;
     const field = screen.getByLabelText('Declination degrees');
-    await fireEvent.changeText(field, '-');
-    expect(screen.queryByText('Enter a number from −180 to 180 (east positive)')).toBeNull();
+    await fireEvent.changeText(field, '2');
+    await fireEvent.changeText(field, '20');
+    await fireEvent.changeText(field, '200');
+    expect(useSettings.getState().declinationOverrideDeg).toBe(start);
+    await fireEvent(field, 'endEditing');
+    expect(useSettings.getState().declinationOverrideDeg).toBe(start);
+    expect(screen.getByText('Enter a number from −180 to 180 (east positive)')).toBeTruthy();
     await fireEvent.changeText(field, '-9.5');
+    expect(useSettings.getState().declinationOverrideDeg).toBe(start);
+    await fireEvent(field, 'endEditing');
     expect(useSettings.getState().declinationOverrideDeg).toBe(-9.5);
-    await fireEvent.changeText(field, '');
+  });
+
+  it('saves a valid typed declination when the menu closes before the edit finishes', async () => {
+    const { unmount } = await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
+    await fireEvent.changeText(screen.getByLabelText('Declination degrees'), '-9.5');
+    await act(async () => unmount());
     expect(useSettings.getState().declinationOverrideDeg).toBe(-9.5);
-    expect(screen.queryByText('Enter a number from −180 to 180 (east positive)')).toBeNull();
+  });
+
+  it('keeps the saved declination when the menu closes on invalid or empty text', async () => {
+    const { unmount } = await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
+    const start = useSettings.getState().declinationOverrideDeg;
+    await fireEvent.changeText(screen.getByLabelText('Declination degrees'), '-');
+    await act(async () => unmount());
+    expect(useSettings.getState().declinationOverrideDeg).toBe(start);
   });
 
   it('updates the G-M angle and model hint as the camera moves', async () => {

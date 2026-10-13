@@ -9,7 +9,7 @@ import { getMissionCamera } from '@/features/missions/repository';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
-import { usePresence } from '@/stores/presence';
+import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
@@ -375,6 +375,50 @@ describe('MapScreen', () => {
       expect(await screen.findByRole('header')).toHaveTextContent('Add point');
       await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77.03, 38.9]));
       expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);
+    });
+
+    it('re-centers on the user when a panel opens while following', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      mapboxMock().__camera.setCamera.mockClear();
+
+      await fireEvent.press(screen.getByLabelText('Settings'));
+      await waitFor(() => expect(calls().some(fullyPadded)).toBe(true));
+      expect(calls().at(-1)?.centerCoordinate).toEqual([-77, 38.9]);
+      expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);
+      await act(async () => usePresence.setState(INITIAL_PRESENCE));
+    });
+
+    it('a late idle from an earlier move does not cut a draft move short', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      const longPress = (coordinates: [number, number]) =>
+        act(async () =>
+          (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates }, properties: {} }),
+        );
+      const idleAt = (center: [number, number]) =>
+        act(async () => (mapboxMock().__props.MapView.main.onMapIdle as (s: unknown) => void)({ properties: { center, zoom: 12, heading: 0 }, gestures: { isGestureActive: false } }));
+      await longPress([-77.03, 38.9]);
+      await screen.findByRole('header');
+      await longPress([-77.1, 38.95]);
+      await idleAt([-77.03, 38.9]);
+      mapboxMock().__camera.setCamera.mockClear();
+
+      await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 500 }));
+      expect(calls().at(-1)?.centerCoordinate).toEqual([-77.1, 38.95]);
+
+      await idleAt([-77.1, 38.95]);
+      mapboxMock().__camera.setCamera.mockClear();
+      await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 420 }));
+      expect(calls().at(-1)?.centerCoordinate).toBeUndefined();
     });
   });
 });

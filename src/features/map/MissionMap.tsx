@@ -30,6 +30,12 @@ import { SelfLayer } from './layers/SelfLayer';
 import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
 
 const EASE = { animationMode: 'easeTo' as const };
+/** ~5 m: the idle camera center counts as the move's target. */
+const ARRIVED_DEG = 5e-5;
+
+function isNear(a: LatLon, b: LatLon) {
+  return Math.abs(a.lat - b.lat) < ARRIVED_DEG && Math.abs(a.lon - b.lon) < ARRIVED_DEG / Math.max(Math.cos((b.lat * Math.PI) / 180), 0.01);
+}
 
 export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {
   const ctx = useCommandContext();
@@ -74,7 +80,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useEffect(() => {
     if (panel === appliedPanel.current) return;
     appliedPanel.current = panel;
-    const target = followTarget.current;
+    // Following the user: re-center on them now rather than at the next GPS fix.
+    const self = useInteraction.getState().followMode ? (usePresence.getState().selfPosition?.position ?? null) : null;
+    const target = followTarget.current ?? self;
     moveCamera({ ...(target ? { centerCoordinate: [target.lon, target.lat] } : {}), ...EASE, animationDuration: 250 });
   }, [panel, moveCamera]);
 
@@ -175,7 +183,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         landscape={landscape}
         panel={panel}
         onCameraIdle={(camera) => {
-          followTarget.current = null;
+          // Only arriving ends a draft-follow move: an idle from an earlier move must not drop it.
+          if (followTarget.current && isNear(camera.center, followTarget.current)) followTarget.current = null;
           if (cameraMoved.current) saver.schedule(camera);
         }}
         onLongPress={onLongPress}

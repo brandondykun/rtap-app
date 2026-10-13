@@ -31,7 +31,9 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
   const stops = ordered.map((d) => heights[d]);
   const [chosen, setDetent] = useState<Detent>(initialDetent);
   // MenuHost reuses this Panel when the menu changes: a detent the new menu does not allow (Add at
-  // peek → Settings) falls back to the new menu's initial detent; an allowed one (Add → Edit) stays.
+  // peek → Settings) is replaced by the new menu's initial detent, so it cannot return with a later
+  // menu; an allowed one (Add → Edit) stays.
+  if (!detents.includes(chosen)) setDetent(initialDetent);
   const detent = detents.includes(chosen) ? chosen : initialDetent;
   const target = landscape ? drawerWidth(metrics) : heights[detent];
   const detentRef = useRef(detent);
@@ -60,7 +62,7 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
       setDetent('full');
     });
     const hide = Keyboard.addListener(hideEvent, () => {
-      if (restore.current !== null) setDetent(restore.current);
+      if (restore.current !== null && detents.includes(restore.current)) setDetent(restore.current);
       restore.current = null;
     });
     return () => {
