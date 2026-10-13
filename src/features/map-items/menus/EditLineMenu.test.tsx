@@ -94,7 +94,7 @@ describe('EditLineMenu', () => {
 
   it('toggles distances on the map even while only viewing', async () => {
     await openEditor();
-    const toggle = screen.getByLabelText('Distances on map');
+    const toggle = screen.getByLabelText('Show distances');
     expect(toggle).not.toBeDisabled();
     await fireEvent(toggle, 'valueChange', false);
     expect(useSettings.getState().showLineDistances).toBe(false);

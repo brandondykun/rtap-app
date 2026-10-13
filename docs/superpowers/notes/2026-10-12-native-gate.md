@@ -148,4 +148,4 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 65 | Each line type's look on Satellite, Topo and Dark: dashed RFL/CFL, heavy boundary, wide axis with arrow, route arrow, FLOT bumps; labels "PL RED" at both ends | PENDING |
 | 66 | Tap a saved line: the map fits it, "Line" view read-only; Edit/Save/Cancel; Hidden on map; Delete line with a second tap | PENDING |
 | 67 | Layers: line rows with a line sample, "Phase line · 2.03 km"; search "phase"; summary and mission rows count lines | PENDING |
-| 68 | Line menu "Distances on map" toggle (works while viewing): off hides the segment distance chips on the map, stays off after relaunch | PENDING |
+| 68 | Line menu "Show distances" toggle (works while viewing): off hides the segment distance chips on the map, stays off after relaunch | PENDING |

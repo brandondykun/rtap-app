@@ -84,7 +84,9 @@ export function LineForm() {
         ))}
         {blocked ? <Text className="text-sm text-text-muted">A line needs at least 2 points</Text> : null}
         {/* A display preference, not part of the line: it works while viewing too. */}
-        <MenuToggle label="Distances on map" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
+        <View className="mt-3">
+          <MenuToggle label="Show distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
+        </View>
       </MenuSection>
       {locked ? null : (
         <MenuSection label={moving ? `Move point ${selected! + 1}` : 'New point'}>
