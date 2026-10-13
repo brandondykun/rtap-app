@@ -22,6 +22,7 @@ export function LocationSection() {
   const coordSource = useDraft((s) => s.coordSource);
   const locked = useDraft((s) => s.locked);
   const picking = useDraft((s) => s.picking);
+  const noun = useDraft((s) => (s.category === 'point' ? 'point' : 'unit'));
   const setPicking = useDraft((s) => s.setPicking);
   const setCoord = useDraft((s) => s.setCoord);
   const setCoordInputValid = useDraft((s) => s.setCoordInputValid);
@@ -68,7 +69,7 @@ export function LocationSection() {
           <MenuButton label="Map" icon="gesture-tap" onPress={() => setPicking(!picking)} active={picking} disabled={locked} />
         </View>
       </View>
-      {picking ? <Text className="text-sm text-accent">Tap the map where the point should go</Text> : null}
+      {picking ? <Text className="text-sm text-accent">{`Tap the map where the ${noun} should go`}</Text> : null}
     </MenuSection>
   );
 }

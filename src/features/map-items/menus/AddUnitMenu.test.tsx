@@ -105,7 +105,7 @@ describe('AddUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Map'));
     expect(useDraft.getState().picking).toBe(true);
     expect(screen.getByLabelText('Map')).toBeSelected();
-    expect(screen.getByText('Tap the map where the point should go')).toBeTruthy();
+    expect(screen.getByText('Tap the map where the unit should go')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Map'));
     expect(useDraft.getState().picking).toBe(false);
   });

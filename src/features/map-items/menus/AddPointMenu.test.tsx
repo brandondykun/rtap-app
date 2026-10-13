@@ -62,4 +62,10 @@ describe('AddPointMenu', () => {
     await renderWithProviders(<AddPointMenu params={{}} missionId="m1" />, ctx);
     expect(await screen.findByDisplayValue('CP-2')).toBeTruthy();
   });
+
+  it('the Map hint names a point', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Map'));
+    expect(screen.getByText('Tap the map where the point should go')).toBeTruthy();
+  });
 });

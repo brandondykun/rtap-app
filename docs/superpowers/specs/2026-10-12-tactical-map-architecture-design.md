@@ -323,6 +323,8 @@ lib/geo/
   center; fallback is `getCoordinateFromView` at the crosshair position.)*
 
 ### 8.5 Placing items (Add Point flow, from mockups)
+
+> **Since 2026-10-13 (§5.4a):** this section describes what is now **Add/Edit Unit** — read `point.add` / `point.edit` / "point" below as `unit.add` / `unit.edit` / "unit". Control-measure points have their own `point.add` / `point.edit`.
 - **Entry:** the POINT tool opens the `point.add` panel with a **draft point** at the
   crosshair. **Long-press** on the map opens it with the draft at the pressed coordinate
   (or moves the draft there if the panel is already open).
