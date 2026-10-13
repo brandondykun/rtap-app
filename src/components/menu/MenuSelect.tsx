@@ -12,8 +12,9 @@ export function MenuSelect<T extends string>({ label, options, value, onChange, 
   const [open, setOpen] = useState(false);
   const currentOption = options.find((o) => o.value === value);
   const current = currentOption?.label ?? '';
+  // No flex here: in a row the caller wraps it in flex-1; stacked, flex-1 would let it shrink to nothing.
   return (
-    <View className="flex-1">
+    <View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${current}`}

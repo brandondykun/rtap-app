@@ -51,7 +51,9 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
       </MenuSection>
       <MenuSection label="Unit type">
         <View className="flex-row items-start gap-2">
-          <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
+          <View className="flex-1">
+            <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
+          </View>
           <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
         {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}

@@ -35,7 +35,9 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
       <LocationSection />
       <MenuSection label="Point type">
         <View className="flex-row items-start gap-2">
-          <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
+          <View className="flex-1">
+            <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
+          </View>
           <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
         {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
