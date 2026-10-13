@@ -16,6 +16,10 @@ type Props = {
   validDetail?: string;
 };
 
+// Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
+const ZONE_WIDTH = 64;
+const SQUARE_WIDTH = 54;
+
 const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
@@ -55,17 +59,18 @@ export function MgrsInput({ value, onChange, status, validDetail }: Props) {
   return (
     <View className="gap-2">
       <View className="flex-row gap-2">
-        <View style={{ flex: 3 }}>
-          <MenuTextField mono accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+        {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
+        <View style={{ width: ZONE_WIDTH }}>
+          <MenuTextField mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
-        <View style={{ flex: 2.5 }}>
-          <MenuTextField ref={square} mono accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+        <View style={{ width: SQUARE_WIDTH }}>
+          <MenuTextField ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
-        <View style={{ flex: 6 }}>
-          <MenuTextField ref={easting} mono accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+        <View style={{ flex: 1 }}>
+          <MenuTextField ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
-        <View style={{ flex: 6 }}>
-          <MenuTextField ref={northing} mono accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+        <View style={{ flex: 1 }}>
+          <MenuTextField ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
       </View>
       <View className="flex-row items-center gap-1">
