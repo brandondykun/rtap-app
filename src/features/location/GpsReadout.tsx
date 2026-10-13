@@ -1,13 +1,12 @@
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { formatLength } from './gps-format';
-
-// The same marker the map draws for the user (without the heading arrow).
-const SELF_ICON = require('../../../assets/map/self-no-heading.png');
 
 /** The user's own position and altitude, shown while the GPS toolbar toggle is on. */
 export function GpsReadout() {
@@ -15,14 +14,15 @@ export function GpsReadout() {
   const status = usePresence((s) => s.locationStatus);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
+  const { colors } = useTheme();
   const off = status === 'denied' || status === 'unavailable';
 
   return (
     <View testID="gps-readout" className="self-start rounded-2xl border border-border bg-surface-chrome px-3 py-2">
       <View className="flex-row items-center gap-2">
-        <Image source={SELF_ICON} style={{ width: 20, height: 20 }} accessibilityIgnoresInvertColors />
+        <Icon name="navigation" size={20} color={colors.self} />
         {fix && !off ? (
-          <Text testID="gps-position" className="font-mono-bold text-base text-text">
+          <Text testID="gps-position" className="font-mono-bold text-lg text-text">
             {formatCoordinate(fix.position, coordinateFormat)}
           </Text>
         ) : (
