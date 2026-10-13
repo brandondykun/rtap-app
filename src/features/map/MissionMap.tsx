@@ -1,4 +1,4 @@
-import type { Camera } from '@rnmapbox/maps';
+import type { Camera, CameraStop } from '@rnmapbox/maps';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,13 +61,21 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   const editingId = useDraft((s) => (s.mode === 'edit' ? s.itemId : null));
   const draftActive = useDraft((s) => s.mode !== null);
+  // A draft-follow move still in flight: a padding change must complete it, not cancel it.
+  const followTarget = useRef<LatLon | null>(null);
+  // Every camera move carries the panel's full padding: a move without it targets the padding of the
+  // moment (possibly mid-animation) and replaces the running padding ease (rnmapbox 10 iOS).
+  const moveCamera = useCallback((stop: Omit<CameraStop, 'padding'>) => {
+    cameraRef.current?.setCamera({ ...stop, padding: cameraPaddingFor(useMenu.getState().panelFrame) });
+  }, []);
   // Pad the camera only when the panel frame changes (not on mount).
   const appliedPanel = useRef<PanelFrame | null>(null);
   useEffect(() => {
     if (panel === appliedPanel.current) return;
     appliedPanel.current = panel;
-    cameraRef.current?.setCamera({ padding: cameraPaddingFor(panel), ...EASE, animationDuration: 250 });
-  }, [panel]);
+    const target = followTarget.current;
+    moveCamera({ ...(target ? { centerCoordinate: [target.lon, target.lat] } : {}), ...EASE, animationDuration: 250 });
+  }, [panel, moveCamera]);
 
   useEffect(() => () => useInteraction.getState().reset(), []);
   useEffect(
@@ -84,9 +92,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       if (!centeredOnSelf.current) {
         centeredOnSelf.current = true;
         markMoved();
-        cameraRef.current?.setCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
+        moveCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
       } else if (useInteraction.getState().followMode) {
-        cameraRef.current?.setCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
+        moveCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
       }
     };
     const current = usePresence.getState().selfPosition;
@@ -94,7 +102,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     return usePresence.subscribe((state, prev) => {
       if (state.selfPosition && state.selfPosition !== prev.selfPosition) onFix(state.selfPosition.position);
     });
-  }, [markMoved]);
+  }, [markMoved, moveCamera]);
 
   // The map follows the draft when typing, Me, a long-press or an item moves it — never for Center
   // (already under the crosshair) and never when the user pans (the draft stays put).
@@ -104,9 +112,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         if (state.coordRev === prev.coordRev || !state.coord || state.coordSource === 'crosshair') return;
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
-        cameraRef.current?.setCamera({ centerCoordinate: [state.coord.lon, state.coord.lat], ...EASE, animationDuration: 400 });
+        followTarget.current = state.coord;
+        moveCamera({ centerCoordinate: [state.coord.lon, state.coord.lat], ...EASE, animationDuration: 400 });
       }),
-    [markMoved, setFollowMode],
+    [markMoved, setFollowMode, moveCamera],
   );
 
   const togglePoint = () => {
@@ -120,25 +129,27 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
 
   const onUserGesture = () => {
+    followTarget.current = null;
     markMoved();
     if (useInteraction.getState().followMode) setFollowMode(false);
   };
   const zoomBy = (delta: number) => {
     markMoved();
     const zoomLevel = clampZoom(useInteraction.getState().cameraZoom + delta);
-    cameraRef.current?.setCamera({ zoomLevel, ...EASE, animationDuration: 250 });
+    moveCamera({ zoomLevel, ...EASE, animationDuration: 250 });
   };
   const northUp = () => {
     markMoved();
-    cameraRef.current?.setCamera({ heading: 0, ...EASE, animationDuration: 300 });
+    moveCamera({ heading: 0, ...EASE, animationDuration: 300 });
   };
   const recenter = () => {
     const self = usePresence.getState().selfPosition?.position;
     if (!self) return;
     markMoved();
+    followTarget.current = null;
     setFollowMode(true);
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
-    cameraRef.current?.setCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
+    moveCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
   };
 
   return (
@@ -149,6 +160,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         landscape={landscape}
         panel={panel}
         onCameraIdle={(camera) => {
+          followTarget.current = null;
           if (cameraMoved.current) saver.schedule(camera);
         }}
         onLongPress={onLongPress}

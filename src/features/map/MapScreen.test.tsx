@@ -237,4 +237,53 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Edit point');
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
   });
+
+  describe('camera padding during panel moves', () => {
+    type Stop = { centerCoordinate?: [number, number]; padding?: { paddingBottom: number; paddingLeft: number } };
+    const calls = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as Stop);
+    const fullyPadded = (stop: Stop) => (stop.padding?.paddingBottom ?? 0) + (stop.padding?.paddingLeft ?? 0) > 0;
+
+    it('tapping a point keeps every camera move fully padded and ends on the item', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      if (!p.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      mapboxMock().__camera.setCamera.mockClear();
+
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
+      );
+      expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+      await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77, 38.9]));
+
+      const opened = calls().findIndex(fullyPadded);
+      expect(opened).toBeGreaterThanOrEqual(0);
+      const afterOpen = calls().slice(opened);
+      expect(afterOpen.every(fullyPadded)).toBe(true);
+      expect(afterOpen.at(-1)?.centerCoordinate).toEqual([-77, 38.9]);
+    });
+
+    it('a long-press with no panel open ends on the press point with the panel padding', async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      mapboxMock().__camera.setCamera.mockClear();
+
+      await act(async () =>
+        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-77.03, 38.9] },
+          properties: {},
+        }),
+      );
+      expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+      await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77.03, 38.9]));
+      expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);
+    });
+  });
 });
