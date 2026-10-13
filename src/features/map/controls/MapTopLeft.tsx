@@ -24,9 +24,14 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
         left: Math.max(insets.left, drawer) + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
-      {measuring ? <MeasureCard /> : null}
+      {/* Like the notice, the card starts below the toolbar (which reaches under it in landscape). */}
+      {measuring ? (
+        <View testID="measure-card-slot" style={{ marginTop: Math.max(0, bannerTop(landscape) - top) }}>
+          <MeasureCard />
+        </View>
+      ) : null}
       {/* The notice hides while a panel is open. It sits below the toolbar (it would reach under it in landscape). */}
-      {panel ? null : <LocationBanner marginTop={Math.max(0, bannerTop(landscape) - top)} />}
+      {panel ? null : <LocationBanner marginTop={measuring ? 0 : Math.max(0, bannerTop(landscape) - top)} />}
     </View>
   );
 }

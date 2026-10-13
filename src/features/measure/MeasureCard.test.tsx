@@ -40,4 +40,10 @@ describe('MeasureCard', () => {
     await fireEvent.press(screen.getByLabelText('Stop measuring'));
     expect(useMeasure.getState().active).toBe(false);
   });
+
+
+  it('wraps its buttons on narrow screens instead of spilling past the card', async () => {
+    await renderWithProviders(<MeasureCard />);
+    expect(screen.getByTestId('measure-buttons')).toHaveStyle({ flexWrap: 'wrap' });
+  });
 });

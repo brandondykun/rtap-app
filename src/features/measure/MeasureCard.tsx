@@ -32,7 +32,7 @@ export function MeasureCard() {
     <View testID="measure-card" className="gap-2 self-start rounded-2xl border border-accent bg-surface-chrome p-3">
       <Text className="text-xs font-bold uppercase tracking-widest text-accent">Measure</Text>
       <Text className="font-mono text-2xl font-semibold text-text">{readout}</Text>
-      <View className="flex-row items-center gap-2">
+      <View testID="measure-buttons" className="flex-row items-center gap-2" style={{ flexWrap: 'wrap' }}>
         <MenuButton label="From me" icon="crosshairs-gps" onPress={() => self && useMeasure.getState().setFromMe(self)} disabled={!self} />
         <MenuButton label="Restart" icon="restore" iconOnly onPress={() => useMeasure.getState().restart()} disabled={!start} />
         <MenuButton label="Stop measuring" icon="close" iconOnly onPress={() => useMeasure.getState().stopMeasure()} />

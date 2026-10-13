@@ -13,7 +13,8 @@ export function SelfLayer({ onPress }: { onPress?: (at: LatLon) => void }) {
   const heading = usePresence((s) => s.selfHeading);
   const shape = useMemo(() => selfFeatureCollection(position, heading), [position, heading]);
   return (
-    <ShapeSource id="self" shape={shape} onPress={() => position && onPress?.(position)}>
+    // Only touchable when asked: a touchable source swallows taps on symbols near it (rnmapbox iOS).
+    <ShapeSource id="self" shape={shape} onPress={onPress && position ? () => onPress(position) : undefined}>
       <SymbolLayer id="self-icon" style={SELF_STYLE} />
     </ShapeSource>
   );

@@ -1,12 +1,16 @@
 import { act, screen } from '@testing-library/react-native';
 
+import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { bannerTop, EDGE, topLeftStackTop } from '../layout';
 import { MapTopLeft } from './MapTopLeft';
 
-beforeEach(() => usePresence.setState(INITIAL_PRESENCE));
+beforeEach(() => {
+  usePresence.setState(INITIAL_PRESENCE);
+  useMeasure.setState(INITIAL_MEASURE);
+});
 
 describe('MapTopLeft', () => {
   it.each([[false], [true]])('places the location notice below the logo row and the toolbar (landscape=%s)', async (landscape) => {
@@ -23,5 +27,12 @@ describe('MapTopLeft', () => {
     await rerender(<MapTopLeft landscape panel={{ side: 'left', size: 320 }} />);
     expect(screen.queryByTestId('location-banner')).toBeNull();
     expect(screen.getByTestId('map-top-left')).toHaveStyle({ left: 320 + EDGE });
+  });
+
+
+  it.each([[false], [true]])('drops the measure card below the toolbar (landscape=%s)', async (landscape) => {
+    useMeasure.getState().startMeasure();
+    await renderWithProviders(<MapTopLeft landscape={landscape} panel={null} />);
+    expect(screen.getByTestId('measure-card-slot')).toHaveStyle({ marginTop: bannerTop(landscape) - topLeftStackTop(landscape) });
   });
 });

@@ -2,6 +2,7 @@ import { ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { pointCoord } from '@/features/map-items/geometry';
 import { createPointFeatureSelector, hiddenFilter } from '@/features/map-items/selectors';
 import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
@@ -42,8 +43,10 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
         const props = e.features[0]?.properties;
         const id = props?.id;
         const sidc = typeof props?.sidc === 'string' ? props.sidc : null;
+        // Snap to the stored coordinate: rendered geometry is quantized to the tile at the current zoom.
+        const stored = typeof id === 'string' ? items.find((i) => i.id === id) : undefined;
         const g = e.features[0]?.geometry;
-        const itemAt = g?.type === 'Point' ? { lat: g.coordinates[1], lon: g.coordinates[0] } : null;
+        const itemAt = (stored ? pointCoord(stored.geometry) : null) ?? (g?.type === 'Point' ? { lat: g.coordinates[1], lon: g.coordinates[0] } : null);
         if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude }, { kind: 'point', sidc }, itemAt);
       }}>
       <SymbolLayer id="points-symbols" style={POINT_SYMBOL_STYLE} filter={filter} />

@@ -26,4 +26,19 @@ describe('SelfLayer', () => {
     expect((props.ShapeSource.self.shape as Shape).features[0].properties).toEqual({ icon: MAP_IMAGE_IDS.self, heading: 120 });
     expect(props.SymbolLayer['self-icon'].style).toMatchObject({ iconRotationAlignment: 'map' });
   });
+
+
+  it('is not tappable unless a press handler is given (it would swallow taps on nearby symbols)', async () => {
+    usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 });
+    await renderWithProviders(<SelfLayer />);
+    expect(mapboxMock().__props.ShapeSource.self.onPress).toBeUndefined();
+  });
+
+  it('reports my position when tapped', async () => {
+    usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 });
+    const onPress = jest.fn();
+    await renderWithProviders(<SelfLayer onPress={onPress} />);
+    await act(async () => (mapboxMock().__props.ShapeSource.self.onPress as () => void)());
+    expect(onPress).toHaveBeenCalledWith({ lat: 38.9, lon: -77 });
+  });
 });

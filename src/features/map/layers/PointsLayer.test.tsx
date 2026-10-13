@@ -63,12 +63,13 @@ describe('PointsLayer', () => {
     await waitFor(() => expect(props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([a.value.id])));
     await act(async () =>
       (props.ShapeSource.points.onPress as (e: unknown) => void)({
-        features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF }, geometry: { type: 'Point', coordinates: [-77, 38.9] } }],
+        features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF }, geometry: { type: 'Point', coordinates: [-77.0003, 38.9002] } }],
         coordinates: { latitude: 38.9001, longitude: -77.0001 },
         point: {},
       }),
     );
-    // `at` is the finger; the last argument is the symbol's own coordinate (for snapping).
-    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9001, lon: -77.0001 }, { kind: 'point', sidc: HOSTILE_INF }, { lat: 38.9, lon: -77 });
+    // `at` is the finger; the last argument is the symbol's stored coordinate (for snapping), not the
+    // tile-quantized rendered geometry.
+    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9001, lon: -77.0001 }, { kind: 'point', sidc: HOSTILE_INF }, at);
   });
 });
