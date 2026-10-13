@@ -1,20 +1,21 @@
 import { Camera, Images, MapView, type MapState } from '@rnmapbox/maps';
-import { useEffect, useMemo, type ReactNode, type Ref } from 'react';
+import { useEffect, useMemo, useState, type ReactNode, type Ref } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
+import { notifyInfo } from '@/features/feedback/feedback';
 import type { MissionCamera } from '@/features/missions/repository';
 import type { LatLon } from '@/lib/geo/types';
 import { wrapLon } from '@/lib/geo/units/angle';
 import { useInteraction } from '@/stores/interaction';
-import { useSettings } from '@/stores/settings';
+import { useSettings, type Basemap } from '@/stores/settings';
 
 import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
 import { cameraFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
-import { BASEMAP_STYLE_URLS } from './mapbox';
+import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
 
 /** The pressed position from a Mapbox press feature; null when not finite. */
 function pressCoord(geometry: unknown): LatLon | null {
@@ -43,6 +44,21 @@ type Props = {
 
 export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
+  // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
+  // this session so points and the self icon still render. Choosing a basemap again retries it.
+  const [failedBasemap, setFailedBasemap] = useState<Basemap | null>(null);
+  // A new choice clears the failure, so picking that basemap again later retries it.
+  const [chosen, setChosen] = useState(basemap);
+  if (chosen !== basemap) {
+    setChosen(basemap);
+    setFailedBasemap(null);
+  }
+  const effectiveBasemap = failedBasemap === basemap ? 'satellite' : basemap;
+  const onMapLoadingError = (payload?: { type?: string }) => {
+    if (payload?.type !== 'style' || basemap === 'satellite' || failedBasemap === basemap) return;
+    setFailedBasemap(basemap);
+    notifyInfo(`${BASEMAP_LABELS[basemap]} map is unavailable — showing Satellite.`);
+  };
   const insets = useSafeAreaInsets();
   // Mapbox on iOS measures ornament margins from the safe area already.
   // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
@@ -74,7 +90,8 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
   return (
     <MapView
       style={{ flex: 1 }}
-      styleURL={BASEMAP_STYLE_URLS[basemap]}
+      styleURL={BASEMAP_STYLE_URLS[effectiveBasemap]}
+      onMapLoadingError={onMapLoadingError}
       compassEnabled={false}
       pitchEnabled={false}
       scaleBarEnabled={false}

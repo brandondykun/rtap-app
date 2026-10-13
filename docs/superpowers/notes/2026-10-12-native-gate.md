@@ -114,3 +114,8 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 31 | Basemap choice survives an app restart | PENDING |
 | 32 | Layers list: eye toggles hide/show the point on the map immediately; Show all brings every hidden point back; tapping a row (also a hidden one) flies there and opens it selected | PENDING |
 | 33 | Seed 5k mission: the Layers panel opens without a stall, shows "Showing 100 of 5,000", search narrows it smoothly | PENDING |
+| 34 | Offline (airplane mode, fresh install or cleared cache): choosing Topo shows the "Topo map is unavailable — showing Satellite." message and the map falls back to Satellite; choosing Topo again after reconnecting loads it | PENDING |
+| 35 | Switching basemap while a point is selected, or while Map pick mode is waiting for a tap, keeps the selection, the draft and the pick mode | PENDING |
+| 36 | Tapping a Layers row while the search keyboard is up dismisses the keyboard before the point opens | PENDING |
+| 37 | Landscape: the basemap segments fit the drawer and the points list scrolls to the last row | PENDING |
+| 38 | VoiceOver: rows read the point name, then "Hidden" and the coordinate as the hint; the eye button reads "Hide …"/"Show …" | PENDING |

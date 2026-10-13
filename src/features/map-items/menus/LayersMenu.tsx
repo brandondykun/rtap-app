@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Image, Keyboard, Text, View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuHeader } from '@/components/menu/MenuHeader';
@@ -41,7 +41,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const [query, setQuery] = useState('');
-  const { rows, matched, total, hiddenIds } = layerRows(items, hidden, query);
+  const { rows, matched, total, hiddenIds } = useMemo(() => layerRows(items, hidden, query), [items, hidden, query]);
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -59,6 +59,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
       <MenuHeader title="Layers" leading={{ label: 'Close', onPress: close }} />
       <MenuSection label="Basemap">
         <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
+        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Points">
         <View className="flex-row items-center justify-between gap-3">
@@ -79,7 +80,10 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             subtitle={`${row.hidden ? 'Hidden · ' : ''}${row.coord ? formatCoordinate(row.coord, coordinateFormat) : '—'}`}
             dimmed={row.hidden}
             leading={<Image source={SYMBOL_IMAGES[row.sidc]} style={{ width: 28, height: 20 }} resizeMode="contain" />}
-            onPress={() => openMenu('point.edit', { itemId: row.id })}
+            onPress={() => {
+              Keyboard.dismiss();
+              openMenu('point.edit', { itemId: row.id });
+            }}
             trailing={{
               icon: row.hidden ? 'eye-off-outline' : 'eye-outline',
               label: row.hidden ? `Show ${row.name}` : `Hide ${row.name}`,

@@ -5,6 +5,7 @@ import { Text } from 'react-native';
 import { MAP_IMAGES } from '@/features/map/images/map-images';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
+import { useToast } from '@/stores/toast';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -92,11 +93,26 @@ describe('MapCanvas', () => {
     expect(props.onCameraIdle).toHaveBeenCalledWith({ center: { lat: 38.9, lon: -77 }, zoom: 11, bearing: 10 });
   });
 
-  it('uses the basemap from settings and switches without remounting the camera', async () => {
+  it('uses the basemap from settings and follows changes', async () => {
     await renderCanvas();
     expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.satellite);
     await act(async () => useSettings.getState().setBasemap('topo'));
     expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.topo);
     expect(new Set(Object.values(BASEMAP_STYLE_URLS)).size).toBe(4);
+  });
+
+  it('falls back to Satellite for the session when a basemap style fails to load, and retries when chosen again', async () => {
+    useSettings.getState().setBasemap('topo');
+    await renderCanvas();
+    const fail = (type: string) => act(async () => (mapboxMock().__props.MapView.main.onMapLoadingError as (p: unknown) => void)({ error: 'offline', type }));
+    await fail('tile');
+    expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.topo);
+    await fail('style');
+    expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.satellite);
+    expect(useToast.getState().toast?.message).toBe('Topo map is unavailable — showing Satellite.');
+    expect(useSettings.getState().basemap).toBe('topo');
+    await act(async () => useSettings.getState().setBasemap('dark'));
+    await act(async () => useSettings.getState().setBasemap('topo'));
+    expect(mapboxMock().__props.MapView.main.styleURL).toBe(BASEMAP_STYLE_URLS.topo);
   });
 });

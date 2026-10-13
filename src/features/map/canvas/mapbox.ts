@@ -9,12 +9,15 @@ const token = getMapboxToken();
 if (token) Mapbox.setAccessToken(token);
 
 /** Mapbox style for each basemap choice in the Layers panel. */
+// Pinned to current Mapbox styles (the library's StyleURL constants point at older versions).
 export const BASEMAP_STYLE_URLS: Record<Basemap, string> = {
   satellite: Mapbox.StyleURL.Satellite,
-  hybrid: Mapbox.StyleURL.SatelliteStreet,
-  topo: Mapbox.StyleURL.Outdoors,
-  dark: Mapbox.StyleURL.Dark,
+  hybrid: 'mapbox://styles/mapbox/satellite-streets-v12',
+  topo: 'mapbox://styles/mapbox/outdoors-v12',
+  dark: 'mapbox://styles/mapbox/dark-v11',
 };
+
+export const BASEMAP_LABELS: Record<Basemap, string> = { satellite: 'Satellite', hybrid: 'Hybrid', topo: 'Topo', dark: 'Dark' };
 
 /** Default style (offline tile packs use it until downloads get a basemap choice). */
 export const MAP_STYLE_URL: string = BASEMAP_STYLE_URLS.satellite;

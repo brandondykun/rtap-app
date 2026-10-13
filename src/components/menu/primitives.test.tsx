@@ -6,6 +6,7 @@ import { renderWithProviders } from '@/test-utils/render';
 import { MenuActions } from './MenuActions';
 import { MenuButton } from './MenuButton';
 import { MenuHeader } from './MenuHeader';
+import { MenuListItem } from './MenuListItem';
 import { MenuRow } from './MenuRow';
 import { MenuSection } from './MenuSection';
 import { MenuToggle } from './MenuToggle';
@@ -99,5 +100,19 @@ describe('menu primitives', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('MenuListItem has separate row and trailing targets', async () => {
+    const onPress = jest.fn();
+    const onEye = jest.fn();
+    await renderWithProviders(
+      <MenuListItem title="HOS-1" subtitle="Hidden · 18S UJ 1 2" onPress={onPress} trailing={{ icon: 'eye-off-outline', label: 'Show HOS-1', onPress: onEye }} dimmed />,
+    );
+    await fireEvent.press(screen.getByLabelText('Show HOS-1'));
+    expect(onEye).toHaveBeenCalledTimes(1);
+    expect(onPress).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('HOS-1'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('HOS-1').props.accessibilityHint).toBe('Hidden · 18S UJ 1 2');
   });
 });

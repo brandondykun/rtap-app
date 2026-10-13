@@ -1,3 +1,5 @@
+import { Q } from '@nozbe/watermelondb';
+
 import type { CommandContext } from '@/lib/db/command-context';
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -112,25 +114,35 @@ export async function toggleItemVisibility(
   }
 }
 
-/** Sets visibility for several items in one write (e.g. Layers → Show all). */
+/** Sets visibility for several items in one write (e.g. Layers → Show all); idempotent. */
 export async function setItemsHidden(ctx: CommandContext, ids: readonly string[], hidden: boolean): Promise<Result<void, 'write_failed'>> {
+  if (ids.length === 0) return ok(undefined);
   try {
     await ctx.db.write(async () => {
-      for (const id of ids) {
-        const existing = await findItemViewState(ctx.db, id);
-        if (existing) {
-          if (existing.hidden !== hidden) {
-            await existing.update((s) => {
-              s.hidden = hidden;
-            });
+      const collection = ctx.db.get<ItemViewState>(Tables.itemViewState);
+      const existing = await collection.query(Q.where('map_item_id', Q.oneOf([...ids]))).fetch();
+      const byItem = new Map(existing.map((v) => [v.mapItemId, v]));
+      const writes: ItemViewState[] = [];
+      for (const id of new Set(ids)) {
+        const view = byItem.get(id);
+        if (view) {
+          if (view.hidden !== hidden) {
+            writes.push(
+              view.prepareUpdate((s) => {
+                s.hidden = hidden;
+              }),
+            );
           }
         } else if (hidden) {
-          await ctx.db.get<ItemViewState>(Tables.itemViewState).create((s) => {
-            s.mapItemId = id;
-            s.hidden = true;
-          });
+          writes.push(
+            collection.prepareCreate((s) => {
+              s.mapItemId = id;
+              s.hidden = true;
+            }),
+          );
         }
       }
+      if (writes.length > 0) await ctx.db.batch(writes);
     });
     return ok(undefined);
   } catch (e) {
@@ -140,24 +152,5 @@ export async function setItemsHidden(ctx: CommandContext, ids: readonly string[]
 
 /** Sets per-device visibility (local-only view state). Showing an item with no view state is a no-op. */
 export async function setItemHidden(ctx: CommandContext, id: string, hidden: boolean): Promise<Result<void, 'write_failed'>> {
-  try {
-    await ctx.db.write(async () => {
-      const existing = await findItemViewState(ctx.db, id);
-      if (existing) {
-        if (existing.hidden !== hidden) {
-          await existing.update((s) => {
-            s.hidden = hidden;
-          });
-        }
-      } else if (hidden) {
-        await ctx.db.get<ItemViewState>(Tables.itemViewState).create((s) => {
-          s.mapItemId = id;
-          s.hidden = true;
-        });
-      }
-    });
-    return ok(undefined);
-  } catch (e) {
-    return err('write_failed', String(e));
-  }
+  return setItemsHidden(ctx, [id], hidden);
 }

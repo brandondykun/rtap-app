@@ -8,6 +8,8 @@ import type { MapItemSnapshot } from './repository';
 export const LAYER_ROW_LIMIT = 100;
 
 const KNOWN_SIDCS: ReadonlySet<string> = new Set(PRESET_SIDCS);
+// One shared collator: localeCompare with options rebuilds collation per comparison (slow for 5k names).
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 export type LayerRow = { id: string; name: string; sidc: string; hidden: boolean; coord: LatLon | null };
 
@@ -29,8 +31,9 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
   const hidden = new Set(hiddenIds);
   const points = items.filter((i) => i.kind === 'point');
   const q = query.trim().toLowerCase();
-  const matches = (q ? points.filter((i) => i.name.toLowerCase().includes(q)) : [...points]).sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }),
+  const matches = (q ? points.filter((i) => i.name.toLowerCase().includes(q)) : [...points]).sort(
+    // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
+    (a, b) => collator.compare(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
   return {
     rows: matches.slice(0, limit).map((i) => ({

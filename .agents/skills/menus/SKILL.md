@@ -11,7 +11,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
 2. **Component** — `src/features/<feature>/menus/<Name>Menu.tsx`, typed
    `MenuComponentProps<'<id>'>` (`params`, `missionId`). Compose only
    `src/components/menu/*`: `MenuHeader`, `MenuSection`, `MenuRow`, `MenuButton`,
-   `MenuToggle`, `MenuTextField`, `MenuSegmented`, `MenuSelect`, `MenuActions`, `MgrsInput`.
+   `MenuToggle`, `MenuTextField`, `MenuSegmented`, `MenuSelect`, `MenuActions`, `MenuListItem`,
+   `MgrsInput`.
    No raw colors, no new one-off controls — add a primitive instead.
 3. **Definition** — in the same file:
    `export const xMenu = defineMenu({ id, family, title, detents, component })`.

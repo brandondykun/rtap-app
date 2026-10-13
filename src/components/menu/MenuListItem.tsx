@@ -11,7 +11,7 @@ export function MenuListItem({ title, subtitle, leading, onPress, trailing, dimm
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center gap-2 rounded-xl border border-border bg-surface-raised pr-1">
-      <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} className={`flex-1 flex-row items-center gap-3 py-2 pl-3 ${dimmed ? 'opacity-50' : ''}`}>
+      <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityHint={subtitle} onPress={onPress} className={`flex-1 flex-row items-center gap-3 py-2 pl-3 ${dimmed ? 'opacity-50' : ''}`}>
         {leading}
         <View className="flex-1">
           <Text numberOfLines={1} className="font-mono text-base text-text">

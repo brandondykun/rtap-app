@@ -2,7 +2,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { deleteItem, placePoint, setItemHidden, toggleItemVisibility, updateItem } from './commands';
+import { deleteItem, placePoint, setItemHidden, setItemsHidden, toggleItemVisibility, updateItem } from './commands';
 import { pointCoord } from './geometry';
 import {
   findItem,
@@ -152,5 +152,21 @@ describe('map items', () => {
     expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([r.value.id]);
     await setItemHidden(ctx, r.value.id, false);
     expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]);
+  });
+
+  it('sets visibility for many items in one call, idempotently, leaving others alone', async () => {
+    const ctx = makeTestContext();
+    const ids: string[] = [];
+    for (const name of ['HOS-1', 'HOS-2', 'HOS-3']) {
+      const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name });
+      if (!r.ok) throw new Error('setup');
+      ids.push(r.value.id);
+    }
+    expect(await setItemsHidden(ctx, [ids[0], ids[1]], true)).toEqual({ ok: true, value: undefined });
+    await setItemsHidden(ctx, [ids[0], ids[1]], true);
+    expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([ids[0], ids[1]].sort());
+    await setItemsHidden(ctx, [ids[0], ids[2]], false);
+    expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([ids[1]]);
+    expect(await setItemsHidden(ctx, [], true)).toEqual({ ok: true, value: undefined });
   });
 });
