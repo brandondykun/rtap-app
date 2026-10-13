@@ -31,13 +31,22 @@ function GridMagneticLine() {
   const angleUnit = useSettings((s) => s.angleUnit);
   const override = useSettings((s) => s.declinationOverrideDeg);
   const gm = center ? gridMagneticAngle(center, { date: new Date(), declinationOverrideDeg: override }) : null;
-  return <Text className="text-sm text-text-muted">{`G-M angle here: ${formatEastWest(gm, angleUnit)}`}</Text>;
+  const value = formatEastWest(gm, angleUnit);
+  // The number a user sets on a compass against the map grid, so it gets its own highlighted card.
+  return (
+    <View accessible accessibilityLabel={`G-M angle here, grid to magnetic: ${value}`} className="rounded-xl border border-accent bg-accent-subtle px-3 py-2">
+      <Text className="text-xs font-semibold uppercase tracking-widest text-accent">G-M angle here · grid → magnetic</Text>
+      <Text testID="gm-angle" className="font-mono-bold text-2xl text-text">
+        {value}
+      </Text>
+    </View>
+  );
 }
 
 function ModelDeclinationHint() {
   const center = useInteraction((s) => s.cameraCenter);
   const model = center ? declination(center, new Date()) : null;
-  return model !== null ? <Text className="text-sm text-text-muted">{`Model (WMM2025) here: ${formatEastWestBoth(model)}`}</Text> : null;
+  return model !== null ? <Text className="text-sm text-text-muted">{`Declination here (true → magnetic, WMM2025): ${formatEastWestBoth(model)}`}</Text> : null;
 }
 
 export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
@@ -144,7 +153,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
             {error ? (
               <Text className="text-sm text-danger">{error}</Text>
             ) : parseDeclination(text) !== null ? (
-              <Text className="text-sm text-text-muted">{`Manual: ${formatEastWestBoth(parseDeclination(text))}`}</Text>
+              <Text className="text-sm text-text-muted">{`Manual declination (true → magnetic): ${formatEastWestBoth(parseDeclination(text))}`}</Text>
             ) : null}
           </>
         ) : null}

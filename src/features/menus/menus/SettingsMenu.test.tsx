@@ -88,23 +88,30 @@ describe('SettingsMenu', () => {
 
   it('updates the G-M angle and model hint as the camera moves', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    const hint = screen.getByText(/^Model \(WMM2025\) here:/).props.children;
+    const hint = screen.getByText(/^Declination here \(true → magnetic, WMM2025\):/).props.children;
     await act(async () => useInteraction.getState().setCamera({ center: { lat: 64.1, lon: -21.9 }, zoom: 12, bearing: 0 }));
-    expect(screen.getByText(/^Model \(WMM2025\) here:/).props.children).not.toBe(hint);
-    expect(screen.getByText(/^G-M angle here: \d+\.\d° [EW]$/)).toBeTruthy();
+    expect(screen.getByText(/^Declination here \(true → magnetic, WMM2025\):/).props.children).not.toBe(hint);
+    expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+\.\d° [EW]$/);
   });
 
   it('shows the model and manual declination in degrees and mils', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getByText(/^Model \(WMM2025\) here: \d+\.\d° [EW] · \d+ mils [EW]$/)).toBeTruthy();
+    expect(screen.getByText(/^Declination here \(true → magnetic, WMM2025\): \d+\.\d° [EW] · \d+ mils [EW]$/)).toBeTruthy();
     await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
     await fireEvent.changeText(screen.getByLabelText('Declination degrees'), '-9.5');
-    expect(screen.getByText('Manual: 9.5° W · 169 mils W')).toBeTruthy();
+    expect(screen.getByText('Manual declination (true → magnetic): 9.5° W · 169 mils W')).toBeTruthy();
   });
 
   it('shows the G-M angle at the crosshair', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getByText(/^G-M angle here: \d+\.\d° [EW]$/)).toBeTruthy();
+    expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+\.\d° [EW]$/);
+  });
+
+  it('shows the G-M angle in the chosen angle unit with a grid → magnetic label', async () => {
+    useSettings.getState().setAngleUnit('mil');
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('G-M angle here · grid → magnetic')).toBeTruthy();
+    expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+ mils [EW]$/);
   });
 
   it('closes', async () => {
