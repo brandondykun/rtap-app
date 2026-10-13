@@ -28,15 +28,22 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 /** milsymbol halo width for point symbols, in its drawing units. */
 const POINT_OUTLINE_WIDTH = 2;
-/** milsymbol line weight for point symbols (its default is 4); thicker reads better on imagery. */
-const POINT_STROKE_WIDTH = 10;
+/** milsymbol draws tactical points with 3-unit lines and ignores `strokeWidth` for them. */
+const POINT_BASE_LINE = 3;
+/** We scale every stroke of a point symbol by this, so the lines read on imagery. */
+const POINT_LINE_SCALE = 1.8;
 /** milsymbol line weight for unit frames and icons (default 4). */
 const UNIT_STROKE_WIDTH = 6;
 /** milsymbol units per px at @1x: it draws on a 100-unit grid scaled to SYMBOL_SIZE. */
 const PX_PER_UNIT = SYMBOL_SIZE / 100;
-/** The point line weight and its halo in px, so the hand-drawn LZ matches milsymbol's symbols. */
-const POINT_LINE_PX = POINT_STROKE_WIDTH * PX_PER_UNIT;
-const POINT_HALO_PX = POINT_OUTLINE_WIDTH * PX_PER_UNIT;
+/** The point line weight and its halo in px, so the hand-drawn LZ matches the scaled milsymbol points. */
+const POINT_LINE_PX = POINT_BASE_LINE * POINT_LINE_SCALE * PX_PER_UNIT;
+const POINT_HALO_PX = POINT_OUTLINE_WIDTH * POINT_LINE_SCALE * PX_PER_UNIT;
+
+/** Multiply every stroke width in milsymbol's SVG (lines and their halo). */
+function thickenStrokes(svg: string, factor: number): string {
+  return svg.replace(/stroke-width="([\d.]+)"/g, (_, w: string) => `stroke-width="${Number(w) * factor}"`);
+}
 
 function writePng(sidc: string, svg: string) {
   for (const scale of [1, 2, 3]) {
@@ -50,14 +57,17 @@ function writePng(sidc: string, svg: string) {
  * Tactical points are anchored where the graphic marks the spot (a checkpoint's bottom tip), but
  * the map centers every image on its coordinate. Pad the canvas so the anchor is the center.
  */
-function centeredOnAnchor(symbol: InstanceType<typeof ms.Symbol>): string {
+function centeredOnAnchor(symbol: InstanceType<typeof ms.Symbol>, lineScale: number): string {
   const { x, y } = symbol.getAnchor();
   const { width, height } = symbol.getSize();
-  const w = 2 * Math.max(x, width - x);
-  const h = 2 * Math.max(y, height - y);
+  // Thicker strokes reach past milsymbol's own bounds: pad the canvas and let them draw there.
+  const pad = POINT_HALO_PX + POINT_LINE_PX;
+  const w = 2 * Math.max(x, width - x) + 2 * pad;
+  const h = 2 * Math.max(y, height - y) + 2 * pad;
+  const inner = thickenStrokes(symbol.asSVG(), lineScale).replace('<svg ', '<svg overflow="visible" ');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<g transform="translate(${w / 2 - x} ${h / 2 - y})">${symbol.asSVG()}</g></svg>`
+    `<g transform="translate(${w / 2 - x} ${h / 2 - y})">${inner}</g></svg>`
   );
 }
 
@@ -92,10 +102,10 @@ for (const type of POINT_TYPES) {
           new ms.Symbol(type.sidc, {
             size: SYMBOL_SIZE,
             monoColor: colors['point-symbol'],
-            strokeWidth: POINT_STROKE_WIDTH,
             outlineColor: colors['point-symbol-halo'],
             outlineWidth: POINT_OUTLINE_WIDTH,
           }),
+          POINT_LINE_SCALE,
         );
   writePng(type.sidc, svg);
 }
