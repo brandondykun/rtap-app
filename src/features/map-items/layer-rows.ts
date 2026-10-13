@@ -54,7 +54,7 @@ export function layerRows(items: readonly MapItemSnapshot[], hiddenIds: readonly
     // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
     (a, b) => collator.compare(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
-  const counts = { unit: 0, point: 0, line: 0 };
+  const counts = { unit: 0, point: 0, line: 0, polygon: 0 };
   for (const i of items) counts[itemCategory(i)]++;
   return {
     rows: matches.slice(0, limit).map((i): LayerRow => {

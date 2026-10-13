@@ -4,8 +4,10 @@ import * as lineDraft from '@/features/map-items/line-draft';
 import type { LineEdit } from '@/features/map-items/line-draft';
 import type { ItemCategory } from '@/features/symbology/categories';
 import type { LineType } from '@/features/symbology/line-types';
+import { MAX_RADIUS_M, type PolygonType } from '@/features/symbology/polygon-types';
 import type { PointType } from '@/features/symbology/point-types';
 import type { Affiliation, UnitType } from '@/features/symbology/presets';
+import { inverse } from '@/lib/geo/measure/geodesic';
 import type { LatLon } from '@/lib/geo/types';
 
 export type DraftMode = 'add' | 'edit';
@@ -41,11 +43,15 @@ type DraftValues = {
   lineType: LineType;
   /** Undo stack of earlier vertex states (most recent last), at most HISTORY_LIMIT. */
   history: LineEdit[];
+  /** Polygon drafts (category 'polygon'): type and shape. Points use `vertices`; a circle uses `coord` as its center. */
+  polygonType: PolygonType;
+  polygonShape: 'points' | 'circle';
+  circleRadiusM: number | null;
   /** Bounds to fit the camera to (a saved line opened); `focusRev` increments with each new request. */
   focusBounds: { sw: LatLon; ne: LatLon } | null;
   focusRev: number;
   /** Last affiliation and types used for adding (rapid entry, and the next time Add opens). */
-  remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType };
+  remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType; polygonType: PolygonType };
   /** The most recent Add opened (long-press starts it again). Not persisted. */
   lastAddCategory: ItemCategory;
 };
@@ -81,6 +87,19 @@ type DraftActions = {
   startInsertAfter: (i: number) => void;
   undo: () => void;
   setLineType: (lineType: LineType) => void;
+  startAddPolygon: () => void;
+  startEditPolygon: (polygon: {
+    itemId: string;
+    polygonType: PolygonType;
+    shape: { kind: 'points'; points: LatLon[] } | { kind: 'circle'; center: LatLon; radiusM: number };
+    ring: LatLon[];
+    name: string;
+    notes: string;
+  }) => void;
+  setPolygonType: (polygonType: PolygonType) => void;
+  setPolygonShape: (shape: 'points' | 'circle') => void;
+  setCircleRadius: (radiusM: number | null) => void;
+  setCircleEdge: (p: LatLon) => void;
   clear: () => void;
 };
 
@@ -105,9 +124,12 @@ export const INITIAL_DRAFT: DraftValues = {
   insertAfter: null,
   lineType: 'phase-line',
   history: [],
+  polygonType: 'objective',
+  polygonShape: 'points',
+  circleRadiusM: null,
   focusBounds: null,
   focusRev: 0,
-  remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line' },
+  remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line', polygonType: 'objective' },
   lastAddCategory: 'unit',
 };
 
@@ -232,7 +254,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     })),
   addVertex: (p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.addVertex(edit(s), p)))),
   moveVertex: (i, p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.moveVertex(edit(s), i, p)))),
-  removeVertex: (i) => set((s) => (s.locked ? {} : record(s, lineDraft.removeVertex(edit(s), i)))),
+  removeVertex: (i) => set((s) => (s.locked ? {} : record(s, lineDraft.removeVertex(edit(s), i, s.category === 'polygon' ? 3 : 2)))),
   // Selection and insert mode are not undoable on their own.
   startInsertAfter: (i) => set((s) => (s.locked ? {} : apply(lineDraft.startInsertAfter(edit(s), i)))),
   selectVertex: (i) => set((s) => (s.locked ? {} : apply(lineDraft.selectVertex(edit(s), i)))),
@@ -240,6 +262,53 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => (s.history.length === 0 ? {} : { ...apply(s.history[s.history.length - 1]), history: s.history.slice(0, -1) })),
   setLineType: (lineType) =>
     set((s) => ({ lineType, remembered: s.mode === 'add' ? { ...s.remembered, lineType } : s.remembered })),
+  startAddPolygon: () =>
+    set((s) => ({
+      ...INITIAL_DRAFT,
+      remembered: s.remembered,
+      lastAddCategory: s.lastAddCategory,
+      mode: 'add',
+      category: 'polygon',
+      polygonType: s.remembered.polygonType,
+      coordRev: s.coordRev,
+      focusRev: s.focusRev,
+    })),
+  startEditPolygon: ({ itemId, polygonType, shape, ring, name, notes }) =>
+    set((s) => ({
+      ...INITIAL_DRAFT,
+      remembered: s.remembered,
+      lastAddCategory: s.lastAddCategory,
+      mode: 'edit',
+      category: 'polygon',
+      itemId,
+      polygonType,
+      polygonShape: shape.kind,
+      vertices: shape.kind === 'points' ? shape.points : [],
+      // The center is the draft coord; coordRev is left alone so the camera fit below wins.
+      coord: shape.kind === 'circle' ? shape.center : null,
+      coordSource: shape.kind === 'circle' ? 'item' : null,
+      circleRadiusM: shape.kind === 'circle' ? shape.radiusM : null,
+      name,
+      nameEdited: true,
+      notes,
+      locked: true,
+      coordRev: s.coordRev,
+      focusBounds: boundsAround(ring),
+      focusRev: s.focusRev + 1,
+    })),
+  setPolygonType: (polygonType) =>
+    set((s) => ({ polygonType, remembered: s.mode === 'add' ? { ...s.remembered, polygonType } : s.remembered })),
+  setPolygonShape: (polygonShape) => set((s) => (s.locked ? {} : { polygonShape })),
+  setCircleRadius: (radiusM) =>
+    set((s) =>
+      s.locked ? {} : { circleRadiusM: radiusM !== null && Number.isFinite(radiusM) && radiusM > 0 && radiusM <= MAX_RADIUS_M ? radiusM : null },
+    ),
+  setCircleEdge: (p) =>
+    set((s) => {
+      if (s.locked || !s.coord || !isValid(p)) return {};
+      const r = inverse(s.coord, p).distanceM;
+      return r > 0 && r <= MAX_RADIUS_M ? { circleRadiusM: r } : {};
+    }),
   clear: () =>
     set((s) => ({
       ...INITIAL_DRAFT,

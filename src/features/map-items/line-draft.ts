@@ -15,13 +15,13 @@ export function moveVertex(e: LineEdit, i: number, p: LatLon): LineEdit {
   return { ...e, vertices: e.vertices.map((v, k) => (k === i ? p : v)) };
 }
 
-/** A saved shape keeps at least 2 points; while building (fewer than 2) anything goes. */
-export function canRemove(e: LineEdit, i: number): boolean {
-  return i >= 0 && i < e.vertices.length && (e.vertices.length > 2 || e.vertices.length < 2);
+/** A saved shape keeps at least `min` points (2 for lines, 3 for polygons); while building (fewer) anything goes. */
+export function canRemove(e: LineEdit, i: number, min = 2): boolean {
+  return i >= 0 && i < e.vertices.length && (e.vertices.length > min || e.vertices.length < min);
 }
 
-export function removeVertex(e: LineEdit, i: number): LineEdit {
-  if (!canRemove(e, i)) return e;
+export function removeVertex(e: LineEdit, i: number, min = 2): LineEdit {
+  if (!canRemove(e, i, min)) return e;
   const shift = (k: number | null) => (k === null || k === i ? null : k > i ? k - 1 : k);
   return { vertices: e.vertices.filter((_, k) => k !== i), selected: shift(e.selected), insertAfter: shift(e.insertAfter) };
 }

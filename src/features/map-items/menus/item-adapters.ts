@@ -2,13 +2,14 @@ import type { CommandContext } from '@/lib/db/command-context';
 import type { ItemCategory, ItemRef } from '@/features/symbology/categories';
 import { lineTypeOf } from '@/features/symbology/line-types';
 import { pointTypeForSidc } from '@/features/symbology/point-types';
+import { MAX_RADIUS_M, polygonStyleOf } from '@/features/symbology/polygon-types';
 import { decomposeSidc } from '@/features/symbology/presets';
 import type { Result } from '@/lib/result';
 import { useDraft } from '@/stores/draft';
 
-import { placeLine, placePoint, updateItem, updateLine } from '../commands';
+import { placeLine, placePoint, placePolygon, updateItem, updateLine, updatePolygon, type PolygonShapeInput } from '../commands';
 import { draftSidc } from '../draft-sidc';
-import { parseLineGeometry, pointCoord } from '../geometry';
+import { parseLineGeometry, parsePolygonGeometry, pointCoord } from '../geometry';
 import type { MapItemSnapshot } from '../repository';
 
 export type DraftState = ReturnType<typeof useDraft.getState>;
@@ -61,4 +62,32 @@ const lineAdapter: ItemAdapter = {
   ref: () => ({ kind: 'line', sidc: null }),
 };
 
-export const ITEM_ADAPTERS: Record<ItemCategory, ItemAdapter> = { unit: symbolAdapter, point: symbolAdapter, line: lineAdapter };
+const polygonShape = (d: DraftState): PolygonShapeInput =>
+  d.polygonShape === 'circle' ? { kind: 'circle', center: d.coord!, radiusM: d.circleRadiusM! } : { kind: 'points', points: d.vertices };
+
+const polygonAdapter: ItemAdapter = {
+  canSave: (d) =>
+    d.name.trim() !== '' &&
+    (d.polygonShape === 'circle'
+      ? d.coord !== null && d.coordInputValid && d.circleRadiusM !== null && d.circleRadiusM > 0 && d.circleRadiusM <= MAX_RADIUS_M
+      : d.vertices.length >= 3),
+  place: (ctx, missionId, d) => placePolygon(ctx, { missionId, polygonType: d.polygonType, name: d.name, notes: notes(d), shape: polygonShape(d) }),
+  update: (ctx, id, d) => updatePolygon(ctx, id, { polygonType: d.polygonType, name: d.name, notes: notes(d), shape: polygonShape(d) }),
+  select: (item) => {
+    const ring = parsePolygonGeometry(item.geometry);
+    if (!ring) return false;
+    const { polygonType, shape } = polygonStyleOf(item.style);
+    useDraft.getState().startEditPolygon({
+      itemId: item.id,
+      polygonType,
+      shape: shape.kind === 'circle' ? shape : { kind: 'points', points: ring },
+      ring,
+      name: item.name,
+      notes: item.notes ?? '',
+    });
+    return true;
+  },
+  ref: () => ({ kind: 'polygon', sidc: null }),
+};
+
+export const ITEM_ADAPTERS: Record<ItemCategory, ItemAdapter> = { unit: symbolAdapter, point: symbolAdapter, line: lineAdapter, polygon: polygonAdapter };

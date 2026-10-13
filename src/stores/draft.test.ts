@@ -146,3 +146,52 @@ describe('line drafts', () => {
     expect(focusBounds!.ne.lon).toBeGreaterThan(-76.9);
   });
 });
+
+describe('polygon drafts', () => {
+  const p = (n: number) => ({ lat: 38.9 + n / 100, lon: -77 });
+  beforeEach(() => useDraft.setState(INITIAL_DRAFT));
+  const d = () => useDraft.getState();
+
+  it('starts a points polygon, keeps 3 points at minimum, and keeps both shapes while switching', () => {
+    d().startAddPolygon();
+    expect(d()).toMatchObject({ mode: 'add', category: 'polygon', polygonType: 'objective', polygonShape: 'points', coord: null, locked: false });
+    for (const n of [0, 1, 2]) d().addVertex(p(n));
+    d().removeVertex(0);
+    expect(d().vertices).toHaveLength(3);
+    d().setPolygonShape('circle');
+    d().setCoord(p(5), 'press');
+    d().setCircleEdge({ lat: 38.95 + 0.0045, lon: -77 });
+    expect(d().circleRadiusM).toBeCloseTo(500, -1);
+    d().setPolygonShape('points');
+    expect(d().vertices).toHaveLength(3);
+    expect(d().coord).toEqual(p(5));
+  });
+
+  it('accepts only sensible radii and no edge before a center', () => {
+    d().startAddPolygon();
+    d().setPolygonShape('circle');
+    d().setCircleEdge(p(1));
+    expect(d().circleRadiusM).toBeNull();
+    d().setCircleRadius(-5);
+    expect(d().circleRadiusM).toBeNull();
+    d().setCircleRadius(1500);
+    expect(d().circleRadiusM).toBe(1500);
+    d().setCircleRadius(Number.NaN);
+    expect(d().circleRadiusM).toBeNull();
+  });
+
+  it('opens a saved circle locked with its exact center and radius, and frames it', () => {
+    const rev = d().focusRev;
+    d().startEditPolygon({ itemId: 'c', polygonType: 'no-fire-area', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    expect(d()).toMatchObject({ mode: 'edit', category: 'polygon', polygonShape: 'circle', coord: p(1), circleRadiusM: 500, locked: true, polygonType: 'no-fire-area' });
+    expect(d().focusRev).toBe(rev + 1);
+  });
+
+  it('remembers the type used last for the next Add polygon', () => {
+    d().startAddPolygon();
+    d().setPolygonType('engagement-area');
+    d().clear();
+    d().startAddPolygon();
+    expect(d().polygonType).toBe('engagement-area');
+  });
+});

@@ -73,4 +73,11 @@ describe('DraftLayer', () => {
     await renderWithProviders(<DraftLayer />);
     expect((mapboxMock().__props.ShapeSource.draft.shape as Shape).features).toEqual([]);
   });
+
+  it('draws nothing for a polygon draft (its center is drawn by DraftPolygonLayer)', async () => {
+    useDraft.getState().startAddPolygon();
+    useDraft.getState().setCoord({ lat: 38.9, lon: -77 }, 'press');
+    await renderWithProviders(<DraftLayer />);
+    expect((mapboxMock().__props.ShapeSource.draft.shape as Shape).features).toEqual([]);
+  });
 });

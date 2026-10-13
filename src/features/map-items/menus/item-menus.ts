@@ -6,6 +6,7 @@ export const ITEM_COPY: Record<ItemCategory, { noun: string; title: string }> = 
   unit: { noun: 'unit', title: 'Unit' },
   point: { noun: 'point', title: 'Point' },
   line: { noun: 'line', title: 'Line' },
+  polygon: { noun: 'polygon', title: 'Polygon' },
 };
 
 /** Open the right view for a map item (tap on the map or a Layers row). */

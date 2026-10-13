@@ -8,6 +8,7 @@ describe('itemCategory', () => {
     for (const sidc of PRESET_SIDCS) expect(itemCategory({ kind: 'point', sidc })).toBe('unit');
     expect(itemCategory({ kind: 'point', sidc: null })).toBe('unit');
     expect(itemCategory({ kind: 'line', sidc: null })).toBe('line');
+    expect(itemCategory({ kind: 'polygon', sidc: null })).toBe('polygon');
   });
 
   it('knows every unit preset and point SIDC', () => {

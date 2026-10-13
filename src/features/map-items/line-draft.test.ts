@@ -33,4 +33,11 @@ describe('line draft rules', () => {
     expect(selectVertex({ ...three, selected: 1 }, 1).selected).toBeNull();
     expect(selectVertex({ ...three, insertAfter: 0 }, 2)).toMatchObject({ selected: 2, insertAfter: null });
   });
+
+  it('takes a higher minimum for polygons', () => {
+    expect(canRemove(three, 0, 3)).toBe(false);
+    expect(removeVertex(three, 0, 3)).toBe(three);
+    expect(canRemove({ ...three, vertices: [...three.vertices, p(4)] }, 0, 3)).toBe(true);
+    expect(removeVertex({ ...empty, vertices: [p(1), p(2)] }, 0, 3).vertices).toEqual([p(2)]);
+  });
 });
