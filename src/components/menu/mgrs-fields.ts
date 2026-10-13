@@ -9,8 +9,9 @@ export type MgrsFieldStatus =
   | { status: 'invalid'; message: string }
   | { status: 'valid'; coord: LatLon };
 
-const ZONE_BAND = /^\d{1,2}[C-HJ-NP-X]$/;
-const SQUARE = /^[A-HJ-NP-Z]{2}$/;
+/** Shaped like a complete reference. Letters are not checked here: the parser says what is wrong. */
+const ZONE_BAND = /^\d{1,2}[A-Z]$/;
+const SQUARE = /^[A-Z]{2}$/;
 
 /**
  * Status of the four MGRS fields while the user types. Only `valid` carries a coordinate; the
@@ -26,12 +27,13 @@ export function evaluateMgrsFields(parts: MgrsParts): MgrsFieldStatus {
   if (northing.length > easting.length) {
     return { status: 'invalid', message: 'Easting and northing need the same number of digits' };
   }
-  if (!ZONE_BAND.test(zoneBand) || !SQUARE.test(square) || easting.length === 0 || northing.length < easting.length) {
-    if (zoneBand.length > 3 || square.length > 2 || easting.length > 5) return { status: 'invalid', message: 'Not an MGRS reference' };
-    return { status: 'incomplete' };
+  const complete = easting.length > 0 && northing.length === easting.length;
+  if (complete && ZONE_BAND.test(zoneBand) && SQUARE.test(square)) {
+    const result = parseMgrs({ zoneBand, square, easting, northing });
+    return result.ok ? { status: 'valid', coord: result.value } : { status: 'invalid', message: result.message };
   }
-  const result = parseMgrs({ zoneBand, square, easting, northing });
-  return result.ok ? { status: 'valid', coord: result.value } : { status: 'invalid', message: result.message };
+  if (zoneBand.length > 3 || square.length > 2 || easting.length > 5) return { status: 'invalid', message: 'Not an MGRS reference' };
+  return { status: 'incomplete' };
 }
 
 /** Ten-digit MGRS fields for a coordinate (empty outside MGRS coverage). */

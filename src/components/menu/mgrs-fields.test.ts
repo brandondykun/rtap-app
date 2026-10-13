@@ -48,6 +48,18 @@ describe('evaluateMgrsFields', () => {
     expect(evaluateMgrsFields(parts).status).toBe('invalid');
   });
 
+  it.each([
+    ['band letter I', { zoneBand: '18I', square: 'UJ', easting: '12345', northing: '67890' }],
+    ['polar band Z', { zoneBand: '18Z', square: 'UJ', easting: '12345', northing: '67890' }],
+    ['polar band A', { zoneBand: '18A', square: 'UJ', easting: '12345', northing: '67890' }],
+    ['square letter I', { zoneBand: '18S', square: 'UI', easting: '12345', northing: '67890' }],
+    ['square letter O', { zoneBand: '18S', square: 'OJ', easting: '12345', northing: '67890' }],
+  ])('explains a complete reference with %s', (_name, parts) => {
+    const r = evaluateMgrsFields(parts);
+    expect(r.status).toBe('invalid');
+    if (r.status === 'invalid') expect(r.message.length).toBeGreaterThan(0);
+  });
+
   it('is invalid when the band letter does not match the square', () => {
     const p = dcParts();
     expect(evaluateMgrsFields({ ...p, zoneBand: p.zoneBand.replace(/.$/, 'C') }).status).toBe('invalid');
