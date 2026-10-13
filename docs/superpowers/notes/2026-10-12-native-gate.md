@@ -134,3 +134,8 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 51 | Altitude is plausible for your location (iPhone reports height above sea level; compare with a known elevation) and switches between meters and feet from Settings → Altitude | PENDING |
 | 52 | With a menu open, the GPS readout hides along with the crosshair readout and returns when the menu closes; the GPS button stays highlighted throughout. Long lat/lon text never runs under the zoom/recenter buttons | PENDING |
 | 53 | NEW BUILD (expo-screen-orientation). Face a known landmark: the self icon's view cone points at it in portrait, landscape with the phone's top to the left, and landscape with the top to the right; turning the phone between them re-points the cone at once, without walking | PENDING |
+| 54 | Toolbar reads UNIT · POINT · LAYERS; UNIT opens "Add unit" (unchanged form), POINT opens "Add point" (location, Point type with symbols, Name, Notes) | PENDING |
+| 55 | Add point: picking a type changes the draft symbol at once and renames CP-1 → LZ-1 etc.; Add shows the point selected as "Point"; Edit/Save/Cancel/Hidden/Delete work | PENDING |
+| 56 | Point symbols (white with dark outline) are readable on Satellite, Hybrid, Topo and Dark; the LZ symbol matches the others; a checkpoint's tip (not its middle) sits on the spot, under the crosshair | PENDING |
+| 57 | Long-press after using Add point starts Add point; after Add unit starts Add unit; first launch starts Add unit | PENDING |
+| 58 | Layers: summary "N units · M points · K hidden"; searching "checkpoint" or "infantry" finds by type; row taps open Unit or Point to match. Missions list shows "N units · M points" | PENDING |

@@ -40,3 +40,10 @@ description: Use whenever you add or change a menu, panel content, or anything o
 Render a menu directly with `renderWithProviders(<XMenu params={…} missionId="m1" />)`, or
 through `<MenuHost landscape={false} missionId="m1" />` after `openMenu(…)` to test closing.
 Reset `useMenu`, `useDraft`, `useToast` in `beforeEach`.
+
+## Item menus
+
+Units and points each have an Add and an Edit menu (`unit.add`, `unit.edit`, `point.add`,
+`point.edit`). They share `AddItemPanel` / `EditItemPanel` (header, Add/Save/Cancel, Hidden,
+Delete) and differ only in the form passed in. Open an existing item with
+`openItemMenu(itemId, sidc)`, which picks the right menu by category.

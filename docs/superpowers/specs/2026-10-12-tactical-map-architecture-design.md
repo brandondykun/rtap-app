@@ -107,7 +107,7 @@ src/
       commands.ts            # placePoint, updateItem, deleteItem, toggleItemVisibility
       selectors.ts           # records → GeoJSON FeatureCollection (cached)
       naming.ts              # auto-names (HOS-4, …)
-      menus/                 # PointForm, AddPointMenu, EditPointMenu
+      menus/                 # Unit/Point forms and Add/Edit menus on shared item panels
     toolbar/                 # top toolbar UI
     location/                # self position + heading stream
     symbology/               # presets (affiliation × unit type → SIDC), image registry
@@ -202,6 +202,14 @@ author, etc.) follows the same pattern.
   shows Edit and Delete. Edit opens the rename sheet (`renameMission`, the same form as New
   mission). Delete (`deleteMission`) asks for confirmation, tombstones the mission and its items,
   and removes their local-only view state.
+
+### 5.4a Units and points
+Map symbols are **units** (affiliation + unit type) or **points** (control measures: checkpoint,
+observation post, landing zone, start/release/rally/linkup points, TRP). Both are stored as
+`kind = 'point'` items; `itemCategory(sidc)` (src/features/symbology/categories.ts) is the only
+place that tells them apart. Section 8.5's Add/Edit Point flow is now **Add/Edit Unit**
+(`unit.add` / `unit.edit`); points have their own `point.add` / `point.edit` with location, type,
+name and notes. Design: `2026-10-13-units-and-points-design.md`.
 
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
@@ -491,7 +499,7 @@ stretchable chip image with `iconTextFit: 'both'`, offset below the symbol.
   - `app.root` (hamburger) → "Switch mission", About.
   - `settings` (gear) → coordinate format, angle unit (degrees / mils), north reference
     (grid / magnetic / true), declination override.
-- **Action family:** `point.add`, `point.edit` (Section 8.5).
+- **Action family:** `unit.add`, `unit.edit`, `point.add`, `point.edit` (Section 8.5; §5.4a).
 - **`layers`** (LAYERS tool, app family; added 2026-10-12): basemap choice — Satellite,
   Hybrid (satellite + streets), Topo (Mapbox Outdoors), Dark — one per-device setting
   (`settings.basemap`, default Satellite); and the mission's points: "N points · M hidden",
