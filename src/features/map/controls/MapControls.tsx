@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
@@ -22,6 +22,11 @@ type Props = {
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
+  const { height } = useWindowDimensions();
+  // A tall bottom sheet (full detent) can leave no room below the north-up button: hide recenter rather than overlap.
+  const noRoom =
+    panel?.side === 'bottom' &&
+    height - panel.size < insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + CONTROL_SIZE + EDGE;
   return (
     <>
       <View className="absolute" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, right }}>
@@ -40,13 +45,15 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
             <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
           </View>
         )}
-        <MapButton
-          label="Recenter on me"
-          icon="crosshairs-gps"
-          active={following}
-          disabled={!canRecenter}
-          onPress={onRecenter}
-        />
+        {noRoom ? null : (
+          <MapButton
+            label="Recenter on me"
+            icon="crosshairs-gps"
+            active={following}
+            disabled={!canRecenter}
+            onPress={onRecenter}
+          />
+        )}
       </View>
     </>
   );

@@ -48,4 +48,22 @@ describe('menu store', () => {
     useMenu.getState().setPanelFrame({ side: 'bottom', size: 320 });
     expect(useMenu.getState().panelFrame).toEqual({ side: 'bottom', size: 320 });
   });
+
+  it('keeps the same panelFrame reference for an equal frame', () => {
+    useMenu.getState().setPanelFrame({ side: 'bottom', size: 320 });
+    const first = useMenu.getState().panelFrame;
+    useMenu.getState().setPanelFrame({ side: 'bottom', size: 320 });
+    expect(useMenu.getState().panelFrame).toBe(first);
+    useMenu.getState().setPanelFrame({ side: 'bottom', size: 400 });
+    expect(useMenu.getState().panelFrame).not.toBe(first);
+  });
+
+  it('treats null over null as a no-op', () => {
+    const listener = jest.fn();
+    const unsubscribe = useMenu.subscribe(listener);
+    useMenu.getState().setPanelFrame(null);
+    unsubscribe();
+    expect(listener).not.toHaveBeenCalled();
+    expect(useMenu.getState().panelFrame).toBeNull();
+  });
 });

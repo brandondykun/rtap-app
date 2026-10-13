@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { renderWithProviders } from '@/test-utils/render';
@@ -49,5 +49,11 @@ describe('MapControls', () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} />);
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
     expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(320 + EDGE);
+  });
+
+  it('hides recenter when a full sheet leaves no room for it', async () => {
+    const size = Dimensions.get('window').height - 100;
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} />);
+    expect(screen.queryByLabelText('Recenter on me')).toBeNull();
   });
 });
