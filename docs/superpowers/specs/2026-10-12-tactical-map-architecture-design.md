@@ -345,6 +345,9 @@ lib/geo/
   `cameraBearing` (throttled, for the north-up button).
 - `draft`: the in-progress point (above).
 - The crosshair is always shown; there is no visibility flag.
+- *Implementation note (Plan 3):* the selected (edited) item is `draft.itemId`; `PointsLayer`
+  leaves it out while `DraftLayer` draws the edit. While a panel is open the readout card, zoom
+  buttons and location banner are hidden; recenter stays.
 
 ### 8.6a Map controls (right edge, from mockups)
 - **North-up button** under the toolbar: compass needle rotated by `cameraBearing`; tap
@@ -461,6 +464,9 @@ stretchable chip image with `iconTextFit: 'both'`, offset below the symbol.
 - A single `MenuHost` in `MapScreen` renders the top of the stack inside the `Panel`.
 - Menus are not Expo Router routes. Routes are reserved for full-screen pages (e.g. About,
   licenses).
+- *Implementation note (Plan 3):* params schemas live in `src/features/menus/params.ts`, keyed by
+  menu id, so the menu store can validate them without importing UI; `defineMenu` therefore takes
+  `id, family, title, detents, component`.
 
 ### 11.3 Primitives (`components/menu`)
 - `MenuHeader` — leading text action (`Cancel` / back), centered uppercase title, trailing

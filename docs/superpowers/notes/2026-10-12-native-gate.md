@@ -74,3 +74,29 @@ Plan 2 device findings (iOS):
 - Label chip: rnmapbox multiplies `stretchX`/`stretchY`/`content` by the image entry's `scale` (RNMBXUtils.swift), so they must be given in points. Pixel values triggered "expected stretchX area lies within an image (width 72)". Fixed by expressing them in points.
 - Scale bar removed at the user's request (too much screen space).
 - Ornament margins: on iOS Mapbox measures logo/attribution margins from the safe area, so adding safe-area insets double-counted them (logo too far right in landscape, too low in portrait). MapCanvas now passes zero insets on iOS. Android is assumed to measure from the map view edges (device insets added) — verify when Android is un-deferred.
+
+## Plan 3 device checks (iOS dev build)
+
+Run `npx expo start --dev-client --clear`, open the app on the device.
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Landscape with location off: the banner sits below the toolbar; Menu is tappable | PENDING |
+| 2 | Hamburger opens the app menu; Switch mission returns to the list; About opens and goes back | PENDING |
+| 3 | Gear opens Settings; changing coordinate format, mils and north reference updates the readout after closing | PENDING |
+| 4 | Manual declination: toggling on starts at the model value; G-M angle is plausible for your area (compare with NOAA's calculator) | PENDING |
+| 5 | Panel in portrait: drag the handle between peek / half / full; flings move one step; the map pans and zooms underneath | PENDING |
+| 6 | Panel in landscape: left drawer, toolbar fully visible, Mapbox logo visible right of the drawer | PENDING |
+| 7 | With a panel open, the crosshair sits in the middle of the visible map and the readout (in the form) describes that point — risk 5: Mapbox reports the padded center. If not, read the center with `getCoordinateFromView` at the crosshair | PENDING |
+| 8 | POINT opens Add Point at the crosshair; the draft shows the amber dashed ring, `HOS-n · NEW` chip and, with a fix, the dashed range line and label | PENDING |
+| 9 | Typing MGRS: the map moves only when the reference becomes valid; partial input never jumps | PENDING |
+| 10 | Center / Me move the draft (Me eases the map); long-press moves the draft and keeps the form | PENDING |
+| 11 | The keyboard never covers the focused field (sheet goes full while typing) | PENDING |
+| 12 | Add: success haptic; the panel stays open; the name increments; repeated Adds are quick | PENDING |
+| 13 | Tap a point: Edit Point opens prefilled; Save moves/renames it; Hidden on map hides it; Delete needs a second tap | PENDING |
+| 14 | Rotate with Add Point open and a half-typed form: nothing typed is lost | PENDING |
+| 15 | Accent chip and draft ring render crisply (no stretched corners) | PENDING |
+| 16 | Long-press near a screen edge with no panel open: the panel opens and the draft ends up centered in the visible map (camera move and padding don't fight) | PENDING |
+| 17 | Open the app menu, pan the map, tap About, then relaunch and reopen the mission: the camera is where you left it | PENDING |
+| 18 | With the keyboard up (sheet full), the recenter button is hidden and never overlaps the toolbar | PENDING |
+| 19 | The amber "· NEW" chip sits below the ring without covering its bottom tick | PENDING |
