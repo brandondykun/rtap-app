@@ -1,5 +1,6 @@
 import { act, render } from '@testing-library/react-native';
 import * as Location from 'expo-location';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
@@ -99,5 +100,31 @@ describe('useSelfLocation', () => {
     expect(fake.removes.position).toHaveBeenCalled();
     expect(fake.removes.heading).toHaveBeenCalled();
     expect(usePresence.getState().selfPosition).toBeNull();
+  });
+
+  it('turns the heading with the screen in landscape and upside down', async () => {
+    const turn = (ScreenOrientation as unknown as { __emit: (o: number) => void }).__emit;
+    const fake = grant();
+    await render(<Probe />);
+    await act(async () => {});
+    await act(async () => fake.heading({ trueHeading: 10, magHeading: 0, accuracy: 1 }));
+    expect(usePresence.getState().selfHeading).toBe(10);
+    await act(async () => turn(ScreenOrientation.Orientation.LANDSCAPE_RIGHT));
+    expect(usePresence.getState().selfHeading).toBe(100);
+    await act(async () => turn(ScreenOrientation.Orientation.LANDSCAPE_LEFT));
+    expect(usePresence.getState().selfHeading).toBe(280);
+    await act(async () => turn(ScreenOrientation.Orientation.PORTRAIT_DOWN));
+    expect(usePresence.getState().selfHeading).toBe(190);
+    await act(async () => turn(ScreenOrientation.Orientation.PORTRAIT_UP));
+    expect(usePresence.getState().selfHeading).toBe(10);
+  });
+
+  it('applies the orientation the screen starts in', async () => {
+    jest.mocked(ScreenOrientation.getOrientationAsync).mockResolvedValueOnce(ScreenOrientation.Orientation.LANDSCAPE_RIGHT);
+    const fake = grant();
+    await render(<Probe />);
+    await act(async () => {});
+    await act(async () => fake.heading({ trueHeading: 350, magHeading: 0, accuracy: 1 }));
+    expect(usePresence.getState().selfHeading).toBe(80);
   });
 });

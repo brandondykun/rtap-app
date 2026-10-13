@@ -34,6 +34,21 @@ jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
 }));
 
+jest.mock('expo-screen-orientation', () => {
+  const listeners = new Set<(mockEvent: unknown) => void>();
+  const Orientation = { UNKNOWN: 0, PORTRAIT_UP: 1, PORTRAIT_DOWN: 2, LANDSCAPE_LEFT: 3, LANDSCAPE_RIGHT: 4 };
+  return {
+    Orientation,
+    getOrientationAsync: jest.fn(async () => Orientation.PORTRAIT_UP),
+    addOrientationChangeListener: jest.fn((cb: (mockEvent: unknown) => void) => {
+      listeners.add(cb);
+      return { remove: () => listeners.delete(cb) };
+    }),
+    /** Test helper: simulate the screen turning. */
+    __emit: (orientation: number) => listeners.forEach((cb) => cb({ orientationInfo: { orientation }, orientationLock: 0 })),
+  };
+});
+
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 require('react-native-gesture-handler/jestSetup');

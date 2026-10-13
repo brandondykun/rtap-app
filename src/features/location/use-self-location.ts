@@ -1,11 +1,34 @@
 import * as Location from 'expo-location';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { normalizeDeg } from '@/lib/geo/units/angle';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
-import { shouldEmitHeading, trueHeadingFrom, type HeadingSample } from './heading';
+import {
+  screenHeadingOffset,
+  shouldEmitHeading,
+  trueHeadingFrom,
+  type HeadingSample,
+  type ScreenOrientation as Orientation,
+} from './heading';
+
+function orientationName(o: ScreenOrientation.Orientation): Orientation {
+  switch (o) {
+    case ScreenOrientation.Orientation.PORTRAIT_UP:
+      return 'portrait-up';
+    case ScreenOrientation.Orientation.PORTRAIT_DOWN:
+      return 'portrait-down';
+    case ScreenOrientation.Orientation.LANDSCAPE_LEFT:
+      return 'landscape-left';
+    case ScreenOrientation.Orientation.LANDSCAPE_RIGHT:
+      return 'landscape-right';
+    default:
+      return 'unknown';
+  }
+}
 
 /**
  * Streams the device position and heading into the presence store while mounted
@@ -18,6 +41,9 @@ export function useSelfLocation(): void {
     let starting = false;
     let subscriptions: { remove: () => void }[] = [];
     let lastHeading: HeadingSample | null = null;
+    // The heading follows the screen, not the phone's top edge (landscape is 90° off otherwise).
+    let orientation: Orientation = 'unknown';
+    let lastEvent: Location.LocationHeadingObject | null = null;
 
     const onPosition = (loc: Location.LocationObject) => {
       usePresence.getState().setSelfPosition({
@@ -28,21 +54,23 @@ export function useSelfLocation(): void {
       });
     };
 
-    const onHeading = (event: Location.LocationHeadingObject) => {
+    const onHeading = (event: Location.LocationHeadingObject, force = false) => {
+      lastEvent = event;
       const presence = usePresence.getState();
-      const heading = trueHeadingFrom(
+      const compass = trueHeadingFrom(
         event,
         presence.selfPosition?.position ?? null,
         new Date(),
         useSettings.getState().declinationOverrideDeg,
       );
+      const heading = compass === null ? null : normalizeDeg(compass + screenHeadingOffset(orientation));
       if (heading === null) {
         lastHeading = null;
         if (presence.selfHeading !== null) presence.setSelfHeading(null);
         return;
       }
       const now = Date.now();
-      if (!shouldEmitHeading(lastHeading, heading, now)) return;
+      if (!force && !shouldEmitHeading(lastHeading, heading, now)) return;
       lastHeading = { heading, at: now };
       presence.setSelfHeading(heading);
     };
@@ -88,8 +116,20 @@ export function useSelfLocation(): void {
     });
     void start();
 
+    const setOrientation = (next: ScreenOrientation.Orientation) => {
+      if (disposed) return;
+      orientation = orientationName(next);
+      // Turning the phone changes where the screen faces: redraw from the latest compass reading now.
+      if (lastEvent) onHeading(lastEvent, true);
+    };
+    const orientationChange = ScreenOrientation.addOrientationChangeListener((e) => setOrientation(e.orientationInfo.orientation));
+    void ScreenOrientation.getOrientationAsync()
+      .then(setOrientation)
+      .catch(() => {});
+
     return () => {
       disposed = true;
+      orientationChange.remove();
       appState.remove();
       subscriptions.forEach((s) => s.remove());
       subscriptions = [];

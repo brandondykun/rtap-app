@@ -1,6 +1,6 @@
 import { declination } from '@/lib/geo/north/magnetic';
 
-import { angularDistance, shouldEmitHeading, trueHeadingFrom } from './heading';
+import { angularDistance, screenHeadingOffset, shouldEmitHeading, trueHeadingFrom } from './heading';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 const DATE = new Date('2026-06-01T00:00:00Z');
@@ -46,5 +46,17 @@ describe('heading throttle', () => {
 
   it('emits a 2° change across north', () => {
     expect(shouldEmitHeading({ heading: 359, at: 0 }, 1, 200)).toBe(true);
+  });
+});
+
+describe('screenHeadingOffset', () => {
+  it.each([
+    ['portrait-up', 0],
+    ['landscape-right', 90],
+    ['portrait-down', 180],
+    ['landscape-left', 270],
+    ['unknown', 0],
+  ] as const)('%s → %i°', (orientation, offset) => {
+    expect(screenHeadingOffset(orientation)).toBe(offset);
   });
 });

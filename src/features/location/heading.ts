@@ -22,6 +22,27 @@ export function trueHeadingFrom(
   return toTrue(event.magHeading, 'magnetic', position, { date, declinationOverrideDeg });
 }
 
+/** Which way the screen is turned (expo-screen-orientation's Orientation values, by name). */
+export type ScreenOrientation = 'portrait-up' | 'portrait-down' | 'landscape-left' | 'landscape-right' | 'unknown';
+
+/**
+ * Degrees to add to a compass heading so it points out of the top of the screen. The compass
+ * reports where the phone's top edge points; turned sideways, the screen's up is 90° off that.
+ * landscape-right: phone top points left, screen up is its right edge (+90°). landscape-left: −90°.
+ */
+export function screenHeadingOffset(orientation: ScreenOrientation): number {
+  switch (orientation) {
+    case 'landscape-right':
+      return 90;
+    case 'portrait-down':
+      return 180;
+    case 'landscape-left':
+      return 270;
+    default:
+      return 0;
+  }
+}
+
 /** Smallest angle between two headings, 0–180°. */
 export function angularDistance(a: number, b: number): number {
   const d = normalizeDeg(a - b);
