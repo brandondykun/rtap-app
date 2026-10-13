@@ -100,3 +100,8 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 17 | Open the app menu, pan the map, tap About, then relaunch and reopen the mission: the camera is where you left it | PENDING |
 | 18 | With the keyboard up (sheet full), the recenter button is hidden and never overlaps the toolbar | PENDING |
 | 19 | The amber "· NEW" chip sits below the ring without covering its bottom tick | PENDING |
+| 20 | With no panel open, tap a point: Edit opens and the draft sits exactly under the crosshair; drag the sheet and it stays aligned | PENDING |
+| 21 | Recenter (follow on), tap POINT, wait for several GPS fixes: the crosshair stays over the camera center in the visible map | PENDING |
+| 22 | Leave Add Point at peek, then tap gear or hamburger: the menu opens readable at half | PENDING |
+| 23 | Settings: type a manual declination and tap Close without pressing return — the value is kept | PENDING |
+| 24 | Edit: tap Delete once, wait ~5 s, tap again — it re-arms instead of deleting | PENDING |
