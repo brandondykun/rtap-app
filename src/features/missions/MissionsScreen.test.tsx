@@ -37,6 +37,7 @@ describe('MissionsScreen', () => {
   it('shows an empty state that opens the create sheet', async () => {
     await renderWithProviders(<MissionsScreen />);
     expect(await screen.findByText('No missions yet')).toBeTruthy();
+    expect(screen.queryByText('Swipe a mission left to delete it.')).toBeNull();
     await fireEvent.press(screen.getByText('Create mission'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
@@ -69,6 +70,7 @@ describe('MissionsScreen', () => {
       pathname: '/missions/[missionId]',
       params: { missionId: iron.value.id },
     });
+    expect(screen.getByText('Swipe a mission left to delete it.')).toBeTruthy();
     await fireEvent.press(screen.getByText('+ New'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });

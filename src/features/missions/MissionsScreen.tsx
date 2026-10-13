@@ -86,6 +86,7 @@ export function MissionsScreen() {
         <EmptyState onCreate={openCreate} />
       ) : (
         <FlatList
+          ListHeaderComponent={<Text className="text-sm text-text-muted">Swipe a mission left to delete it.</Text>}
           data={missions}
           keyExtractor={(m) => m.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 16, gap: 8 }}
