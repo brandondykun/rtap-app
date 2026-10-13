@@ -18,11 +18,11 @@ beforeEach(() => {
 describe('LineDrawBar', () => {
   it('adds at center, undoes, and names the next point', async () => {
     await renderWithProviders(<LineDrawBar panel={null} />);
-    expect(screen.getByText('Tap map to add point 1')).toBeTruthy();
+    expect(screen.getByText('Tap map')).toBeTruthy();
     expect(screen.getByLabelText('Undo')).toBeDisabled();
     await fireEvent.press(screen.getByLabelText('Add at center'));
     expect(useDraft.getState().vertices).toEqual([C]);
-    expect(screen.getByText('Tap map to add point 2')).toBeTruthy();
+    expect(screen.getByText('Tap map')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Undo'));
     expect(useDraft.getState().vertices).toEqual([]);
   });
@@ -34,12 +34,12 @@ describe('LineDrawBar', () => {
       useDraft.getState().selectVertex(0);
     });
     await renderWithProviders(<LineDrawBar panel={null} />);
-    expect(screen.getByText('Tap map to move point 1')).toBeTruthy();
+    expect(screen.getByText('Tap map')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Move to center'));
     expect(useDraft.getState().vertices[0]).toEqual(C);
     await fireEvent.press(screen.getByLabelText('Done'));
     expect(useDraft.getState().selectedVertex).toBeNull();
     await act(async () => useDraft.getState().startInsertAfter(0));
-    expect(screen.getByText('Tap map to insert point 2')).toBeTruthy();
+    expect(screen.getByText('Tap map')).toBeTruthy();
   });
 });

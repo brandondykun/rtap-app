@@ -15,12 +15,10 @@ import { CONTROL_SIZE, EDGE, GAP } from '../layout';
 export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const count = useDraft((s) => s.vertices.length);
   const selected = useDraft((s) => s.selectedVertex);
   const insertAfter = useDraft((s) => s.insertAfter);
   const canUndo = useDraft((s) => s.history.length > 0);
   const moving = selected !== null && insertAfter === null;
-  const prompt = moving ? `Tap map to move point ${selected! + 1}` : insertAfter !== null ? `Tap map to insert point ${insertAfter + 2}` : `Tap map to add point ${count + 1}`;
 
   const atCenter = () => {
     const center = useInteraction.getState().cameraCenter;
@@ -40,7 +38,7 @@ export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
       }}>
       <Icon name="gesture-tap" size={20} color={colors.accent} />
       <Text numberOfLines={1} className="shrink text-sm text-text">
-        {prompt}
+        Tap map
       </Text>
       <View className="ml-auto flex-row gap-2">
         <MenuButton label={moving ? 'Move to center' : 'Add at center'} icon={<CrosshairGlyph size={16} color={colors.text} />} onPress={atCenter} />
