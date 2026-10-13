@@ -1,6 +1,7 @@
 import {
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
+  bannerTop,
   EDGE,
   GAP,
   isLandscape,
@@ -43,5 +44,12 @@ describe('map layout', () => {
 
   it('exposes the logo row height for the location banner', () => {
     expect(LOGO_ROW_HEIGHT).toBe(28);
+  });
+
+  it('puts the location banner below both the logo row and the toolbar', () => {
+    for (const landscape of [false, true]) {
+      expect(bannerTop(landscape)).toBeGreaterThanOrEqual(ornamentRowTop(landscape) + LOGO_ROW_HEIGHT);
+      expect(bannerTop(landscape)).toBeGreaterThanOrEqual(EDGE + TOOLBAR_HEIGHT + GAP);
+    }
   });
 });

@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
-import { EDGE, GAP, LOGO_ROW_HEIGHT, ornamentRowTop, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { bannerTop } from '@/features/map/layout';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -27,13 +27,9 @@ describe('LocationBanner', () => {
     expect(screen.queryByText(/Location is off/)).toBeNull();
   });
 
-  it.each([
-    [false, EDGE + TOOLBAR_HEIGHT + GAP + LOGO_ROW_HEIGHT],
-    [true, ornamentRowTop(true) + LOGO_ROW_HEIGHT],
-  ])('sits below the Mapbox logo row (landscape=%s)', async (landscape, top) => {
+  it.each([[false], [true]])('sits below the toolbar and logo row (landscape=%s)', async (landscape) => {
     await renderWithProviders(<LocationBanner landscape={landscape} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
-    const banner = screen.getByTestId('location-banner');
-    expect(banner).toHaveStyle({ top });
+    expect(screen.getByTestId('location-banner')).toHaveStyle({ top: bannerTop(landscape) });
   });
 });

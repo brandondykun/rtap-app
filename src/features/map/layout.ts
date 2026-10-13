@@ -38,6 +38,14 @@ export function ornamentRowTop(landscape: boolean): number {
 }
 
 /**
+ * Location banner top (from the safe area): below the Mapbox logo row and below the toolbar,
+ * whichever is lower. In landscape the toolbar is top-right, so the logo row alone is too high.
+ */
+export function bannerTop(landscape: boolean): number {
+  return Math.max(ornamentRowTop(landscape) + LOGO_ROW_HEIGHT, EDGE + TOOLBAR_HEIGHT + GAP);
+}
+
+/**
  * Mapbox ornament positions. The logo and attribution must stay visible (Mapbox terms), so they
  * sit top-left (the (i) button first, then the wordmark): under the full-width toolbar in
  * portrait, beside the top-right toolbar in landscape. There is no scale bar (it costs too much screen space).
