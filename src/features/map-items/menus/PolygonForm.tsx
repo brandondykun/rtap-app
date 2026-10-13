@@ -36,6 +36,8 @@ const UNITS = [
   { value: 'km' as const, label: 'km' },
 ];
 
+// A decimal comma (many locales' keypads) counts as a point.
+const parseRadius = (text: string) => (text.trim() === '' ? NaN : Number(text.replace(',', '.')));
 const radiusText = (m: number | null, unit: 'm' | 'km') => (m === null ? '' : unit === 'km' ? String(Number((m / 1000).toFixed(3))) : String(Math.round(m)));
 
 /** Add/Edit polygon: name, type, shape (points list or circle center + radius), notes. Edits only the draft store. */
@@ -63,20 +65,19 @@ export function PolygonForm() {
 
   // A radius set on the map (edge tap) rewrites the field; typing does not fight it.
   useEffect(() => {
-    const typed = Number(radius) * (unit === 'km' ? 1000 : 1);
+    const typed = parseRadius(radius) * (unit === 'km' ? 1000 : 1);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing field text from an external store change
     if (radiusM !== null && Math.abs(typed - radiusM) > 0.5) setRadius(radiusText(radiusM, unit));
   }, [radiusM]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onRadius = (text: string) => {
     setRadius(text);
-    const value = text.trim() === '' ? NaN : Number(text);
-    useDraft.getState().setCircleRadius(value * (unit === 'km' ? 1000 : 1));
+    useDraft.getState().setCircleRadius(parseRadius(text) * (unit === 'km' ? 1000 : 1));
   };
+  // Switching the unit converts the shown number; the circle keeps its size.
   const onUnit = (next: 'm' | 'km') => {
     setUnit(next);
-    const value = radius.trim() === '' ? NaN : Number(radius);
-    useDraft.getState().setCircleRadius(value * (next === 'km' ? 1000 : 1));
+    if (radiusM !== null) setRadius(radiusText(radiusM, next));
   };
 
   const submitTyped = () => {

@@ -11,8 +11,8 @@ import { inverse } from '@/lib/geo/measure/geodesic';
 import type { LatLon } from '@/lib/geo/types';
 
 export type DraftMode = 'add' | 'edit';
-/** Where the draft coordinate came from; the map follows every source except the crosshair. */
-export type DraftCoordSource = 'crosshair' | 'self' | 'press' | 'typed' | 'item';
+/** Where the draft coordinate came from; the map follows every source except the crosshair and drawing taps. */
+export type DraftCoordSource = 'crosshair' | 'self' | 'press' | 'typed' | 'item' | 'draw';
 
 type DraftValues = {
   mode: DraftMode | null;

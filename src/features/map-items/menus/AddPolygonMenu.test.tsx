@@ -98,4 +98,16 @@ describe('AddPolygonMenu', () => {
       'Target area of interest',
     ]);
   });
+
+
+  it('accepts a decimal comma and converts the radius when switching m/km', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Circle'));
+    await fireEvent.press(screen.getByLabelText('km'));
+    await fireEvent.changeText(screen.getByLabelText('Radius'), '1,5');
+    expect(useDraft.getState().circleRadiusM).toBe(1500);
+    await fireEvent.press(screen.getByLabelText('m'));
+    expect(screen.getByLabelText('Radius')).toHaveDisplayValue('1500');
+    expect(useDraft.getState().circleRadiusM).toBe(1500);
+  });
 });

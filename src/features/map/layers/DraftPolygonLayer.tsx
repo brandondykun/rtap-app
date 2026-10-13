@@ -43,10 +43,14 @@ export function DraftPolygonLayer({ onVertexPress, onPress }: { onVertexPress?: 
   const polygonType = useDraft((s) => s.polygonType);
   const name = useDraft((s) => s.name);
   const showDistances = useSettings((s) => s.showLineDistances);
-  const shape = useMemo(
-    () => draftPolygonFeatures({ polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances }),
-    [polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances],
-  );
+  // The fill gets its own untappable source: a touchable fill would swallow taps on items inside an open polygon.
+  const { fills, shape } = useMemo(() => {
+    const all = draftPolygonFeatures({ polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances });
+    return {
+      fills: { type: 'FeatureCollection' as const, features: all.features.filter((f) => f.properties.role === 'fill') },
+      shape: { type: 'FeatureCollection' as const, features: all.features.filter((f) => f.properties.role !== 'fill') },
+    };
+  }, [polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances]);
   const styles = useMemo(
     () => ({
       fill: makePolygonFillStyle(colors),
@@ -61,24 +65,28 @@ export function DraftPolygonLayer({ onVertexPress, onPress }: { onVertexPress?: 
   );
 
   return (
-    <ShapeSource
-      id="draft-polygon"
-      shape={shape}
-      onPress={(e) => {
-        const index = e.features.find((f) => f.properties?.role === 'vertex')?.properties?.index;
-        if (typeof index === 'number') onVertexPress?.(index);
-        else onPress?.({ lat: e.coordinates.latitude, lon: e.coordinates.longitude });
-      }}>
-      <FillLayer id="draft-polygon-fill" style={styles.fill} filter={role('fill') as never} />
-      <LineLayer id="draft-polygon-halo" style={styles.halo} filter={role('outline') as never} />
-      <LineLayer id="draft-polygon-solid" style={styles.solid} filter={role('outline', ['==', ['get', 'dash'], 'solid']) as never} />
-      <LineLayer id="draft-polygon-dashed" style={styles.dashed} filter={role('outline', ['==', ['get', 'dash'], 'dashed']) as never} />
-      <SymbolLayer id="draft-polygon-segment" style={styles.chip} filter={role('segment')} />
-      <SymbolLayer id="draft-polygon-radius" style={styles.chip} filter={role('radius')} />
-      <SymbolLayer id="draft-polygon-selected" style={SELECTED_STYLE} filter={role('vertex', ['==', ['get', 'selected'], true])} />
-      <SymbolLayer id="draft-polygon-vertex" style={styles.vertex} filter={role('vertex')} />
-      <SymbolLayer id="draft-polygon-center" style={CENTER_STYLE} filter={role('center')} />
-      <SymbolLayer id="draft-polygon-label" style={styles.label} filter={role('label')} />
-    </ShapeSource>
+    <>
+      <ShapeSource id="draft-polygon-fills" shape={fills}>
+        <FillLayer id="draft-polygon-fill" style={styles.fill} />
+      </ShapeSource>
+      <ShapeSource
+        id="draft-polygon"
+        shape={shape}
+        onPress={(e) => {
+          const index = e.features.find((f) => f.properties?.role === 'vertex')?.properties?.index;
+          if (typeof index === 'number') onVertexPress?.(index);
+          else onPress?.({ lat: e.coordinates.latitude, lon: e.coordinates.longitude });
+        }}>
+        <LineLayer id="draft-polygon-halo" style={styles.halo} filter={role('outline') as never} />
+        <LineLayer id="draft-polygon-solid" style={styles.solid} filter={role('outline', ['==', ['get', 'dash'], 'solid']) as never} />
+        <LineLayer id="draft-polygon-dashed" style={styles.dashed} filter={role('outline', ['==', ['get', 'dash'], 'dashed']) as never} />
+        <SymbolLayer id="draft-polygon-segment" style={styles.chip} filter={role('segment')} />
+        <SymbolLayer id="draft-polygon-radius" style={styles.chip} filter={role('radius')} />
+        <SymbolLayer id="draft-polygon-selected" style={SELECTED_STYLE} filter={role('vertex', ['==', ['get', 'selected'], true])} />
+        <SymbolLayer id="draft-polygon-vertex" style={styles.vertex} filter={role('vertex')} />
+        <SymbolLayer id="draft-polygon-center" style={CENTER_STYLE} filter={role('center')} />
+        <SymbolLayer id="draft-polygon-label" style={styles.label} filter={role('label')} />
+      </ShapeSource>
+    </>
   );
 }

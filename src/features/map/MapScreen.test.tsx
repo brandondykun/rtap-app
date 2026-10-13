@@ -468,7 +468,10 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('Circle'));
     const tap = (lon: number, lat: number) =>
       act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    mapboxMock().__camera.setCamera.mockClear();
     await tap(-77, 38.9);
+    // Drawing taps never move the map (the edge the user aims at must stay put).
+    expect(mapboxMock().__camera.setCamera.mock.calls.some((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate)).toBe(false);
     await tap(-77, 38.9045);
     await fireEvent.press(screen.getByLabelText('Map'));
     await tap(-77.01, 38.95);

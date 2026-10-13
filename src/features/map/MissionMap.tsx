@@ -157,7 +157,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useEffect(
     () =>
       useDraft.subscribe((state, prev) => {
-        if (state.coordRev === prev.coordRev || !state.coord || state.coordSource === 'crosshair') return;
+        if (state.coordRev === prev.coordRev || !state.coord || state.coordSource === 'crosshair' || state.coordSource === 'draw') return;
         markMoved();
         if (useInteraction.getState().followMode) setFollowMode(false);
         followTarget.current = state.coord;
@@ -218,7 +218,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const d = useDraft.getState();
     if (d.category === 'polygon' && d.polygonShape === 'circle') {
       // The Map button (picking) moves the center; otherwise the first tap sets it and later taps the edge.
-      if (d.coord === null || d.picking) d.setCoord(at, 'press');
+      if (d.coord === null || d.picking) d.setCoord(at, 'draw');
       else d.setCircleEdge(at);
     } else if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
     else d.addVertex(at);

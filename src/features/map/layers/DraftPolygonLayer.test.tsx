@@ -33,4 +33,16 @@ describe('DraftPolygonLayer', () => {
     await act(async () => press({ features: [{ properties: { role: 'fill' } }], coordinates: { latitude: 38.91, longitude: -76.995 }, point: {} }));
     expect(onPress).toHaveBeenCalledWith({ lat: 38.91, lon: -76.995 });
   });
+
+
+  it('keeps the fill in its own untappable source so items inside an open polygon stay tappable', async () => {
+    useDraft.getState().startAddPolygon();
+    for (const lat of [38.9, 38.91, 38.92]) useDraft.getState().addVertex({ lat, lon: lat === 38.91 ? -76.99 : -77 });
+    await renderWithProviders(<DraftPolygonLayer />);
+    const props = mapboxMock().__props;
+    expect(props.ShapeSource['draft-polygon-fills'].onPress).toBeUndefined();
+    expect((props.ShapeSource['draft-polygon-fills'].shape as { features: unknown[] }).features).toHaveLength(1);
+    const touchable = props.ShapeSource['draft-polygon'].shape as { features: { properties: { role: string } }[] };
+    expect(touchable.features.some((f) => f.properties.role === 'fill')).toBe(false);
+  });
 });
