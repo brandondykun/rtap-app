@@ -28,6 +28,7 @@ import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
+import { LinesLayer } from './layers/LinesLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
@@ -202,6 +203,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onLongPress={onLongPress}
         onPress={onMapPress}
         onUserGesture={onUserGesture}>
+        <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
         <SelfLayer />

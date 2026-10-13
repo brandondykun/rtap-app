@@ -63,3 +63,19 @@ const accentChip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" he
 writeFileSync(join(OUT_DIR, 'label-chip-accent.png'), new Resvg(accentChip).render().asPng());
 
 console.log(`Wrote map images to ${OUT_DIR}`);
+
+// Line end arrow: a filled chevron pointing up (north); the layer rotates it to the line's bearing.
+const A = 24;
+const arrowPath = `M${A / 2} 3 L${A - 4} ${A - 5} L${A / 2} ${A - 9} L4 ${A - 5} Z`;
+const lineArrow = `<svg xmlns="http://www.w3.org/2000/svg" width="${A}" height="${A}" viewBox="0 0 ${A} ${A}"><path d="${arrowPath}" fill="${colors.friendly}" stroke="${colors['point-symbol-halo']}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+writeScaled('line-arrow', lineArrow);
+
+// FLOT decoration: a small semicircle (bump) repeated along the line.
+const F = 14;
+const flot = `<svg xmlns="http://www.w3.org/2000/svg" width="${F}" height="${F}" viewBox="0 0 ${F} ${F}"><path d="M2 ${F / 2} A5 5 0 0 1 ${F - 2} ${F / 2}" fill="none" stroke="${colors['point-symbol-halo']}" stroke-width="4"/><path d="M2 ${F / 2} A5 5 0 0 1 ${F - 2} ${F / 2}" fill="none" stroke="${colors.friendly}" stroke-width="2"/></svg>`;
+writeScaled('line-flot-arc', flot);
+
+// Draft vertex: white disc with a dark ring; the number is drawn as text on top.
+const V = 22;
+const vertex = `<svg xmlns="http://www.w3.org/2000/svg" width="${V}" height="${V}" viewBox="0 0 ${V} ${V}"><circle cx="${V / 2}" cy="${V / 2}" r="${V / 2 - 1.5}" fill="${colors.text}" stroke="${colors['surface-input']}" stroke-width="2"/></svg>`;
+writeScaled('line-vertex', vertex);

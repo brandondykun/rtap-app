@@ -108,3 +108,43 @@ export function makeRangeLabelStyle(colors: Record<SemanticToken, string>): Symb
     iconAllowOverlap: true,
   };
 }
+
+/** Line widths in pt by width class; the halo is 2 pt wider. */
+export const LINE_WIDTHS = { normal: 3, heavy: 5, wide: 7 } as const;
+export const LINE_DASH = [2, 1.5];
+const LINE_WIDTH: LineLayerStyle['lineWidth'] = ['match', ['get', 'width'], 'heavy', LINE_WIDTHS.heavy, 'wide', LINE_WIDTHS.wide, LINE_WIDTHS.normal];
+
+export function makeLineHaloStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { lineColor: colors['point-symbol-halo'], lineWidth: ['+', LINE_WIDTH, 2] as LineLayerStyle['lineWidth'], lineCap: 'round', lineJoin: 'round' };
+}
+
+export function makeLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { lineColor: colors.friendly, lineWidth: LINE_WIDTH, lineCap: 'round', lineJoin: 'round' };
+}
+
+export function makeLineDashedStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { ...makeLineStyle(colors), lineCap: 'butt', lineDasharray: LINE_DASH };
+}
+
+/** Arrowhead at a line end, rotated to the end segment's bearing (map-aligned). */
+export const LINE_ARROW_STYLE: SymbolLayerStyle = {
+  iconImage: MAP_IMAGE_IDS.lineArrow,
+  iconRotate: ['get', 'bearing'],
+  iconRotationAlignment: 'map',
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
+
+/** FLOT bumps repeated along the line. */
+export const LINE_FLOT_STYLE: SymbolLayerStyle = {
+  symbolPlacement: 'line',
+  symbolSpacing: 18,
+  iconImage: MAP_IMAGE_IDS.lineFlotArc,
+  iconAllowOverlap: true,
+  iconIgnorePlacement: true,
+};
+
+/** "PL RED" chips at both ends of a line, beside the end point. */
+export function makeLineLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return { ...makePointLabelStyle(colors), textField: ['get', 'label'], textAnchor: 'left', textOffset: [0.9, 0] };
+}
