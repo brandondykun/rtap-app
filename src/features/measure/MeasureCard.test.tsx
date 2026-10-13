@@ -24,7 +24,6 @@ describe('MeasureCard', () => {
     await renderWithProviders(<MeasureCard />);
     expect(screen.getByText('Measure')).toBeTruthy();
     expect(screen.getByText('Set start')).toBeTruthy();
-    expect(screen.getByLabelText('From me')).toBeDisabled();
     expect(screen.getByLabelText('Restart')).toBeDisabled();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(useMeasure.getState().start).toEqual(C);
@@ -34,20 +33,23 @@ describe('MeasureCard', () => {
     expect(useMeasure.getState().start).toBeNull();
   });
 
-  it('measures from the user and stops', async () => {
-    usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 });
+  it('has no From me button; measures and stops', async () => {
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureCard />);
-    await fireEvent.press(screen.getByLabelText('From me'));
-    expect(screen.getByText('Set end')).toBeTruthy();
+    expect(screen.queryByLabelText('From me')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(screen.getByText('1.11 km · 000° TRUE')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Stop measuring'));
     expect(useMeasure.getState().active).toBe(false);
   });
 
-
-  it('wraps its buttons on narrow screens instead of spilling past the card', async () => {
+  it('keeps everything on one line, shrinking the readout text to fit', async () => {
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
+    useMeasure.getState().place(C);
     await renderWithProviders(<MeasureCard />);
-    expect(screen.getByTestId('measure-buttons')).toHaveStyle({ flexWrap: 'wrap' });
+    const readout = screen.getByText('1.11 km · 000° TRUE');
+    expect(readout.props.numberOfLines).toBe(1);
+    expect(readout.props.adjustsFontSizeToFit).toBe(true);
+    expect(screen.getByTestId('measure-row')).toHaveStyle({ flexDirection: 'row' });
   });
 });

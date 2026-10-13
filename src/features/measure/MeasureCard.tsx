@@ -4,18 +4,16 @@ import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { MapButton } from '@/features/map/controls/MapButton';
 import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
-import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { measureReadout } from './measure-readout';
 
-/** Top-left while measuring: the readout, From me, Restart, Stop (×) and the amber Set. */
+/** Top-left while measuring, on one line: the readout, Restart, Stop (×) and the amber Set. */
 export function MeasureCard() {
   const { colors } = useTheme();
   const start = useMeasure((s) => s.start);
   const end = useMeasure((s) => s.end);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
@@ -26,26 +24,23 @@ export function MeasureCard() {
     if (c) useMeasure.getState().place(c);
   };
 
-  // Compact: title and readout with Stop beside them, then From me / Restart and the amber Set.
+  // One line: title over the readout (shrinks to fit), then Restart, Stop and the amber Set.
   return (
-    <View testID="measure-card" className="gap-1 self-start rounded-2xl border border-accent bg-surface-chrome px-2 py-1">
-      <View className="flex-row items-center gap-1">
-        <View className="pl-1">
+    <View testID="measure-card" className="self-start rounded-2xl border border-accent bg-surface-chrome px-2 py-1">
+      <View testID="measure-row" className="flex-row items-center gap-1" style={{ flexDirection: 'row' }}>
+        <View className="shrink pl-1 pr-1">
           <Text className="text-[10px] font-bold uppercase tracking-widest text-accent">Measure</Text>
-          <Text className="font-mono text-lg font-semibold text-text">{readout}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit className="font-mono text-lg font-semibold text-text">
+            {readout}
+          </Text>
         </View>
-        <View className="ml-auto">
-          <MapButton grouped label="Stop measuring" icon="close" onPress={() => useMeasure.getState().stopMeasure()} />
-        </View>
-      </View>
-      <View testID="measure-buttons" className="flex-row items-center gap-1" style={{ flexWrap: 'wrap' }}>
-        <MapButton grouped label="From me" icon="crosshairs-gps" onPress={() => self && useMeasure.getState().setFromMe(self)} disabled={!self} />
         <MapButton grouped label="Restart" icon="restore" onPress={() => useMeasure.getState().restart()} disabled={!start} />
+        <MapButton grouped label="Stop measuring" icon="close" onPress={() => useMeasure.getState().stopMeasure()} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Set at crosshair"
           onPress={setAtCrosshair}
-          className="ml-auto h-10 w-12 items-center justify-center rounded-xl bg-accent">
+          className="h-10 w-12 items-center justify-center rounded-xl bg-accent">
           <CrosshairGlyph size={20} color={colors['on-accent']} />
         </Pressable>
       </View>

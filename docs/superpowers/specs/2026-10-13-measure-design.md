@@ -38,11 +38,11 @@ there while the start stays on them.
 
 State: `start: LatLon | null`, `end: LatLon | null` (null until set).
 
-| State | Map tap / snap at `p` | **Set** (crosshair `c`) | **From me** (GPS `g`) |
-|---|---|---|---|
-| No start | start = p | start = c | start = g |
-| Start, no end | end = p | end = c | start = g |
-| Start and end | end = p | end = c | start = g |
+| State | Map tap / snap at `p` | **Set** (crosshair `c`) |
+|---|---|---|
+| No start | start = p | start = c |
+| Start, no end | end = p | end = c |
+| Start and end | end = p | end = c |
 
 - **Restart** clears both points (back to "No start").
 - While measuring, a tap on a unit/point or the self marker snaps instead of opening a menu;
@@ -62,10 +62,11 @@ Top-left in the `MapTopLeft` stack (below the Mapbox logo row, as in the mockup)
 `surface-chrome` style with an `accent` border:
 
 - Label **MEASURE** (small, accent, uppercase) above the readout (mono) or **Set start** / **Set end**.
-- Buttons: **From me** (disabled without a GPS fix), **Restart** (disabled with no start),
+- One line (the readout shrinks to fit). Buttons: **Restart** (disabled with no start),
   **×** (turns measuring off), and the amber primary **Set** (crosshair glyph; sets the next
   point at the crosshair as in §3.2).
-- Accessibility labels: "From me", "Restart", "Stop measuring", "Set at crosshair".
+- Accessibility labels: "Restart", "Stop measuring", "Set at crosshair". (**From me** was removed
+  2026-10-13 at the user's request; tapping the self marker snaps to the user instead.)
 
 ### 4.2 Map — `MeasureLayer`
 
@@ -86,8 +87,8 @@ is tapped; `MissionMap` passes it only while measuring.
 
 | Unit | Responsibility |
 |---|---|
-| `src/features/measure/measure-step.ts` | Pure rules of §3.2: `placePoint(m, p)`, `fromMe(m, g)`, `restart()`. |
-| `src/stores/measure.ts` | `active`, `start`, `end`; `startMeasure()`, `stopMeasure()`, `place(p)`, `setFromMe(g)`, `restart()`. |
+| `src/features/measure/measure-step.ts` | Pure rules of §3.2: `placePoint(m, p)`, `restart()`. |
+| `src/stores/measure.ts` | `active`, `start`, `end`; `startMeasure()`, `stopMeasure()`, `place(p)`, `restart()`. |
 | `src/features/measure/measure-readout.ts` | `measureReadout(start, end, settings)` → label text. |
 | `src/features/measure/MeasureCard.tsx` | The card. |
 | `src/features/map/layers/MeasureLayer.tsx` | The map layer. |
@@ -100,7 +101,7 @@ is tapped; `MissionMap` passes it only while measuring.
 - Store: start/stop clear state; actions follow the step rules.
 - Readout: uses the angle unit and north reference; "Set start" with no start.
 - `MeasureLayer`: no features without a start; only the start dot until the end is set; chip text.
-- `MeasureCard`: buttons call the right actions; From me disabled without GPS; Restart disabled with no start.
+- `MeasureCard`: buttons call the right actions; Restart disabled with no start; one line.
 - MapScreen: MEASURE toggles on/off and closes an open menu; a map tap sets start then end; a
   unit tap snaps to the unit and does not open its menu; a
   self-marker tap snaps to the self position; opening Layers turns measuring off; long-press
