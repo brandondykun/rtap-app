@@ -31,7 +31,7 @@ export function MenuSelect<T extends string>({ label, options, value, onChange, 
         <Icon name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors['text-muted']} />
       </Pressable>
       {open && !disabled ? (
-        <View className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-raised">
+        <View testID="menu-select-options" className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-raised">
           {options.map((option) => (
             <Pressable
               key={option.value}

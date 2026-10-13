@@ -5,6 +5,7 @@ import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { parseLineGeometry } from '../geometry';
@@ -85,6 +86,22 @@ describe('AddLineMenu', () => {
     await fireEvent.press(screen.getByLabelText('Insert after point 1'));
     await act(async () => useDraft.getState().addVertex(p(9)));
     expect(useDraft.getState().vertices).toEqual([p(0), p(9), p(1), p(2)]);
+  });
+  it('lists line types alphabetically', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Line type: Phase line'));
+    expect(selectOptionLabels()).toEqual([
+      'Axis of advance',
+      'Boundary',
+      'Coordinated fire line',
+      'Fire support coordination line',
+      'Forward line of own troops',
+      'Limit of advance',
+      'Line of departure',
+      'Phase line',
+      'Restrictive fire line',
+      'Route',
+    ]);
   });
 });
 

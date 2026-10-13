@@ -20,7 +20,8 @@ import { canRemove } from '../line-draft';
 import { segmentLengths, totalLength } from '../line-measure';
 import { LineSample } from './LineSample';
 
-const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <LineSample lineType={t.id} /> }));
+// Listed alphabetically in the dropdown.
+const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <LineSample lineType={t.id} /> })).sort((a, b) => a.label.localeCompare(b.label));
 
 /** Add/Edit line: name, type, the point list, a typed point, notes. Edits only the draft store. */
 export function LineForm() {

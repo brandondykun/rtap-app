@@ -15,7 +15,8 @@ import { LocationSection } from './form/LocationSection';
 import { useAutoName } from './form/use-auto-name';
 
 const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
-const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label }));
+// Listed alphabetically in the dropdown.
+const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label })).sort((a, b) => a.label.localeCompare(b.label));
 
 /** The Add/Edit unit form. It edits only the draft store; the menu decides when to write. */
 export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {

@@ -6,6 +6,7 @@ import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { placePoint } from '../commands';
@@ -74,5 +75,14 @@ describe('AddPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));
     await fireEvent.press(screen.getByText('Target'));
     expect(await screen.findByDisplayValue('TGT-1')).toBeTruthy();
+  });
+
+
+  it('lists point types alphabetically', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));
+    const labels = selectOptionLabels();
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
+    expect(labels).toHaveLength(9);
   });
 });

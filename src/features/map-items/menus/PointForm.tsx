@@ -12,11 +12,12 @@ import { useDraft, type DraftMode } from '@/stores/draft';
 import { LocationSection } from './form/LocationSection';
 import { useAutoName } from './form/use-auto-name';
 
+// Listed alphabetically in the dropdown.
 const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
   value: t.id,
   label: t.label,
   icon: <Image source={symbolThumbnail(t.sidc)} style={{ width: 32, height: 26 }} resizeMode="contain" />,
-}));
+})).sort((a, b) => a.label.localeCompare(b.label));
 
 /** Add/Edit point form: location, point type, name, notes. Edits only the draft store. */
 export function PointForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {

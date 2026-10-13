@@ -9,6 +9,7 @@ import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
+import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { observeMissionItems } from '../repository';
@@ -121,5 +122,12 @@ describe('AddUnitMenu', () => {
     await open();
     await fireEvent.press(screen.getByText('Cancel'));
     expect(useMenu.getState().stack).toEqual([]);
+  });
+
+
+  it('lists unit types alphabetically', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    expect(selectOptionLabels()).toEqual(['Air defense', 'Armor', 'Artillery', 'Engineer', 'Infantry', 'Medical', 'Reconnaissance', 'Unspecified']);
   });
 });
