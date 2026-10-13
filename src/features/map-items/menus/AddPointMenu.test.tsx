@@ -99,12 +99,20 @@ describe('AddPointMenu', () => {
     expect(useDraft.getState().affiliation).toBe('friend');
   });
 
-  it('uses the crosshair or the user for Center and Me', async () => {
+  it('has no Me button; Map toggles picking a location on the map', async () => {
     await open();
-    expect(screen.getByLabelText('Me')).toBeDisabled();
-    await act(async () => usePresence.getState().setSelfPosition({ position: OTHER, accuracyM: 5, timestamp: 1 }));
-    await fireEvent.press(screen.getByLabelText('Me'));
-    expect(useDraft.getState()).toMatchObject({ coord: OTHER, coordSource: 'self' });
+    expect(screen.queryByLabelText('Me')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Map'));
+    expect(useDraft.getState().picking).toBe(true);
+    expect(screen.getByLabelText('Map')).toBeSelected();
+    expect(screen.getByText('Tap the map where the point should go')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Map'));
+    expect(useDraft.getState().picking).toBe(false);
+  });
+
+  it('Center moves the draft to the crosshair', async () => {
+    await open();
+    await act(async () => useDraft.getState().setCoord(OTHER, 'press'));
     await fireEvent.press(screen.getByLabelText('Center'));
     expect(useDraft.getState()).toMatchObject({ coord: CENTER, coordSource: 'crosshair' });
   });

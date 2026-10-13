@@ -122,6 +122,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (topId === 'point.add') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('point.add', {});
   };
+  // Map button: the next tap on the map (or on a point) places the draft there.
+  const onMapPress = (coord: LatLon) => {
+    if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
+  };
+  const onItemPress = (itemId: string, at: LatLon) => {
+    if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
+    else useMenu.getState().openMenu('point.edit', { itemId });
+  };
   const onLongPress = (coord: LatLon) => {
     const current = topMenu(useMenu.getState())?.id;
     const viewing = current === 'point.edit' && useDraft.getState().locked;
@@ -165,8 +173,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           if (cameraMoved.current) saver.schedule(camera);
         }}
         onLongPress={onLongPress}
+        onPress={onMapPress}
         onUserGesture={onUserGesture}>
-        <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={(itemId) => useMenu.getState().openMenu('point.edit', { itemId })} />
+        <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}
         <SelfLayer />
       </MapCanvas>

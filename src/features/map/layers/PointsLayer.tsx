@@ -5,6 +5,7 @@ import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from 
 import { createPointFeatureSelector, hiddenFilter } from '@/features/map-items/selectors';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
+import type { LatLon } from '@/lib/geo/types';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
@@ -15,7 +16,8 @@ const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 
 /** All mission points in one ShapeSource; hidden items are filtered out, never removed. */
-type Props = { missionId: string; excludeId?: string | null; onItemPress?: (id: string) => void };
+/** `at` is where the user tapped (used when picking a location on the map). */
+type Props = { missionId: string; excludeId?: string | null; onItemPress?: (id: string, at: LatLon) => void };
 
 export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props) {
   const ctx = useCommandContext();
@@ -33,7 +35,7 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
       shape={shape}
       onPress={(e) => {
         const id = e.features[0]?.properties?.id;
-        if (typeof id === 'string') onItemPress?.(id);
+        if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude });
       }}>
       <SymbolLayer id="points-symbols" style={POINT_SYMBOL_STYLE} filter={filter} />
       <SymbolLayer id="points-labels" style={labelStyle} filter={filter} />

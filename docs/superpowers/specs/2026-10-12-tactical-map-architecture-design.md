@@ -324,8 +324,9 @@ lib/geo/
   Center, Me, long-press), the camera eases to it, using the panel's camera padding so it
   lands in the center of the visible map area. Panning the map does *not* move the draft.
 - **Form:** MGRS split into four fields (zone+band, 100 km square, easting, northing) with
-  live validation (`✓ Valid · 1.15 km @ 103°`); **Center** (draft ← crosshair) and **Me**
-  (draft ← own position); affiliation segmented control (friendly / hostile / neutral /
+  live validation (`✓ Valid · 1.15 km @ 103°`); **Center** (draft ← crosshair) and **Map**
+  (the next tap on the map, or on a point, moves the draft there; user decision 2026-10-12,
+  replacing **Me**); affiliation segmented control (friendly / hostile / neutral /
   unknown, shown as frame icons); **Name** (auto, e.g. `HOS-4`, editable); **unit type**
   dropdown; **notes** button that reveals a notes field.
 - **Add** → `placePoint({ missionId, coord, sidc, name, notes })`, success haptic, then the

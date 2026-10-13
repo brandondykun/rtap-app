@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
@@ -38,6 +38,8 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   const nameEdited = useDraft((s) => s.nameEdited);
   const notes = useDraft((s) => s.notes);
   const locked = useDraft((s) => s.locked);
+  const picking = useDraft((s) => s.picking);
+  const setPicking = useDraft((s) => s.setPicking);
   const setCoord = useDraft((s) => s.setCoord);
   const setCoordInputValid = useDraft((s) => s.setCoordInputValid);
   const setAffiliation = useDraft((s) => s.setAffiliation);
@@ -52,7 +54,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   const [parts, setParts] = useState<MgrsParts>(() => (coord ? mgrsFieldsFor(coord) : EMPTY_MGRS));
   const [showNotes, setShowNotes] = useState(notes !== '');
 
-  // External moves (Center, Me, long-press, reset, item) rewrite the fields; typing does not.
+  // External moves (Center, a map pick, long-press, item) rewrite the fields; typing does not.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing local field text from an external store move
     if (coord && coordSource !== 'typed') setParts(mgrsFieldsFor(coord));
@@ -89,9 +91,6 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
     const center = useInteraction.getState().cameraCenter;
     if (center) setCoord(center, 'crosshair');
   };
-  const toMe = () => {
-    if (self) setCoord(self, 'self');
-  };
 
   return (
     <View>
@@ -102,9 +101,10 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
             <MenuButton label="Center" icon={<CrosshairGlyph size={18} color={colors.text} />} onPress={toCrosshair} disabled={locked} />
           </View>
           <View className="flex-1">
-            <MenuButton label="Me" icon="crosshairs-gps" onPress={toMe} disabled={locked || !self} />
+            <MenuButton label="Map" icon="gesture-tap" onPress={() => setPicking(!picking)} active={picking} disabled={locked} />
           </View>
         </View>
+        {picking ? <Text className="text-sm text-accent">Tap the map where the point should go</Text> : null}
       </MenuSection>
       <MenuSection label="Affiliation">
         <MenuSegmented<Affiliation>

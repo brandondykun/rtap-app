@@ -62,8 +62,8 @@ describe('PointsLayer', () => {
     const props = mapboxMock().__props;
     await waitFor(() => expect(props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([a.value.id])));
     await act(async () =>
-      (props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: a.value.id } }], coordinates: {}, point: {} }),
+      (props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: a.value.id } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
     );
-    expect(onItemPress).toHaveBeenCalledWith(a.value.id);
+    expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9, lon: -77 });
   });
 });

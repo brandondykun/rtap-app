@@ -24,6 +24,8 @@ type DraftValues = {
   notes: string;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
+  /** Waiting for the user to tap the map where the point should go (the Map button). */
+  picking: boolean;
   /** Last affiliation and type used for adding (rapid entry, and the next time Add opens). */
   remembered: { affiliation: Affiliation; unitType: UnitType };
 };
@@ -39,6 +41,7 @@ type DraftActions = {
   setAutoName: (name: string) => void;
   setNotes: (notes: string) => void;
   setLocked: (locked: boolean) => void;
+  setPicking: (picking: boolean) => void;
   clear: () => void;
 };
 
@@ -55,6 +58,7 @@ export const INITIAL_DRAFT: DraftValues = {
   nameEdited: false,
   notes: '',
   locked: false,
+  picking: false,
   remembered: { affiliation: 'hostile', unitType: 'unspecified' },
 };
 
@@ -94,7 +98,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       locked: true,
     })),
   setCoord: (coord, source) =>
-    set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1 } : {})),
+    // Any move ends a pending map pick (the pick itself arrives through here too).
+    set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1, picking: false } : {})),
   setCoordInputValid: (coordInputValid) => set({ coordInputValid }),
   setAffiliation: (affiliation) =>
     set((s) => ({
@@ -107,7 +112,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setName: (name) => set({ name, nameEdited: name.trim() !== '' }),
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
-  setLocked: (locked) => set({ locked }),
+  setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
+  setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
   clear: () =>
     set((s) => ({
       ...INITIAL_DRAFT,

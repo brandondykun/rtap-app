@@ -50,4 +50,17 @@ describe('draft store', () => {
     useDraft.getState().startAdd({ coord: A, source: 'press' });
     expect(useDraft.getState().affiliation).toBe('friend');
   });
+
+  it('picks a map location once, and never while locked', () => {
+    useDraft.getState().setPicking(true);
+    expect(useDraft.getState().picking).toBe(false); // no draft yet
+    useDraft.getState().startAdd({ coord: A, source: 'crosshair' });
+    useDraft.getState().setPicking(true);
+    expect(useDraft.getState().picking).toBe(true);
+    useDraft.getState().setCoord(B, 'press');
+    expect(useDraft.getState()).toMatchObject({ coord: B, picking: false });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: A, affiliation: 'friend', unitType: 'armor', name: 'FRD-1', notes: '' });
+    useDraft.getState().setPicking(true);
+    expect(useDraft.getState().picking).toBe(false);
+  });
 });

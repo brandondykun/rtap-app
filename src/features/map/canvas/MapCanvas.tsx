@@ -15,6 +15,13 @@ import { cameraFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { MAP_STYLE_URL } from './mapbox';
 
+/** The pressed position from a Mapbox press feature; null when not finite. */
+function pressCoord(geometry: unknown): LatLon | null {
+  const [lon, lat] = (geometry as { coordinates: number[] }).coordinates;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return { lat, lon: lon >= -180 && lon < 180 ? lon : wrapLon(lon) };
+}
+
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 type Props = {
@@ -26,12 +33,14 @@ type Props = {
   onUserGesture: () => void;
   /** A long press on the map at this coordinate. */
   onLongPress?: (coord: LatLon) => void;
+  /** A tap on the map (not on a point). */
+  onPress?: (coord: LatLon) => void;
   landscape: boolean;
   panel: PanelFrame | null;
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, landscape, panel, children }: Props) {
+export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
   const insets = useSafeAreaInsets();
   // Mapbox on iOS measures ornament margins from the safe area already.
   // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
@@ -71,9 +80,13 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
       attributionPosition={ornaments.attribution}
       onCameraChanged={onCameraChanged}
       onMapIdle={onMapIdle}
+      onPress={(feature) => {
+        const coord = pressCoord(feature.geometry);
+        if (coord) onPress?.(coord);
+      }}
       onLongPress={(feature) => {
-        const [lon, lat] = (feature.geometry as { coordinates: number[] }).coordinates;
-        if (Number.isFinite(lat) && Number.isFinite(lon)) onLongPress?.({ lat, lon: lon >= -180 && lon < 180 ? lon : wrapLon(lon) });
+        const coord = pressCoord(feature.geometry);
+        if (coord) onLongPress?.(coord);
       }}>
       <Camera ref={cameraRef} defaultSettings={toCameraStop(initialCamera)} />
       <Images images={MAP_IMAGES} />

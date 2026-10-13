@@ -200,6 +200,48 @@ describe('MapScreen', () => {
     await waitFor(() => expect(mapboxMock().__props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([itemId!])));
   });
 
+  it('Map button: the next map tap moves the draft there and the map follows', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    await screen.findByDisplayValue('HOS-1');
+    const tap = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+
+    const before = useDraft.getState().coord;
+    await tap(-77.2, 38.7);
+    expect(useDraft.getState().coord).toEqual(before); // not picking: taps do nothing
+
+    await fireEvent.press(screen.getByLabelText('Map'));
+    mapboxMock().__camera.setCamera.mockClear();
+    await tap(-77.1, 38.95);
+    expect(useDraft.getState()).toMatchObject({ coord: { lat: 38.95, lon: -77.1 }, picking: false });
+    expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ centerCoordinate: [-77.1, 38.95] }));
+  });
+
+  it('Map button: tapping on an existing point places the draft there instead of opening it', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    await screen.findByDisplayValue('HOS-2');
+    await fireEvent.press(screen.getByLabelText('Map'));
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({
+        features: [{ properties: { id: p.value.id } }],
+        coordinates: { latitude: 38.9001, longitude: -77.0001 },
+        point: {},
+      }),
+    );
+    expect(screen.getByRole('header')).toHaveTextContent('Add point');
+    expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.9001, lon: -77.0001 } });
+  });
+
   it('toggles Add Point from the toolbar', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
