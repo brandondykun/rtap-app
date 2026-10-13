@@ -6,9 +6,11 @@ import {
   LINE_WIDTHS,
   makeLineHaloStyle,
   makeLineStyle,
+  makePolygonFillStyle,
   MARKER_ICON_SIZE,
   POINT_ICON_SIZE,
   POINT_SYMBOL_STYLE,
+  POLYGON_FILL_OPACITY,
 } from './styles';
 
 describe('symbol sizes', () => {
@@ -28,5 +30,13 @@ describe('line styles', () => {
     expect(makeLineStyle(colors)).toMatchObject({ lineColor: colors.friendly, lineWidth: width });
     expect(makeLineHaloStyle(colors)).toMatchObject({ lineColor: colors['point-symbol-halo'], lineWidth: ['+', width, 2] });
     expect(LINE_DASH).toEqual([2, 1.5]);
+  });
+});
+
+describe('polygon styles', () => {
+  it('fills in light friendly blue', () => {
+    const colors = themeColors('dark');
+    expect(makePolygonFillStyle(colors)).toEqual({ fillColor: colors.friendly, fillOpacity: POLYGON_FILL_OPACITY });
+    expect(POLYGON_FILL_OPACITY).toBe(0.15);
   });
 });

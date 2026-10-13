@@ -34,6 +34,7 @@ import { DraftLineLayer } from './layers/DraftLineLayer';
 import { LinesLayer } from './layers/LinesLayer';
 import { MeasureLayer } from './layers/MeasureLayer';
 import { PointsLayer } from './layers/PointsLayer';
+import { PolygonsLayer } from './layers/PolygonsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
 
@@ -289,6 +290,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onLongPress={onLongPress}
         onPress={onMapPress}
         onUserGesture={onUserGesture}>
+        <PolygonsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}

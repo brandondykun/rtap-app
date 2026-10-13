@@ -1,4 +1,4 @@
-import type { LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
+import type { FillLayerStyle, LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
 import type { SemanticToken } from '@/theme/tokens';
 
@@ -162,4 +162,16 @@ export function makeMeasureChipStyle(colors: Record<SemanticToken, string>): Sym
     textAllowOverlap: true,
     iconAllowOverlap: true,
   };
+}
+
+/** Light friendly-blue fill under polygon outlines. */
+export const POLYGON_FILL_OPACITY = 0.15;
+
+export function makePolygonFillStyle(colors: Record<SemanticToken, string>): FillLayerStyle {
+  return { fillColor: colors.friendly, fillOpacity: POLYGON_FILL_OPACITY };
+}
+
+/** "OBJ IRON" chip centered in the polygon. */
+export function makePolygonLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return { ...makePointLabelStyle(colors), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
 }
