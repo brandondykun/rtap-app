@@ -18,6 +18,28 @@ import { formatEastWest } from './settings-format';
 
 const DECLINATION_ERROR = 'Enter a number from −180 to 180 (east positive)';
 
+/** Parsed declination text, or null when it is not a number yet ('', '-', '1e'). */
+function parseDeclination(text: string): number | null {
+  if (text.trim() === '') return null;
+  const value = Number(text.replace(',', '.'));
+  return Number.isFinite(value) ? value : null;
+}
+
+// Leaves subscribe to the camera themselves so a camera frame re-renders only these lines.
+function GridMagneticLine() {
+  const center = useInteraction((s) => s.cameraCenter);
+  const angleUnit = useSettings((s) => s.angleUnit);
+  const override = useSettings((s) => s.declinationOverrideDeg);
+  const gm = center ? gridMagneticAngle(center, { date: new Date(), declinationOverrideDeg: override }) : null;
+  return <Text className="text-sm text-text-muted">{`G-M angle here: ${formatEastWest(gm, angleUnit)}`}</Text>;
+}
+
+function ModelDeclinationHint() {
+  const center = useInteraction((s) => s.cameraCenter);
+  const model = center ? declination(center, new Date()) : null;
+  return model !== null ? <Text className="text-sm text-text-muted">{`Model (WMM2025) here: ${formatEastWest(model, 'deg')}`}</Text> : null;
+}
+
 export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const close = useMenu((s) => s.closeMenu);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -28,11 +50,6 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setAngleUnit = useSettings((s) => s.setAngleUnit);
   const setNorthRef = useSettings((s) => s.setNorthRef);
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
-  const center = useInteraction((s) => s.cameraCenter);
-
-  const date = new Date();
-  const model = center ? declination(center, date) : null;
-  const gm = center ? gridMagneticAngle(center, { date, declinationOverrideDeg: override }) : null;
   const [text, setText] = useState(override === null ? '' : String(override));
   const [error, setError] = useState<string | null>(null);
 
@@ -43,14 +60,24 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       setText('');
       return;
     }
-    const start = Math.round((model ?? 0) * 10) / 10;
+    const center = useInteraction.getState().cameraCenter;
+    const model = center ? declination(center, new Date()) : 0;
+    const start = Math.round(model * 10) / 10;
     setDeclinationOverride(start);
     setText(String(start));
   };
 
+  // Save every valid value as it is typed (Close with the keyboard up must not lose it); only
+  // finishing the edit reports an invalid one.
+  const change = (next: string) => {
+    setText(next);
+    const value = parseDeclination(next);
+    if (value !== null) setDeclinationOverride(value);
+  };
+
   const commit = () => {
-    const value = Number(text.replace(',', '.'));
-    if (text.trim() === '' || !setDeclinationOverride(value)) setError(DECLINATION_ERROR);
+    const value = parseDeclination(text);
+    if (value === null || !setDeclinationOverride(value)) setError(DECLINATION_ERROR);
     else setError(null);
   };
 
@@ -87,7 +114,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           value={northRef}
           onChange={setNorthRef}
         />
-        <Text className="text-sm text-text-muted">{`G-M angle here: ${formatEastWest(gm, angleUnit)}`}</Text>
+        <GridMagneticLine />
       </MenuSection>
       <MenuSection label="Declination">
         <MenuToggle label="Manual declination" value={override !== null} onValueChange={toggleManual} />
@@ -97,7 +124,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
               mono
               accessibilityLabel="Declination degrees"
               value={text}
-              onChangeText={setText}
+              onChangeText={change}
               onEndEditing={commit}
               onSubmitEditing={commit}
               keyboardType="numbers-and-punctuation"
@@ -107,7 +134,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
             {error ? <Text className="text-sm text-danger">{error}</Text> : null}
           </>
         ) : null}
-        {model !== null ? <Text className="text-sm text-text-muted">{`Model (WMM2025) here: ${formatEastWest(model, 'deg')}`}</Text> : null}
+        <ModelDeclinationHint />
       </MenuSection>
     </View>
   );

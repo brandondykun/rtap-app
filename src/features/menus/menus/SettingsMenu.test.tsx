@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { declination } from '@/lib/geo/north/magnetic';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -49,6 +49,27 @@ describe('SettingsMenu', () => {
 
     await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', false);
     expect(useSettings.getState().declinationOverrideDeg).toBeNull();
+  });
+
+  it('saves a valid typed declination without finishing the edit', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
+    const field = screen.getByLabelText('Declination degrees');
+    await fireEvent.changeText(field, '-');
+    expect(screen.queryByText('Enter a number from −180 to 180 (east positive)')).toBeNull();
+    await fireEvent.changeText(field, '-9.5');
+    expect(useSettings.getState().declinationOverrideDeg).toBe(-9.5);
+    await fireEvent.changeText(field, '');
+    expect(useSettings.getState().declinationOverrideDeg).toBe(-9.5);
+    expect(screen.queryByText('Enter a number from −180 to 180 (east positive)')).toBeNull();
+  });
+
+  it('updates the G-M angle and model hint as the camera moves', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    const hint = screen.getByText(/^Model \(WMM2025\) here:/).props.children;
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 64.1, lon: -21.9 }, zoom: 12, bearing: 0 }));
+    expect(screen.getByText(/^Model \(WMM2025\) here:/).props.children).not.toBe(hint);
+    expect(screen.getByText(/^G-M angle here: \d+\.\d° [EW]$/)).toBeTruthy();
   });
 
   it('shows the G-M angle at the crosshair', async () => {
