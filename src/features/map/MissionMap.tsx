@@ -21,9 +21,9 @@ import { useSettings } from '@/stores/settings';
 import { clampZoom, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
+import { MapBottomLeft } from './controls/MapBottomLeft';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
-import { ReadoutCard } from './controls/ReadoutCard';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { PointsLayer } from './layers/PointsLayer';
@@ -220,7 +220,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onRecenter={recenter}
         panel={panel}
       />
-      {panel ? null : <ReadoutCard />}
+      {panel ? null : <MapBottomLeft />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />

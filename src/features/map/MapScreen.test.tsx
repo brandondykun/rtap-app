@@ -256,18 +256,21 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it('the GPS button shows and hides the GPS readout without touching the menus', async () => {
+  it('the GPS button shows and hides the GPS readout, independent of the menus', async () => {
     useSettings.setState(DEFAULT_SETTINGS);
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     expect(screen.queryByTestId('gps-readout')).toBeNull();
-    await fireEvent.press(await screen.findByLabelText('LAYERS'));
-    await fireEvent.press(screen.getByLabelText('GPS'));
+    await fireEvent.press(await screen.findByLabelText('GPS'));
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
     expect(screen.getByLabelText('GPS')).toBeSelected();
+    // A panel hides the bottom-left readouts, GPS included, but never changes the toggle.
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
+    expect(screen.getByLabelText('GPS')).toBeSelected();
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('GPS'));

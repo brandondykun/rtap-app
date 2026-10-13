@@ -1,5 +1,4 @@
-import { Pressable, Text, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useInteraction } from '@/stores/interaction';
@@ -8,12 +7,9 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { describeReadout } from '../interaction/readout';
-import { CONTROL_SIZE, EDGE, GAP } from '../layout';
 
-/** Bottom-left card: crosshair MGRS, and range · bearing from the user (tap bearing: grid ↔ mag). */
+/** Crosshair MGRS, and range · bearing from the user (tap bearing: grid ↔ mag). Positioned by MapBottomLeft. */
 export function ReadoutCard() {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { colors } = useTheme();
   const center = useInteraction((s) => s.cameraCenter);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
@@ -26,14 +22,7 @@ export function ReadoutCard() {
   const r = describeReadout(center, self, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
 
   return (
-    <View
-      className="absolute rounded-2xl border border-border bg-surface-chrome px-4 py-3"
-      // Never reach under the zoom/recenter column on the right.
-      style={{
-        left: insets.left + EDGE,
-        bottom: insets.bottom + EDGE,
-        maxWidth: width - insets.left - insets.right - 2 * EDGE - CONTROL_SIZE - GAP,
-      }}>
+    <View testID="readout-card" className="self-start rounded-2xl border border-border bg-surface-chrome px-4 py-3">
       <View className="flex-row items-center gap-2">
         <CrosshairGlyph size={18} color={colors['text-muted']} />
         <Text testID="readout-coordinate" className="shrink font-mono-bold text-xl text-text" adjustsFontSizeToFit numberOfLines={1}>

@@ -130,6 +130,6 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 47 | Edit opens a sheet titled "Rename mission" with the name prefilled and selected; Save updates the list immediately with a success haptic; a blank name turns the field red with "Enter a mission name."; Cancel and swiping the sheet down keep the old name | PENDING |
 | 48 | VoiceOver: a mission row offers "Rename" and "Delete" actions | PENDING |
 | 49 | GPS toolbar button: highlights amber when on, plain when off; opening/closing POINT, LAYERS or other menus never changes it; it stays on after an app restart | PENDING |
-| 50 | GPS readout sits just under the Mapbox logo (portrait and landscape), shows the blue self marker, your MGRS (or lat/lon per Settings), and "ALT … · ACC ±…"; position matches the map's self icon and updates as you move | PENDING |
+| 50 | GPS readout sits bottom-left in its own box, stacked just above the crosshair readout card with a small gap; shows the blue navigation arrow, your MGRS (or lat/lon per Settings), and "ALT … · ACC ±…"; position matches the map's self icon and updates as you move | PENDING |
 | 51 | Altitude is plausible for your location (iPhone reports height above sea level; compare with a known elevation) and switches between meters and feet from Settings → Altitude | PENDING |
-| 52 | Landscape with a menu open: the GPS readout moves right of the drawer; with location denied, the "Location is off" notice sits above the readout without overlapping | PENDING |
+| 52 | With a menu open, the GPS readout hides along with the crosshair readout and returns when the menu closes; the GPS button stays highlighted throughout. Long lat/lon text never runs under the zoom/recenter buttons | PENDING |
