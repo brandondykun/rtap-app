@@ -135,7 +135,7 @@ must be one of `POINT_TYPES`; a unit's must decompose with `decomposeSidc`.
 
 ### 4.5 Toolbar and map
 
-- Toolbar: **UNIT** (`account-group-outline`) → toggles `unit.add`; **POINT**
+- Toolbar: **UNIT** (`rhombus-outline`, the hostile-unit frame) → toggles `unit.add`; **POINT**
   (`map-marker-outline`) → toggles `point.add`; **LAYERS** unchanged. Highlight = the matching
   menu is on top.
 - Tapping a map symbol, or a Layers row, opens `unit.edit` or `point.edit` by `itemCategory`.

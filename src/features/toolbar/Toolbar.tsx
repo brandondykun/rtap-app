@@ -32,7 +32,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLaye
 
   const tools = (
     <>
-      <ToolButton icon="account-group-outline" label="UNIT" active={activeTool === 'unit'} onPress={onUnit} />
+      <ToolButton icon="rhombus-outline" label="UNIT" active={activeTool === 'unit'} onPress={onUnit} />
       <ToolButton icon="map-marker-outline" label="POINT" active={activeTool === 'point'} onPress={onPoint} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
     </>
