@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { MenuButton } from '@/components/menu/MenuButton';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
+import { MapButton } from '@/features/map/controls/MapButton';
 import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
 import { usePresence } from '@/stores/presence';
@@ -28,20 +28,24 @@ export function MeasureCard() {
     if (c) useMeasure.getState().place(c);
   };
 
+  // Compact: the readout with Stop beside it, then From me / Restart and the amber Set.
   return (
-    <View testID="measure-card" className="gap-2 self-start rounded-2xl border border-accent bg-surface-chrome p-3">
-      <Text className="text-xs font-bold uppercase tracking-widest text-accent">Measure</Text>
-      <Text className="font-mono text-2xl font-semibold text-text">{readout}</Text>
-      <View testID="measure-buttons" className="flex-row items-center gap-2" style={{ flexWrap: 'wrap' }}>
-        <MenuButton label="From me" icon="crosshairs-gps" onPress={() => self && useMeasure.getState().setFromMe(self)} disabled={!self} />
-        <MenuButton label="Restart" icon="restore" iconOnly onPress={() => useMeasure.getState().restart()} disabled={!start} />
-        <MenuButton label="Stop measuring" icon="close" iconOnly onPress={() => useMeasure.getState().stopMeasure()} />
+    <View testID="measure-card" className="gap-1 self-start rounded-2xl border border-accent bg-surface-chrome px-2 py-1">
+      <View className="flex-row items-center gap-1">
+        <Text className="pl-1 font-mono text-lg font-semibold text-text">{readout}</Text>
+        <View className="ml-auto">
+          <MapButton grouped label="Stop measuring" icon="close" onPress={() => useMeasure.getState().stopMeasure()} />
+        </View>
+      </View>
+      <View testID="measure-buttons" className="flex-row items-center gap-1" style={{ flexWrap: 'wrap' }}>
+        <MapButton grouped label="From me" icon="crosshairs-gps" onPress={() => self && useMeasure.getState().setFromMe(self)} disabled={!self} />
+        <MapButton grouped label="Restart" icon="restore" onPress={() => useMeasure.getState().restart()} disabled={!start} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Set at crosshair"
           onPress={setAtCrosshair}
-          className="h-12 w-14 items-center justify-center rounded-xl bg-accent">
-          <CrosshairGlyph size={22} color={colors['on-accent']} />
+          className="ml-auto h-10 w-12 items-center justify-center rounded-xl bg-accent">
+          <CrosshairGlyph size={20} color={colors['on-accent']} />
         </Pressable>
       </View>
     </View>
