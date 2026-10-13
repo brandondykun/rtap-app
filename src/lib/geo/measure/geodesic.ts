@@ -26,3 +26,11 @@ export function midpoint(a: LatLon, b: LatLon): LatLon {
   if (azimuthTrue === null) return a;
   return destination(a, azimuthTrue, distanceM / 2);
 }
+
+/** Geodesic area (m², always positive) of the polygon through `points` (implicitly closed). */
+export function polygonAreaM2(points: readonly LatLon[]): number {
+  if (points.length < 3) return 0;
+  const poly = WGS84.Polygon(false);
+  for (const p of points) poly.AddPoint(p.lat, p.lon);
+  return Math.abs(poly.Compute(false, true).area ?? 0);
+}

@@ -1,4 +1,4 @@
-import { destination, inverse, midpoint } from './geodesic';
+import { destination, inverse, midpoint, polygonAreaM2 } from './geodesic';
 
 describe('inverse (WGS84, Karney)', () => {
   it('JFK → CDG matches GeographicLib', () => {
@@ -45,5 +45,14 @@ describe('midpoint', () => {
   it('returns the start for identical points', () => {
     const a = { lat: 10, lon: 20 };
     expect(midpoint(a, a)).toEqual(a);
+  });
+});
+
+describe('polygonAreaM2', () => {
+  it('measures a 0.01° square at the equator in either winding', () => {
+    const sq = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.01 }, { lat: 0.01, lon: 0.01 }, { lat: 0.01, lon: 0 }];
+    expect(polygonAreaM2(sq)).toBeCloseTo(1_230_907, -2);
+    expect(polygonAreaM2([...sq].reverse())).toBeCloseTo(1_230_907, -2);
+    expect(polygonAreaM2(sq.slice(0, 2))).toBe(0);
   });
 });

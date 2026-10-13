@@ -55,3 +55,31 @@ export function parseLineGeometry(json: string): LatLon[] | null {
   }
   return points;
 }
+
+/** Stores a closed ring (first point repeated at the end). */
+export function polygonGeometry(points: LatLon[]): string {
+  const ring = points.map((p) => [p.lon, p.lat]);
+  return JSON.stringify({ type: 'Polygon', coordinates: [[...ring, ring[0]]] });
+}
+
+/** The ring's distinct points (closing point dropped), or null for bad JSON, another type, an invalid position or < 3 points. */
+export function parsePolygonGeometry(json: string): LatLon[] | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  const g = value as { type?: unknown; coordinates?: unknown } | null;
+  if (!g || g.type !== 'Polygon' || !Array.isArray(g.coordinates) || !Array.isArray(g.coordinates[0])) return null;
+  const points: LatLon[] = [];
+  for (const c of g.coordinates[0] as unknown[]) {
+    if (!Array.isArray(c) || c.length < 2) return null;
+    const p = { lat: Number(c[1]), lon: Number(c[0]) };
+    if (!isValidLatLon(p)) return null;
+    points.push(p);
+  }
+  const last = points[points.length - 1];
+  if (points.length > 1 && last.lat === points[0].lat && last.lon === points[0].lon) points.pop();
+  return points.length >= 3 ? points : null;
+}

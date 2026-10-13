@@ -1,0 +1,75 @@
+import type { LatLon } from '@/lib/geo/types';
+
+/** Military areas the Polygon menu offers (spec 2026-10-13-polygons-design.md §3.1). */
+export type PolygonType =
+  | 'assembly-area'
+  | 'objective'
+  | 'battle-position'
+  | 'engagement-area'
+  | 'named-area-of-interest'
+  | 'target-area-of-interest'
+  | 'free-fire-area'
+  | 'no-fire-area'
+  | 'restrictive-fire-area'
+  | 'airspace-coordination-area';
+
+export type PolygonTypeInfo = { id: PolygonType; label: string; prefix: string; dash: 'solid' | 'dashed' };
+
+const t = (id: PolygonType, label: string, prefix: string, dash: 'solid' | 'dashed' = 'solid'): PolygonTypeInfo => ({ id, label, prefix, dash });
+
+export const POLYGON_TYPES: readonly PolygonTypeInfo[] = [
+  t('assembly-area', 'Assembly area', 'AA'),
+  t('objective', 'Objective', 'OBJ'),
+  t('battle-position', 'Battle position', 'BP'),
+  t('engagement-area', 'Engagement area', 'EA'),
+  t('named-area-of-interest', 'Named area of interest', 'NAI'),
+  t('target-area-of-interest', 'Target area of interest', 'TAI'),
+  t('free-fire-area', 'Free fire area', 'FFA', 'dashed'),
+  t('no-fire-area', 'No fire area', 'NFA', 'dashed'),
+  t('restrictive-fire-area', 'Restrictive fire area', 'RFA', 'dashed'),
+  t('airspace-coordination-area', 'Airspace coordination area', 'ACA', 'dashed'),
+];
+
+const BY_ID = new Map(POLYGON_TYPES.map((x) => [x.id, x]));
+
+export function polygonTypeInfo(id: PolygonType): PolygonTypeInfo {
+  return BY_ID.get(id)!;
+}
+
+/** "OBJ IRON"; the prefix is not repeated when the name already starts with it. */
+export function polygonLabel(type: PolygonType, name: string): string {
+  const trimmed = name.trim();
+  const prefix = polygonTypeInfo(type).prefix;
+  if (trimmed.startsWith(`${prefix} `) || trimmed === prefix) return trimmed;
+  return `${prefix} ${trimmed}`;
+}
+
+/** Points: the geometry is the shape. Circle: the exact center and radius (the geometry is a 64-point ring). */
+export type PolygonShape = { kind: 'points' } | { kind: 'circle'; center: LatLon; radiusM: number };
+export type PolygonStyle = { polygonType: PolygonType; shape: PolygonShape };
+
+/** Largest circle the app accepts (500 km). */
+export const MAX_RADIUS_M = 500_000;
+
+export function polygonStyle(type: PolygonType, shape: PolygonShape): string {
+  return JSON.stringify(shape.kind === 'circle' ? { polygonType: type, shape: 'circle', center: shape.center, radiusM: shape.radiusM } : { polygonType: type, shape: 'points' });
+}
+
+const validCenter = (c: unknown): c is LatLon => {
+  const p = c as Partial<LatLon> | null;
+  return !!p && typeof p.lat === 'number' && typeof p.lon === 'number' && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
+};
+
+/** Parses `style`: unknown types read as Objective; a circle with a bad center or radius reads as Points. */
+export function polygonStyleOf(style: string | null): PolygonStyle {
+  let v: { polygonType?: unknown; shape?: unknown; center?: unknown; radiusM?: unknown } = {};
+  try {
+    v = style ? (JSON.parse(style) ?? {}) : {};
+  } catch {
+    v = {};
+  }
+  const polygonType = typeof v.polygonType === 'string' && BY_ID.has(v.polygonType as PolygonType) ? (v.polygonType as PolygonType) : 'objective';
+  const circle =
+    v.shape === 'circle' && validCenter(v.center) && typeof v.radiusM === 'number' && v.radiusM > 0 && v.radiusM <= MAX_RADIUS_M;
+  return { polygonType, shape: circle ? { kind: 'circle', center: { lat: (v.center as LatLon).lat, lon: (v.center as LatLon).lon }, radiusM: v.radiusM as number } : { kind: 'points' } };
+}

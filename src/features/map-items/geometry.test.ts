@@ -1,4 +1,13 @@
-import { isValidLatLon, lineGeometry, parseLineGeometry, parsePointGeometry, pointCoord, pointGeometry } from './geometry';
+import {
+  isValidLatLon,
+  lineGeometry,
+  parseLineGeometry,
+  parsePointGeometry,
+  parsePolygonGeometry,
+  pointCoord,
+  pointGeometry,
+  polygonGeometry,
+} from './geometry';
 
 describe('point geometry', () => {
   it('serializes as GeoJSON [lon, lat]', () => {
@@ -43,5 +52,22 @@ describe('line geometry', () => {
     expect(parseLineGeometry('nope')).toBeNull();
     expect(parseLineGeometry(JSON.stringify({ type: 'Point', coordinates: [-77, 38.9] }))).toBeNull();
     expect(parseLineGeometry(JSON.stringify({ type: 'LineString', coordinates: [[-77, 38.9], [500, 1]] }))).toBeNull();
+  });
+});
+
+describe('polygon geometry', () => {
+  const ring = [{ lat: 0, lon: 0 }, { lat: 0, lon: 0.01 }, { lat: 0.01, lon: 0.01 }];
+
+  it('closes the ring when storing and opens it when reading', () => {
+    const json = polygonGeometry(ring);
+    expect(JSON.parse(json)).toEqual({ type: 'Polygon', coordinates: [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0]]] });
+    expect(parsePolygonGeometry(json)).toEqual(ring);
+  });
+
+  it('rejects fewer than 3 points, bad JSON, other types and invalid positions', () => {
+    expect(parsePolygonGeometry(JSON.stringify({ type: 'Polygon', coordinates: [[[0, 0], [0, 1], [0, 0]]] }))).toBeNull();
+    expect(parsePolygonGeometry('nope')).toBeNull();
+    expect(parsePolygonGeometry(JSON.stringify({ type: 'LineString', coordinates: [[0, 0], [1, 1]] }))).toBeNull();
+    expect(parsePolygonGeometry(JSON.stringify({ type: 'Polygon', coordinates: [[[0, 0], [0, 1], [500, 1], [0, 0]]] }))).toBeNull();
   });
 });
