@@ -33,7 +33,7 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         initialDetent={initialDetent}
         topReserved={insets.top + EDGE + TOOLBAR_HEIGHT + GAP}
         onFrameChange={setPanelFrame}>
-        <Component key={top.id} params={top.params as MenuParams<MenuId>} missionId={missionId} />
+        <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
       </Panel>
     </View>
   );

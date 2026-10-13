@@ -1,185 +1,152 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { AppState, type AppStateStatus } from "react-native";
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 
-import { placePoint } from "@/features/map-items/commands";
-import { createMission } from "@/features/missions/commands";
-import { getMissionCamera } from "@/features/missions/repository";
-import { INITIAL_DRAFT, useDraft } from "@/stores/draft";
-import { useInteraction } from "@/stores/interaction";
-import { INITIAL_MENU, useMenu } from "@/stores/menu";
-import { usePresence } from "@/stores/presence";
-import { makeTestContext } from "@/lib/db/test-database";
-import { mapboxMock } from "@/test-utils/mapbox-mock";
-import { renderWithProviders } from "@/test-utils/render";
+import { placePoint } from '@/features/map-items/commands';
+import { createMission } from '@/features/missions/commands';
+import { getMissionCamera } from '@/features/missions/repository';
+import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { useInteraction } from '@/stores/interaction';
+import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { usePresence } from '@/stores/presence';
+import { makeTestContext } from '@/lib/db/test-database';
+import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { renderWithProviders } from '@/test-utils/render';
 
-import { MapScreen } from "./MapScreen";
+import { MapScreen } from './MapScreen';
 
-jest.mock("@rnmapbox/maps");
+jest.mock('@rnmapbox/maps');
 
-let mockToken: string | null = "pk.test";
-jest.mock("@/config/env", () => ({ getMapboxToken: () => mockToken }));
+let mockToken: string | null = 'pk.test';
+jest.mock('@/config/env', () => ({ getMapboxToken: () => mockToken }));
 
-const mockRouter = {
-  push: jest.fn(),
-  replace: jest.fn(),
-  back: jest.fn(),
-  canGoBack: jest.fn(() => true),
-};
-jest.mock("expo-router", () => ({
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) };
+jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
-  useFocusEffect: (effect: () => void | (() => void)) =>
-    jest.requireActual("react").useEffect(effect, [effect]),
+  useFocusEffect: (effect: () => void | (() => void)) => jest.requireActual('react').useEffect(effect, [effect]),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockToken = "pk.test";
+  mockToken = 'pk.test';
   useMenu.setState(INITIAL_MENU);
   useDraft.setState(INITIAL_DRAFT);
 });
 
-describe("MapScreen", () => {
-  it("opens a mission on its map with the shell around it", async () => {
+describe('MapScreen', () => {
+  it('opens a mission on its map with the shell around it', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
 
-    expect(await screen.findByTestId("map-view")).toBeTruthy();
-    expect(screen.getByTestId("toolbar")).toBeTruthy();
-    expect(screen.getByTestId("readout-coordinate")).toBeTruthy();
-    expect(screen.getByLabelText("Recenter on me")).toBeTruthy();
+    expect(await screen.findByTestId('map-view')).toBeTruthy();
+    expect(screen.getByTestId('toolbar')).toBeTruthy();
+    expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
+    expect(screen.getByLabelText('Recenter on me')).toBeTruthy();
     expect(mapboxMock().__props.ShapeSource.points).toBeDefined();
     expect(mapboxMock().__props.ShapeSource.self).toBeDefined();
   });
 
-  it("pops a stale mission link back to the existing list", async () => {
+  it('pops a stale mission link back to the existing list', async () => {
     await renderWithProviders(<MapScreen missionId="deleted-or-unknown" />);
     await waitFor(() => expect(mockRouter.back).toHaveBeenCalled());
     expect(mockRouter.replace).not.toHaveBeenCalled();
-    expect(screen.queryByTestId("map-view")).toBeNull();
+    expect(screen.queryByTestId('map-view')).toBeNull();
   });
 
-  it("replaces with the list when a stale link is the stack root", async () => {
+  it('replaces with the list when a stale link is the stack root', async () => {
     mockRouter.canGoBack.mockReturnValue(false);
     await renderWithProviders(<MapScreen missionId="deleted-or-unknown" />);
-    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith("/"));
+    await waitFor(() => expect(mockRouter.replace).toHaveBeenCalledWith('/'));
     expect(mockRouter.back).not.toHaveBeenCalled();
     mockRouter.canGoBack.mockReturnValue(true);
   });
 
-  it("shows a setup error without a Mapbox token and goes back from it", async () => {
+  it('shows a setup error without a Mapbox token and goes back from it', async () => {
     mockToken = null;
     await renderWithProviders(<MapScreen missionId="any" />);
-    expect(screen.getByText("Mapbox token missing")).toBeTruthy();
-    await fireEvent.press(screen.getByRole("button"));
+    expect(screen.getByText('Mapbox token missing')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button'));
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it("opens the app menu from the toolbar and switches mission from it", async () => {
+  it('opens the app menu from the toolbar and switches mission from it', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await fireEvent.press(await screen.findByLabelText("Menu"));
-    await fireEvent.press(await screen.findByText("Switch mission"));
+    await fireEvent.press(await screen.findByLabelText('Menu'));
+    await fireEvent.press(await screen.findByText('Switch mission'));
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it("pads the camera and hides the readout while a panel is open", async () => {
+  it('pads the camera and hides the readout while a panel is open', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await screen.findByTestId("map-view");
+    await screen.findByTestId('map-view');
     mapboxMock().__camera.setCamera.mockClear();
 
-    await fireEvent.press(screen.getByLabelText("Menu"));
+    await fireEvent.press(screen.getByLabelText('Menu'));
     await waitFor(() =>
       expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(
-        expect.objectContaining({
-          padding: expect.objectContaining({
-            paddingBottom: expect.any(Number),
-          }),
-        }),
+        expect.objectContaining({ padding: expect.objectContaining({ paddingBottom: expect.any(Number) }) }),
       ),
     );
-    const padded = mapboxMock().__camera.setCamera.mock.calls.at(-1)?.[0] as {
-      padding: { paddingBottom: number };
-    };
+    const padded = mapboxMock().__camera.setCamera.mock.calls.at(-1)?.[0] as { padding: { paddingBottom: number } };
     expect(padded.padding.paddingBottom).toBeGreaterThan(0);
-    expect(screen.queryByTestId("readout-coordinate")).toBeNull();
+    expect(screen.queryByTestId('readout-coordinate')).toBeNull();
 
     await act(async () => useMenu.getState().closeMenu());
     await waitFor(() =>
       expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          padding: {
-            paddingTop: 0,
-            paddingRight: 0,
-            paddingBottom: 0,
-            paddingLeft: 0,
-          },
-        }),
+        expect.objectContaining({ padding: { paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } }),
       ),
     );
-    expect(screen.getByTestId("readout-coordinate")).toBeTruthy();
+    expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
   });
 
-  it("keeps the recenter zoom (follow effect does not override it)", async () => {
+  it('keeps the recenter zoom (follow effect does not override it)', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await screen.findByTestId("map-view");
+    await screen.findByTestId('map-view');
     await act(async () =>
-      usePresence
-        .getState()
-        .setSelfPosition({
-          position: { lat: 38.9, lon: -77 },
-          accuracyM: 5,
-          timestamp: 1,
-        }),
+      usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }),
     );
     mapboxMock().__camera.setCamera.mockClear();
-    await fireEvent.press(screen.getByLabelText("Recenter on me"));
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
     const calls = mapboxMock().__camera.setCamera.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    expect(calls[calls.length - 1][0]).toHaveProperty("zoomLevel");
+    expect(calls[calls.length - 1][0]).toHaveProperty('zoomLevel');
   });
 
-  describe("camera persistence", () => {
+  describe('camera persistence', () => {
     const state = (gesture: boolean) => ({
       properties: { center: [-77, 38.9], zoom: 11, heading: 10 },
       gestures: { isGestureActive: gesture },
     });
 
-    it("does not save an untouched camera", async () => {
+    it('does not save an untouched camera', async () => {
       const ctx = makeTestContext();
-      const r = await createMission(ctx, { name: "Op Iron" });
-      if (!r.ok) throw new Error("setup");
-      const { unmount } = await renderWithProviders(
-        <MapScreen missionId={r.value.id} />,
-        ctx,
-      );
-      await screen.findByTestId("map-view");
-      const { onMapIdle } = mapboxMock().__props.MapView.main as {
-        onMapIdle: (s: unknown) => void;
-      };
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const { unmount } = await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      const { onMapIdle } = mapboxMock().__props.MapView.main as { onMapIdle: (s: unknown) => void };
       await act(async () => onMapIdle(state(false)));
       await unmount();
       expect(await getMissionCamera(ctx.db, r.value.id)).toBeNull();
     });
 
-    it("saves a camera the user moved", async () => {
+    it('saves a camera the user moved', async () => {
       const ctx = makeTestContext();
-      const r = await createMission(ctx, { name: "Op Iron" });
-      if (!r.ok) throw new Error("setup");
-      const { unmount } = await renderWithProviders(
-        <MapScreen missionId={r.value.id} />,
-        ctx,
-      );
-      await screen.findByTestId("map-view");
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const { unmount } = await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
       const props = mapboxMock().__props.MapView.main as {
         onCameraChanged: (s: unknown) => void;
         onMapIdle: (s: unknown) => void;
@@ -188,121 +155,86 @@ describe("MapScreen", () => {
       await act(async () => props.onMapIdle(state(false)));
       await unmount();
       await waitFor(async () =>
-        expect(await getMissionCamera(ctx.db, r.value.id)).toEqual({
-          center: { lat: 38.9, lon: -77 },
-          zoom: 11,
-          bearing: 10,
-        }),
+        expect(await getMissionCamera(ctx.db, r.value.id)).toEqual({ center: { lat: 38.9, lon: -77 }, zoom: 11, bearing: 10 }),
       );
     });
 
-    it("saves the live camera when backgrounded before the map goes idle", async () => {
+    it('saves the live camera when backgrounded before the map goes idle', async () => {
       const listeners: ((s: AppStateStatus) => void)[] = [];
-      const spy = jest
-        .spyOn(AppState, "addEventListener")
-        .mockImplementation((_type, cb) => {
-          listeners.push(cb as (s: AppStateStatus) => void);
-          return { remove: jest.fn() };
-        });
+      const spy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, cb) => {
+        listeners.push(cb as (s: AppStateStatus) => void);
+        return { remove: jest.fn() };
+      });
       const ctx = makeTestContext();
-      const r = await createMission(ctx, { name: "Op Iron" });
-      if (!r.ok) throw new Error("setup");
-      const { unmount } = await renderWithProviders(
-        <MapScreen missionId={r.value.id} />,
-        ctx,
-      );
-      await screen.findByTestId("map-view");
-      const props = mapboxMock().__props.MapView.main as {
-        onCameraChanged: (s: unknown) => void;
-      };
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      const { unmount } = await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      const props = mapboxMock().__props.MapView.main as { onCameraChanged: (s: unknown) => void };
       await act(async () => props.onCameraChanged(state(true)));
       await act(async () => {
-        await new Promise((resolve) =>
-          requestAnimationFrame(() => resolve(null)),
-        );
+        await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
       });
       expect(useInteraction.getState().cameraZoom).toBe(11);
-      await act(async () => listeners.forEach((l) => l("background")));
+      await act(async () => listeners.forEach((l) => l('background')));
       await waitFor(async () =>
-        expect(await getMissionCamera(ctx.db, r.value.id)).toEqual({
-          center: { lat: 38.9, lon: -77 },
-          zoom: 11,
-          bearing: 10,
-        }),
+        expect(await getMissionCamera(ctx.db, r.value.id)).toEqual({ center: { lat: 38.9, lon: -77 }, zoom: 11, bearing: 10 }),
       );
       spy.mockImplementation(() => ({ remove: jest.fn() }));
       await unmount();
     });
   });
 
-  it("toggles Add Point from the toolbar", async () => {
+  it('toggles Add Point from the toolbar', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await fireEvent.press(await screen.findByLabelText("POINT"));
-    expect(await screen.findByRole("header")).toHaveTextContent("Add point");
-    expect(screen.getByLabelText("POINT")).toBeSelected();
-    await fireEvent.press(screen.getByLabelText("POINT"));
-    expect(screen.queryByTestId("menu-panel")).toBeNull();
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(screen.getByLabelText('POINT')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('POINT'));
+    expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it("long-press opens Add Point there, and a second long-press moves the draft and the map", async () => {
+  it('long-press opens Add Point there, and a second long-press moves the draft and the map', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await screen.findByTestId("map-view");
+    await screen.findByTestId('map-view');
     const longPress = (lon: number, lat: number) =>
       act(async () =>
-        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)(
-          {
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [lon, lat] },
-            properties: {},
-          },
-        ),
+        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: {},
+        }),
       );
 
     await longPress(-77.03, 38.9);
-    expect(await screen.findByRole("header")).toHaveTextContent("Add point");
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
     expect(useDraft.getState().coord).toEqual({ lat: 38.9, lon: -77.03 });
-    await fireEvent.changeText(screen.getByLabelText("Name"), "OBJ IRON");
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
 
     mapboxMock().__camera.setCamera.mockClear();
     await longPress(-77.1, 38.95);
-    expect(useDraft.getState()).toMatchObject({
-      coord: { lat: 38.95, lon: -77.1 },
-      name: "OBJ IRON",
-    });
-    expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(
-      expect.objectContaining({ centerCoordinate: [-77.1, 38.95] }),
-    );
+    expect(useDraft.getState()).toMatchObject({ coord: { lat: 38.95, lon: -77.1 }, name: 'OBJ IRON' });
+    expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ centerCoordinate: [-77.1, 38.95] }));
   });
 
-  it("opens Edit Point when a point is tapped", async () => {
+  it('opens Edit Point when a point is tapped', async () => {
     const ctx = makeTestContext();
-    const r = await createMission(ctx, { name: "Op Iron" });
-    if (!r.ok) throw new Error("setup");
-    const p = await placePoint(ctx, {
-      missionId: r.value.id,
-      coord: { lat: 38.9, lon: -77 },
-      sidc: "SHGPUCI--------",
-      name: "HOS-1",
-    });
-    if (!p.ok) throw new Error("setup");
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    await screen.findByTestId("map-view");
+    await screen.findByTestId('map-view');
     await act(async () =>
-      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)(
-        {
-          features: [{ properties: { id: p.value.id } }],
-          coordinates: {},
-          point: {},
-        },
-      ),
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    expect(await screen.findByRole("header")).toHaveTextContent("Edit point");
-    expect(await screen.findByDisplayValue("HOS-1")).toBeTruthy();
+    expect(await screen.findByRole('header')).toHaveTextContent('Edit point');
+    expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
   });
 });
