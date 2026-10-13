@@ -48,4 +48,20 @@ describe('layerRows', () => {
     expect(layerRows(items, [], 'infantry').rows.map((r) => r.id)).toEqual(['b']);
     expect(layerRows(items, [], 'brav').rows.map((r) => r.id)).toEqual(['c']);
   });
+
+
+  it('lists lines with their type and length, counts them, and searches their type', () => {
+    const lineItem = {
+      ...item('l', 'RED', null),
+      kind: 'line' as const,
+      style: '{"lineType":"phase-line"}',
+      geometry: JSON.stringify({ type: 'LineString', coordinates: [[-77, 38.9], [-77, 38.91]] }),
+    };
+    const rows = layerRows([item('a', 'CP-1', 'GFGPGPPK------X'), lineItem], [], '');
+    expect(rows).toMatchObject({ units: 0, points: 1, lines: 1, total: 2 });
+    const line = rows.rows.find((r) => r.id === 'l')!;
+    expect(line).toMatchObject({ kind: 'line', lineType: 'phase-line', coord: null });
+    expect(line.length).toBeGreaterThan(1000);
+    expect(layerRows([lineItem], [], 'phase').rows.map((r) => r.id)).toEqual(['l']);
+  });
 });

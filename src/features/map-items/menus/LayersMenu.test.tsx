@@ -8,7 +8,7 @@ import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { placePoint, setItemHidden } from '../commands';
+import { placeLine, placePoint, setItemHidden } from '../commands';
 import { observeHiddenItemIds } from '../repository';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
@@ -39,7 +39,7 @@ describe('LayersMenu', () => {
 
   it('explains an empty mission', async () => {
     await openLayers();
-    expect(screen.getByText('Nothing on the map yet. Use UNIT, POINT or long-press the map.')).toBeTruthy();
+    expect(screen.getByText('Nothing on the map yet. Use UNIT, POINT, LINE or long-press the map.')).toBeTruthy();
     expect(screen.getByLabelText('Show all')).toBeDisabled();
   });
 
@@ -52,15 +52,15 @@ describe('LayersMenu', () => {
     await setItemHidden(ctx, b.value.id, true);
     await openLayers(ctx);
 
-    expect(await screen.findByText('2 units · 0 points · 1 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 0 lines · 1 hidden')).toBeTruthy();
     expect(screen.queryByText('ELSEWHERE')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Hide HOS-1'));
     await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
-    expect(await screen.findByText('2 units · 0 points · 2 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 0 lines · 2 hidden')).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]));
-    expect(await screen.findByText('2 units · 0 points · 0 hidden')).toBeTruthy();
+    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 hidden')).toBeTruthy();
   });
 
   it('searches and caps long lists', async () => {
@@ -85,5 +85,17 @@ describe('LayersMenu', () => {
     await fireEvent.press(await screen.findByLabelText('HOS-1'));
     expect(topMenu(useMenu.getState())).toEqual({ id: 'unit.edit', params: { itemId: a.value.id } });
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+  });
+
+
+  it('shows a line row with its type and length, and opens the line when tapped', async () => {
+    const ctx = makeTestContext();
+    const r = await placeLine(ctx, { missionId: 'm1', points: [{ lat: 38.9, lon: -77 }, { lat: 38.91, lon: -77 }], lineType: 'phase-line', name: 'RED' });
+    if (!r.ok) throw new Error('setup');
+    await openLayers(ctx);
+    expect(await screen.findByText('0 units · 0 points · 1 line · 0 hidden')).toBeTruthy();
+    expect(screen.getByText('Phase line · 1.11 km')).toBeTruthy();
+    await fireEvent.press(screen.getByText('RED'));
+    await waitFor(() => expect(topMenu(useMenu.getState())).toEqual({ id: 'line.edit', params: { itemId: r.value.id } }));
   });
 });

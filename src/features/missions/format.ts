@@ -15,7 +15,8 @@ export function formatLastOpened(ts: number | null, now: number): string {
 
 const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
-/** "2 units · 1 point" (row) or "2 units and 1 point" (sentence). */
-export function formatCategoryCounts(c: { units: number; points: number }, joiner = ' · '): string {
-  return `${plural(c.units, 'unit')}${joiner}${plural(c.points, 'point')}`;
+/** "2 units · 1 point · 0 lines" (row) or, with ' and ', "2 units, 1 point and 0 lines" (sentence). */
+export function formatCategoryCounts(c: { units: number; points: number; lines: number }, joiner = ' · '): string {
+  const parts = [plural(c.units, 'unit'), plural(c.points, 'point'), plural(c.lines, 'line')];
+  return joiner === ' and ' ? `${parts[0]}, ${parts[1]} and ${parts[2]}` : parts.join(joiner);
 }
