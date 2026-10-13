@@ -37,6 +37,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   const name = useDraft((s) => s.name);
   const nameEdited = useDraft((s) => s.nameEdited);
   const notes = useDraft((s) => s.notes);
+  const locked = useDraft((s) => s.locked);
   const setCoord = useDraft((s) => s.setCoord);
   const setCoordInputValid = useDraft((s) => s.setCoordInputValid);
   const setAffiliation = useDraft((s) => s.setAffiliation);
@@ -95,13 +96,13 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   return (
     <View>
       <MenuSection label="MGRS · Zone / 100K / Easting / Northing">
-        <MgrsInput value={parts} onChange={onPartsChange} status={status} validDetail={validDetail} />
+        <MgrsInput value={parts} onChange={onPartsChange} status={status} validDetail={validDetail} disabled={locked} />
         <View className="flex-row gap-2">
           <View className="flex-1">
-            <MenuButton label="Center" icon={<CrosshairGlyph size={18} color={colors.text} />} onPress={toCrosshair} />
+            <MenuButton label="Center" icon={<CrosshairGlyph size={18} color={colors.text} />} onPress={toCrosshair} disabled={locked} />
           </View>
           <View className="flex-1">
-            <MenuButton label="Me" icon="crosshairs-gps" onPress={toMe} disabled={!self} />
+            <MenuButton label="Me" icon="crosshairs-gps" onPress={toMe} disabled={locked || !self} />
           </View>
         </View>
       </MenuSection>
@@ -114,17 +115,18 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
           }))}
           value={affiliation}
           onChange={setAffiliation}
+          disabled={locked}
         />
       </MenuSection>
       <MenuSection label="Name">
-        <MenuTextField mono accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        <MenuTextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <MenuSection label="Unit type">
         <View className="flex-row items-start gap-2">
-          <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} />
-          <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} />
+          <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
+          <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
-        {showNotes ? <MenuTextField accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
+        {showNotes ? <MenuTextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
       </MenuSection>
     </View>
   );

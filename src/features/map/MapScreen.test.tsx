@@ -194,9 +194,9 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('POINT'));
     await screen.findByDisplayValue('HOS-1');
     await fireEvent.press(screen.getByLabelText('Add'));
-    expect(await screen.findByText('Edit point')).toBeTruthy();
+    expect(await screen.findByRole('header')).toHaveTextContent('Point');
     const itemId = useDraft.getState().itemId;
-    expect(useDraft.getState().mode).toBe('edit');
+    expect(useDraft.getState()).toMatchObject({ mode: 'edit', locked: true });
     await waitFor(() => expect(mapboxMock().__props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([itemId!])));
   });
 
@@ -249,8 +249,28 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    expect(await screen.findByRole('header')).toHaveTextContent('Edit point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Point');
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+    expect(screen.getByLabelText('Name').props.editable).toBe(false);
+  });
+
+  it('long-press while viewing a point starts a new point there', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
+    );
+    await screen.findByDisplayValue('HOS-1');
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
+    );
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.95, lon: -77.1 } });
   });
 
   describe('camera padding during panel moves', () => {

@@ -124,7 +124,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   const onLongPress = (coord: LatLon) => {
     const current = topMenu(useMenu.getState())?.id;
-    if (current === 'point.add' || current === 'point.edit') useDraft.getState().setCoord(coord, 'press');
+    const viewing = current === 'point.edit' && useDraft.getState().locked;
+    if ((current === 'point.add' || current === 'point.edit') && !viewing) useDraft.getState().setCoord(coord, 'press');
     else useMenu.getState().openMenu('point.add', { at: coord });
   };
 

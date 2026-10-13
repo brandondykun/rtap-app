@@ -41,8 +41,16 @@ describe('DraftLayer', () => {
     expect(mapboxMock().__props.SymbolLayer['draft-label'].style).toBe(labelStyle);
   });
 
+  it('labels a selected point with its name only', async () => {
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    await renderWithProviders(<DraftLayer />);
+    const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
+    expect(shape.features[0].properties.label).toBe('FRD-2');
+  });
+
   it('labels an edit draft EDIT', async () => {
     useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    useDraft.getState().setLocked(false);
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
     expect(shape.features[0].properties.label).toBe('FRD-2 · EDIT');

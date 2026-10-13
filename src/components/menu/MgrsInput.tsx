@@ -14,6 +14,8 @@ type Props = {
   status: MgrsFieldStatus;
   /** Extra text after "Valid ·", e.g. range and bearing from the user. */
   validDetail?: string;
+  /** Read-only: the fields show the reference but cannot be edited. */
+  disabled?: boolean;
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
@@ -24,7 +26,7 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false }: Props) {
   const { colors } = useTheme();
   const square = useRef<TextInput>(null);
   const easting = useRef<TextInput>(null);
@@ -61,16 +63,16 @@ export function MgrsInput({ value, onChange, status, validDetail }: Props) {
       <View className="flex-row gap-2">
         {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
         <View style={{ width: ZONE_WIDTH }}>
-          <MenuTextField mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+          <MenuTextField editable={!disabled} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
-          <MenuTextField ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+          <MenuTextField editable={!disabled} ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
         <View style={{ flex: 1 }}>
-          <MenuTextField ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <MenuTextField editable={!disabled} ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <MenuTextField ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <MenuTextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
       </View>
       <View className="flex-row items-center gap-1">

@@ -19,6 +19,15 @@ import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repo
 import { PointForm } from './PointForm';
 
 const GONE = 'That point no longer exists.';
+
+/** Loads an item into the draft, selected and read-only. False when its geometry is unreadable. */
+function selectItem(item: MapItemSnapshot): boolean {
+  const at = pointCoord(item.geometry);
+  if (!at) return false;
+  const kind = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
+  useDraft.getState().startEdit({ itemId: item.id, coord: at, affiliation: kind.affiliation, unitType: kind.unitType, name: item.name, notes: item.notes ?? '' });
+  return true;
+}
 const NO_IDS: string[] = [];
 
 export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.edit'>) {
@@ -31,6 +40,8 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
   const coord = useDraft((s) => s.coord);
   const name = useDraft((s) => s.name);
   const coordInputValid = useDraft((s) => s.coordInputValid);
+  // Opens view-only; Edit unlocks the form, Save or Cancel locks it again.
+  const locked = useDraft((s) => s.locked);
   const started = useRef(false);
   // Set before we close or delete ourselves, so the item vanishing is not reported as "missing".
   const leaving = useRef(false);
@@ -47,13 +58,12 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
     }
     if (started.current) return;
     started.current = true;
-    const kind = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
-    useDraft.getState().startEdit({ itemId: item.id, coord: at, affiliation: kind.affiliation, unitType: kind.unitType, name: item.name, notes: item.notes ?? '' });
+    selectItem(item);
   }, [item, close]);
 
   useEffect(() => () => useDraft.getState().clear(), []);
 
-  const canSave = ready && coord !== null && coordInputValid && name.trim() !== '';
+  const canSave = ready && !locked && coord !== null && coordInputValid && name.trim() !== '';
 
   const save = async () => {
     if (busy.current || !canSave) return;
@@ -71,9 +81,9 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
       busy.current = false;
     }
     if (result.ok) {
-      leaving.current = true;
       notifySuccess();
-      close();
+      // Back to the view-only point; the draft already holds what was saved.
+      useDraft.getState().setLocked(true);
     } else if (result.error === 'not_found') {
       leaving.current = true;
       notifyError(GONE);
@@ -102,6 +112,11 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
     }
   };
 
+  /** Cancel editing: drop the changes and show the saved point again, read-only. */
+  const cancelEdit = () => {
+    if (item && !selectItem(item)) close();
+  };
+
   const setHidden = (hidden: boolean) => {
     void setItemHidden(ctx, params.itemId, hidden).then((result) => {
       if (!result.ok) notifyError('Could not change visibility.');
@@ -110,18 +125,26 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
 
   return (
     <View>
-      <MenuHeader
-        title="Edit point"
-        leading={{ label: 'Cancel', onPress: close }}
-        trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
-      />
+      {locked ? (
+        <MenuHeader
+          title="Point"
+          leading={{ label: 'Close', onPress: close }}
+          trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
+        />
+      ) : (
+        <MenuHeader
+          title="Edit point"
+          leading={{ label: 'Cancel', onPress: cancelEdit }}
+          trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
+        />
+      )}
       {ready ? (
         <>
           <PointForm missionId={missionId} mode="edit" />
           <MenuSection>
-            <MenuToggle label="Hidden on map" value={hiddenIds.includes(params.itemId)} onValueChange={setHidden} />
+            <MenuToggle label="Hidden on map" value={hiddenIds.includes(params.itemId)} onValueChange={setHidden} disabled={locked} />
           </MenuSection>
-          <MenuActions destructive={{ label: 'Delete point', confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
+          <MenuActions disabled={locked} destructive={{ label: 'Delete point', confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
         </>
       ) : null}
     </View>

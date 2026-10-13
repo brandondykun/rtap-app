@@ -338,8 +338,12 @@ lib/geo/
   Unspecified, Infantry, Armor, Reconnaissance, Medical, Engineer (2525C function IDs;
   2525C has no distinct "dismounted infantry" code, so the mockup's example maps to
   Infantry).
-- **Editing:** tapping a point opens `point.edit` — the same form component prefilled,
-  with **Save**, a hide toggle, and **Delete**.
+- **Editing:** tapping a point (or adding one) opens `point.edit` — the same form component
+  prefilled, **read-only** first: title "Point", **Close** and **Edit**, every field, the hide
+  toggle and **Delete** disabled, and long-press elsewhere starts a new point (user decision
+  2026-10-12: prevents accidental edits). **Edit** unlocks the form ("Edit point", **Cancel** and
+  **Save**); **Save** writes and returns to read-only; **Cancel** drops the changes and returns to
+  read-only.
 
 ### 8.6 Interaction stores
 - `interaction`: `selectedItemId`, `followMode`, `cameraCenter` (throttled),

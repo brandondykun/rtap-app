@@ -7,7 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 type Option<T extends string> = { value: T; label: string };
 
 /** Dropdown field that expands an inline list (no native picker), so it works inside the panel. */
-export function MenuSelect<T extends string>({ label, options, value, onChange }: { label: string; options: Option<T>[]; value: T; onChange: (value: T) => void }) {
+export function MenuSelect<T extends string>({ label, options, value, onChange, disabled = false }: { label: string; options: Option<T>[]; value: T; onChange: (value: T) => void; disabled?: boolean }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.value === value)?.label ?? '';
@@ -16,7 +16,8 @@ export function MenuSelect<T extends string>({ label, options, value, onChange }
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${current}`}
-        accessibilityState={{ expanded: open }}
+        accessibilityState={{ expanded: open, disabled }}
+        disabled={disabled}
         onPress={() => setOpen((o) => !o)}
         className="h-12 flex-row items-center justify-between rounded-xl border-2 border-border bg-surface-input px-3">
         <Text numberOfLines={1} className="shrink text-lg text-text">
@@ -24,7 +25,7 @@ export function MenuSelect<T extends string>({ label, options, value, onChange }
         </Text>
         <Icon name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors['text-muted']} />
       </Pressable>
-      {open ? (
+      {open && !disabled ? (
         <View className="mt-1 overflow-hidden rounded-xl border border-border bg-surface-raised">
           {options.map((option) => (
             <Pressable

@@ -29,6 +29,7 @@ export function DraftLayer() {
   const affiliation = useDraft((s) => s.affiliation);
   const unitType = useDraft((s) => s.unitType);
   const name = useDraft((s) => s.name);
+  const locked = useDraft((s) => s.locked);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
@@ -44,11 +45,12 @@ export function DraftLayer() {
     return draftFeatureCollection({
       coord,
       sidc: composeSidc(affiliation, unitType),
-      label: `${name.trim() || '…'} · ${mode === 'add' ? 'NEW' : 'EDIT'}`,
+      // A selected (view-only) point shows just its name; drafts being placed or edited are tagged.
+      label: locked ? name.trim() || '…' : `${name.trim() || '…'} · ${mode === 'add' ? 'NEW' : 'EDIT'}`,
       self,
       rangeLabel: v ? `${v.distanceLabel} · ${v.bearingLabel}` : null,
     });
-  }, [mode, coord, affiliation, unitType, name, self, angleUnit, northRef, declinationOverrideDeg]);
+  }, [mode, coord, affiliation, unitType, name, locked, self, angleUnit, northRef, declinationOverrideDeg]);
 
   return (
     <ShapeSource id="draft" shape={shape}>

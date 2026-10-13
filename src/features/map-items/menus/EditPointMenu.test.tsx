@@ -38,29 +38,66 @@ async function openEditor() {
 }
 
 describe('EditPointMenu', () => {
+  it('opens the selected point read-only with Close and Edit', async () => {
+    await openEditor();
+    expect(screen.getByRole('header')).toHaveTextContent('Point');
+    expect(screen.getByText('Close')).toBeTruthy();
+    expect(screen.getByLabelText('Edit')).toBeEnabled();
+    expect(screen.getByLabelText('Name').props.editable).toBe(false);
+    expect(screen.getByLabelText('Northing').props.editable).toBe(false);
+    expect(screen.getByLabelText('Hostile')).toBeDisabled();
+    expect(screen.getByLabelText('Center')).toBeDisabled();
+    expect(screen.getByLabelText('Hidden on map')).toBeDisabled();
+    expect(screen.getByLabelText('Delete point')).toBeDisabled();
+    expect(useDraft.getState().locked).toBe(true);
+  });
+
+  it('ignores long-press moves while read-only', async () => {
+    await openEditor();
+    await act(async () => useDraft.getState().setCoord(OTHER, 'press'));
+    expect(useDraft.getState().coord).toEqual(AT);
+  });
+
   it('opens prefilled from the item', async () => {
     await openEditor();
-    expect(screen.getByRole('header')).toHaveTextContent('Edit point');
     expect(screen.getByLabelText('Friendly')).toBeSelected();
     expect(screen.getByLabelText('Unit type: Armor')).toBeTruthy();
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(mgrsFieldsFor(AT).northing);
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', notes: 'hull down' });
   });
 
-  it('saves name and position, then closes', async () => {
+  it('Edit unlocks the form; Save writes and returns to the read-only view', async () => {
     const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    expect(screen.getByRole('header')).toHaveTextContent('Edit point');
+    expect(screen.getByText('Cancel')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Point'));
+    expect(useMenu.getState().stack).toHaveLength(1);
+    expect(screen.getByLabelText('Name').props.editable).toBe(false);
+    expect(screen.getByDisplayValue('OBJ IRON')).toBeTruthy();
     const item = await findItem(ctx.db, id);
     expect(item?.name).toBe('OBJ IRON');
     expect(pointCoord(item!.geometry)?.lat).toBeCloseTo(OTHER.lat, 3);
   });
 
+  it('Cancel drops unsaved changes and returns to the read-only view', async () => {
+    const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
+    await fireEvent.press(screen.getByText('Cancel'));
+    expect(screen.getByRole('header')).toHaveTextContent('Point');
+    expect(screen.getByDisplayValue('FRD-2')).toBeTruthy();
+    expect((await findItem(ctx.db, id))?.name).toBe('FRD-2');
+    expect(useMenu.getState().stack).toHaveLength(1);
+  });
+
   it('hides the item without closing', async () => {
     const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent(screen.getByLabelText('Hidden on map'), 'valueChange', true);
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([id]));
     expect(screen.getByTestId('menu-panel')).toBeTruthy();
@@ -68,6 +105,7 @@ describe('EditPointMenu', () => {
 
   it('deletes after a second tap, without a "missing" message', async () => {
     const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByText('Delete point'));
     expect(await findItem(ctx.db, id)).not.toBeNull();
     await fireEvent.press(screen.getByText('Tap again to delete'));

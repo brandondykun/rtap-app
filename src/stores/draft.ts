@@ -22,6 +22,8 @@ type DraftValues = {
   /** True once the user typed a name; auto-names never overwrite it. */
   nameEdited: boolean;
   notes: string;
+  /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
+  locked: boolean;
   /** Last affiliation and type used for adding (rapid entry, and the next time Add opens). */
   remembered: { affiliation: Affiliation; unitType: UnitType };
 };
@@ -36,6 +38,7 @@ type DraftActions = {
   setName: (name: string) => void;
   setAutoName: (name: string) => void;
   setNotes: (notes: string) => void;
+  setLocked: (locked: boolean) => void;
   clear: () => void;
 };
 
@@ -51,6 +54,7 @@ export const INITIAL_DRAFT: DraftValues = {
   name: '',
   nameEdited: false,
   notes: '',
+  locked: false,
   remembered: { affiliation: 'hostile', unitType: 'unspecified' },
 };
 
@@ -86,9 +90,11 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       name,
       nameEdited: true,
       notes,
+      // Selecting a point shows it read-only; the menu unlocks it on Edit.
+      locked: true,
     })),
   setCoord: (coord, source) =>
-    set((s) => (isValid(coord) ? { coord, coordSource: source, coordRev: s.coordRev + 1 } : {})),
+    set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1 } : {})),
   setCoordInputValid: (coordInputValid) => set({ coordInputValid }),
   setAffiliation: (affiliation) =>
     set((s) => ({
@@ -101,6 +107,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setName: (name) => set({ name, nameEdited: name.trim() !== '' }),
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
+  setLocked: (locked) => set({ locked }),
   clear: () =>
     set((s) => ({
       ...INITIAL_DRAFT,
