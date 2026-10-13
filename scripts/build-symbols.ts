@@ -26,13 +26,17 @@ const fill: Record<Affiliation, string> = {
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-const POINT_OUTLINE_PX = 2;
+/** milsymbol halo width for point symbols, in its drawing units. */
+const POINT_OUTLINE_WIDTH = 2;
 /** milsymbol line weight for point symbols (its default is 4); thicker reads better on imagery. */
 const POINT_STROKE_WIDTH = 10;
 /** milsymbol line weight for unit frames and icons (default 4). */
 const UNIT_STROKE_WIDTH = 6;
-/** The same line weight in px at @1x (milsymbol draws on a 100-unit grid scaled to SYMBOL_SIZE). */
-const POINT_LINE_PX = (POINT_STROKE_WIDTH * SYMBOL_SIZE) / 100;
+/** milsymbol units per px at @1x: it draws on a 100-unit grid scaled to SYMBOL_SIZE. */
+const PX_PER_UNIT = SYMBOL_SIZE / 100;
+/** The point line weight and its halo in px, so the hand-drawn LZ matches milsymbol's symbols. */
+const POINT_LINE_PX = POINT_STROKE_WIDTH * PX_PER_UNIT;
+const POINT_HALO_PX = POINT_OUTLINE_WIDTH * PX_PER_UNIT;
 
 function writePng(sidc: string, svg: string) {
   for (const scale of [1, 2, 3]) {
@@ -66,10 +70,10 @@ function landingZoneSvg(): string {
     `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="${width}"/>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-    stroke(colors['point-symbol-halo'], POINT_LINE_PX + 2 * POINT_OUTLINE_PX) +
+    stroke(colors['point-symbol-halo'], POINT_LINE_PX + 2 * POINT_HALO_PX) +
     stroke(colors['point-symbol'], POINT_LINE_PX) +
     `<text x="${c}" y="${c + 4.5}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" ` +
-    `fill="${colors['point-symbol']}" stroke="${colors['point-symbol-halo']}" stroke-width="${POINT_OUTLINE_PX}" paint-order="stroke">LZ</text>` +
+    `fill="${colors['point-symbol']}" stroke="${colors['point-symbol-halo']}" stroke-width="${2 * POINT_HALO_PX}" paint-order="stroke">LZ</text>` +
     `</svg>`
   );
 }
@@ -90,7 +94,7 @@ for (const type of POINT_TYPES) {
             monoColor: colors['point-symbol'],
             strokeWidth: POINT_STROKE_WIDTH,
             outlineColor: colors['point-symbol-halo'],
-            outlineWidth: POINT_OUTLINE_PX,
+            outlineWidth: POINT_OUTLINE_WIDTH,
           }),
         );
   writePng(type.sidc, svg);
