@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { MenuActions } from '@/components/menu/MenuActions';
@@ -6,37 +6,51 @@ import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
-import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
-import { composeSidc, decomposeSidc } from '@/features/symbology/presets';
+import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
+import { pointTypeForSidc } from '@/features/symbology/point-types';
+import { decomposeSidc } from '@/features/symbology/presets';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { useDraft } from '@/stores/draft';
 import { useMenu } from '@/stores/menu';
 
 import { deleteItem, setItemHidden, updateItem } from '../commands';
+import { draftSidc } from '../draft-sidc';
 import { pointCoord } from '../geometry';
 import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repository';
-import { PointForm } from './PointForm';
-
-const GONE = 'That point no longer exists.';
+import { ITEM_COPY, openItemMenu } from './item-menus';
 
 /** Loads an item into the draft, selected and read-only. False when its geometry is unreadable. */
 function selectItem(item: MapItemSnapshot): boolean {
   const at = pointCoord(item.geometry);
   if (!at) return false;
-  const kind = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
-  useDraft.getState().startEdit({ itemId: item.id, coord: at, category: 'unit', pointType: 'checkpoint', affiliation: kind.affiliation, unitType: kind.unitType, name: item.name, notes: item.notes ?? '' });
+  const unit = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
+  useDraft.getState().startEdit({
+    itemId: item.id,
+    coord: at,
+    category: itemCategory(item.sidc),
+    affiliation: unit.affiliation,
+    unitType: unit.unitType,
+    pointType: pointTypeForSidc(item.sidc) ?? 'checkpoint',
+    name: item.name,
+    notes: item.notes ?? '',
+  });
   return true;
 }
 const NO_IDS: string[] = [];
 
-export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.edit'>) {
+type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
+
+/** Unit / Point view: opens read-only; Edit unlocks the form, Save or Cancel locks it again. */
+export function EditItemPanel({ category, itemId, form }: Props) {
+  const { noun, title } = ITEM_COPY[category];
+  const GONE = `That ${noun} no longer exists.`;
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
   // undefined = still loading; null = missing or deleted.
-  const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, params.itemId), undefined, [ctx, params.itemId]);
+  const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, itemId), undefined, [ctx, itemId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
-  const ready = useDraft((s) => s.mode === 'edit' && s.itemId === params.itemId);
+  const ready = useDraft((s) => s.mode === 'edit' && s.itemId === itemId);
   const coord = useDraft((s) => s.coord);
   const name = useDraft((s) => s.name);
   const coordInputValid = useDraft((s) => s.coordInputValid);
@@ -56,10 +70,16 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
       close();
       return;
     }
+    // Opened in the other category's menu (a stale link): hand over to the right one.
+    if (itemCategory(item.sidc) !== category) {
+      leaving.current = true;
+      openItemMenu(item.id, item.sidc);
+      return;
+    }
     if (started.current) return;
     started.current = true;
     selectItem(item);
-  }, [item, close]);
+  }, [item, close, category, GONE]);
 
   useEffect(() => () => useDraft.getState().clear(), []);
 
@@ -71,25 +91,25 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
     const d = useDraft.getState();
     let result;
     try {
-      result = await updateItem(ctx, params.itemId, {
+      result = await updateItem(ctx, itemId, {
         coord: d.coord!,
         name: d.name,
         notes: d.notes.trim() || null,
-        sidc: composeSidc(d.affiliation, d.unitType),
+        sidc: draftSidc(d),
       });
     } finally {
       busy.current = false;
     }
     if (result.ok) {
       notifySuccess();
-      // Back to the view-only point; the draft already holds what was saved.
+      // Back to the view-only item; the draft already holds what was saved.
       useDraft.getState().setLocked(true);
     } else if (result.error === 'not_found') {
       leaving.current = true;
       notifyError(GONE);
       close();
     } else {
-      notifyError(result.error === 'invalid_name' ? 'Enter a name.' : 'Could not save the point.');
+      notifyError(result.error === 'invalid_name' ? 'Enter a name.' : `Could not save the ${noun}.`);
     }
   };
 
@@ -99,7 +119,7 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
     leaving.current = true;
     let result;
     try {
-      result = await deleteItem(ctx, params.itemId);
+      result = await deleteItem(ctx, itemId);
     } finally {
       busy.current = false;
     }
@@ -108,17 +128,17 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
       close();
     } else {
       leaving.current = false;
-      notifyError('Could not delete the point.');
+      notifyError(`Could not delete the ${noun}.`);
     }
   };
 
-  /** Cancel editing: drop the changes and show the saved point again, read-only. */
+  /** Cancel editing: drop the changes and show the saved item again, read-only. */
   const cancelEdit = () => {
     if (item && !selectItem(item)) close();
   };
 
   const setHidden = (hidden: boolean) => {
-    void setItemHidden(ctx, params.itemId, hidden).then((result) => {
+    void setItemHidden(ctx, itemId, hidden).then((result) => {
       if (!result.ok) notifyError('Could not change visibility.');
     });
   };
@@ -127,28 +147,26 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
     <View>
       {locked ? (
         <MenuHeader
-          title="Point"
+          title={title}
           leading={{ label: 'Close', onPress: close }}
           trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
         />
       ) : (
         <MenuHeader
-          title="Edit point"
+          title={`Edit ${noun}`}
           leading={{ label: 'Cancel', onPress: cancelEdit }}
           trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
         />
       )}
       {ready ? (
         <>
-          <PointForm missionId={missionId} mode="edit" />
+          {form}
           <MenuSection>
-            <MenuToggle label="Hidden on map" value={hiddenIds.includes(params.itemId)} onValueChange={setHidden} disabled={locked} />
+            <MenuToggle label="Hidden on map" value={hiddenIds.includes(itemId)} onValueChange={setHidden} disabled={locked} />
           </MenuSection>
-          <MenuActions disabled={locked} destructive={{ label: 'Delete point', confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
+          <MenuActions disabled={locked} destructive={{ label: `Delete ${noun}`, confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
         </>
       ) : null}
     </View>
   );
 }
-
-export const editPointMenu = defineMenu({ id: 'point.edit', family: 'action', title: 'Edit point', detents: ['peek', 'half', 'full'], component: EditPointMenu });

@@ -83,7 +83,7 @@ describe('LayersMenu', () => {
     await setItemHidden(ctx, a.value.id, true);
     await openLayers(ctx);
     await fireEvent.press(await screen.findByLabelText('HOS-1'));
-    expect(topMenu(useMenu.getState())).toEqual({ id: 'point.edit', params: { itemId: a.value.id } });
+    expect(topMenu(useMenu.getState())).toEqual({ id: 'unit.edit', params: { itemId: a.value.id } });
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
   });
 });

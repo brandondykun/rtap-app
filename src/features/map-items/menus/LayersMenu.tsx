@@ -19,6 +19,7 @@ import { useSettings, type Basemap } from '@/stores/settings';
 import { setItemHidden, setItemsHidden } from '../commands';
 import { layerRows } from '../layer-rows';
 import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '../repository';
+import { openItemMenu } from './item-menus';
 
 const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'satellite', label: 'Satellite' },
@@ -34,7 +35,6 @@ const count = (n: number) => n.toLocaleString('en-US');
 export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
-  const openMenu = useMenu((s) => s.openMenu);
   const basemap = useSettings((s) => s.basemap);
   const setBasemap = useSettings((s) => s.setBasemap);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -82,7 +82,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             leading={<Image source={SYMBOL_IMAGES[row.sidc]} style={{ width: 28, height: 20 }} resizeMode="contain" />}
             onPress={() => {
               Keyboard.dismiss();
-              openMenu('point.edit', { itemId: row.id });
+              openItemMenu(row.id, row.sidc);
             }}
             trailing={{
               icon: row.hidden ? 'eye-off-outline' : 'eye-outline',

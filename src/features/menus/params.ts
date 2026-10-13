@@ -10,8 +10,8 @@ export const MENU_PARAMS = {
   'app.root': z.object({}),
   settings: z.object({}),
   layers: z.object({}),
-  'point.add': z.object({ at: latLon.optional() }),
-  'point.edit': z.object({ itemId: z.string().min(1) }),
+  'unit.add': z.object({ at: latLon.optional() }),
+  'unit.edit': z.object({ itemId: z.string().min(1) }),
 } as const;
 
 export type MenuId = keyof typeof MENU_PARAMS;

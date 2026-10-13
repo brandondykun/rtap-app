@@ -6,7 +6,7 @@ import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { useToast } from '@/stores/toast';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { AddPointMenu } from './AddPointMenu';
+import { AddUnitMenu } from './AddUnitMenu';
 
 jest.mock('../commands', () => ({
   ...jest.requireActual('../commands'),
@@ -21,10 +21,10 @@ beforeEach(() => {
 });
 
 it('shows a toast and an error haptic when the point cannot be saved', async () => {
-  await renderWithProviders(<AddPointMenu params={{}} missionId="m1" />);
+  await renderWithProviders(<AddUnitMenu params={{}} missionId="m1" />);
   await screen.findByDisplayValue('HOS-1');
   await fireEvent.press(screen.getByLabelText('Add'));
-  await waitFor(() => expect(useToast.getState().toast?.message).toBe('Could not add the point.'));
+  await waitFor(() => expect(useToast.getState().toast?.message).toBe('Could not add the unit.'));
   expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
   expect(screen.getByDisplayValue('HOS-1')).toBeTruthy();
 });

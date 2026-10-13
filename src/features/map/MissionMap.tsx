@@ -135,8 +135,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else useMenu.getState().openMenu('layers', {});
   };
   const togglePoint = () => {
-    if (topId === 'point.add') useMenu.getState().closeMenu();
-    else useMenu.getState().openMenu('point.add', {});
+    if (topId === 'unit.add') useMenu.getState().closeMenu();
+    else useMenu.getState().openMenu('unit.add', {});
   };
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
@@ -146,15 +146,15 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
       notifySelected();
-      useMenu.getState().openMenu('point.edit', { itemId });
+      useMenu.getState().openMenu('unit.edit', { itemId });
     }
   };
   const onLongPress = (coord: LatLon) => {
     notifyPlaced();
     const current = topMenu(useMenu.getState())?.id;
-    const viewing = current === 'point.edit' && useDraft.getState().locked;
-    if ((current === 'point.add' || current === 'point.edit') && !viewing) useDraft.getState().setCoord(coord, 'press');
-    else useMenu.getState().openMenu('point.add', { at: coord });
+    const viewing = current === 'unit.edit' && useDraft.getState().locked;
+    if ((current === 'unit.add' || current === 'unit.edit') && !viewing) useDraft.getState().setCoord(coord, 'press');
+    else useMenu.getState().openMenu('unit.add', { at: coord });
   };
 
   const onUserGesture = () => {
@@ -203,7 +203,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={topId === 'point.add' ? 'point' : topId === 'layers' ? 'layers' : null}
+        activeTool={topId === 'unit.add' ? 'point' : topId === 'layers' ? 'layers' : null}
         onPoint={togglePoint}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}

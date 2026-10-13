@@ -12,7 +12,7 @@ import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { observeMissionItems } from '../repository';
-import { AddPointMenu } from './AddPointMenu';
+import { AddUnitMenu } from './AddUnitMenu';
 
 const CENTER = { lat: 38.8977, lon: -77.0365 };
 const OTHER = { lat: 38.95, lon: -77.1 };
@@ -24,18 +24,18 @@ beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useInteraction.setState(INITIAL_INTERACTION);
   useInteraction.getState().setCamera({ center: CENTER, zoom: 14, bearing: 0 });
-  useMenu.getState().openMenu('point.add', {});
+  useMenu.getState().openMenu('unit.add', {});
 });
 
 async function open(ctx = makeTestContext()) {
-  await renderWithProviders(<AddPointMenu params={{}} missionId="m1" />, ctx);
+  await renderWithProviders(<AddUnitMenu params={{}} missionId="m1" />, ctx);
   await screen.findByDisplayValue('HOS-1');
   return ctx;
 }
 
 const items = (ctx: ReturnType<typeof makeTestContext>) => firstValueFrom(observeMissionItems(ctx.db, 'm1'));
 
-describe('AddPointMenu', () => {
+describe('AddUnitMenu', () => {
   it('starts at the crosshair with an auto name', async () => {
     await open();
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(mgrsFieldsFor(CENTER).northing);
@@ -50,7 +50,7 @@ describe('AddPointMenu', () => {
     const [item] = await items(ctx);
     expect(item).toMatchObject({ name: 'HOS-1', sidc: composeSidc('hostile', 'unspecified') });
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
-    expect(useMenu.getState().stack).toEqual([{ id: 'point.edit', params: { itemId: item.id } }]);
+    expect(useMenu.getState().stack).toEqual([{ id: 'unit.edit', params: { itemId: item.id } }]);
   });
 
   it('adds only one point when Add is tapped twice', async () => {

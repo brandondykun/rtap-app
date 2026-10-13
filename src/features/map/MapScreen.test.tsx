@@ -196,7 +196,7 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('POINT'));
     await screen.findByDisplayValue('HOS-1');
     await fireEvent.press(screen.getByLabelText('Add'));
-    expect(await screen.findByRole('header')).toHaveTextContent('Point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Unit');
     const itemId = useDraft.getState().itemId;
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', locked: true });
     await waitFor(() => expect(mapboxMock().__props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([itemId!])));
@@ -240,7 +240,7 @@ describe('MapScreen', () => {
         point: {},
       }),
     );
-    expect(screen.getByRole('header')).toHaveTextContent('Add point');
+    expect(screen.getByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.9001, lon: -77.0001 } });
   });
 
@@ -284,7 +284,7 @@ describe('MapScreen', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('POINT'));
-    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(screen.getByLabelText('POINT')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('POINT'));
     expect(screen.queryByTestId('menu-panel')).toBeNull();
@@ -306,7 +306,7 @@ describe('MapScreen', () => {
       );
 
     await longPress(-77.03, 38.9);
-    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
     expect(useDraft.getState().coord).toEqual({ lat: 38.9, lon: -77.03 });
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
@@ -328,7 +328,7 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    expect(await screen.findByRole('header')).toHaveTextContent('Point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Unit');
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
     expect(screen.getByLabelText('Name').props.editable).toBe(false);
   });
@@ -348,7 +348,7 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
     );
-    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.95, lon: -77.1 } });
   });
 
@@ -409,7 +409,7 @@ describe('MapScreen', () => {
           properties: {},
         }),
       );
-      expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+      expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
       await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77.03, 38.9]));
       expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);
     });

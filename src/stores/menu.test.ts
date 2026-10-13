@@ -5,8 +5,8 @@ beforeEach(() => useMenu.setState(INITIAL_MENU));
 describe('menu store', () => {
   it('opens a menu, replacing the stack', () => {
     useMenu.getState().openMenu('settings', {});
-    useMenu.getState().openMenu('point.edit', { itemId: 'a' });
-    expect(useMenu.getState().stack).toEqual([{ id: 'point.edit', params: { itemId: 'a' } }]);
+    useMenu.getState().openMenu('unit.edit', { itemId: 'a' });
+    expect(useMenu.getState().stack).toEqual([{ id: 'unit.edit', params: { itemId: 'a' } }]);
   });
 
   it('pushes and goes back', () => {
@@ -26,15 +26,15 @@ describe('menu store', () => {
     expect(useMenu.getState().stack).toEqual([]);
   });
 
-  it('accepts an optional press coordinate for point.add', () => {
-    expect(useMenu.getState().openMenu('point.add', { at: { lat: 38.9, lon: -77 } })).toBe(true);
-    expect(useMenu.getState().openMenu('point.add', {})).toBe(true);
+  it('accepts an optional press coordinate for unit.add', () => {
+    expect(useMenu.getState().openMenu('unit.add', { at: { lat: 38.9, lon: -77 } })).toBe(true);
+    expect(useMenu.getState().openMenu('unit.add', {})).toBe(true);
   });
 
   it.each([
-    ['point.edit', { itemId: '' }],
-    ['point.add', { at: { lat: 95, lon: 0 } }],
-    ['point.edit', {}],
+    ['unit.edit', { itemId: '' }],
+    ['unit.add', { at: { lat: 95, lon: 0 } }],
+    ['unit.edit', {}],
   ] as const)('rejects invalid params for %s and keeps the stack', (id, params) => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     useMenu.getState().openMenu('settings', {});

@@ -32,15 +32,15 @@ async function openEditor() {
   const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2', notes: 'hull down' });
   if (!r.ok) throw new Error('setup');
   await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
-  await act(async () => useMenu.getState().openMenu('point.edit', { itemId: r.value.id }));
+  await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
   await screen.findByDisplayValue('FRD-2');
   return { ctx, id: r.value.id };
 }
 
-describe('EditPointMenu', () => {
+describe('EditUnitMenu', () => {
   it('opens the selected point read-only with Close and Edit', async () => {
     await openEditor();
-    expect(screen.getByRole('header')).toHaveTextContent('Point');
+    expect(screen.getByRole('header')).toHaveTextContent('Unit');
     expect(screen.getByText('Close')).toBeTruthy();
     expect(screen.getByLabelText('Edit')).toBeEnabled();
     expect(screen.getByLabelText('Name').props.editable).toBe(false);
@@ -48,7 +48,7 @@ describe('EditPointMenu', () => {
     expect(screen.getByLabelText('Hostile')).toBeDisabled();
     expect(screen.getByLabelText('Center')).toBeDisabled();
     expect(screen.getByLabelText('Hidden on map')).toBeDisabled();
-    expect(screen.getByLabelText('Delete point')).toBeDisabled();
+    expect(screen.getByLabelText('Delete unit')).toBeDisabled();
     expect(useDraft.getState().locked).toBe(true);
   });
 
@@ -69,13 +69,13 @@ describe('EditPointMenu', () => {
   it('Edit unlocks the form; Save writes and returns to the read-only view', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));
-    expect(screen.getByRole('header')).toHaveTextContent('Edit point');
+    expect(screen.getByRole('header')).toHaveTextContent('Edit unit');
     expect(screen.getByText('Cancel')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Point'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
     expect(useMenu.getState().stack).toHaveLength(1);
     expect(screen.getByLabelText('Name').props.editable).toBe(false);
     expect(screen.getByDisplayValue('OBJ IRON')).toBeTruthy();
@@ -89,7 +89,7 @@ describe('EditPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     await fireEvent.press(screen.getByText('Cancel'));
-    expect(screen.getByRole('header')).toHaveTextContent('Point');
+    expect(screen.getByRole('header')).toHaveTextContent('Unit');
     expect(screen.getByDisplayValue('FRD-2')).toBeTruthy();
     expect((await findItem(ctx.db, id))?.name).toBe('FRD-2');
     expect(useMenu.getState().stack).toHaveLength(1);
@@ -106,7 +106,7 @@ describe('EditPointMenu', () => {
   it('deletes after a second tap, without a "missing" message', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));
-    await fireEvent.press(screen.getByText('Delete point'));
+    await fireEvent.press(screen.getByText('Delete unit'));
     expect(await findItem(ctx.db, id)).not.toBeNull();
     await fireEvent.press(screen.getByText('Tap again to delete'));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
@@ -120,7 +120,7 @@ describe('EditPointMenu', () => {
       await deleteItem(ctx, id);
     });
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
-    expect(useToast.getState().toast?.message).toBe('That point no longer exists.');
+    expect(useToast.getState().toast?.message).toBe('That unit no longer exists.');
   });
 
   it('closes with a message, writing nothing, when the stored geometry is unreadable', async () => {
@@ -136,9 +136,9 @@ describe('EditPointMenu', () => {
     const before = await findItem(ctx.db, r.value.id);
 
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
-    await act(async () => useMenu.getState().openMenu('point.edit', { itemId: r.value.id }));
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
-    expect(useToast.getState().toast?.message).toBe('That point no longer exists.');
+    expect(useToast.getState().toast?.message).toBe('That unit no longer exists.');
     expect(useDraft.getState().mode).toBeNull();
     expect(await findItem(ctx.db, r.value.id)).toEqual(before);
     expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]);
@@ -146,9 +146,9 @@ describe('EditPointMenu', () => {
 
   it('closes with a message for an unknown item', async () => {
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />);
-    await act(async () => useMenu.getState().openMenu('point.edit', { itemId: 'nope' }));
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: 'nope' }));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
-    expect(useToast.getState().toast?.message).toBe('That point no longer exists.');
+    expect(useToast.getState().toast?.message).toBe('That unit no longer exists.');
     expect(useDraft.getState().mode).toBeNull();
   });
 
@@ -156,8 +156,18 @@ describe('EditPointMenu', () => {
     const { ctx } = await openEditor();
     const b = await placePoint(ctx, { missionId: 'm1', coord: OTHER, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-9' });
     if (!b.ok) throw new Error('setup');
-    await act(async () => useMenu.getState().openMenu('point.edit', { itemId: b.value.id }));
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: b.value.id }));
     await screen.findByDisplayValue('HOS-9');
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: b.value.id });
+  });
+
+  // enabled in Task 5 (point.edit exists then)
+  it.skip('opens a point in the point menu instead', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: 'GFGPGPPK------X', name: 'CP-1' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await waitFor(() => expect(useMenu.getState().stack).toEqual([{ id: 'point.edit', params: { itemId: r.value.id } }]));
   });
 });

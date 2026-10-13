@@ -1,5 +1,5 @@
-import { addPointMenu } from '@/features/map-items/menus/AddPointMenu';
-import { editPointMenu } from '@/features/map-items/menus/EditPointMenu';
+import { addUnitMenu } from '@/features/map-items/menus/AddUnitMenu';
+import { editUnitMenu } from '@/features/map-items/menus/EditUnitMenu';
 import { layersMenu } from '@/features/map-items/menus/LayersMenu';
 
 import type { MenuDefinition } from './define-menu';
@@ -13,7 +13,7 @@ export type MenuRegistry = { [I in MenuId]: MenuDefinition<I> };
 export const MENU_REGISTRY: MenuRegistry = {
   'app.root': appRootMenu,
   layers: layersMenu,
-  'point.add': addPointMenu,
-  'point.edit': editPointMenu,
   settings: settingsMenu,
+  'unit.add': addUnitMenu,
+  'unit.edit': editUnitMenu,
 };
