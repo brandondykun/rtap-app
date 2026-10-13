@@ -10,6 +10,7 @@ import { MenuListItem } from './MenuListItem';
 import { MenuRow } from './MenuRow';
 import { MenuSection } from './MenuSection';
 import { MenuToggle } from './MenuToggle';
+import { MenuVertexRow } from './MenuVertexRow';
 
 describe('menu primitives', () => {
   it('MenuHeader shows the title and runs both actions', async () => {
@@ -114,5 +115,21 @@ describe('menu primitives', () => {
     await fireEvent.press(screen.getByLabelText('HOS-1'));
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('HOS-1').props.accessibilityHint).toBe('Hidden · 18S UJ 1 2');
+  });
+
+  it('MenuVertexRow: row, remove and insert are separate targets; remove can be disabled', async () => {
+    const onPress = jest.fn();
+    const onRemove = jest.fn();
+    const onInsertAfter = jest.fn();
+    await renderWithProviders(
+      <MenuVertexRow number={2} title="18S UJ 24250 07313" detail="+0.75 km" selected onPress={onPress} onRemove={onRemove} onInsertAfter={onInsertAfter} removeDisabled />,
+    );
+    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Insert after point 2'));
+    expect(onInsertAfter).toHaveBeenCalled();
+    expect(screen.getByLabelText('Remove point 2')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Point 2'));
+    expect(onPress).toHaveBeenCalled();
+    expect(onRemove).not.toHaveBeenCalled();
   });
 });

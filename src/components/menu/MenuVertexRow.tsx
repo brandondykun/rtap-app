@@ -1,0 +1,59 @@
+import { Pressable, Text, View } from 'react-native';
+
+import { Icon } from '@/components/ui/Icon';
+import { useTheme } from '@/theme/ThemeProvider';
+
+type Props = {
+  number: number;
+  title: string;
+  detail: string;
+  selected?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+  onRemove: () => void;
+  removeDisabled?: boolean;
+  /** Shown on the selected row: the next added point goes right after this one. */
+  onInsertAfter?: () => void;
+};
+
+/** One point of a line: number badge, grid, distance from the previous point, remove (×). */
+export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter }: Props) {
+  const { colors } = useTheme();
+  return (
+    <View className={`rounded-xl border px-3 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'}`}>
+      <View className="flex-row items-center gap-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Point ${number}`}
+          accessibilityState={{ selected, disabled }}
+          disabled={disabled}
+          onPress={onPress}
+          className="flex-1 flex-row items-center gap-3">
+          <View className={`h-7 w-7 items-center justify-center rounded-full ${selected ? 'bg-accent' : 'bg-text'}`}>
+            <Text className="font-bold text-surface-input">{number}</Text>
+          </View>
+          <Text numberOfLines={1} className="shrink font-mono text-base text-text">
+            {title}
+          </Text>
+          <Text className={`ml-auto font-mono text-sm ${selected ? 'text-accent' : 'text-text-muted'}`}>{detail}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Remove point ${number}`}
+          accessibilityState={{ disabled: disabled || removeDisabled }}
+          disabled={disabled || removeDisabled}
+          onPress={onRemove}
+          hitSlop={8}
+          className={disabled || removeDisabled ? 'opacity-30' : ''}>
+          <Icon name="close" size={20} color={colors['text-muted']} />
+        </Pressable>
+      </View>
+      {selected && onInsertAfter && !disabled ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={`Insert after point ${number}`} onPress={onInsertAfter} className="mt-2 flex-row items-center gap-2 self-start">
+          <Icon name="plus" size={16} color={colors.accent} />
+          <Text className="text-sm font-semibold text-accent">Insert after</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}

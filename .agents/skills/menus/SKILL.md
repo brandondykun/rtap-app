@@ -12,7 +12,7 @@ description: Use whenever you add or change a menu, panel content, or anything o
    `MenuComponentProps<'<id>'>` (`params`, `missionId`). Compose only
    `src/components/menu/*`: `MenuHeader`, `MenuSection`, `MenuRow`, `MenuButton`,
    `MenuToggle`, `TextField` (shared, in `src/components/ui`), `MenuSegmented`, `MenuSelect`, `MenuActions`, `MenuListItem`,
-   `MgrsInput`.
+   `MenuVertexRow` (one point of a line), `MgrsInput`.
    No raw colors, no new one-off controls — add a primitive instead.
 3. **Definition** — in the same file:
    `export const xMenu = defineMenu({ id, family, title, detents, component })`.
