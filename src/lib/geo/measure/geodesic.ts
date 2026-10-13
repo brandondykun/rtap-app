@@ -19,3 +19,10 @@ export function destination(p: LatLon, azimuthTrue: number, distanceM: number): 
   const r = WGS84.Direct(p.lat, p.lon, azimuthTrue, distanceM);
   return { lat: r.lat2 as number, lon: r.lon2 as number };
 }
+
+/** Point halfway along the geodesic from a to b (a when they coincide). */
+export function midpoint(a: LatLon, b: LatLon): LatLon {
+  const { distanceM, azimuthTrue } = inverse(a, b);
+  if (azimuthTrue === null) return a;
+  return destination(a, azimuthTrue, distanceM / 2);
+}

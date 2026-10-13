@@ -111,3 +111,27 @@ export async function toggleItemVisibility(
     return err('write_failed', String(e));
   }
 }
+
+/** Sets per-device visibility (local-only view state). Showing an item with no view state is a no-op. */
+export async function setItemHidden(ctx: CommandContext, id: string, hidden: boolean): Promise<Result<void, 'write_failed'>> {
+  try {
+    await ctx.db.write(async () => {
+      const existing = await findItemViewState(ctx.db, id);
+      if (existing) {
+        if (existing.hidden !== hidden) {
+          await existing.update((s) => {
+            s.hidden = hidden;
+          });
+        }
+      } else if (hidden) {
+        await ctx.db.get<ItemViewState>(Tables.itemViewState).create((s) => {
+          s.mapItemId = id;
+          s.hidden = true;
+        });
+      }
+    });
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}

@@ -40,6 +40,15 @@ export function observeMissionItems(db: Database, missionId: string): Observable
     .pipe(map((items) => items.map(snapshot)));
 }
 
+/** One item as a snapshot; null when it does not exist or was deleted. */
+export function observeItem(db: Database, id: string): Observable<MapItemSnapshot | null> {
+  return db
+    .get<MapItem>(Tables.mapItems)
+    .query(Q.where('id', id))
+    .observeWithColumns(['geometry', 'sidc', 'name', 'notes', 'updated_at'])
+    .pipe(map((items) => (items[0] ? snapshot(items[0]) : null)));
+}
+
 export function observeHiddenItemIds(db: Database): Observable<string[]> {
   return db
     .get<ItemViewState>(Tables.itemViewState)

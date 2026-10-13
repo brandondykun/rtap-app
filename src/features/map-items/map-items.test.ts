@@ -2,9 +2,16 @@ import { firstValueFrom } from 'rxjs';
 
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { deleteItem, placePoint, toggleItemVisibility, updateItem } from './commands';
+import { deleteItem, placePoint, setItemHidden, toggleItemVisibility, updateItem } from './commands';
 import { pointCoord } from './geometry';
-import { findItem, getMissionItemNames, observeHiddenItemIds, observeMissionItems, suggestPointName } from './repository';
+import {
+  findItem,
+  getMissionItemNames,
+  observeHiddenItemIds,
+  observeItem,
+  observeMissionItems,
+  suggestPointName,
+} from './repository';
 
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };
@@ -124,5 +131,26 @@ describe('map items', () => {
     expect(await findItem(ctx.db, r.value.id)).toBeNull();
     expect(await updateItem(ctx, r.value.id, { name: 'B' })).toMatchObject({ ok: false, error: 'not_found' });
     expect(await deleteItem(ctx, r.value.id)).toMatchObject({ ok: false, error: 'not_found' });
+  });
+
+  it('observes one item and reports null once it is deleted', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!r.ok) throw new Error('setup');
+    expect((await firstValueFrom(observeItem(ctx.db, r.value.id)))?.name).toBe('HOS-1');
+    await deleteItem(ctx, r.value.id);
+    expect(await firstValueFrom(observeItem(ctx.db, r.value.id))).toBeNull();
+    expect(await firstValueFrom(observeItem(ctx.db, 'nope'))).toBeNull();
+  });
+
+  it('sets visibility explicitly', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!r.ok) throw new Error('setup');
+    await setItemHidden(ctx, r.value.id, true);
+    await setItemHidden(ctx, r.value.id, true);
+    expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([r.value.id]);
+    await setItemHidden(ctx, r.value.id, false);
+    expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]);
   });
 });
