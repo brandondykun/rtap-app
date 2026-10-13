@@ -44,7 +44,12 @@ export const useMenu = create<MenuValues & MenuActions>()((set, get) => ({
   },
   back: () => set({ stack: get().stack.slice(0, -1) }),
   closeMenu: () => set({ stack: [] }),
-  setPanelFrame: (panelFrame) => set({ panelFrame }),
+  setPanelFrame: (panelFrame) => {
+    // Ignore an identical frame: subscribers (the map's camera padding) must not re-render for no change.
+    const current = get().panelFrame;
+    if (current === panelFrame || (current && panelFrame && current.side === panelFrame.side && current.size === panelFrame.size)) return;
+    set({ panelFrame });
+  },
 }));
 
 export function topMenu(state: { stack: MenuEntry[] }): MenuEntry | null {

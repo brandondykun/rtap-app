@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { useSelfLocation } from '@/features/location/use-self-location';
@@ -23,7 +24,7 @@ import { ReadoutCard } from './controls/ReadoutCard';
 import { Crosshair } from './interaction/Crosshair';
 import { PointsLayer } from './layers/PointsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
+import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
 
 const EASE = { animationMode: 'easeTo' as const };
 
@@ -54,6 +55,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     saver.touch();
   }, [saver]);
   useSelfLocation();
+  const panel = useMenu((s) => s.panelFrame);
+  // Pad the camera only when the panel frame changes (not on mount).
+  const appliedPanel = useRef<PanelFrame | null>(null);
+  useEffect(() => {
+    if (panel === appliedPanel.current) return;
+    appliedPanel.current = panel;
+    cameraRef.current?.setCamera({ padding: cameraPaddingFor(panel), ...EASE, animationDuration: 250 });
+  }, [panel]);
 
   useEffect(() => () => useInteraction.getState().reset(), []);
   useEffect(
@@ -110,6 +119,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         cameraRef={cameraRef}
         initialCamera={initialCamera}
         landscape={landscape}
+        panel={panel}
         onCameraIdle={(camera) => {
           if (cameraMoved.current) saver.schedule(camera);
         }}
@@ -117,7 +127,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <PointsLayer missionId={missionId} />
         <SelfLayer />
       </MapCanvas>
-      <Crosshair />
+      <Crosshair panel={panel} />
       <Toolbar landscape={landscape} activeTool={null} onMenu={() => useMenu.getState().openMenu('app.root', {})} />
       <MapControls
         following={followMode}
@@ -126,9 +136,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
+        panel={panel}
       />
-      <ReadoutCard />
-      <LocationBanner landscape={landscape} />
+      {panel ? null : <ReadoutCard />}
+      {panel ? null : <LocationBanner landscape={landscape} />}
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />
     </View>

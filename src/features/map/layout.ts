@@ -1,3 +1,5 @@
+import type { PanelFrame } from '@/components/menu/panel-geometry';
+
 /** Spacing and sizes for map chrome (toolbar, controls, readout, Mapbox ornaments), in points. */
 export const EDGE = 12;
 export const GAP = 8;
@@ -53,11 +55,23 @@ export function bannerTop(landscape: boolean): number {
  * `insets` are added to the margins. Mapbox on iOS already measures ornament margins from the
  * safe area, so pass zero insets there.
  */
-export function ornamentPositions({ landscape, insets }: { landscape: boolean; insets: Insets }) {
-  const left = insets.left + EDGE;
+export function ornamentPositions({ landscape, insets, leftOffset = 0 }: { landscape: boolean; insets: Insets; leftOffset?: number }) {
+  const left = insets.left + EDGE + leftOffset;
   const top = insets.top + ornamentRowTop(landscape);
   return {
     attribution: { top: top - attributionRaise(landscape), left },
     logo: { top, left: left + ATTRIBUTION_WIDTH },
+  };
+}
+
+export type CameraPadding = { paddingTop: number; paddingRight: number; paddingBottom: number; paddingLeft: number };
+
+/** Camera padding equal to the panel's area, so the camera center is the visible map's center. */
+export function cameraPaddingFor(panel: PanelFrame | null): CameraPadding {
+  return {
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: panel?.side === 'bottom' ? panel.size : 0,
+    paddingLeft: panel?.side === 'left' ? panel.size : 0,
   };
 }

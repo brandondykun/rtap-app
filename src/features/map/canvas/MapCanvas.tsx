@@ -3,6 +3,7 @@ import { useEffect, useMemo, type ReactNode, type Ref } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { PanelFrame } from '@/components/menu/panel-geometry';
 import type { MissionCamera } from '@/features/missions/repository';
 import { useInteraction } from '@/stores/interaction';
 
@@ -22,13 +23,21 @@ type Props = {
   /** Called while the user drags/pinches the map (turns follow mode off). */
   onUserGesture: () => void;
   landscape: boolean;
+  panel: PanelFrame | null;
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, landscape, children }: Props) {
+export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, landscape, panel, children }: Props) {
   const insets = useSafeAreaInsets();
   // Mapbox on iOS measures ornament margins from the safe area already.
-  const ornaments = ornamentPositions({ landscape, insets: Platform.OS === 'ios' ? NO_INSETS : insets });
+  // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
+  // width counts from the screen edge, the ornament margin from the safe area: subtract the inset.
+  const leftOffset = panel?.side === 'left' ? Math.max(0, panel.size - insets.left) : 0;
+  const ornaments = ornamentPositions({
+    landscape,
+    insets: Platform.OS === 'ios' ? NO_INSETS : insets,
+    leftOffset,
+  });
   const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
 
   useEffect(() => {

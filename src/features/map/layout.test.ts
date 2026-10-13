@@ -2,6 +2,7 @@ import {
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
   bannerTop,
+  cameraPaddingFor,
   EDGE,
   GAP,
   isLandscape,
@@ -51,5 +52,17 @@ describe('map layout', () => {
       expect(bannerTop(landscape)).toBeGreaterThanOrEqual(ornamentRowTop(landscape) + LOGO_ROW_HEIGHT);
       expect(bannerTop(landscape)).toBeGreaterThanOrEqual(EDGE + TOOLBAR_HEIGHT + GAP);
     }
+  });
+
+  it('pads the camera by the panel area', () => {
+    expect(cameraPaddingFor(null)).toEqual({ paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 });
+    expect(cameraPaddingFor({ side: 'bottom', size: 320 })).toMatchObject({ paddingBottom: 320, paddingLeft: 0 });
+    expect(cameraPaddingFor({ side: 'left', size: 400 })).toMatchObject({ paddingLeft: 400, paddingBottom: 0 });
+  });
+
+  it('shifts the logo row right by an offset', () => {
+    const p = ornamentPositions({ landscape: true, insets: NO_INSETS, leftOffset: 400 });
+    expect(p.attribution.left).toBe(EDGE + 400);
+    expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
   });
 });

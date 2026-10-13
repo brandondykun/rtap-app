@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { useInteraction } from '@/stores/interaction';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -14,10 +15,11 @@ type Props = {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onRecenter: () => void;
+  panel: PanelFrame | null;
 };
 
 /** Right-edge controls: north-up under the toolbar; zoom and recenter at the bottom. */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter }: Props) {
+export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   return (
@@ -27,12 +29,17 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
           <NorthNeedle />
         </MapButton>
       </View>
-      <View className="absolute gap-3" style={{ bottom: insets.bottom + EDGE, right }}>
-        <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
-          <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
-          <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
-          <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
-        </View>
+      <View
+        testID="map-controls-bottom"
+        className="absolute gap-3"
+        style={{ bottom: (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE, right }}>
+        {panel ? null : (
+          <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
+            <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
+            <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
+            <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
+          </View>
+        )}
         <MapButton
           label="Recenter on me"
           icon="crosshairs-gps"

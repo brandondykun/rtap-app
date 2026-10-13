@@ -77,6 +77,33 @@ describe('MapScreen', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
+  it('pads the camera and hides the readout while a panel is open', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    mapboxMock().__camera.setCamera.mockClear();
+
+    await fireEvent.press(screen.getByLabelText('Menu'));
+    await waitFor(() =>
+      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(
+        expect.objectContaining({ padding: expect.objectContaining({ paddingBottom: expect.any(Number) }) }),
+      ),
+    );
+    const padded = mapboxMock().__camera.setCamera.mock.calls.at(-1)?.[0] as { padding: { paddingBottom: number } };
+    expect(padded.padding.paddingBottom).toBeGreaterThan(0);
+    expect(screen.queryByTestId('readout-coordinate')).toBeNull();
+
+    await act(async () => useMenu.getState().closeMenu());
+    await waitFor(() =>
+      expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(
+        expect.objectContaining({ padding: { paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } }),
+      ),
+    );
+    expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
+  });
+
   it('keeps the recenter zoom (follow effect does not override it)', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

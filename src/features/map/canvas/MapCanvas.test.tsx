@@ -29,6 +29,7 @@ async function renderCanvas(overrides: Partial<Parameters<typeof MapCanvas>[0]> 
     onCameraIdle: jest.fn(),
     onUserGesture: jest.fn(),
     landscape: false,
+    panel: null,
     ...overrides,
   };
   await renderWithProviders(
@@ -49,6 +50,12 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Images.main.images).toBe(MAP_IMAGES);
     expect(mapboxMock().__props.MapView.main.compassEnabled).toBe(false);
     expect(mapboxMock().__props.MapView.main.scaleBarEnabled).toBe(false);
+  });
+
+  it('keeps the Mapbox logo row right of a left drawer', async () => {
+    await renderCanvas({ panel: { side: 'left', size: 400 } });
+    const logo = mapboxMock().__props.MapView.main.logoPosition as { left: number };
+    expect(logo.left).toBeGreaterThan(400);
   });
 
   it('seeds the interaction store with the initial camera', async () => {
