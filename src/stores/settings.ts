@@ -20,6 +20,8 @@ type SettingsValues = {
   /** The GPS toolbar toggle: show the user's position and altitude top-left. */
   showGps: boolean;
   altitudeUnit: AltitudeUnit;
+  /** Distance chips between the points of the line being viewed or edited. */
+  showLineDistances: boolean;
 };
 
 type SettingsActions = {
@@ -29,6 +31,7 @@ type SettingsActions = {
   setBasemap: (basemap: Basemap) => void;
   toggleShowGps: () => void;
   setAltitudeUnit: (unit: AltitudeUnit) => void;
+  setShowLineDistances: (show: boolean) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -45,6 +48,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   basemap: 'satellite',
   showGps: false,
   altitudeUnit: 'm',
+  showLineDistances: true,
 };
 
 const syncStorage: StateStorage = {
@@ -73,6 +77,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     basemap: pick(p.basemap, BASEMAPS, current.basemap),
     showGps: typeof p.showGps === 'boolean' ? p.showGps : current.showGps,
     altitudeUnit: pick(p.altitudeUnit, ['m', 'ft'], current.altitudeUnit),
+    showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
   };
 }
 
@@ -86,6 +91,7 @@ export const useSettings = create<SettingsState>()(
       setBasemap: (basemap) => set({ basemap }),
       toggleShowGps: () => set({ showGps: !get().showGps }),
       setAltitudeUnit: (altitudeUnit) => set({ altitudeUnit }),
+      setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -98,7 +104,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, showGps, altitudeUnit }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, showGps, altitudeUnit, showLineDistances }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -106,6 +112,7 @@ export const useSettings = create<SettingsState>()(
         basemap,
         showGps,
         altitudeUnit,
+        showLineDistances,
       }),
     },
   ),

@@ -32,4 +32,11 @@ describe('draftLineFeatures', () => {
     expect(flot.features.find((f) => f.properties.role === 'line')!.properties.decoration).toBe('flot-arcs');
     expect(flot.features.some((f) => f.properties.role === 'end')).toBe(false);
   });
+
+
+  it('leaves out the distance chips when distances are off', () => {
+    const fc = draftLineFeatures({ vertices: [p(0), p(1), p(2)], selected: null, lineType: 'phase-line', name: 'RED', showDistances: false });
+    expect(fc.features.some((f) => f.properties.role === 'segment')).toBe(false);
+    expect(fc.features.filter((f) => f.properties.role === 'vertex')).toHaveLength(3);
+  });
 });

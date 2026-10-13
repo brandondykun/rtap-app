@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
+import { MenuToggle } from '@/components/menu/MenuToggle';
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
@@ -31,6 +32,7 @@ export function LineForm() {
   const insertAfter = useDraft((s) => s.insertAfter);
   const locked = useDraft((s) => s.locked);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
+  const showDistances = useSettings((s) => s.showLineDistances);
   const [parts, setParts] = useState<MgrsParts>(EMPTY_MGRS);
   const [showNotes, setShowNotes] = useState(notes !== '');
   const status = evaluateMgrsFields(parts);
@@ -81,6 +83,8 @@ export function LineForm() {
           />
         ))}
         {blocked ? <Text className="text-sm text-text-muted">A line needs at least 2 points</Text> : null}
+        {/* A display preference, not part of the line: it works while viewing too. */}
+        <MenuToggle label="Distances on map" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
       </MenuSection>
       {locked ? null : (
         <MenuSection label={moving ? `Move point ${selected! + 1}` : 'New point'}>

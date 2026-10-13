@@ -1,6 +1,7 @@
 import { act } from '@testing-library/react-native';
 
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -8,7 +9,10 @@ import { DraftLineLayer } from './DraftLineLayer';
 
 jest.mock('@rnmapbox/maps');
 
-beforeEach(() => useDraft.setState(INITIAL_DRAFT));
+beforeEach(() => {
+  useDraft.setState(INITIAL_DRAFT);
+  useSettings.setState(DEFAULT_SETTINGS);
+});
 
 describe('DraftLineLayer', () => {
   it('draws the draft and selects a vertex when its marker is tapped', async () => {
@@ -48,5 +52,16 @@ describe('DraftLineLayer', () => {
     await renderWithProviders(<DraftLineLayer />);
     const props = mapboxMock().__props;
     for (const id of ['draft-line-arrow', 'draft-line-flot']) expect(props.SymbolLayer[id]).toBeDefined();
+  });
+
+
+  it('hides the distance chips when the setting is off', async () => {
+    useSettings.getState().setShowLineDistances(false);
+    useDraft.getState().startAddLine();
+    useDraft.getState().addVertex({ lat: 38.9, lon: -77 });
+    useDraft.getState().addVertex({ lat: 38.91, lon: -77 });
+    await renderWithProviders(<DraftLineLayer />);
+    const shape = mapboxMock().__props.ShapeSource['draft-line'].shape as { features: { properties: { role: string } }[] };
+    expect(shape.features.some((f) => f.properties.role === 'segment')).toBe(false);
   });
 });

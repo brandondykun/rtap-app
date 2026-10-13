@@ -103,4 +103,12 @@ describe('settings store', () => {
       expect(useSettings.getState().coordinateFormat).toBe('mgrs');
     });
   });
+
+
+  it('shows line distances by default, and toggles and persists them', () => {
+    expect(useSettings.getState().showLineDistances).toBe(true);
+    useSettings.getState().setShowLineDistances(false);
+    expect(useSettings.getState().showLineDistances).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state.showLineDistances).toBe(false);
+  });
 });

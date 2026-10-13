@@ -4,6 +4,7 @@ import { MenuHost } from '@/features/menus/MenuHost';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { useToast } from '@/stores/toast';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -19,6 +20,7 @@ beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
   useMenu.setState(INITIAL_MENU);
   useToast.setState({ toast: null });
+  useSettings.setState(DEFAULT_SETTINGS);
 });
 
 async function openEditor() {
@@ -87,5 +89,14 @@ describe('EditLineMenu', () => {
     expect(screen.queryByText('A line needs at least 2 points')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Edit'));
     expect(screen.getByText('A line needs at least 2 points')).toBeTruthy();
+  });
+
+
+  it('toggles distances on the map even while only viewing', async () => {
+    await openEditor();
+    const toggle = screen.getByLabelText('Distances on map');
+    expect(toggle).not.toBeDisabled();
+    await fireEvent(toggle, 'valueChange', false);
+    expect(useSettings.getState().showLineDistances).toBe(false);
   });
 });

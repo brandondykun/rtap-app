@@ -2,6 +2,7 @@ import { LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { useDraft } from '@/stores/draft';
+import { useSettings } from '@/stores/settings';
 import type { LatLon } from '@/lib/geo/types';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -31,7 +32,11 @@ export function DraftLineLayer({ onVertexPress, onPress }: { onVertexPress?: (in
   const selected = useDraft((s) => s.selectedVertex);
   const lineType = useDraft((s) => s.lineType);
   const name = useDraft((s) => s.name);
-  const shape = useMemo(() => draftLineFeatures({ vertices, selected, lineType, name }), [vertices, selected, lineType, name]);
+  const showDistances = useSettings((s) => s.showLineDistances);
+  const shape = useMemo(
+    () => draftLineFeatures({ vertices, selected, lineType, name, showDistances }),
+    [vertices, selected, lineType, name, showDistances],
+  );
   const styles = useMemo(
     () => ({
       halo: makeLineHaloStyle(colors),
