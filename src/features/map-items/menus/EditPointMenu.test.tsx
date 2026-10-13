@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { composeSidc } from '@/features/symbology/presets';
+import type { MapItem } from '@/lib/db/models/MapItem';
+import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
@@ -81,6 +83,27 @@ describe('EditPointMenu', () => {
     });
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
     expect(useToast.getState().toast?.message).toBe('That point no longer exists.');
+  });
+
+  it('closes with a message, writing nothing, when the stored geometry is unreadable', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    await ctx.db.write(async () => {
+      const record = await ctx.db.get<MapItem>(Tables.mapItems).find(r.value.id);
+      await record.update((m) => {
+        m.geometry = 'not geojson';
+      });
+    });
+    const before = await findItem(ctx.db, r.value.id);
+
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('point.edit', { itemId: r.value.id }));
+    await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
+    expect(useToast.getState().toast?.message).toBe('That point no longer exists.');
+    expect(useDraft.getState().mode).toBeNull();
+    expect(await findItem(ctx.db, r.value.id)).toEqual(before);
+    expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]);
   });
 
   it('closes with a message for an unknown item', async () => {
