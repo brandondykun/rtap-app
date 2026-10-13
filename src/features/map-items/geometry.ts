@@ -29,3 +29,29 @@ export function pointCoord(json: string): LatLon | null {
   const g = parsePointGeometry(json);
   return g ? { lat: g.coordinates[1], lon: g.coordinates[0] } : null;
 }
+
+export type LineGeometry = { type: 'LineString'; coordinates: [number, number][] };
+
+export function lineGeometry(points: LatLon[]): string {
+  return JSON.stringify({ type: 'LineString', coordinates: points.map((p) => [p.lon, p.lat]) });
+}
+
+/** The line's points, or null for bad JSON, another geometry, an invalid position or fewer than 2 points. */
+export function parseLineGeometry(json: string): LatLon[] | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  const g = value as Partial<LineGeometry> | null;
+  if (!g || g.type !== 'LineString' || !Array.isArray(g.coordinates) || g.coordinates.length < 2) return null;
+  const points: LatLon[] = [];
+  for (const c of g.coordinates) {
+    if (!Array.isArray(c) || c.length < 2) return null;
+    const p = { lat: Number(c[1]), lon: Number(c[0]) };
+    if (!isValidLatLon(p)) return null;
+    points.push(p);
+  }
+  return points;
+}
