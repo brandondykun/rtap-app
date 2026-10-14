@@ -77,4 +77,10 @@ describe('QuickPlotEntry', () => {
     expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
     expect(screen.getByLabelText('Northing').props.onSubmitEditing).toBeUndefined();
   });
+
+  it.each([[false], [true]])('puts the clear button right of Plot (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.filter((l) => ['Plot', 'Clear grid'].includes(l))).toEqual(['Plot', 'Clear grid']);
+  });
 });

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Keyboard, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
+import { MapButton } from '@/features/map/controls/MapButton';
 import { EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { describeVector } from '@/lib/geo/vector';
@@ -16,6 +16,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 const LANDSCAPE_WIDTH = 520;
+const PORTRAIT_MARGIN = 6;
 
 /** Zone and 100 km square of the crosshair (most quick plots are nearby); empty before the map has a center. */
 function prefill(): MgrsParts {
@@ -40,8 +41,10 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   const status = evaluateMgrsFields(parts);
   const v = status.status === 'valid' && self ? describeVector(self, status.coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
   const validDetail = v ? `${v.distanceLabel} @ ${v.bearingLabel} ${v.refLabel} from you` : undefined;
-  const full = width - insets.left - insets.right - 2 * EDGE;
-  const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, full) : full;
+  // Portrait uses slimmer side margins than the map's usual edge so the four fields get more room.
+  const cardWidth = landscape
+    ? Math.min(LANDSCAPE_WIDTH, width - insets.left - insets.right - 2 * EDGE)
+    : width - insets.left - insets.right - 2 * PORTRAIT_MARGIN;
   const valid = status.status === 'valid';
 
   const plot = () => {
@@ -54,6 +57,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
     setGeneration((g) => g + 1);
   };
 
+  const clearButton = <MapButton grouped label="Clear grid" icon="close-circle-outline" onPress={clear} />;
   const plotButton = (
     <Pressable
       accessibilityRole="button"
@@ -81,11 +85,16 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
               autoFocus={generation === 0 && parts.square ? 'easting' : 'zone'}
             />
           </View>
-          <MenuButton label="Clear grid" icon="close" iconOnly onPress={clear} />
-          {/* Landscape: Plot beside the fields, above the (tall) keyboard. iOS's number pad has no Go key. */}
+          {/* Landscape: Plot (then Clear) beside the fields, above the tall keyboard. */}
           {landscape ? plotButton : null}
+          {landscape ? clearButton : null}
         </View>
-        {landscape ? null : plotButton}
+        {landscape ? null : (
+          <View className="flex-row items-center gap-1">
+            <View className="flex-1">{plotButton}</View>
+            {clearButton}
+          </View>
+        )}
       </View>
     </View>
   );
