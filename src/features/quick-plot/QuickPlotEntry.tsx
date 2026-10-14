@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Keyboard, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
-import { MapButton } from '@/features/map/controls/MapButton';
 import { EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { describeVector } from '@/lib/geo/vector';
@@ -78,11 +78,10 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
               onChange={setParts}
               status={status}
               validDetail={validDetail}
-              onSubmit={plot}
               autoFocus={generation === 0 && parts.square ? 'easting' : 'zone'}
             />
           </View>
-          <MapButton grouped label="Clear grid" icon="close-circle-outline" onPress={clear} />
+          <MenuButton label="Clear grid" icon="close" iconOnly onPress={clear} />
           {/* Landscape: Plot beside the fields, above the (tall) keyboard. iOS's number pad has no Go key. */}
           {landscape ? plotButton : null}
         </View>

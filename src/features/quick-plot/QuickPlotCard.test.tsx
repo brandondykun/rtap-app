@@ -53,4 +53,11 @@ describe('QuickPlotCard', () => {
     expect(row.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
     for (const label of ['Discard', 'Save unit', 'Save point']) expect(row.getByLabelText(label)).toBeTruthy();
   });
+
+
+  it.each([[false], [true]])('puts the trash button after Save unit and Save point (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.filter((l) => ['Discard', 'Save unit', 'Save point'].includes(l))).toEqual(['Save unit', 'Save point', 'Discard']);
+  });
 });

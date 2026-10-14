@@ -70,4 +70,11 @@ describe('QuickPlotEntry', () => {
     await renderWithProviders(<QuickPlotEntry landscape />);
     expect(within(screen.getByTestId('quick-plot-row')).getByLabelText('Plot')).toBeTruthy();
   });
+
+
+  it('has no keyboard Done bar: Plot is the only way to plot', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
+    expect(screen.getByLabelText('Northing').props.onSubmitEditing).toBeUndefined();
+  });
 });

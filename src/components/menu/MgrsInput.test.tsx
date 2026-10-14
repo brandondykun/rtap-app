@@ -76,4 +76,13 @@ describe('MgrsInput', () => {
     // No crash on backspace in an empty field (focus moves natively; checked on device).
     await fireEvent(screen.getByLabelText('Easting'), 'keyPress', { nativeEvent: { key: 'Backspace' } });
   });
+
+
+  it('offers the return key only when the form submits on it', async () => {
+    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} />);
+    expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
+    screen.unmount();
+    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} onSubmit={jest.fn()} />);
+    expect(screen.getByLabelText('Northing')).toHaveProp('returnKeyType', 'done');
+  });
 });

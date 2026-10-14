@@ -16,7 +16,7 @@ type Props = {
   validDetail?: string;
   /** Read-only: the fields show the reference but cannot be edited. */
   disabled?: boolean;
-  /** Return in the northing field (e.g. add the typed point). */
+  /** Return in the northing field (e.g. add the typed point). Without it there is no return key (no iOS Done bar). */
   onSubmit?: () => void;
   /** Focus this field once on mount (quick plot). */
   autoFocus?: 'zone' | 'easting';
@@ -102,7 +102,7 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
           <TextField editable={!disabled} ref={easting} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
+          <TextField editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
         </View>
       </View>
       {status.status === 'valid' || status.status === 'invalid' ? (

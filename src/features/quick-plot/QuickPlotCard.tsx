@@ -61,17 +61,17 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
           // Landscape: one compact line.
           <View testID="quick-plot-card-row" className="flex-row items-center gap-2">
             <View className="flex-1">{grid}</View>
-            {discard}
             <View style={{ width: 140 }}>{saveUnit}</View>
             <View style={{ width: 150 }}>{savePoint}</View>
+            {discard}
           </View>
         ) : (
           <>
             {grid}
             <View className="flex-row gap-2">
-              {discard}
               <View className="flex-1">{saveUnit}</View>
               <View className="flex-1">{savePoint}</View>
+              {discard}
             </View>
           </>
         )}
