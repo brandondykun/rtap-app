@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AppState, type AppStateStatus } from 'react-native';
 
+import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { placeLine, placePoint, placePolygon } from '@/features/map-items/commands';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
@@ -9,6 +10,7 @@ import { getMissionCamera } from '@/features/missions/repository';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
+import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
@@ -35,6 +37,7 @@ beforeEach(() => {
   useMenu.setState(INITIAL_MENU);
   useDraft.setState(INITIAL_DRAFT);
   useMeasure.setState(INITIAL_MEASURE);
+  useQuickPlot.setState(INITIAL_QUICK_PLOT);
   usePresence.setState(INITIAL_PRESENCE);
 });
 
@@ -477,6 +480,62 @@ describe('MapScreen', () => {
     await tap(-77.01, 38.95);
     expect(useDraft.getState().coord).toEqual({ lat: 38.95, lon: -77.01 });
     expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
+  });
+
+  describe('quick plot', () => {
+    async function openMap() {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 0 }));
+    }
+    const plotGrid = async (p: { lat: number; lon: number }) => {
+      const g = mgrsFieldsFor(p);
+      await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
+      await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
+      await fireEvent.press(screen.getByLabelText('Plot'));
+    };
+
+    it('PLOT closes a menu, plots a temporary point, moves the map, and Save point opens Add point there', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('LAYERS'));
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      expect(useMenu.getState().stack).toEqual([]);
+      expect(screen.getByTestId('quick-plot-entry')).toBeTruthy();
+      expect(screen.getByLabelText('PLOT')).toBeSelected();
+      mapboxMock().__camera.setCamera.mockClear();
+      await plotGrid({ lat: 38.91, lon: -77 });
+      expect(screen.queryByTestId('quick-plot-entry')).toBeNull();
+      expect(screen.getByTestId('quick-plot-card')).toBeTruthy();
+      const temp = useQuickPlot.getState().temp!;
+      const moved = mapboxMock().__camera.setCamera.mock.calls.map((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate);
+      expect(moved).toContainEqual([temp.lon, temp.lat]);
+      await fireEvent.press(screen.getByLabelText('Save point'));
+      await waitFor(() => expect(useMenu.getState().stack).toEqual([{ id: 'point.add', params: { at: temp } }]));
+      expect(useDraft.getState().coord).toEqual(temp);
+      expect(screen.queryByTestId('quick-plot-card')).toBeNull();
+    });
+
+    it('ends on a map tap while entering, and when Layers opens or MEASURE starts', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      await act(async () =>
+        (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77, 38.9] }, properties: {} }),
+      );
+      expect(screen.queryByTestId('quick-plot-entry')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      await plotGrid({ lat: 38.91, lon: -77 });
+      await fireEvent.press(screen.getByLabelText('LAYERS'));
+      expect(useQuickPlot.getState().temp).toBeNull();
+      await fireEvent.press(screen.getByLabelText('LAYERS'));
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      await plotGrid({ lat: 38.91, lon: -77 });
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      expect(useQuickPlot.getState().temp).toBeNull();
+      expect(screen.queryByTestId('quick-plot-card')).toBeNull();
+    });
   });
 
   describe('measure', () => {

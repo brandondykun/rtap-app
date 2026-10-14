@@ -86,4 +86,14 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('POLYGON'));
     expect(onPolygon).toHaveBeenCalled();
   });
+
+  it('ends with PLOT after LAYERS and marks it active', async () => {
+    const onPlot = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool="plot" onLayers={jest.fn()} onPlot={onPlot} />);
+    const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(labels.filter((l) => ['LAYERS', 'PLOT'].includes(l))).toEqual(['LAYERS', 'PLOT']);
+    expect(screen.getByLabelText('PLOT')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('PLOT'));
+    expect(onPlot).toHaveBeenCalled();
+  });
 });
