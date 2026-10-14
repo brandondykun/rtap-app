@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 
 import { formatCoordinate } from '@/features/map/interaction/readout';
+import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { renderWithProviders } from '@/test-utils/render';
@@ -32,5 +33,11 @@ describe('QuickPlotCard', () => {
     await fireEvent.press(screen.getByLabelText(label));
     expect(useMenu.getState().stack).toEqual([{ id, params: { at: T } }]);
     expect(useQuickPlot.getState().temp).toBeNull();
+  });
+
+
+  it.each([[false], [true]])('leaves the zoom and recenter column clear (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP });
   });
 });

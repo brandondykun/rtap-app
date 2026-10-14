@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -60,5 +60,11 @@ describe('QuickPlotEntry', () => {
     await renderWithProviders(<QuickPlotEntry landscape={false} />);
     expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue('');
     expect(screen.getByLabelText('MGRS zone')).toHaveProp('autoFocus', true);
+  });
+
+
+  it('puts Plot beside the grid in landscape so the keyboard cannot cover it', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape />);
+    expect(within(screen.getByTestId('quick-plot-row')).getByLabelText('Plot')).toBeTruthy();
   });
 });

@@ -54,10 +54,23 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
     setGeneration((g) => g + 1);
   };
 
+  const plotButton = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Plot"
+      accessibilityState={{ disabled: !valid }}
+      disabled={!valid}
+      onPress={plot}
+      className={`h-12 flex-row items-center justify-center gap-2 rounded-xl bg-accent ${landscape ? 'px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
+      <CrosshairGlyph size={20} color={colors['on-accent']} />
+      <Text className="text-lg font-bold text-on-accent">Plot</Text>
+    </Pressable>
+  );
+
   return (
     <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP }}>
       <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-border bg-surface-chrome p-3">
-        <View className="flex-row items-start gap-1">
+        <View testID="quick-plot-row" className="flex-row items-start gap-1">
           <View className="flex-1">
             <MgrsInput
               key={generation}
@@ -70,17 +83,10 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
             />
           </View>
           <MapButton grouped label="Clear grid" icon="close-circle-outline" onPress={clear} />
+          {/* Landscape: Plot beside the fields, above the (tall) keyboard. iOS's number pad has no Go key. */}
+          {landscape ? plotButton : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Plot"
-          accessibilityState={{ disabled: !valid }}
-          disabled={!valid}
-          onPress={plot}
-          className={`h-12 flex-row items-center justify-center gap-2 rounded-xl bg-accent ${valid ? '' : 'opacity-40'}`}>
-          <CrosshairGlyph size={20} color={colors['on-accent']} />
-          <Text className="text-lg font-bold text-on-accent">Plot</Text>
-        </Pressable>
+        {landscape ? null : plotButton}
       </View>
     </View>
   );

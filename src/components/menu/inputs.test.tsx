@@ -57,4 +57,10 @@ describe('menu inputs', () => {
     await fireEvent.press(screen.getByLabelText('Type: Alpha'));
     expect(screen.getAllByText('ICON-A')).toHaveLength(2);
   });
+
+
+  it('TextField never switches Android to full-screen text editing in landscape', async () => {
+    await renderWithProviders(<TextField accessibilityLabel="Field" value="" onChangeText={jest.fn()} />);
+    expect(screen.getByLabelText('Field')).toHaveProp('disableFullscreenUI', true);
+  });
 });

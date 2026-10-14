@@ -2,6 +2,7 @@ import { act, screen } from '@testing-library/react-native';
 
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
+import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { bannerTop, EDGE, topLeftStackTop } from '../layout';
@@ -10,6 +11,7 @@ import { MapTopLeft } from './MapTopLeft';
 beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useMeasure.setState(INITIAL_MEASURE);
+  useQuickPlot.setState(INITIAL_QUICK_PLOT);
 });
 
 describe('MapTopLeft', () => {
@@ -34,5 +36,13 @@ describe('MapTopLeft', () => {
     useMeasure.getState().startMeasure();
     await renderWithProviders(<MapTopLeft landscape={landscape} panel={null} />);
     expect(screen.getByTestId('measure-card-slot')).toHaveStyle({ marginTop: bannerTop(landscape) - topLeftStackTop(landscape) });
+  });
+
+
+  it('hides the location notice while the quick plot entry is up (it would cover the grid fields)', async () => {
+    useQuickPlot.getState().open();
+    await renderWithProviders(<MapTopLeft landscape={false} panel={null} />);
+    await act(async () => usePresence.getState().setLocationStatus('denied'));
+    expect(screen.queryByTestId('location-banner')).toBeNull();
   });
 });

@@ -32,6 +32,8 @@ export function TextField({ invalid = false, mono = false, dense = false, ref, o
         onBlur?.(e);
       }}
       multiline={multiline}
+      // Android landscape would otherwise swap the screen for a full-screen editor (hiding the map and menus).
+      disableFullscreenUI
       // A fixed height and no line-height keep single-line text vertically centred on iOS
       // (Tailwind's text-lg adds a 28 pt line-height that pushes TextInput text down).
       style={multiline ? undefined : { textAlignVertical: 'center' }}

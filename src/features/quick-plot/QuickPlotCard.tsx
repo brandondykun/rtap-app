@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MenuButton } from '@/components/menu/MenuButton';
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
-import { EDGE } from '@/features/map/layout';
+import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
 import { useMenu } from '@/stores/menu';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -18,8 +18,11 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   const { colors } = useTheme();
   const temp = useQuickPlot((s) => s.temp);
   if (!temp) return null;
-  const full = width - insets.left - insets.right - 2 * EDGE;
-  const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, full) : full;
+  // Clear of the zoom / recenter column on the right edge.
+  const left = insets.left + EDGE;
+  const right = insets.right + EDGE + CONTROL_SIZE + GAP;
+  const available = width - left - right;
+  const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, available) : available;
 
   const save = (id: 'unit.add' | 'point.add') => {
     useQuickPlot.getState().close();
@@ -27,7 +30,7 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   };
 
   return (
-    <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ bottom: insets.bottom + EDGE }}>
+    <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE, left, right }}>
       <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-3 rounded-2xl border border-accent bg-surface-chrome p-3">
         <View className="flex-row items-center gap-3">
           <View className="rounded-md border border-accent px-2 py-0.5">

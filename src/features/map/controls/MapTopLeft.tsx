@@ -5,6 +5,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { LocationBanner } from '@/features/location/LocationBanner';
 import { MeasureCard } from '@/features/measure/MeasureCard';
 import { useMeasure } from '@/stores/measure';
+import { useQuickPlot } from '@/stores/quick-plot';
 
 import { bannerTop, CONTROL_SIZE, EDGE, GAP, topLeftStackTop } from '../layout';
 
@@ -14,6 +15,8 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
   const drawer = panel?.side === 'left' ? panel.size : 0;
   const top = topLeftStackTop(landscape);
   const measuring = useMeasure((s) => s.active);
+  // The quick plot entry card sits where the notice would; the notice would cover its fields.
+  const plotEntryOpen = useQuickPlot((s) => s.entryOpen);
   return (
     <View
       testID="map-top-left"
@@ -31,7 +34,7 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
         </View>
       ) : null}
       {/* The notice hides while a panel is open. It sits below the toolbar (it would reach under it in landscape). */}
-      {panel ? null : <LocationBanner marginTop={measuring ? 0 : Math.max(0, bannerTop(landscape) - top)} />}
+      {panel || plotEntryOpen ? null : <LocationBanner marginTop={measuring ? 0 : Math.max(0, bannerTop(landscape) - top)} />}
     </View>
   );
 }

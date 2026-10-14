@@ -161,8 +161,8 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 78 | Tap a saved polygon's outline or label: the map fits it and "Polygon" opens; a tap inside its fill does not open it; Edit / Save / Cancel; edit a circle's radius; Hidden; Delete polygon | PENDING |
 | 79 | Layers: polygon rows with a swatch and "Objective · 0.42 km²" / "No fire area · r 500 m"; search by type; summary and mission rows count polygons | PENDING |
 | 80 | Layers: Units · Points · Lines · Polygons tabs with counts fit on the phone in both orientations; each tab lists only its items; search, "N hidden" and Show all cover the current tab; the last tab reopens next time (first tab with items before that) | PENDING |
-| 81 | Toolbar ends with PLOT (target icon); PLOT closes an open panel and shows the entry card centered under the toolbar, above the keyboard, in portrait and landscape | PENDING |
+| 81 | Toolbar ends with PLOT (target icon); PLOT closes an open panel and shows the entry card centered under the toolbar, above the keyboard, in portrait and landscape (landscape: Plot beside the fields, never under the keyboard; Android never goes full-screen editor); with location off the location notice does not cover the card | PENDING |
 | 82 | Entry opens with the map's zone and square filled and the cursor in Easting; backspace in an empty field hops back (also in the Unit/Point/Line/Polygon menus); ⊗ clears to Zone | PENDING |
 | 83 | Status shows "Valid · distance @ bearing REF from you"; Plot and the keyboard's Go plot only a full valid grid; the map eases to the amber TEMP reticle with the dashed range line from me | PENDING |
-| 84 | TEMP card: Discard removes it; Save unit / Save point open Add unit / Add point at that grid; plotting again replaces the temporary point | PENDING |
+| 84 | TEMP card sits left of the zoom/recenter buttons (all still tappable); Discard removes it; Save unit / Save point open Add unit / Add point at that grid; PLOT while a temporary point shows removes it | PENDING |
 | 85 | Quick plot ends on PLOT again, a map tap while entering, opening Layers/Menu/Settings, or MEASURE | PENDING |
