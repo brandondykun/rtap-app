@@ -12,7 +12,7 @@ description: Use whenever you add or change a menu, panel content, or anything o
    `MenuComponentProps<'<id>'>` (`params`, `missionId`). Compose only
    `src/components/menu/*`: `MenuHeader`, `MenuSection`, `MenuRow`, `MenuButton`,
    `MenuToggle`, `TextField` (shared, in `src/components/ui`), `MenuSegmented`, `MenuSelect`, `MenuActions`, `MenuListItem`,
-   `MenuVertexRow` (one point of a line), `MgrsInput`.
+   `MenuVertexRow` (one point of a line), `MgrsInput` (backspace in an empty field hops to the previous one).
    No raw colors, no new one-off controls — add a primitive instead.
 3. **Definition** — in the same file:
    `export const xMenu = defineMenu({ id, family, title, detents, component })`.
@@ -35,6 +35,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
   Clear it in the menu's unmount cleanup.
 - **Measure is not a menu.** MEASURE closes the open menu; opening any menu stops measuring
   (MissionMap). Keep it that way so the map stays clear while aiming.
+- **Quick plot is not a menu either.** PLOT closes the open menu; any menu opening ends quick plot.
+  Save unit / Save point hand over with `openMenu('unit.add' | 'point.add', { at })`.
 - Menu content must not depend on orientation for its own state: the Panel keeps it mounted
   across rotation.
 

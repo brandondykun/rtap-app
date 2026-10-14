@@ -228,6 +228,12 @@ Military areas (10 types) are `kind = 'polygon'` items: a closed GeoJSON Polygon
 drawn point by point or as a circle (center + radius); only their outline and label are tappable.
 See `2026-10-13-polygons-design.md`.
 
+### 5.4e Quick plot
+PLOT is a map mode like MEASURE (not a menu, never stored): `stores/quick-plot.ts` holds the entry
+state and one temporary point; `QuickPlotEntry` (four MGRS fields under the toolbar),
+`QuickPlotLayer` and `QuickPlotCard` (Discard / Save unit / Save point → the Add menus at that
+spot). See `2026-10-13-quick-plot-design.md`.
+
 ### 5.5 Data kept outside WatermelonDB
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
