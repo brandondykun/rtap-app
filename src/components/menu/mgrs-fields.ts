@@ -43,3 +43,12 @@ export function mgrsFieldsFor(coord: LatLon): MgrsParts {
   const parts = splitMgrs(mgrs.value);
   return parts.ok ? parts.value : EMPTY_MGRS;
 }
+
+export type MgrsField = 'zone' | 'square' | 'easting' | 'northing';
+const ORDER: MgrsField[] = ['zone', 'square', 'easting', 'northing'];
+
+/** The field Backspace in an empty field moves to (none before Zone). */
+export function fieldBefore(field: MgrsField): MgrsField | null {
+  const i = ORDER.indexOf(field);
+  return i > 0 ? ORDER[i - 1] : null;
+}

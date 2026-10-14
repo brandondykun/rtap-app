@@ -2,7 +2,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from './mgrs-fields';
+import { EMPTY_MGRS, evaluateMgrsFields, fieldBefore, mgrsFieldsFor } from './mgrs-fields';
 import { MgrsInput } from './MgrsInput';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
@@ -51,5 +51,21 @@ describe('MgrsInput', () => {
     expect(screen.queryByTestId('mgrs-status')).toBeNull();
     await renderWithProviders(<MgrsInput value={{ ...EMPTY_MGRS, zoneBand: '18S' }} onChange={jest.fn()} status={{ status: 'incomplete' }} />);
     expect(screen.queryByTestId('mgrs-status')).toBeNull();
+  });
+
+  it('knows which field backspace hops back to', () => {
+    expect(fieldBefore('zone')).toBeNull();
+    expect(fieldBefore('square')).toBe('zone');
+    expect(fieldBefore('easting')).toBe('square');
+    expect(fieldBefore('northing')).toBe('easting');
+  });
+
+  it('wires backspace on empty fields and the requested autofocus', async () => {
+    await renderWithProviders(<MgrsInput value={{ ...EMPTY_MGRS, zoneBand: '18S', square: 'UJ' }} onChange={jest.fn()} status={{ status: 'incomplete' }} autoFocus="easting" />);
+    expect(screen.getByLabelText('Easting')).toHaveProp('autoFocus', true);
+    expect(screen.getByLabelText('MGRS zone')).toHaveProp('autoFocus', false);
+    for (const label of ['100 km square', 'Easting', 'Northing']) expect(screen.getByLabelText(label).props.onKeyPress).toEqual(expect.any(Function));
+    // No crash on backspace in an empty field (focus moves natively; checked on device).
+    await fireEvent(screen.getByLabelText('Easting'), 'keyPress', { nativeEvent: { key: 'Backspace' } });
   });
 });

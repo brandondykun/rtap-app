@@ -1,12 +1,12 @@
 import { useRef } from 'react';
-import { Text, View, type TextInput } from 'react-native';
+import { Text, View, type NativeSyntheticEvent, type TextInput, type TextInputKeyPressEventData } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { TextField } from '@/components/ui/TextField';
 import { splitMgrs, type MgrsParts } from '@/lib/geo/coords/mgrs';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import type { MgrsFieldStatus } from './mgrs-fields';
+import { fieldBefore, type MgrsField, type MgrsFieldStatus } from './mgrs-fields';
 
 type Props = {
   value: MgrsParts;
@@ -18,6 +18,8 @@ type Props = {
   disabled?: boolean;
   /** Return in the northing field (e.g. add the typed point). */
   onSubmit?: () => void;
+  /** Focus this field on mount (quick plot). */
+  autoFocus?: 'zone' | 'easting';
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
@@ -28,8 +30,9 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus }: Props) {
   const { colors } = useTheme();
+  const zone = useRef<TextInput>(null);
   const square = useRef<TextInput>(null);
   const easting = useRef<TextInput>(null);
   const northing = useRef<TextInput>(null);
@@ -59,22 +62,38 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
   };
   const onNorthing = (text: string) => onChange({ ...value, northing: digits(text).slice(0, 5) });
 
+  const focusField = (field: MgrsField) => {
+    if (field === 'zone') zone.current?.focus();
+    else if (field === 'square') square.current?.focus();
+    else if (field === 'easting') easting.current?.focus();
+    else northing.current?.focus();
+  };
+  /** Backspace in an empty field hops back to the previous one, so a whole grid can be erased in one go. */
+  const hopBack = (e: NativeSyntheticEvent<TextInputKeyPressEventData>, field: MgrsField, text: string) => {
+    if (e.nativeEvent.key !== 'Backspace' || text !== '') return;
+    const prev = fieldBefore(field);
+    if (prev) focusField(prev);
+  };
+  const onSquareKey = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => hopBack(e, 'square', value.square);
+  const onEastingKey = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => hopBack(e, 'easting', value.easting);
+  const onNorthingKey = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => hopBack(e, 'northing', value.northing);
+
   const invalid = status.status === 'invalid';
   return (
     <View className="gap-2">
       <View className="flex-row gap-2">
         {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
         <View style={{ width: ZONE_WIDTH }}>
-          <TextField editable={!disabled} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+          <TextField editable={!disabled} ref={zone} autoFocus={autoFocus === 'zone'} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
-          <TextField editable={!disabled} ref={square} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+          <TextField editable={!disabled} ref={square} autoFocus={false} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={easting} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField editable={!disabled} ref={easting} autoFocus={autoFocus === 'easting'} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={northing} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
+          <TextField editable={!disabled} ref={northing} autoFocus={false} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
         </View>
       </View>
       {status.status === 'valid' || status.status === 'invalid' ? (
