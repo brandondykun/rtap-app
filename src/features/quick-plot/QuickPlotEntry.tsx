@@ -65,7 +65,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       accessibilityState={{ disabled: !valid }}
       disabled={!valid}
       onPress={plot}
-      className={`h-12 flex-row items-center justify-center gap-2 rounded-xl bg-accent ${landscape ? 'px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
+      className={`h-12 flex-row items-center justify-center gap-2 rounded-xl bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
       <CrosshairGlyph size={20} color={colors['on-accent']} />
       <Text className="text-lg font-bold text-on-accent">Plot</Text>
     </Pressable>
