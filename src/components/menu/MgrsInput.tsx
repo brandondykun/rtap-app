@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Text, View, type NativeSyntheticEvent, type TextInput, type TextInputKeyPressEventData } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -18,7 +18,7 @@ type Props = {
   disabled?: boolean;
   /** Return in the northing field (e.g. add the typed point). */
   onSubmit?: () => void;
-  /** Focus this field on mount (quick plot). */
+  /** Focus this field once on mount (quick plot). */
   autoFocus?: 'zone' | 'easting';
 };
 
@@ -62,6 +62,15 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
   };
   const onNorthing = (text: string) => onChange({ ...value, northing: digits(text).slice(0, 5) });
 
+  // Focus once from code rather than with the native autoFocus prop: iOS re-applies autoFocus whenever it
+  // rebuilds a field's view, which pulled focus back to Easting mid-tap and swallowed the first Plot press.
+  useEffect(() => {
+    if (autoFocus === 'zone') zone.current?.focus();
+    else if (autoFocus === 'easting') easting.current?.focus();
+    // Mount only: later changes to autoFocus must not move the cursor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const focusField = (field: MgrsField) => {
     if (field === 'zone') zone.current?.focus();
     else if (field === 'square') square.current?.focus();
@@ -84,16 +93,16 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
       <View className="flex-row gap-2">
         {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
         <View style={{ width: ZONE_WIDTH }}>
-          <TextField editable={!disabled} ref={zone} autoFocus={autoFocus === 'zone'} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+          <TextField editable={!disabled} ref={zone} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
-          <TextField editable={!disabled} ref={square} autoFocus={false} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+          <TextField editable={!disabled} ref={square} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={easting} autoFocus={autoFocus === 'easting'} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField editable={!disabled} ref={easting} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={northing} autoFocus={false} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
+          <TextField editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType="done" onSubmitEditing={onSubmit} />
         </View>
       </View>
       {status.status === 'valid' || status.status === 'invalid' ? (

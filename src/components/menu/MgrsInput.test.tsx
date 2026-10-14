@@ -1,11 +1,17 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 
+import { TextInput } from 'react-native';
+
 import { renderWithProviders } from '@/test-utils/render';
 
 import { EMPTY_MGRS, evaluateMgrsFields, fieldBefore, mgrsFieldsFor } from './mgrs-fields';
 import { MgrsInput } from './MgrsInput';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
+
+/** Which fields had focus() called on them (the TextInput mock records the instance). */
+const focusedLabels = () => (TextInput.prototype.focus as jest.Mock).mock.contexts.map((c) => (c as { props: { accessibilityLabel: string } }).props.accessibilityLabel);
+beforeEach(() => (TextInput.prototype.focus as jest.Mock).mockClear());
 
 describe('MgrsInput', () => {
   it('shows the four fields and a valid status line', async () => {
@@ -62,8 +68,10 @@ describe('MgrsInput', () => {
 
   it('wires backspace on empty fields and the requested autofocus', async () => {
     await renderWithProviders(<MgrsInput value={{ ...EMPTY_MGRS, zoneBand: '18S', square: 'UJ' }} onChange={jest.fn()} status={{ status: 'incomplete' }} autoFocus="easting" />);
-    expect(screen.getByLabelText('Easting')).toHaveProp('autoFocus', true);
-    expect(screen.getByLabelText('MGRS zone')).toHaveProp('autoFocus', false);
+    // Focused once from code, never through the native autoFocus prop: iOS re-applies that whenever
+    // it rebuilds the field's view, which yanked focus to Easting and cancelled the first Plot tap.
+    for (const label of ['MGRS zone', '100 km square', 'Easting', 'Northing']) expect(screen.getByLabelText(label).props.autoFocus).toBeFalsy();
+    expect(focusedLabels()).toEqual(['Easting']);
     for (const label of ['100 km square', 'Easting', 'Northing']) expect(screen.getByLabelText(label).props.onKeyPress).toEqual(expect.any(Function));
     // No crash on backspace in an empty field (focus moves natively; checked on device).
     await fireEvent(screen.getByLabelText('Easting'), 'keyPress', { nativeEvent: { key: 'Backspace' } });

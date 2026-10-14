@@ -1,4 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
+import { TextInput } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -10,9 +11,11 @@ import { renderWithProviders } from '@/test-utils/render';
 import { QuickPlotEntry } from './QuickPlotEntry';
 
 const C = { lat: 38.9, lon: -77 };
+const focusedLabels = () => (TextInput.prototype.focus as jest.Mock).mock.contexts.map((c) => (c as { props: { accessibilityLabel: string } }).props.accessibilityLabel);
 const T = { lat: 38.91, lon: -77 };
 
 beforeEach(() => {
+  (TextInput.prototype.focus as jest.Mock).mockClear();
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   useQuickPlot.getState().open();
   usePresence.setState(INITIAL_PRESENCE);
@@ -28,7 +31,7 @@ describe('QuickPlotEntry', () => {
     expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue(g.zoneBand);
     expect(screen.getByLabelText('100 km square')).toHaveDisplayValue(g.square);
     expect(screen.getByLabelText('Easting')).toHaveDisplayValue('');
-    expect(screen.getByLabelText('Easting')).toHaveProp('autoFocus', true);
+    expect(focusedLabels()).toEqual(['Easting']);
     expect(screen.getByLabelText('Plot')).toBeDisabled();
     await fireEvent.changeText(screen.getByLabelText('Easting'), '253');
     await fireEvent.changeText(screen.getByLabelText('Northing'), '05');
@@ -53,13 +56,13 @@ describe('QuickPlotEntry', () => {
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent('Valid · 1.11 km @ 000° TRUE from you');
     await fireEvent.press(screen.getByLabelText('Clear grid'));
     expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue('');
-    expect(screen.getByLabelText('MGRS zone')).toHaveProp('autoFocus', true);
+    expect(focusedLabels().at(-1)).toBe('MGRS zone');
   });
 
   it('opens empty on Zone when the crosshair has no position yet', async () => {
     await renderWithProviders(<QuickPlotEntry landscape={false} />);
     expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue('');
-    expect(screen.getByLabelText('MGRS zone')).toHaveProp('autoFocus', true);
+    expect(focusedLabels()).toEqual(['MGRS zone']);
   });
 
 
