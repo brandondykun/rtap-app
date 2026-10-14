@@ -20,7 +20,7 @@ describe('map images', () => {
     expect(existsSync(join(ASSETS, 'label-chip.png'))).toBe(true);
     for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `draft-ring${suffix}.png`))).toBe(true);
     expect(existsSync(join(ASSETS, 'label-chip-accent.png'))).toBe(true);
-    for (const name of ['line-arrow', 'line-flot-arc', 'line-vertex']) {
+    for (const name of ['line-arrow', 'line-flot-arc', 'line-vertex', 'temp-reticle']) {
       for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `${name}${suffix}.png`))).toBe(true);
     }
   });

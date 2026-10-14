@@ -13,6 +13,7 @@ export const MAP_IMAGE_IDS = {
   lineArrow: 'line-arrow',
   lineFlotArc: 'line-flot-arc',
   lineVertex: 'line-vertex',
+  tempReticle: 'temp-reticle',
 } as const;
 
 /** Every image a map layer may reference by name (`iconImage`). Module constant: stable identity. */
@@ -26,4 +27,5 @@ export const MAP_IMAGES: Record<string, ImageEntry> = {
   [MAP_IMAGE_IDS.lineArrow]: require('../../../../assets/map/line-arrow.png'),
   [MAP_IMAGE_IDS.lineFlotArc]: require('../../../../assets/map/line-flot-arc.png'),
   [MAP_IMAGE_IDS.lineVertex]: require('../../../../assets/map/line-vertex.png'),
+  [MAP_IMAGE_IDS.tempReticle]: require('../../../../assets/map/temp-reticle.png'),
 };

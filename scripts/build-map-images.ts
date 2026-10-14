@@ -79,3 +79,11 @@ writeScaled('line-flot-arc', flot);
 const V = 22;
 const vertex = `<svg xmlns="http://www.w3.org/2000/svg" width="${V}" height="${V}" viewBox="0 0 ${V} ${V}"><circle cx="${V / 2}" cy="${V / 2}" r="${V / 2 - 1.5}" fill="${colors.text}" stroke="${colors['surface-input']}" stroke-width="2"/></svg>`;
 writeScaled('line-vertex', vertex);
+
+// Quick plot temporary point: amber reticle — translucent disc, dashed ring, four ticks, center dot.
+const R = 56;
+const RC = R / 2;
+const tick = (x1: number, y1: number, x2: number, y2: number) =>
+  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colors['point-symbol-halo']}" stroke-width="5" stroke-linecap="round"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colors.accent}" stroke-width="2.5" stroke-linecap="round"/>`;
+const reticle = `<svg xmlns="http://www.w3.org/2000/svg" width="${R}" height="${R}" viewBox="0 0 ${R} ${R}"><circle cx="${RC}" cy="${RC}" r="${RC - 2}" fill="${colors.accent}" fill-opacity="0.15" stroke="${colors.accent}" stroke-opacity="0.5" stroke-width="1.5"/><circle cx="${RC}" cy="${RC}" r="${RC - 12}" fill="none" stroke="${colors.accent}" stroke-width="2.5" stroke-dasharray="5 4"/>${tick(RC, 4, RC, 16)}${tick(RC, R - 16, RC, R - 4)}${tick(4, RC, 16, RC)}${tick(R - 16, RC, R - 4, RC)}<circle cx="${RC}" cy="${RC}" r="4" fill="${colors.text}" stroke="${colors.accent}" stroke-width="2.5"/></svg>`;
+writeScaled('temp-reticle', reticle);
