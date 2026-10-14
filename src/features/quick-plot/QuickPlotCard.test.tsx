@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
@@ -39,5 +39,18 @@ describe('QuickPlotCard', () => {
   it.each([[false], [true]])('leaves the zoom and recenter column clear (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP });
+  });
+
+  it('shows Discard as a trash icon only', async () => {
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    expect(screen.getByLabelText('Discard')).toBeTruthy();
+    expect(screen.queryByText('Discard')).toBeNull();
+  });
+
+  it('puts the grid and the buttons on one line in landscape', async () => {
+    await renderWithProviders(<QuickPlotCard landscape />);
+    const row = within(screen.getByTestId('quick-plot-card-row'));
+    expect(row.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
+    for (const label of ['Discard', 'Save unit', 'Save point']) expect(row.getByLabelText(label)).toBeTruthy();
   });
 });

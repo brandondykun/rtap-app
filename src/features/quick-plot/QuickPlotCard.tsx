@@ -29,35 +29,52 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
     useMenu.getState().openMenu(id, { at: temp });
   };
 
+  const grid = (
+    <View className="shrink flex-row items-center gap-3">
+      <View className="rounded-md border border-accent px-2 py-0.5">
+        <Text className="text-xs font-bold tracking-widest text-accent">TEMP</Text>
+      </View>
+      <Text numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono text-xl font-semibold text-text">
+        {formatCoordinate(temp, 'mgrs')}
+      </Text>
+    </View>
+  );
+  const discard = <MenuButton label="Discard" icon="trash-can-outline" iconOnly onPress={() => useQuickPlot.getState().close()} />;
+  const saveUnit = <MenuButton label="Save unit" icon="rhombus-outline" active onPress={() => save('unit.add')} />;
+  const savePoint = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Save point"
+      onPress={() => save('point.add')}
+      className="flex-row items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3">
+      <Icon name="map-marker-outline" size={18} color={colors['on-accent']} />
+      <Text style={{ color: colors['on-accent'] }} className="font-semibold">
+        Save point
+      </Text>
+    </Pressable>
+  );
+
   return (
     <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE, left, right }}>
       <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-3 rounded-2xl border border-accent bg-surface-chrome p-3">
-        <View className="flex-row items-center gap-3">
-          <View className="rounded-md border border-accent px-2 py-0.5">
-            <Text className="text-xs font-bold tracking-widest text-accent">TEMP</Text>
+        {landscape ? (
+          // Landscape: one compact line.
+          <View testID="quick-plot-card-row" className="flex-row items-center gap-2">
+            <View className="flex-1">{grid}</View>
+            {discard}
+            <View style={{ width: 140 }}>{saveUnit}</View>
+            <View style={{ width: 150 }}>{savePoint}</View>
           </View>
-          <Text numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono text-xl font-semibold text-text">
-            {formatCoordinate(temp, 'mgrs')}
-          </Text>
-        </View>
-        <View className="flex-row gap-2">
-          <View className="flex-1">
-            <MenuButton label="Discard" icon="trash-can-outline" onPress={() => useQuickPlot.getState().close()} />
-          </View>
-          <View className="flex-1">
-            <MenuButton label="Save unit" icon="rhombus-outline" active onPress={() => save('unit.add')} />
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Save point"
-            onPress={() => save('point.add')}
-            className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-accent px-3 py-3">
-            <Icon name="map-marker-outline" size={18} color={colors['on-accent']} />
-            <Text style={{ color: colors['on-accent'] }} className="font-semibold">
-              Save point
-            </Text>
-          </Pressable>
-        </View>
+        ) : (
+          <>
+            {grid}
+            <View className="flex-row gap-2">
+              {discard}
+              <View className="flex-1">{saveUnit}</View>
+              <View className="flex-1">{savePoint}</View>
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
