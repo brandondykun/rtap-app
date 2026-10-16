@@ -298,7 +298,7 @@ describe('MapScreen', () => {
     expect(screen.queryByLabelText('Hostile')).toBeNull();
   });
 
-  it('tapping a point opens Point; long-press while viewing starts the last-used Add', async () => {
+  it('tapping a point opens Point; long-press while viewing it starts a hostile Add unit, not a point', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
@@ -320,8 +320,37 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
     );
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
+    expect(useDraft.getState()).toMatchObject({ category: 'unit', affiliation: 'hostile', coord: { lat: 38.95, lon: -77.1 } });
+  });
+
+  it('long-press during Add point starts a hostile Add unit instead of moving the point', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
     expect(await screen.findByRole('header')).toHaveTextContent('Add point');
-    expect(useDraft.getState().coord).toEqual({ lat: 38.95, lon: -77.1 });
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
+    );
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
+    expect(useDraft.getState()).toMatchObject({ category: 'unit', affiliation: 'hostile', coord: { lat: 38.95, lon: -77.1 } });
+  });
+
+  it('long-press adds a hostile unit even after a friendly unit was added from the toolbar', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(await screen.findByLabelText('Friendly'));
+    await fireEvent.press(screen.getByText('Cancel'));
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
+    );
+    expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
+    expect(screen.getByLabelText('Hostile')).toBeSelected();
   });
 
   it('toggles Add Unit from the toolbar', async () => {
@@ -336,7 +365,7 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it('long-press opens Add Point there, and a second long-press moves the draft and the map', async () => {
+  it('long-press opens Add unit there, and a second long-press moves the draft and the map', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
@@ -379,7 +408,7 @@ describe('MapScreen', () => {
     expect(screen.getByLabelText('Name').props.editable).toBe(false);
   });
 
-  it('long-press while viewing a point starts a new point there', async () => {
+  it('long-press while viewing a unit starts a new unit there', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');

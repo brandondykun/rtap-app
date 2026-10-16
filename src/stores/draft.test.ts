@@ -68,6 +68,15 @@ describe('draft store', () => {
     expect(useDraft.getState().affiliation).toBe('friend');
   });
 
+  it('starts with a given affiliation without changing the remembered one', () => {
+    useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
+    useDraft.getState().setAffiliation('friend');
+    useDraft.getState().startAdd({ coord: A, source: 'press', category: 'unit', affiliation: 'hostile' });
+    expect(useDraft.getState().affiliation).toBe('hostile');
+    useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
+    expect(useDraft.getState().affiliation).toBe('friend');
+  });
+
   it('picks a map location once, and never while locked', () => {
     useDraft.getState().setPicking(true);
     expect(useDraft.getState().picking).toBe(false); // no draft yet
@@ -85,12 +94,11 @@ describe('draft store', () => {
 describe('categories', () => {
   beforeEach(() => useDraft.setState(INITIAL_DRAFT));
 
-  it('starts a point add with the remembered type and records the last Add', () => {
+  it('starts a point add with the remembered type', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'point' });
-    expect(useDraft.getState()).toMatchObject({ category: 'point', pointType: 'checkpoint', lastAddCategory: 'point' });
+    expect(useDraft.getState()).toMatchObject({ category: 'point', pointType: 'checkpoint' });
     useDraft.getState().setPointType('landing-zone');
     useDraft.getState().clear();
-    expect(useDraft.getState().lastAddCategory).toBe('point');
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'point' });
     expect(useDraft.getState().pointType).toBe('landing-zone');
   });

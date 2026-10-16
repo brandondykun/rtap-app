@@ -52,12 +52,11 @@ type DraftValues = {
   focusRev: number;
   /** Last affiliation and types used for adding (rapid entry, and the next time Add opens). */
   remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType; polygonType: PolygonType };
-  /** The most recent Add opened (long-press starts it again). Not persisted. */
-  lastAddCategory: ItemCategory;
 };
 
 type DraftActions = {
-  startAdd: (start: { coord: LatLon | null; source: DraftCoordSource; category: ItemCategory }) => void;
+  /** `affiliation` overrides the remembered one for this draft only (long-press: hostile). */
+  startAdd: (start: { coord: LatLon | null; source: DraftCoordSource; category: ItemCategory; affiliation?: Affiliation }) => void;
   startEdit: (item: {
     itemId: string;
     coord: LatLon;
@@ -130,7 +129,6 @@ export const INITIAL_DRAFT: DraftValues = {
   focusBounds: null,
   focusRev: 0,
   remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line', polygonType: 'objective' },
-  lastAddCategory: 'unit',
 };
 
 export const HISTORY_LIMIT = 50;
@@ -163,13 +161,12 @@ const record = (s: DraftValues, next: LineEdit) =>
 /** The in-progress point (add or edit). Lives only in memory; commands write it on Add/Save. */
 export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   ...INITIAL_DRAFT,
-  startAdd: ({ coord, source, category }) =>
+  startAdd: ({ coord, source, category, affiliation }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: category,
       category,
-      affiliation: s.remembered.affiliation,
+      affiliation: affiliation ?? s.remembered.affiliation,
       unitType: s.remembered.unitType,
       pointType: s.remembered.pointType,
       mode: 'add',
@@ -182,7 +179,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       mode: 'edit',
       itemId,
       category,
@@ -222,12 +218,10 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setNotes: (notes) => set({ notes }),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
-  // Lines are never started by long-press, so lastAddCategory is left alone.
   startAddLine: () =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       mode: 'add',
       category: 'line',
       lineType: s.remembered.lineType,
@@ -238,7 +232,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       mode: 'edit',
       category: 'line',
       itemId,
@@ -266,7 +259,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       mode: 'add',
       category: 'polygon',
       polygonType: s.remembered.polygonType,
@@ -277,7 +269,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       mode: 'edit',
       category: 'polygon',
       itemId,
@@ -317,7 +308,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
-      lastAddCategory: s.lastAddCategory,
       affiliation: s.remembered.affiliation,
       unitType: s.remembered.unitType,
       pointType: s.remembered.pointType,

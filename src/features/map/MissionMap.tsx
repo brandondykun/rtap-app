@@ -291,12 +291,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       return;
     }
     const current = topMenu(useMenu.getState())?.id;
-    const adding = current === 'unit.add' || current === 'point.add';
-    const editing = (current === 'unit.edit' || current === 'point.edit') && !useDraft.getState().locked;
-    if (adding || editing) useDraft.getState().setCoord(coord, 'press');
-    // Otherwise start whichever Add was used last (units the first time).
-    else if (useDraft.getState().lastAddCategory === 'point') useMenu.getState().openMenu('point.add', { at: coord });
-    else useMenu.getState().openMenu('unit.add', { at: coord });
+    // A unit being added or edited moves there; otherwise long-press always adds an enemy unit (never a point).
+    const movingUnit = current === 'unit.add' || (current === 'unit.edit' && !useDraft.getState().locked);
+    if (movingUnit) useDraft.getState().setCoord(coord, 'press');
+    else useMenu.getState().openMenu('unit.add', { at: coord, affiliation: 'hostile' });
   };
 
   const onUserGesture = () => {

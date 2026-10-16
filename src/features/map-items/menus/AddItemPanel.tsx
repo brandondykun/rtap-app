@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import type { ItemCategory } from '@/features/symbology/categories';
+import type { Affiliation } from '@/features/symbology/presets';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
 import { useDraft } from '@/stores/draft';
@@ -14,7 +15,19 @@ import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
 
 /** Add unit / point / line: starts a draft of the category, writes it on Add, then shows it selected. */
-export function AddItemPanel({ category, at, missionId, form }: { category: ItemCategory; at?: LatLon; missionId: string; form: ReactNode }) {
+export function AddItemPanel({
+  category,
+  at,
+  affiliation,
+  missionId,
+  form,
+}: {
+  category: ItemCategory;
+  at?: LatLon;
+  affiliation?: Affiliation;
+  missionId: string;
+  form: ReactNode;
+}) {
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
   // A ref, not state: a second tap in the same frame must see the first tap's lock.
@@ -27,7 +40,7 @@ export function AddItemPanel({ category, at, missionId, form }: { category: Item
     else if (category === 'polygon') useDraft.getState().startAddPolygon();
     else {
       const start = at ?? useInteraction.getState().cameraCenter;
-      useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category });
+      useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category, affiliation });
     }
     return () => useDraft.getState().clear();
     // Opened once per panel; later long-presses move the draft instead of reopening.

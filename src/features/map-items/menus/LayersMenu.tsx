@@ -41,7 +41,7 @@ const count = (n: number) => n.toLocaleString('en-US');
 
 const TABS: { id: ItemCategory; label: string; noun: string; empty: string }[] = [
   { id: 'unit', label: 'Units', noun: 'units', empty: 'No units yet. Use UNIT or long-press the map.' },
-  { id: 'point', label: 'Points', noun: 'points', empty: 'No points yet. Use POINT or long-press the map.' },
+  { id: 'point', label: 'Points', noun: 'points', empty: 'No points yet. Use POINT to add one.' },
   { id: 'line', label: 'Lines', noun: 'lines', empty: 'No lines yet. Use LINE to draw one.' },
   { id: 'polygon', label: 'Polygons', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
 ];
