@@ -10,6 +10,10 @@ import type { Affiliation, UnitType } from '@/features/symbology/presets';
 import { inverse } from '@/lib/geo/measure/geodesic';
 import type { LatLon } from '@/lib/geo/types';
 
+export type UnitPreset = { affiliation: Affiliation; unitType: UnitType };
+/** What a long-press adds: an enemy unit of no particular type. */
+export const ENEMY_UNIT: UnitPreset = { affiliation: 'hostile', unitType: 'unspecified' };
+
 export type DraftMode = 'add' | 'edit';
 /** Where the draft coordinate came from; the map follows every source except the crosshair and drawing taps. */
 export type DraftCoordSource = 'crosshair' | 'self' | 'press' | 'typed' | 'item' | 'draw';
@@ -55,8 +59,8 @@ type DraftValues = {
 };
 
 type DraftActions = {
-  /** `affiliation` overrides the remembered one for this draft only (long-press: hostile). */
-  startAdd: (start: { coord: LatLon | null; source: DraftCoordSource; category: ItemCategory; affiliation?: Affiliation }) => void;
+  /** `unitPreset` overrides the remembered affiliation and unit type for this draft only (long-press). */
+  startAdd: (start: { coord: LatLon | null; source: DraftCoordSource; category: ItemCategory; unitPreset?: UnitPreset }) => void;
   startEdit: (item: {
     itemId: string;
     coord: LatLon;
@@ -161,13 +165,13 @@ const record = (s: DraftValues, next: LineEdit) =>
 /** The in-progress point (add or edit). Lives only in memory; commands write it on Add/Save. */
 export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   ...INITIAL_DRAFT,
-  startAdd: ({ coord, source, category, affiliation }) =>
+  startAdd: ({ coord, source, category, unitPreset }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
       category,
-      affiliation: affiliation ?? s.remembered.affiliation,
-      unitType: s.remembered.unitType,
+      affiliation: unitPreset?.affiliation ?? s.remembered.affiliation,
+      unitType: unitPreset?.unitType ?? s.remembered.unitType,
       pointType: s.remembered.pointType,
       mode: 'add',
       coord: isValid(coord) ? coord : null,

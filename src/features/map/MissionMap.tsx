@@ -294,7 +294,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     // A unit being added or edited moves there; otherwise long-press always adds an enemy unit (never a point).
     const movingUnit = current === 'unit.add' || (current === 'unit.edit' && !useDraft.getState().locked);
     if (movingUnit) useDraft.getState().setCoord(coord, 'press');
-    else useMenu.getState().openMenu('unit.add', { at: coord, affiliation: 'hostile' });
+    else useMenu.getState().openMenu('unit.add', { at: coord, enemy: true });
   };
 
   const onUserGesture = () => {

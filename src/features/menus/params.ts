@@ -16,8 +16,8 @@ export const MENU_PARAMS = {
   'polygon.edit': z.object({ itemId: z.string().min(1) }),
   'point.add': z.object({ at: latLon.optional() }),
   'point.edit': z.object({ itemId: z.string().min(1) }),
-  // Long-press always adds an enemy unit, whatever affiliation the toolbar's Add unit last used.
-  'unit.add': z.object({ at: latLon.optional(), affiliation: z.enum(['friend', 'hostile', 'neutral', 'unknown']).optional() }),
+  // `enemy`: long-press adds a hostile, unspecified unit, whatever the toolbar's Add unit last used.
+  'unit.add': z.object({ at: latLon.optional(), enemy: z.boolean().optional() }),
   'unit.edit': z.object({ itemId: z.string().min(1) }),
 } as const;
 

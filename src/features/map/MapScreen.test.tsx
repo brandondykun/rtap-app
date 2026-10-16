@@ -338,19 +338,23 @@ describe('MapScreen', () => {
     expect(useDraft.getState()).toMatchObject({ category: 'unit', affiliation: 'hostile', coord: { lat: 38.95, lon: -77.1 } });
   });
 
-  it('long-press adds a hostile unit even after a friendly unit was added from the toolbar', async () => {
+  it('long-press adds a hostile, unspecified unit even after a friendly armor unit was started from the toolbar', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     await fireEvent.press(await screen.findByLabelText('Friendly'));
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    await fireEvent.press(screen.getByText('Armor'));
     await fireEvent.press(screen.getByText('Cancel'));
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
     );
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(screen.getByLabelText('Hostile')).toBeSelected();
+    expect(screen.getByLabelText('Unit type: Unspecified')).toBeTruthy();
+    expect(useDraft.getState()).toMatchObject({ affiliation: 'hostile', unitType: 'unspecified' });
   });
 
   it('toggles Add Unit from the toolbar', async () => {

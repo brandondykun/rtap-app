@@ -1,4 +1,4 @@
-import { INITIAL_DRAFT, useDraft } from './draft';
+import { ENEMY_UNIT, INITIAL_DRAFT, useDraft } from './draft';
 
 const A = { lat: 38.9, lon: -77 };
 const B = { lat: 38.95, lon: -77.05 };
@@ -68,13 +68,14 @@ describe('draft store', () => {
     expect(useDraft.getState().affiliation).toBe('friend');
   });
 
-  it('starts with a given affiliation without changing the remembered one', () => {
+  it('starts with a given unit preset without changing the remembered choices', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
     useDraft.getState().setAffiliation('friend');
-    useDraft.getState().startAdd({ coord: A, source: 'press', category: 'unit', affiliation: 'hostile' });
-    expect(useDraft.getState().affiliation).toBe('hostile');
+    useDraft.getState().setUnitType('armor');
+    useDraft.getState().startAdd({ coord: A, source: 'press', category: 'unit', unitPreset: ENEMY_UNIT });
+    expect(useDraft.getState()).toMatchObject({ affiliation: 'hostile', unitType: 'unspecified' });
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
-    expect(useDraft.getState().affiliation).toBe('friend');
+    expect(useDraft.getState()).toMatchObject({ affiliation: 'friend', unitType: 'armor' });
   });
 
   it('picks a map location once, and never while locked', () => {

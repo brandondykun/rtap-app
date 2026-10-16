@@ -4,10 +4,9 @@ import { View } from 'react-native';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import type { ItemCategory } from '@/features/symbology/categories';
-import type { Affiliation } from '@/features/symbology/presets';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
-import { useDraft } from '@/stores/draft';
+import { useDraft, type UnitPreset } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
 
@@ -18,13 +17,13 @@ import { ITEM_COPY, openItemMenu } from './item-menus';
 export function AddItemPanel({
   category,
   at,
-  affiliation,
+  unitPreset,
   missionId,
   form,
 }: {
   category: ItemCategory;
   at?: LatLon;
-  affiliation?: Affiliation;
+  unitPreset?: UnitPreset;
   missionId: string;
   form: ReactNode;
 }) {
@@ -40,7 +39,7 @@ export function AddItemPanel({
     else if (category === 'polygon') useDraft.getState().startAddPolygon();
     else {
       const start = at ?? useInteraction.getState().cameraCenter;
-      useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category, affiliation });
+      useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category, unitPreset });
     }
     return () => useDraft.getState().clear();
     // Opened once per panel; later long-presses move the draft instead of reopening.
