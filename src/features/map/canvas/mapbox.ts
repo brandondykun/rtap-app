@@ -1,12 +1,16 @@
-import Mapbox from '@rnmapbox/maps';
+import Mapbox, { Logger } from '@rnmapbox/maps';
 
 import { getMapboxToken } from '@/config/env';
 import type { Basemap } from '@/stores/settings';
+
+import { isTileLoadFailure } from './mapbox-logs';
 
 // Runs once, on first import, before any MapView mounts. MapScreen shows an error screen
 // instead of the map when the token is missing.
 const token = getMapboxToken();
 if (token) Mapbox.setAccessToken(token);
+// Returning true swallows the log; everything else keeps Mapbox's default console output.
+Logger.setLogCallback(isTileLoadFailure);
 
 /** Mapbox style for each basemap choice in the Layers panel. */
 // Pinned to current Mapbox styles (the library's StyleURL constants point at older versions).

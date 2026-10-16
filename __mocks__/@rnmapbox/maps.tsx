@@ -60,5 +60,6 @@ export const StyleURL = {
 };
 export const offlineManager = { createPack: jest.fn(), getPacks: jest.fn(async () => []), deletePack: jest.fn() };
 export const setAccessToken = jest.fn();
+export const Logger = { setLogCallback: jest.fn() };
 
 export default { setAccessToken, StyleURL, offlineManager };
