@@ -82,6 +82,11 @@ describe('AddPolygonMenu', () => {
     expect(JSON.parse((await items(ctx))[0].style!).shape).toBe('points');
   });
 
+  it('fills the next name for the polygon type', async () => {
+    await open();
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveProp('value', 'OBJ-1'));
+  });
+
   it('lists polygon types alphabetically', async () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Polygon type: Objective'));

@@ -1,4 +1,4 @@
-import { LINE_TYPES, lineLabel, lineStyle, lineTypeInfo, lineTypeOf } from './line-types';
+import { LINE_TYPES, lineLabel, lineNamePrefix, lineStyle, lineTypeInfo, lineTypeOf } from './line-types';
 
 describe('line types', () => {
   it('has the 10 agreed types with prefixes and styles', () => {
@@ -23,6 +23,9 @@ describe('line types', () => {
     // Case-sensitive: names are typed upper-case (the field uses autoCapitalize="characters").
     expect(lineLabel('phase-line', 'pl red')).toBe('PL pl red');
     expect(lineLabel('boundary', 'NORTH')).toBe('NORTH');
+    // Auto names already carry the prefix.
+    expect(lineLabel('phase-line', 'PL-3')).toBe('PL-3');
+    expect(lineLabel('route', 'PL-3')).toBe('RTE PL-3');
     expect(lineLabel('restrictive-fire-line', ' ALPHA ')).toBe('RFL ALPHA');
   });
 
@@ -31,5 +34,10 @@ describe('line types', () => {
     expect(lineTypeOf(null)).toBe('phase-line');
     expect(lineTypeOf('not json')).toBe('phase-line');
     expect(lineTypeOf('{"lineType":"nope"}')).toBe('phase-line');
+  });
+
+  it('names new lines after the type prefix, BDY for boundaries', () => {
+    expect(lineNamePrefix('phase-line')).toBe('PL');
+    expect(lineNamePrefix('boundary')).toBe('BDY');
   });
 });

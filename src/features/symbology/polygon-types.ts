@@ -36,11 +36,11 @@ export function polygonTypeInfo(id: PolygonType): PolygonTypeInfo {
   return BY_ID.get(id)!;
 }
 
-/** "OBJ IRON"; the prefix is not repeated when the name already starts with it. */
+/** "OBJ IRON"; the prefix is not repeated when the name already starts with it ("OBJ-2"). */
 export function polygonLabel(type: PolygonType, name: string): string {
   const trimmed = name.trim();
   const prefix = polygonTypeInfo(type).prefix;
-  if (trimmed.startsWith(`${prefix} `) || trimmed === prefix) return trimmed;
+  if (trimmed.startsWith(`${prefix} `) || trimmed.startsWith(`${prefix}-`) || trimmed === prefix) return trimmed;
   return `${prefix} ${trimmed}`;
 }
 

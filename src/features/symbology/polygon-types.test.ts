@@ -21,6 +21,7 @@ describe('polygon types', () => {
     expect(polygonLabel('objective', 'IRON')).toBe('OBJ IRON');
     expect(polygonLabel('objective', ' OBJ IRON ')).toBe('OBJ IRON');
     expect(polygonLabel('no-fire-area', '1')).toBe('NFA 1');
+    expect(polygonLabel('objective', 'OBJ-2')).toBe('OBJ-2');
   });
 
   it('round-trips points and circle styles and falls back sensibly', () => {

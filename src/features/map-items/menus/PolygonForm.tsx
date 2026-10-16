@@ -11,16 +11,17 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
 import { formatCoordinate } from '@/features/map/interaction/readout';
-import { POLYGON_TYPES, type PolygonType } from '@/features/symbology/polygon-types';
+import { POLYGON_TYPES, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { formatDistance } from '@/lib/geo/format/measure';
-import { useDraft } from '@/stores/draft';
+import { useDraft, type DraftMode } from '@/stores/draft';
 import { useSettings } from '@/stores/settings';
 
 import { canRemove } from '../line-draft';
 import { segmentLengths } from '../line-measure';
 import { areaM2, circleRing, formatArea, perimeterM } from '../polygon-measure';
 import { LocationSection } from './form/LocationSection';
+import { useAutoName } from './form/use-auto-name';
 import { PolygonSample } from './PolygonSample';
 
 // Listed alphabetically in the dropdown.
@@ -41,10 +42,11 @@ const parseRadius = (text: string) => (text.trim() === '' ? NaN : Number(text.re
 const radiusText = (m: number | null, unit: 'm' | 'km') => (m === null ? '' : unit === 'km' ? String(Number((m / 1000).toFixed(3))) : String(Math.round(m)));
 
 /** Add/Edit polygon: name, type, shape (points list or circle center + radius), notes. Edits only the draft store. */
-export function PolygonForm() {
+export function PolygonForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
   const notes = useDraft((s) => s.notes);
   const polygonType = useDraft((s) => s.polygonType);
+  useAutoName(missionId, mode, polygonTypeInfo(polygonType).prefix);
   const shape = useDraft((s) => s.polygonShape);
   const vertices = useDraft((s) => s.vertices);
   const selected = useDraft((s) => s.selectedVertex);

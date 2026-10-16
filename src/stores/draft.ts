@@ -261,7 +261,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   undo: () =>
     set((s) => (s.history.length === 0 ? {} : { ...apply(s.history[s.history.length - 1]), history: s.history.slice(0, -1) })),
   setLineType: (lineType) =>
-    set((s) => ({ lineType, remembered: s.mode === 'add' ? { ...s.remembered, lineType } : s.remembered })),
+    set((s) => ({ lineType, name: s.nameEdited ? s.name : '', remembered: s.mode === 'add' ? { ...s.remembered, lineType } : s.remembered })),
   startAddPolygon: () =>
     set((s) => ({
       ...INITIAL_DRAFT,
@@ -297,7 +297,11 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       focusRev: s.focusRev + 1,
     })),
   setPolygonType: (polygonType) =>
-    set((s) => ({ polygonType, remembered: s.mode === 'add' ? { ...s.remembered, polygonType } : s.remembered })),
+    set((s) => ({
+      polygonType,
+      name: s.nameEdited ? s.name : '',
+      remembered: s.mode === 'add' ? { ...s.remembered, polygonType } : s.remembered,
+    })),
   setPolygonShape: (polygonShape) => set((s) => (s.locked ? {} : { polygonShape })),
   setCircleRadius: (radiusM) =>
     set((s) =>

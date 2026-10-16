@@ -10,21 +10,22 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
 import { formatCoordinate } from '@/features/map/interaction/readout';
-import { LINE_TYPES, type LineType } from '@/features/symbology/line-types';
+import { LINE_TYPES, lineNamePrefix, type LineType } from '@/features/symbology/line-types';
 import { formatDistance } from '@/lib/geo/format/measure';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
-import { useDraft } from '@/stores/draft';
+import { useDraft, type DraftMode } from '@/stores/draft';
 import { useSettings } from '@/stores/settings';
 
 import { canRemove } from '../line-draft';
 import { segmentLengths, totalLength } from '../line-measure';
+import { useAutoName } from './form/use-auto-name';
 import { LineSample } from './LineSample';
 
 // Listed alphabetically in the dropdown.
 const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <LineSample lineType={t.id} /> })).sort((a, b) => a.label.localeCompare(b.label));
 
 /** Add/Edit line: name, type, the point list, a typed point, notes. Edits only the draft store. */
-export function LineForm() {
+export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
   const notes = useDraft((s) => s.notes);
   const lineType = useDraft((s) => s.lineType);
@@ -40,6 +41,7 @@ export function LineForm() {
   const segs = segmentLengths(vertices);
   const edit = { vertices, selected, insertAfter };
   const moving = selected !== null && insertAfter === null;
+  useAutoName(missionId, mode, lineNamePrefix(lineType));
 
   const submitTyped = () => {
     if (status.status !== 'valid') return;

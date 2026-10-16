@@ -32,6 +32,20 @@ describe('draft store', () => {
     expect(useDraft.getState().name).toBe('OBJ IRON');
   });
 
+  it('drops an auto name when the line or polygon type changes, but keeps a typed one', () => {
+    useDraft.getState().startAddLine();
+    useDraft.getState().setAutoName('PL-1');
+    useDraft.getState().setLineType('route');
+    expect(useDraft.getState().name).toBe('');
+    useDraft.getState().startAddPolygon();
+    useDraft.getState().setAutoName('OBJ-1');
+    useDraft.getState().setPolygonType('no-fire-area');
+    expect(useDraft.getState().name).toBe('');
+    useDraft.getState().setName('IRON');
+    useDraft.getState().setPolygonType('objective');
+    expect(useDraft.getState().name).toBe('IRON');
+  });
+
   it('keeps a name the user cleared empty, without refilling it', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
     useDraft.getState().setAutoName('HOS-1');

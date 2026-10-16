@@ -9,6 +9,7 @@ import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { parseLineGeometry } from '../geometry';
+import { placeLine } from '../commands';
 import { observeMissionItems } from '../repository';
 import { AddLineMenu } from './AddLineMenu';
 
@@ -41,6 +42,7 @@ describe('AddLineMenu', () => {
       useDraft.getState().addVertex(p(1));
     });
     expect(screen.getByText('POINTS · 2')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Name'), '');
     expect(screen.getByLabelText('Save')).toBeDisabled();
     await fireEvent.changeText(screen.getByLabelText('Name'), 'RED');
     await fireEvent.press(screen.getByLabelText('Line type: Phase line'));
@@ -51,6 +53,16 @@ describe('AddLineMenu', () => {
     expect(item).toMatchObject({ kind: 'line', name: 'RED', style: '{"lineType":"route"}' });
     expect(parseLineGeometry(item.geometry)).toHaveLength(2);
     expect(useMenu.getState().stack).toEqual([{ id: 'line.edit', params: { itemId: item.id } }]);
+  });
+
+  it('fills the next name for the line type and follows a type change', async () => {
+    const ctx = makeTestContext();
+    await placeLine(ctx, { missionId: 'm1', points: [p(0), p(1)], lineType: 'phase-line', name: 'PL-1' });
+    await open(ctx);
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveProp('value', 'PL-2'));
+    await fireEvent.press(screen.getByLabelText('Line type: Phase line'));
+    await fireEvent.press(screen.getByText('Boundary'));
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveProp('value', 'BDY-1'));
   });
 
   it('adds typed grids, refuses partial ones, and moves a selected point', async () => {

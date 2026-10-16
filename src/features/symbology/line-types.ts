@@ -52,11 +52,16 @@ export function lineTypeInfo(id: LineType): LineTypeInfo {
   return BY_ID.get(id)!;
 }
 
-/** "PL RED"; the prefix is not repeated when the name already starts with it; boundaries show the name. */
+/** Auto names for new lines: `<prefix>-n`, with BDY for boundaries (which have no label prefix). */
+export function lineNamePrefix(type: LineType): string {
+  return lineTypeInfo(type).prefix ?? 'BDY';
+}
+
+/** "PL RED"; the prefix is not repeated when the name already starts with it ("PL-2"); boundaries show the name. */
 export function lineLabel(type: LineType, name: string): string {
   const trimmed = name.trim();
   const prefix = lineTypeInfo(type).prefix;
-  if (!prefix || trimmed.startsWith(`${prefix} `) || trimmed === prefix) return trimmed;
+  if (!prefix || trimmed.startsWith(`${prefix} `) || trimmed.startsWith(`${prefix}-`) || trimmed === prefix) return trimmed;
   return `${prefix} ${trimmed}`;
 }
 
