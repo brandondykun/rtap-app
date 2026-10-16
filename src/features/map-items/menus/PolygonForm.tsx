@@ -101,7 +101,7 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   return (
     <View>
       <MenuSection label="Name">
-        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <MenuSection label="Polygon type">
         <MenuSelect<PolygonType> label="Polygon type" options={TYPE_OPTIONS} value={polygonType} onChange={(t) => useDraft.getState().setPolygonType(t)} disabled={locked} />

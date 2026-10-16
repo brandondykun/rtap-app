@@ -34,7 +34,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
   return (
     <View>
       <MenuSection label="Name">
-        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <LocationSection />
       <MenuSection label="Point type">

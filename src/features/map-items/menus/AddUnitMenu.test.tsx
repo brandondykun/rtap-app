@@ -44,6 +44,14 @@ describe('AddUnitMenu', () => {
     expect(screen.getByLabelText('Hostile')).toBeSelected();
   });
 
+  it('clears the name with the × and keeps it empty', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Clear Name'));
+    expect(screen.getByLabelText('Name')).toHaveDisplayValue('');
+    expect(screen.getByLabelText('Add')).toBeDisabled();
+    expect(screen.queryByLabelText('Clear Name')).toBeNull();
+  });
+
   it('adds the point, plays a success haptic and selects it in Edit Point', async () => {
     const ctx = await open();
     await fireEvent.press(screen.getByLabelText('Add'));

@@ -16,6 +16,19 @@ describe('menu inputs', () => {
     expect(onChangeText).toHaveBeenCalledWith('OBJ IRON');
   });
 
+  it('a clearable TextField has a clear button only while it has text and is editable', async () => {
+    const onChangeText = jest.fn();
+    const first = await renderWithProviders(<TextField clearable accessibilityLabel="Name" value="HOS-1" onChangeText={onChangeText} />);
+    await fireEvent.press(screen.getByLabelText('Clear Name'));
+    expect(onChangeText).toHaveBeenCalledWith('');
+    await first.unmount();
+    const empty = await renderWithProviders(<TextField clearable accessibilityLabel="Name" value="" onChangeText={onChangeText} />);
+    expect(screen.queryByLabelText('Clear Name')).toBeNull();
+    await empty.unmount();
+    await renderWithProviders(<TextField clearable editable={false} accessibilityLabel="Name" value="HOS-1" onChangeText={onChangeText} />);
+    expect(screen.queryByLabelText('Clear Name')).toBeNull();
+  });
+
   it('MenuSegmented selects one option', async () => {
     const onChange = jest.fn();
     const options = [

@@ -21,6 +21,7 @@ export function MissionNameForm({ title, name, onChangeName, submitLabel, onSubm
         {title}
       </Text>
       <TextField
+        clearable
         accessibilityLabel="Mission name"
         value={name}
         onChangeText={onChangeName}

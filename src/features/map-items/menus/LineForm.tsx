@@ -65,7 +65,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
   return (
     <View>
       <MenuSection label="Name">
-        <TextField mono editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={(t) => useDraft.getState().setName(t)} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
       <MenuSection label="Line type">
         <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
