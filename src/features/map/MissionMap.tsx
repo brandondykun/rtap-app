@@ -409,7 +409,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         <MapBottomLeft
           footerBeside={landscape}
           footer={
-            placing ? <PlaceBar category={placing} landscape={landscape} onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null
+            placing ? <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null
           }
         />
       )}

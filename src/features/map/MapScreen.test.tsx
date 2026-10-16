@@ -296,7 +296,7 @@ describe('MapScreen', () => {
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     expect(screen.getByLabelText('UNIT')).toBeSelected();
-    expect(screen.getByText('Tap map to add a unit')).toBeTruthy();
+    expect(screen.getByText('Tap map')).toBeTruthy();
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useDraft.getState().mode).toBeNull();
     await act(async () =>
@@ -315,7 +315,6 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     await fireEvent.press(screen.getByLabelText('POINT'));
     expect(screen.getByLabelText('POINT')).toBeSelected();
-    expect(screen.getByText('Tap map to add a point')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add at center'));
     expect(await screen.findByRole('header')).toHaveTextContent('Add point');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point', coord: useInteraction.getState().cameraCenter, coordSource: 'crosshair' });
