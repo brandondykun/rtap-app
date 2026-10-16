@@ -21,6 +21,7 @@ import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useMenu, topMenu } from '@/stores/menu';
+import { usePlacing, type PlacingCategory } from '@/stores/placing';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
@@ -31,6 +32,7 @@ import { MapBottomLeft } from './controls/MapBottomLeft';
 import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
+import { PlaceBar } from './controls/PlaceBar';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
@@ -94,6 +96,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const plotEntryOpen = useQuickPlot((s) => s.entryOpen);
   const plotTemp = useQuickPlot((s) => s.temp);
   const quickPlotting = plotEntryOpen || plotTemp !== null;
+  const placing = usePlacing((s) => s.category);
   const lineDrawing = useDraft((s) => (s.category === 'line' || s.category === 'polygon') && s.mode !== null && !s.locked);
   const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
@@ -188,12 +191,13 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     [markMoved, setFollowMode, fitCamera],
   );
 
-  // Any menu opening (a tool, Menu, Settings, a Layers row…) ends measuring and quick plot.
+  // Any menu opening (a tool, Menu, Settings, a Layers row…) ends measuring, placing and quick plot.
   useEffect(
     () =>
       useMenu.subscribe((state, prev) => {
         if (state.stack.length === 0 || state.stack === prev.stack) return;
         if (useMeasure.getState().active) useMeasure.getState().stopMeasure();
+        if (usePlacing.getState().category) usePlacing.getState().stop();
         const q = useQuickPlot.getState();
         if (q.entryOpen || q.temp) q.close();
       }),
@@ -203,6 +207,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     () => () => {
       useMeasure.getState().stopMeasure();
       useQuickPlot.getState().close();
+      usePlacing.getState().stop();
     },
     [],
   );
@@ -211,6 +216,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else {
       useMenu.getState().closeMenu();
       useQuickPlot.getState().close();
+      usePlacing.getState().stop();
       useMeasure.getState().startMeasure();
     }
   };
@@ -221,6 +227,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else {
       useMenu.getState().closeMenu();
       useMeasure.getState().stopMeasure();
+      usePlacing.getState().stop();
       q.open();
     }
   };
@@ -241,12 +248,29 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     if (topId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
   };
-  const toggleAdd = (id: 'unit.add' | 'point.add' | 'line.add' | 'polygon.add') => {
+  const toggleAdd = (id: 'line.add' | 'polygon.add') => {
     if (topId === id) useMenu.getState().closeMenu();
-    else if (id === 'unit.add') useMenu.getState().openMenu('unit.add', {});
     else if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
-    else if (id === 'polygon.add') useMenu.getState().openMenu('polygon.add', {});
-    else useMenu.getState().openMenu('point.add', {});
+    else useMenu.getState().openMenu('polygon.add', {});
+  };
+  // UNIT / POINT wait for a map tap (or Add at center) before their Add menu opens.
+  const togglePlacing = (category: PlacingCategory) => {
+    const p = usePlacing.getState();
+    if (topId === `${category}.add` || p.category === category) {
+      useMenu.getState().closeMenu();
+      p.stop();
+      return;
+    }
+    useMenu.getState().closeMenu();
+    useMeasure.getState().stopMeasure();
+    useQuickPlot.getState().close();
+    p.start(category);
+  };
+  /** Opens the Add menu being placed, at `at` or (no `at`) at the crosshair; opening it ends placing. */
+  const placeAt = (category: PlacingCategory, at?: LatLon) => {
+    const params = at ? { at } : {};
+    if (category === 'unit') useMenu.getState().openMenu('unit.add', params);
+    else useMenu.getState().openMenu('point.add', params);
   };
   const isDrawing = () => {
     const d = useDraft.getState();
@@ -269,13 +293,17 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useQuickPlot.getState().close();
       return;
     }
+    const placingCategory = usePlacing.getState().category;
     if (useMeasure.getState().active) useMeasure.getState().place(coord);
+    else if (placingCategory) placeAt(placingCategory, coord);
     else if (isDrawing()) placeDraftPoint(coord);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
     // Measuring snaps to the symbol itself (lines pass no itemAt: the tap point is used).
+    const placingCategory = usePlacing.getState().category;
     if (useMeasure.getState().active) useMeasure.getState().place(itemAt ?? at);
+    else if (placingCategory) placeAt(placingCategory, at);
     else if (isDrawing()) placeDraftPoint(at);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
@@ -352,9 +380,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={quickPlotting ? 'plot' : measuring ? 'measure' : topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : topId === 'layers' ? 'layers' : null}
-        onUnit={() => toggleAdd('unit.add')}
-        onPoint={() => toggleAdd('point.add')}
+        activeTool={quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : topId === 'layers' ? 'layers' : null)}
+        onUnit={() => togglePlacing('unit')}
+        onPoint={() => togglePlacing('point')}
         onLine={() => toggleAdd('line.add')}
         onPolygon={() => toggleAdd('polygon.add')}
         onMeasure={toggleMeasure}
@@ -377,7 +405,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {lineDrawing ? <LineDrawBar panel={panel} /> : null}
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
-      {panel || plotTemp ? null : <MapBottomLeft />}
+      {panel || plotTemp ? null : (
+        <MapBottomLeft footer={placing ? <PlaceBar category={placing} onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null} />
+      )}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />

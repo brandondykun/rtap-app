@@ -12,6 +12,7 @@ import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { INITIAL_PLACING, usePlacing } from '@/stores/placing';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { makeTestContext } from '@/lib/db/test-database';
@@ -38,6 +39,7 @@ beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
   useMeasure.setState(INITIAL_MEASURE);
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
+  usePlacing.setState(INITIAL_PLACING);
   usePresence.setState(INITIAL_PRESENCE);
 });
 
@@ -200,6 +202,7 @@ describe('MapScreen', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     await screen.findByDisplayValue('HOS-1');
     await fireEvent.press(screen.getByLabelText('Add'));
     expect(await screen.findByRole('header')).toHaveTextContent('Unit');
@@ -214,6 +217,7 @@ describe('MapScreen', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     await screen.findByDisplayValue('HOS-1');
     const tap = (lon: number, lat: number) =>
       act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
@@ -237,6 +241,7 @@ describe('MapScreen', () => {
     if (!p.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     await screen.findByDisplayValue('HOS-2');
     await fireEvent.press(screen.getByLabelText('Map'));
     await act(async () =>
@@ -284,18 +289,55 @@ describe('MapScreen', () => {
     expect(screen.getByLabelText('GPS')).not.toBeSelected();
   });
 
-  it('UNIT and POINT open their Add menus, and switching resets the draft to the new category', async () => {
+  it('UNIT shows the tap bar and no menu; a map tap opens Add unit at the tap', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    expect(screen.getByLabelText('UNIT')).toBeSelected();
+    expect(screen.getByText('Tap map to add a unit')).toBeTruthy();
+    expect(screen.queryByTestId('menu-panel')).toBeNull();
+    expect(useDraft.getState().mode).toBeNull();
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
+    );
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
+    expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'unit', coord: { lat: 38.95, lon: -77.1 } });
+    expect(screen.queryByTestId('place-bar')).toBeNull();
+  });
+
+  it('POINT: Add at center opens Add point at the crosshair; switching from UNIT changes the bar', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('UNIT'));
     await fireEvent.press(screen.getByLabelText('POINT'));
-    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
     expect(screen.getByLabelText('POINT')).toBeSelected();
-    expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point' });
-    expect(screen.queryByLabelText('Hostile')).toBeNull();
+    expect(screen.getByText('Tap map to add a point')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Add at center'));
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point', coord: useInteraction.getState().cameraCenter, coordSource: 'crosshair' });
+  });
+
+  it('a tap on an existing symbol while placing adds there instead of opening the item', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('POINT'));
+    await act(async () =>
+      (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({
+        features: [{ properties: { id: p.value.id } }],
+        coordinates: { latitude: 38.9001, longitude: -77.0001 },
+        point: {},
+      }),
+    );
+    expect(await screen.findByRole('header')).toHaveTextContent('Add point');
+    expect(useDraft.getState()).toMatchObject({ mode: 'add', coord: { lat: 38.9001, lon: -77.0001 } });
   });
 
   it('tapping a point opens Point; long-press while viewing it starts a hostile Add unit, not a point', async () => {
@@ -306,8 +348,6 @@ describe('MapScreen', () => {
     if (!p.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await screen.findByTestId('map-view');
-    await fireEvent.press(screen.getByLabelText('POINT'));
-    await fireEvent.press(await screen.findByText('Cancel'));
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({
         features: [{ properties: { id: p.value.id, sidc: 'GFGPGPPK------X' } }],
@@ -330,6 +370,7 @@ describe('MapScreen', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('POINT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     expect(await screen.findByRole('header')).toHaveTextContent('Add point');
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
@@ -344,6 +385,7 @@ describe('MapScreen', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     await fireEvent.press(await screen.findByLabelText('Friendly'));
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
     await fireEvent.press(screen.getByText('Armor'));
@@ -357,16 +399,35 @@ describe('MapScreen', () => {
     expect(useDraft.getState()).toMatchObject({ affiliation: 'hostile', unitType: 'unspecified' });
   });
 
-  it('toggles Add Unit from the toolbar', async () => {
+  it('ends placing with Cancel, a second UNIT tap, or another tool, and UNIT closes an open Add unit', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Cancel'));
+    expect(screen.queryByTestId('place-bar')).toBeNull();
+    expect(screen.getByLabelText('UNIT')).not.toBeSelected();
+
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    expect(screen.queryByTestId('place-bar')).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('MEASURE'));
+    expect(screen.queryByTestId('place-bar')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    expect(useMeasure.getState().active).toBe(false);
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
+    expect(screen.queryByTestId('place-bar')).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    await fireEvent.press(screen.getByLabelText('Add at center'));
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('UNIT'));
     expect(screen.queryByTestId('menu-panel')).toBeNull();
+    expect(screen.queryByTestId('place-bar')).toBeNull();
   });
 
   it('long-press opens Add unit there, and a second long-press moves the draft and the map', async () => {

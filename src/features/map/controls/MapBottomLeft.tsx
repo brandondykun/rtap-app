@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,8 +8,8 @@ import { useSettings } from '@/stores/settings';
 import { CONTROL_SIZE, EDGE, GAP } from '../layout';
 import { ReadoutCard } from './ReadoutCard';
 
-/** Bottom-left stack: the GPS readout (while its toggle is on) above the crosshair readout card. */
-export function MapBottomLeft() {
+/** Bottom-left stack: the GPS readout (while its toggle is on) above the crosshair readout card, then `footer` (full width). */
+export function MapBottomLeft({ footer }: { footer?: ReactNode }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const showGps = useSettings((s) => s.showGps);
@@ -21,10 +22,14 @@ export function MapBottomLeft() {
       style={{
         left: insets.left + EDGE,
         bottom: insets.bottom + EDGE,
-        maxWidth: width - insets.left - insets.right - 2 * EDGE - CONTROL_SIZE - GAP,
+        // A footer (the place bar) takes the full width; the readouts stay their own size.
+        ...(footer ? { right: insets.right + EDGE + CONTROL_SIZE + GAP } : { maxWidth: width - insets.left - insets.right - 2 * EDGE - CONTROL_SIZE - GAP }),
       }}>
-      {showGps ? <GpsReadout /> : null}
-      <ReadoutCard />
+      <View testID="map-readouts" className="items-start gap-2" pointerEvents="box-none">
+        {showGps ? <GpsReadout /> : null}
+        <ReadoutCard />
+      </View>
+      {footer}
     </View>
   );
 }
