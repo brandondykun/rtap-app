@@ -406,7 +406,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
       {panel || plotTemp ? null : (
-        <MapBottomLeft footer={placing ? <PlaceBar category={placing} onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null} />
+        <MapBottomLeft
+          footerBeside={landscape}
+          footer={
+            placing ? <PlaceBar category={placing} landscape={landscape} onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null
+          }
+        />
       )}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />

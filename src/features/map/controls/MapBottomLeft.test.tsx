@@ -29,4 +29,13 @@ describe('MapBottomLeft', () => {
     expect(screen.getByTestId('map-bottom-left').children).toEqual([screen.getByTestId('map-readouts'), screen.getByTestId('footer')]);
     expect(screen.getByTestId('map-bottom-left')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP });
   });
+
+  it('puts a footer beside the readouts (landscape), in the room left before the recenter button', async () => {
+    await renderWithProviders(<MapBottomLeft footer={<View testID="footer" />} footerBeside />);
+    const [readouts, slot] = screen.getByTestId('map-bottom-left').children;
+    expect(readouts).toEqual(screen.getByTestId('map-readouts'));
+    expect(slot).toEqual(screen.getByTestId('map-bottom-footer'));
+    expect(screen.getByTestId('map-bottom-footer').children).toEqual([screen.getByTestId('footer')]);
+    expect(screen.getByTestId('map-bottom-left')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP, flexDirection: 'row', alignItems: 'flex-end' });
+  });
 });
