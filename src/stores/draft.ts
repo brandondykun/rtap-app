@@ -29,7 +29,7 @@ type DraftValues = {
   unitType: UnitType;
   pointType: PointType;
   name: string;
-  /** True once the user typed a name; auto-names never overwrite it. */
+  /** True once the user edits the name (even clearing it); auto-names never overwrite it. */
   nameEdited: boolean;
   notes: string;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
@@ -217,7 +217,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       name: s.nameEdited ? s.name : '',
       remembered: s.mode === 'add' ? { ...s.remembered, pointType } : s.remembered,
     })),
-  setName: (name) => set({ name, nameEdited: name.trim() !== '' }),
+  setName: (name) => set({ name, nameEdited: true }),
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),

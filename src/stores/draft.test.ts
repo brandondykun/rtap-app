@@ -32,11 +32,14 @@ describe('draft store', () => {
     expect(useDraft.getState().name).toBe('OBJ IRON');
   });
 
-  it('returns to auto naming when the user clears the name', () => {
+  it('keeps a name the user cleared empty, without refilling it', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
-    useDraft.getState().setName('X');
-    useDraft.getState().setName('  ');
-    expect(useDraft.getState().nameEdited).toBe(false);
+    useDraft.getState().setAutoName('HOS-1');
+    useDraft.getState().setName('');
+    expect(useDraft.getState()).toMatchObject({ name: '', nameEdited: true });
+    useDraft.getState().setAutoName('HOS-1');
+    useDraft.getState().setAffiliation('neutral');
+    expect(useDraft.getState().name).toBe('');
   });
 
   it('remembers add choices across clear, but not edit values', () => {
