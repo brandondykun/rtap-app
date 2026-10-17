@@ -1,11 +1,11 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { GpsReadout } from '@/features/location/GpsReadout';
 import { useInteraction } from '@/stores/interaction';
-import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
+import { useMapChrome } from '@/stores/map-chrome';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -90,14 +90,14 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
 
 /** Reports the size of what fills the card's spot (your grid card or an action bar) to the controls that keep clear of it, and zero once it hides. */
 function SelfCardSlot({ onHeight, children }: { onHeight: (height: number) => void; children: ReactNode }) {
-  const setSelfCard = useMapChrome((s) => s.setSelfCard);
-  useEffect(() => () => setSelfCard(INITIAL_MAP_CHROME.selfCard), [setSelfCard]);
+  const id = useId();
+  useEffect(() => () => useMapChrome.getState().clearSelfCard(id), [id]);
   return (
     <View
       testID="self-card-slot"
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
-        setSelfCard({ width, height });
+        useMapChrome.getState().setSelfCard({ width, height }, id);
         onHeight(height);
       }}>
       {children}
