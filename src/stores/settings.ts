@@ -5,7 +5,7 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 
 export type CoordinateFormat = 'mgrs' | 'latlon';
-/** Mapbox basemap styles offered in the Layers panel. */
+/** Mapbox basemap styles offered in Settings. */
 export type Basemap = 'satellite' | 'hybrid' | 'topo' | 'dark';
 export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dark'];
 export type AltitudeUnit = 'm' | 'ft';

@@ -32,11 +32,10 @@ async function openLayers(ctx = makeTestContext()) {
 }
 
 describe('LayersMenu', () => {
-  it('switches the basemap', async () => {
+  it('has no basemap choice (it is in Settings)', async () => {
     await openLayers();
-    expect(screen.getByLabelText('Satellite')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Topo'));
-    expect(useSettings.getState().basemap).toBe('topo');
+    expect(screen.queryByText('Basemap')).toBeNull();
+    expect(screen.queryByLabelText('Topo')).toBeNull();
   });
 
   it('explains an empty mission', async () => {

@@ -11,10 +11,17 @@ import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type AltitudeUnit, type CoordinateFormat } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatEastWest, formatEastWestBoth } from './settings-format';
+
+const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
+  { value: 'satellite', label: 'Satellite' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'topo', label: 'Topo' },
+  { value: 'dark', label: 'Dark' },
+];
 
 const DECLINATION_ERROR = 'Enter a number from −180 to 180 (east positive)';
 
@@ -62,6 +69,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setAltitudeUnit = useSettings((s) => s.setAltitudeUnit);
   const setNorthRef = useSettings((s) => s.setNorthRef);
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
+  const basemap = useSettings((s) => s.basemap);
+  const setBasemap = useSettings((s) => s.setBasemap);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const showToolbarText = useSettings((s) => s.showToolbarText);
@@ -175,6 +184,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           </>
         ) : null}
         <ModelDeclinationHint />
+      </MenuSection>
+      <MenuSection label="Basemap">
+        <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
+        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Map">
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />

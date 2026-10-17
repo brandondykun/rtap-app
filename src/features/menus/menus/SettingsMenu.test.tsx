@@ -137,6 +137,16 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().showToolbarText).toBe(false);
   });
 
+  it('switches the basemap', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('Basemap')).toBeTruthy();
+    expect(screen.getByLabelText('Satellite')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Topo'));
+    expect(useSettings.getState().basemap).toBe('topo');
+    expect(screen.getByLabelText('Topo')).toBeSelected();
+    expect(screen.getByText('Offline map downloads use Satellite.')).toBeTruthy();
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

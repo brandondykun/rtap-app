@@ -19,7 +19,7 @@ import { useCommandContext } from '@/lib/db/command-context-provider';
 import { formatDistance } from '@/lib/geo/format/measure';
 import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type Basemap } from '@/stores/settings';
+import { useSettings } from '@/stores/settings';
 
 import { setItemHidden, setItemsHidden } from '../commands';
 import { layerRows } from '../layer-rows';
@@ -29,12 +29,6 @@ import { openItemMenu } from './item-menus';
 import { LineSample } from './LineSample';
 import { PolygonSample } from './PolygonSample';
 
-const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
-  { value: 'satellite', label: 'Satellite' },
-  { value: 'hybrid', label: 'Hybrid' },
-  { value: 'topo', label: 'Topo' },
-  { value: 'dark', label: 'Dark' },
-];
 const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 const count = (n: number) => n.toLocaleString('en-US');
@@ -46,12 +40,10 @@ const TABS: { id: ItemCategory; label: string; noun: string; empty: string }[] =
   { id: 'polygon', label: 'Polygons', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
 ];
 
-/** Basemap choice and the mission's items in one tab per category: search, show/hide, tap to open. */
+/** The mission's items in one tab per category: search, show/hide, tap to open. */
 export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
-  const basemap = useSettings((s) => s.basemap);
-  const setBasemap = useSettings((s) => s.setBasemap);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
@@ -88,10 +80,6 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   return (
     <View>
       <MenuHeader title="Layers" leading={{ label: 'Close', onPress: close }} />
-      <MenuSection label="Basemap">
-        <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
-        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
-      </MenuSection>
       <MenuSection label="Map items">
         <MenuSegmented<ItemCategory>
           options={tabOptions}

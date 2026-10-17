@@ -12,7 +12,7 @@ if (token) Mapbox.setAccessToken(token);
 // Returning true swallows the log; everything else keeps Mapbox's default console output.
 Logger.setLogCallback(isTileLoadFailure);
 
-/** Mapbox style for each basemap choice in the Layers panel. */
+/** Mapbox style for each basemap choice in Settings. */
 // Pinned to current Mapbox styles (the library's StyleURL constants point at older versions).
 export const BASEMAP_STYLE_URLS: Record<Basemap, string> = {
   satellite: Mapbox.StyleURL.Satellite,
