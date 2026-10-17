@@ -266,14 +266,13 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it('always shows your grid card bottom right, also with a panel open, and has no GPS toggle', async () => {
+  it('always shows your grid card, also with a panel open, and has no GPS toggle', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     expect(await screen.findByTestId('gps-readout')).toBeTruthy();
     expect(screen.queryByLabelText('GPS')).toBeNull();
-    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
     expect(screen.getByTestId('gps-readout')).toBeTruthy();

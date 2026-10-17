@@ -19,20 +19,30 @@ type Props = {
   onZoomOut: () => void;
   onRecenter: () => void;
   panel: PanelFrame | null;
+  landscape: boolean;
 };
 
 /** Height of your grid card before it is first laid out (two lines). */
 const SELF_CARD_HEIGHT = 64;
 
-/** Right-edge controls: north-up under the toolbar; zoom and your grid card (tap to recenter) at the bottom. */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel }: Props) {
+/**
+ * Right-edge controls: north-up under the toolbar; zoom and your grid card (tap to recenter) at the bottom.
+ * In portrait the card sits bottom left instead, under the crosshair readout, so both grids line up.
+ */
+export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
+  const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   // A tall bottom sheet (full detent) can leave no room below north-up: hide the card rather than overlap.
   const noRoom = panel?.side === 'bottom' && height - panel.size < insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + cardHeight + EDGE;
+  const selfCard = (
+    <SelfCardSlot onHeight={setCardHeight}>
+      <GpsReadout following={following} disabled={!canRecenter} onPress={onRecenter} />
+    </SelfCardSlot>
+  );
   return (
     <>
       <View className="absolute" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, right }}>
@@ -43,7 +53,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       <View
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
-        style={{ bottom: (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE, right }}>
+        style={{ bottom, right }}>
         {panel ? null : (
           <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
             <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
@@ -51,12 +61,13 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
             <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
           </View>
         )}
-        {noRoom ? null : (
-          <SelfCardSlot onHeight={setCardHeight}>
-            <GpsReadout following={following} disabled={!canRecenter} onPress={onRecenter} />
-          </SelfCardSlot>
-        )}
+        {landscape && !noRoom ? selfCard : null}
       </View>
+      {!landscape && !noRoom ? (
+        <View testID="self-card-left" className="absolute" style={{ bottom, left: insets.left + EDGE }}>
+          {selfCard}
+        </View>
+      ) : null}
     </>
   );
 }

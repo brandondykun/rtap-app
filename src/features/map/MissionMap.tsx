@@ -396,6 +396,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
         panel={panel}
+        landscape={landscape}
       />
       {lineDrawing ? <LineDrawBar panel={panel} /> : null}
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}

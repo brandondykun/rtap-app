@@ -9,8 +9,8 @@ import { ReadoutCard } from './ReadoutCard';
 
 /**
  * Bottom-left stack: the crosshair readout card, then `footer` under it. In landscape it sits beside your
- * grid card (bottom right); in portrait there is no room, so it sits above it and the footer stretches to
- * the zoom column.
+ * grid card (bottom right); in portrait it sits right above it (bottom left, lined up) and the footer
+ * stretches to the zoom column.
  */
 export function MapBottomLeft({ footer, landscape }: { footer?: ReactNode; landscape: boolean }) {
   const insets = useSafeAreaInsets();
