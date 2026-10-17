@@ -29,6 +29,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ altitudeUnit: 'ft' });
   });
 
+  it('sets and persists the zoom buttons (shown by default)', () => {
+    expect(useSettings.getState().showZoomButtons).toBe(true);
+    useSettings.getState().setShowZoomButtons(false);
+    expect(useSettings.getState().showZoomButtons).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');

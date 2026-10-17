@@ -3,6 +3,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { EDGE } from '../layout';
@@ -11,6 +12,7 @@ import { MapControls } from './MapControls';
 beforeEach(() => {
   useInteraction.setState(INITIAL_INTERACTION);
   useMapChrome.setState(INITIAL_MAP_CHROME);
+  useSettings.setState(DEFAULT_SETTINGS);
 });
 
 function handlers() {
@@ -29,6 +31,14 @@ describe('MapControls', () => {
     expect(h.onZoomIn).toHaveBeenCalledTimes(1);
     expect(h.onZoomOut).toHaveBeenCalledTimes(1);
     expect(h.onRecenter).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the zoom buttons when the setting is off', async () => {
+    useSettings.getState().setShowZoomButtons(false);
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape />);
+    expect(screen.queryByLabelText('Zoom in')).toBeNull();
+    expect(screen.queryByLabelText('Zoom out')).toBeNull();
+    expect(screen.getByLabelText('Recenter on me')).toBeTruthy();
   });
 
   it('rotates the needle against the map bearing', async () => {

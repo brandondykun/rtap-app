@@ -6,6 +6,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { GpsReadout } from '@/features/location/GpsReadout';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
+import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CONTROL_SIZE, EDGE, GAP, TOOLBAR_HEIGHT } from '../layout';
@@ -26,13 +27,14 @@ type Props = {
 const SELF_CARD_HEIGHT = 56;
 
 /**
- * Right-edge controls: north-up under the toolbar; zoom and your grid card (tap to recenter) at the bottom.
+ * Right-edge controls: north-up under the toolbar; zoom (unless turned off in Settings) and your grid card (tap to recenter) at the bottom.
  * In portrait the card sits bottom left instead, under the crosshair readout, so both grids line up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
+  const showZoom = useSettings((s) => s.showZoomButtons);
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
@@ -54,7 +56,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {panel ? null : (
+        {panel || !showZoom ? null : (
           <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
             <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
             <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />

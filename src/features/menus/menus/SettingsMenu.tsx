@@ -62,6 +62,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setAltitudeUnit = useSettings((s) => s.setAltitudeUnit);
   const setNorthRef = useSettings((s) => s.setNorthRef);
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
+  const showZoomButtons = useSettings((s) => s.showZoomButtons);
+  const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const [text, setText] = useState(override === null ? '' : String(override));
   const [error, setError] = useState<string | null>(null);
   // Text typed since the last commit; closing the menu with the keyboard up still saves it.
@@ -171,6 +173,9 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           </>
         ) : null}
         <ModelDeclinationHint />
+      </MenuSection>
+      <MenuSection label="Map">
+        <MenuToggle label="Zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
       </MenuSection>
     </View>
   );
