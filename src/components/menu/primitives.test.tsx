@@ -54,6 +54,8 @@ describe('menu primitives', () => {
     expect(screen.getByLabelText('Normal').props.className).toContain('px-4 py-3');
     expect(screen.getByLabelText('Small').props.className).toContain('px-3 py-2');
     expect(screen.getByLabelText('Small').props.className).not.toContain('py-3');
+    expect(screen.getByLabelText('Small').props.className).toContain('min-h-10');
+    expect(screen.getByLabelText('Small').props.hitSlop).toEqual({ top: 4, bottom: 4, left: 3, right: 3 });
   });
 
   it('MenuRow and MenuButton are pressable', async () => {
