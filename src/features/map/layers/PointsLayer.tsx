@@ -8,6 +8,7 @@ import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
+import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
@@ -33,7 +34,8 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
   const select = useMemo(() => createPointFeatureSelector(), []);
   const shape = useMemo(() => select(items), [select, items]);
   const filter = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds) as unknown as LayerFilter, [hiddenIds, excludeId]);
-  const labelStyle = useMemo(() => makePointLabelStyle(colors), [colors]);
+  const showLabels = useSettings((s) => s.showMapLabels);
+  const labelStyle = useMemo(() => ({ ...makePointLabelStyle(colors), visibility: showLabels ? 'visible' : 'none' }) as const, [colors, showLabels]);
 
   return (
     <ShapeSource

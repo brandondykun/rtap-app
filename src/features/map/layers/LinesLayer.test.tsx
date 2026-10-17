@@ -4,6 +4,7 @@ import { placeLine } from '@/features/map-items/commands';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { LinesLayer } from './LinesLayer';
@@ -37,5 +38,18 @@ describe('LinesLayer', () => {
       (props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: r.value.id } }], coordinates: { latitude: 38.905, longitude: -77 }, point: {} }),
     );
     expect(onItemPress).toHaveBeenCalledWith(r.value.id, { lat: 38.905, lon: -77 }, { kind: 'line', sidc: null });
+  });
+
+  it('hides its labels (only) while map labels are off', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    const ctx = makeTestContext();
+    const r = await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'restrictive-fire-line', name: 'ALPHA' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<LinesLayer missionId="m1" excludeId={null} />, ctx);
+    const props = mapboxMock().__props;
+    await waitFor(() => expect(props.SymbolLayer['lines-label'].style).toMatchObject({ visibility: 'visible' }));
+    await act(async () => useSettings.getState().toggleMapLabels());
+    expect(props.SymbolLayer['lines-label'].style).toMatchObject({ visibility: 'none' });
+    useSettings.setState(DEFAULT_SETTINGS);
   });
 });

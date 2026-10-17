@@ -114,4 +114,17 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('PLOT'));
     expect(onPlot).toHaveBeenCalled();
   });
+
+  it('has a LABELS toggle after LAYERS that shows whether labels are on', async () => {
+    const onLabels = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onLayers={jest.fn()} labelsOn onLabels={onLabels} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.filter((l) => ['LAYERS', 'LABELS', 'PLOT'].includes(l))).toEqual(['LAYERS', 'LABELS', 'PLOT']);
+    expect(screen.getByLabelText('LABELS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LABELS'));
+    expect(onLabels).toHaveBeenCalled();
+    await screen.unmount();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} labelsOn={false} onLabels={onLabels} />);
+    expect(screen.getByLabelText('LABELS')).not.toBeSelected();
+  });
 });

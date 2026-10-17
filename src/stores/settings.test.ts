@@ -43,6 +43,15 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showToolbarText: false });
   });
 
+  it('toggles and persists the map labels (shown by default)', () => {
+    expect(useSettings.getState().showMapLabels).toBe(true);
+    useSettings.getState().toggleMapLabels();
+    expect(useSettings.getState().showMapLabels).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showMapLabels: false });
+    useSettings.getState().toggleMapLabels();
+    expect(useSettings.getState().showMapLabels).toBe(true);
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');

@@ -8,6 +8,7 @@ import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
+import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { LINE_ARROW_STYLE, LINE_FLOT_STYLE, makeLineDashedStyle, makeLineHaloStyle, makeLineLabelStyle, makeLineStyle } from './styles';
@@ -23,14 +24,20 @@ type Props = { missionId: string; excludeId?: string | null; onItemPress?: (id: 
 export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) {
   const ctx = useCommandContext();
   const { colors } = useTheme();
+  const showLabels = useSettings((s) => s.showMapLabels);
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const select = useMemo(() => createLineFeatureSelector(), []);
   const { lines, ends } = useMemo(() => select(items), [select, items]);
   const visible = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds), [hiddenIds, excludeId]);
   const styles = useMemo(
-    () => ({ halo: makeLineHaloStyle(colors), solid: makeLineStyle(colors), dashed: makeLineDashedStyle(colors), label: makeLineLabelStyle(colors) }),
-    [colors],
+    () => ({
+      halo: makeLineHaloStyle(colors),
+      solid: makeLineStyle(colors),
+      dashed: makeLineDashedStyle(colors),
+      label: { ...makeLineLabelStyle(colors), visibility: showLabels ? 'visible' : 'none' } as const,
+    }),
+    [colors, showLabels],
   );
 
   return (

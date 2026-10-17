@@ -25,6 +25,7 @@ import { useQuickPlot } from '@/stores/quick-plot';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePlacing, type PlacingCategory } from '@/stores/placing';
 import { usePresence } from '@/stores/presence';
+import { useSettings } from '@/stores/settings';
 
 import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
@@ -64,6 +65,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
   const toolbar = useToolbarHeight();
+  const labelsOn = useSettings((s) => s.showMapLabels);
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [initialCamera] = useState(() => savedCamera ?? WORLD_CAMERA);
@@ -390,6 +392,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         onSettings={() => useMenu.getState().openMenu('settings', {})}
+        labelsOn={labelsOn}
+        onLabels={() => useSettings.getState().toggleMapLabels()}
       />
       <MapControls
         following={followMode}

@@ -16,6 +16,7 @@ import { INITIAL_PLACING, usePlacing } from '@/stores/placing';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MapScreen } from './MapScreen';
@@ -40,6 +41,7 @@ beforeEach(() => {
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   usePlacing.setState(INITIAL_PLACING);
   usePresence.setState(INITIAL_PRESENCE);
+  useSettings.setState(DEFAULT_SETTINGS);
 });
 
 describe('MapScreen', () => {
@@ -264,6 +266,20 @@ describe('MapScreen', () => {
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.queryByTestId('menu-panel')).toBeNull();
+  });
+
+  it('LABELS turns the map labels off and on, independent of the menus', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    expect(await screen.findByLabelText('LABELS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LABELS'));
+    expect(useSettings.getState().showMapLabels).toBe(false);
+    expect(screen.getByLabelText('LABELS')).not.toBeSelected();
+    expect(mapboxMock().__props.SymbolLayer['points-labels'].style).toMatchObject({ visibility: 'none' });
+    await fireEvent.press(screen.getByLabelText('LABELS'));
+    expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
   it('always shows your grid card, also with a panel open, and has no GPS toggle', async () => {

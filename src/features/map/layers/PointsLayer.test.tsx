@@ -4,6 +4,7 @@ import { placePoint, toggleItemVisibility } from '@/features/map-items/commands'
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { PointsLayer } from './PointsLayer';
@@ -71,5 +72,18 @@ describe('PointsLayer', () => {
     // `at` is the finger; the last argument is the symbol's stored coordinate (for snapping), not the
     // tile-quantized rendered geometry.
     expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9001, lon: -77.0001 }, { kind: 'point', sidc: HOSTILE_INF }, at);
+  });
+
+  it('hides its labels (only) while map labels are off', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<PointsLayer missionId="m1" />, ctx);
+    const props = mapboxMock().__props;
+    await waitFor(() => expect(props.SymbolLayer['points-labels'].style).toMatchObject({ visibility: 'visible' }));
+    await act(async () => useSettings.getState().toggleMapLabels());
+    expect(props.SymbolLayer['points-labels'].style).toMatchObject({ visibility: 'none' });
+    useSettings.setState(DEFAULT_SETTINGS);
   });
 });

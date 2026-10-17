@@ -23,13 +23,16 @@ type Props = {
   onLayers?: () => void;
   onPlot?: () => void;
   onSettings?: () => void;
+  /** The LABELS toggle: highlighted (and a label icon) while map labels show, a crossed-out label icon while hidden. */
+  labelsOn?: boolean;
+  onLabels?: () => void;
 };
 
 /**
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, onSettings }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, onSettings, labelsOn = true, onLabels }: Props) {
   const insets = useSafeAreaInsets();
   const height = useToolbarHeight();
   const position = landscape
@@ -44,6 +47,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       <ToolButton icon="pentagon-outline" label="POLYGON" active={activeTool === 'polygon'} onPress={onPolygon} />
       <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
+      <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" active={labelsOn} onPress={onLabels} />
       <ToolButton icon="target" label="PLOT" active={activeTool === 'plot'} onPress={onPlot} />
     </>
   );
