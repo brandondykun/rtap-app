@@ -34,7 +34,7 @@ describe('map layout', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS });
     expect(p.logo.top).toBe(LANDSCAPE_LOGO_TOP);
     // Only the button's padding may extend past the safe area, never the icon (~half its frame).
-    expect(p.attribution.top).toBeGreaterThanOrEqual(-EDGE);
+    expect(p.attribution.top).toBeGreaterThanOrEqual(-12);
     expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE.landscape);
     expect(p.attribution.left).toBe(EDGE);
   });

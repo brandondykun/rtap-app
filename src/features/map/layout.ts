@@ -1,7 +1,7 @@
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 
 /** Spacing and sizes for map chrome (toolbar, controls, readout, Mapbox ornaments), in points. */
-export const EDGE = 12;
+export const EDGE = 4;
 export const GAP = 8;
 export const TOOLBAR_HEIGHT = 50;
 export const CONTROL_SIZE = 40;
