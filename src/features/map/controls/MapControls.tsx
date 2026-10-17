@@ -113,7 +113,7 @@ function isNorthUp(bearing: number): boolean {
 /** North-up fades out while the map already points north (so after it is pressed) and back in once rotated. */
 function NorthUpButton({ top, right, onPress }: { top: number; right: number; onPress: () => void }) {
   const hidden = useInteraction((s) => isNorthUp(s.cameraBearing));
-  const fade = useAnimatedStyle(() => ({ opacity: withTiming(hidden ? 0 : 1, { duration: 200 }) }), [hidden]);
+  const fade = useAnimatedStyle(() => ({ opacity: withTiming(hidden ? 0 : 1, { duration: 500 }) }), [hidden]);
   return (
     <Animated.View
       testID="north-up"
