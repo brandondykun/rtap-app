@@ -4,10 +4,17 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-type Props = { icon: IconName; label: string; active?: boolean; onPress?: () => void };
+type Props = {
+  icon: IconName;
+  label: string;
+  active?: boolean;
+  /** An on/off toggle's state: reported to screen readers only (the icon shows it), never highlighted. */
+  toggled?: boolean;
+  onPress?: () => void;
+};
 
 /** Icon over an uppercase label (icon only when toolbar text is off in Settings). Active: amber on dark amber. No handler: disabled. */
-export function ToolButton({ icon, label, active = false, onPress }: Props) {
+export function ToolButton({ icon, label, active = false, toggled, onPress }: Props) {
   const { colors } = useTheme();
   const showText = useSettings((s) => s.showToolbarText);
   const disabled = !onPress;
@@ -16,7 +23,7 @@ export function ToolButton({ icon, label, active = false, onPress }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ selected: active, disabled }}
+      accessibilityState={{ selected: toggled ?? active, disabled }}
       disabled={disabled}
       onPress={onPress}
       // Icon only: a bigger icon in a taller pill, so the button and its active highlight keep their size.

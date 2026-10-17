@@ -23,7 +23,7 @@ type Props = {
   onLayers?: () => void;
   onPlot?: () => void;
   onSettings?: () => void;
-  /** The Labels toggle, right of the tools and before Settings: a label icon while map labels show, a crossed-out one while hidden. */
+  /** The LABELS toggle, the last tool: a label icon while map labels show, a crossed-out one while hidden. */
   labelsOn?: boolean;
   onLabels?: () => void;
 };
@@ -48,6 +48,8 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
       <ToolButton icon="target" label="PLOT" active={activeTool === 'plot'} onPress={onPlot} />
+      {/* A toggle, not a tool: its icon shows the state, with no highlight. */}
+      <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" toggled={labelsOn} onPress={onLabels} />
     </>
   );
 
@@ -69,47 +71,25 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
           {tools}
         </ScrollView>
       )}
-      {/* A toggle, not a tool: right of the scrolling tools; only the icon shows its state (no highlight). */}
-      <BarIcon
-        icon={labelsOn ? 'label-outline' : 'label-off-outline'}
-        iconTestID={labelsOn ? 'labels-icon-on' : 'labels-icon-off'}
-        label="Labels"
-        selected={labelsOn}
-        onPress={onLabels}
-      />
       <Divider />
       <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
     </View>
   );
 }
 
-function BarIcon({
-  icon,
-  label,
-  onPress,
-  selected,
-  iconTestID,
-}: {
-  icon: IconName;
-  label: string;
-  onPress?: () => void;
-  selected?: boolean;
-  iconTestID?: string;
-}): ReactNode {
+function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPress?: () => void }): ReactNode {
   const { colors } = useTheme();
   const disabled = !onPress;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled, selected }}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       hitSlop={6}
       className={`h-10 w-10 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
-      <View testID={iconTestID}>
-        <Icon name={icon} size={22} color={colors.text} />
-      </View>
+      <Icon name={icon} size={22} color={colors.text} />
     </Pressable>
   );
 }

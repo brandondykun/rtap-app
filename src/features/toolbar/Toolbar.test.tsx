@@ -115,22 +115,21 @@ describe('Toolbar', () => {
     expect(onPlot).toHaveBeenCalled();
   });
 
-  it('has a Labels toggle right after the tools, before Settings, that swaps its icon with no highlight', async () => {
+  it('ends the tools with a LABELS toggle that swaps its icon, with no highlight', async () => {
     const onLabels = jest.fn();
-    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onSettings={jest.fn()} labelsOn onLabels={onLabels} />);
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onPlot={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(order.slice(-3)).toEqual(['PLOT', 'Labels', 'Settings']);
-    // Outside the scrolling tools, so it never scrolls away.
-    expect(screen.getByTestId('toolbar').children).toContain(screen.getByLabelText('Labels'));
-    const on = screen.getByLabelText('Labels');
+    expect(order.slice(-3)).toEqual(['PLOT', 'LABELS', 'Settings']);
+    expect(screen.getByText('LABELS')).toBeTruthy();
+    const on = screen.getByLabelText('LABELS');
     expect(on).toBeSelected();
     expect(on.props.className).not.toContain('bg-accent-subtle');
-    expect(screen.getByTestId('labels-icon-on')).toBeTruthy();
+    // Inside the scrolling tools.
+    expect(screen.getByTestId('toolbar').children).not.toContain(on);
     await fireEvent.press(on);
     expect(onLabels).toHaveBeenCalled();
     await screen.unmount();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} labelsOn={false} onLabels={onLabels} />);
-    expect(screen.getByLabelText('Labels')).not.toBeSelected();
-    expect(screen.getByTestId('labels-icon-off')).toBeTruthy();
+    expect(screen.getByLabelText('LABELS')).not.toBeSelected();
   });
 });

@@ -268,17 +268,17 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it('Labels turns the map labels off and on, independent of the menus', async () => {
+  it('LABELS turns the map labels off and on, independent of the menus', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    expect(await screen.findByLabelText('Labels')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Labels'));
+    expect(await screen.findByLabelText('LABELS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LABELS'));
     expect(useSettings.getState().showMapLabels).toBe(false);
-    expect(screen.getByLabelText('Labels')).not.toBeSelected();
+    expect(screen.getByLabelText('LABELS')).not.toBeSelected();
     expect(mapboxMock().__props.SymbolLayer['points-labels'].style).toMatchObject({ visibility: 'none' });
-    await fireEvent.press(screen.getByLabelText('Labels'));
+    await fireEvent.press(screen.getByLabelText('LABELS'));
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
