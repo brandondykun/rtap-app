@@ -130,6 +130,13 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Show zoom buttons').props.value).toBe(false);
   });
 
+  it('shows or hides the toolbar text (shown by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Show toolbar text').props.value).toBe(true);
+    await fireEvent(screen.getByLabelText('Show toolbar text'), 'valueChange', false);
+    expect(useSettings.getState().showToolbarText).toBe(false);
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

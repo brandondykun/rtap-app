@@ -64,6 +64,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
+  const showToolbarText = useSettings((s) => s.showToolbarText);
+  const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
   const [text, setText] = useState(override === null ? '' : String(override));
   const [error, setError] = useState<string | null>(null);
   // Text typed since the last commit; closing the menu with the keyboard up still saves it.
@@ -176,6 +178,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       </MenuSection>
       <MenuSection label="Map">
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
+        <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
       </MenuSection>
     </View>
   );

@@ -36,6 +36,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
   });
 
+  it('sets and persists the toolbar text (shown by default)', () => {
+    expect(useSettings.getState().showToolbarText).toBe(true);
+    useSettings.getState().setShowToolbarText(false);
+    expect(useSettings.getState().showToolbarText).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showToolbarText: false });
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');

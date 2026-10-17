@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { Toolbar } from './Toolbar';
@@ -9,7 +10,21 @@ function style() {
   return StyleSheet.flatten(screen.getByTestId('toolbar').props.style);
 }
 
+beforeEach(() => useSettings.setState(DEFAULT_SETTINGS));
+
 describe('Toolbar', () => {
+  it('shows the tool labels, or only icons when toolbar text is off (labels stay for accessibility)', async () => {
+    const onUnit = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onUnit={onUnit} />);
+    expect(screen.getByText('UNIT')).toBeTruthy();
+    await screen.unmount();
+    useSettings.getState().setShowToolbarText(false);
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onUnit={onUnit} />);
+    expect(screen.queryByText('UNIT')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('UNIT'));
+    expect(onUnit).toHaveBeenCalled();
+  });
+
   it('spans the width in portrait', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
     expect(style().left).toBeDefined();
