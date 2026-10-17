@@ -286,6 +286,8 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     expect(screen.getByText('Tap map')).toBeTruthy();
+    // The bar takes your grid card's place.
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useDraft.getState().mode).toBeNull();
     await act(async () =>
@@ -294,6 +296,7 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'unit', coord: { lat: 38.95, lon: -77.1 } });
     expect(screen.queryByTestId('place-bar')).toBeNull();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
   it('POINT: Add at center opens Add point at the crosshair; switching from UNIT changes the bar', async () => {

@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { Dimensions, StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet, View } from 'react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
@@ -91,6 +91,19 @@ describe('MapControls', () => {
   it('keeps the portrait card above a bottom sheet', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} />);
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: 320 + EDGE });
+  });
+
+  it.each([[true], [false]])('shows an action bar in place of your grid card (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} bar={<View testID="bar" />} />);
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    const slot = landscape ? screen.getByTestId('map-controls-bottom') : screen.getByTestId('self-card-left');
+    expect(slot).toContainElement(screen.getByTestId('bar'));
+  });
+
+  it('keeps the action bar even when a full sheet leaves no room for your grid card', async () => {
+    const size = Dimensions.get('window').height - 100;
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} bar={<View testID="bar" />} />);
+    expect(screen.getByTestId('bar')).toBeTruthy();
   });
 
   it('reports the card size for the bottom bars, and zero once it hides', async () => {

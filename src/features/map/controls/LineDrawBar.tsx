@@ -1,5 +1,4 @@
 import { MenuButton } from '@/components/menu/MenuButton';
-import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
@@ -8,7 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { MapHintBar } from './MapHintBar';
 
 /** While drawing a line or polygon: Add/Move at center and Undo/Done; for a circle, Set center / Set edge at the crosshair. */
-export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
+export function LineDrawBar() {
   const { colors } = useTheme();
   const selected = useDraft((s) => s.selectedVertex);
   const insertAfter = useDraft((s) => s.insertAfter);
@@ -30,12 +29,12 @@ export function LineDrawBar({ panel }: { panel: PanelFrame | null }) {
   const centerLabel = circle ? (hasCenter ? 'Set edge at crosshair' : 'Set center at crosshair') : moving ? 'Move to center' : 'Add at center';
 
   return (
-    <MapHintBar testID="line-draw-bar" panel={panel} hint="Tap map">
-      <MenuButton label={centerLabel} icon={<CrosshairGlyph size={16} color={colors.text} />} onPress={atCenter} />
+    <MapHintBar testID="line-draw-bar" hint="Tap map">
+      <MenuButton compact label={centerLabel} icon={<CrosshairGlyph size={14} color={colors.text} />} onPress={atCenter} />
       {circle ? null : moving ? (
-        <MenuButton label="Done" icon="check" onPress={() => useDraft.getState().selectVertex(null)} />
+        <MenuButton compact label="Done" icon="check" onPress={() => useDraft.getState().selectVertex(null)} />
       ) : (
-        <MenuButton label="Undo" icon="undo" iconOnly onPress={() => useDraft.getState().undo()} disabled={!canUndo} />
+        <MenuButton compact label="Undo" icon="undo" iconOnly onPress={() => useDraft.getState().undo()} disabled={!canUndo} />
       )}
     </MapHintBar>
   );

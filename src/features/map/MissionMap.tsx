@@ -397,18 +397,17 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onRecenter={recenter}
         panel={panel}
         landscape={landscape}
+        bar={
+          lineDrawing ? (
+            <LineDrawBar />
+          ) : placing ? (
+            <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
+          ) : null
+        }
       />
-      {lineDrawing ? <LineDrawBar panel={panel} /> : null}
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
-      {panel || plotTemp ? null : (
-        <MapBottomLeft
-          landscape={landscape}
-          footer={
-            placing ? <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null
-          }
-        />
-      )}
+      {panel || plotTemp ? null : <MapBottomLeft landscape={landscape} />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />

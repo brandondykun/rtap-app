@@ -44,6 +44,18 @@ describe('menu primitives', () => {
     expect(screen.getByText('child')).toBeTruthy();
   });
 
+  it('MenuButton has a compact variant with less padding for map bars', async () => {
+    await renderWithProviders(
+      <>
+        <MenuButton label="Normal" icon="close" onPress={() => {}} />
+        <MenuButton label="Small" icon="close" onPress={() => {}} compact />
+      </>,
+    );
+    expect(screen.getByLabelText('Normal').props.className).toContain('px-4 py-3');
+    expect(screen.getByLabelText('Small').props.className).toContain('px-2 py-1');
+    expect(screen.getByLabelText('Small').props.className).not.toContain('py-3');
+  });
+
   it('MenuRow and MenuButton are pressable', async () => {
     const row = jest.fn();
     const button = jest.fn();

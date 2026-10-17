@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export type ChromeSize = { width: number; height: number };
 
 type MapChromeValues = {
-  /** Your grid card at the bottom right, as laid out; zero while it is hidden. Bottom bars keep clear of it. */
+  /** Your grid card (or the action bar in its place), as laid out; zero while hidden. Bottom controls keep clear of it. */
   selfCard: ChromeSize;
 };
 type MapChromeActions = { setSelfCard: (size: ChromeSize) => void };
