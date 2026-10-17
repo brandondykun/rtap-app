@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Panel } from '@/components/menu/Panel';
-import { EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { EDGE, GAP } from '@/features/map/layout';
+import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { topMenu, useMenu } from '@/stores/menu';
 
 import type { MenuComponentProps } from './define-menu';
@@ -13,6 +14,7 @@ import { MENU_REGISTRY } from './registry';
 /** Renders the top of the menu stack in the Panel. The map behind stays fully interactive. */
 export function MenuHost({ landscape, missionId }: { landscape: boolean; missionId: string }) {
   const insets = useSafeAreaInsets();
+  const toolbar = useToolbarHeight();
   const top = useMenu((s) => topMenu(s));
   const setPanelFrame = useMenu((s) => s.setPanelFrame);
   const definition = top ? MENU_REGISTRY[top.id] : undefined;
@@ -31,7 +33,7 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         landscape={landscape}
         detents={definition.detents}
         initialDetent={initialDetent}
-        topReserved={insets.top + EDGE + TOOLBAR_HEIGHT + GAP}
+        topReserved={insets.top + EDGE + toolbar + GAP}
         onFrameChange={setPanelFrame}>
         <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
       </Panel>

@@ -13,6 +13,8 @@ import {
   ornamentRowTop,
   selfCardClearance,
   TOOLBAR_HEIGHT,
+  TOOLBAR_HEIGHT_ICONS,
+  toolbarHeight,
 } from './layout';
 
 const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -73,5 +75,17 @@ describe('map layout', () => {
     expect(selfCardClearance(card, true)).toEqual({ lift: 0, right: 250 + GAP });
     expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, right: CONTROL_SIZE + GAP });
     expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, right: CONTROL_SIZE + GAP });
+  });
+
+  it('shrinks the toolbar when its text is hidden, and moves what sits under it up to match', () => {
+    expect(toolbarHeight(true)).toBe(TOOLBAR_HEIGHT);
+    expect(toolbarHeight(false)).toBe(TOOLBAR_HEIGHT_ICONS);
+    expect(TOOLBAR_HEIGHT_ICONS).toBeLessThan(TOOLBAR_HEIGHT);
+    const shrink = TOOLBAR_HEIGHT - TOOLBAR_HEIGHT_ICONS;
+    expect(ornamentRowTop(false, TOOLBAR_HEIGHT_ICONS)).toBe(ornamentRowTop(false) - shrink);
+    expect(bannerTop(false, TOOLBAR_HEIGHT_ICONS)).toBe(bannerTop(false) - shrink);
+    expect(ornamentPositions({ landscape: false, insets: NO_INSETS, toolbarHeight: TOOLBAR_HEIGHT_ICONS }).logo.top).toBe(EDGE + TOOLBAR_HEIGHT_ICONS + GAP);
+    // Landscape: the logo row is beside the toolbar, not under it.
+    expect(ornamentRowTop(true, TOOLBAR_HEIGHT_ICONS)).toBe(ornamentRowTop(true));
   });
 });

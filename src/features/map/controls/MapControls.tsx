@@ -5,12 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { GpsReadout } from '@/features/location/GpsReadout';
+import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { useInteraction } from '@/stores/interaction';
 import { useMapChrome } from '@/stores/map-chrome';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { CONTROL_SIZE, EDGE, GAP, TOOLBAR_HEIGHT } from '../layout';
+import { CONTROL_SIZE, EDGE, GAP } from '../layout';
 import { MapButton } from './MapButton';
 
 type Props = {
@@ -41,11 +42,12 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
   const showZoom = useSettings((s) => s.showZoomButtons);
+  const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   // A tall bottom sheet (full detent) can leave no room below north-up: hide the card and zoom rather than overlap.
-  const room = panel?.side === 'bottom' ? height - panel.size - (insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE) : Infinity;
+  const room = panel?.side === 'bottom' ? height - panel.size - (insets.top + EDGE + toolbar + GAP + CONTROL_SIZE + GAP + EDGE) : Infinity;
   // The action bar always shows: it is how the user finishes the mode.
   const noRoom = !bar && room < cardHeight;
   const selfCard = bar ? (
@@ -57,7 +59,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   );
   return (
     <>
-      <NorthUpButton top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} right={right} onPress={onNorthUp} />
+      <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} />
       <View
         testID="map-controls-bottom"
         className="absolute items-end gap-3"

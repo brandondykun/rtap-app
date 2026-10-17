@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
+import { TOOLBAR_HEIGHT, TOOLBAR_HEIGHT_ICONS } from '@/features/map/layout';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -17,10 +18,12 @@ describe('Toolbar', () => {
     const onUnit = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onUnit={onUnit} />);
     expect(screen.getByText('UNIT')).toBeTruthy();
+    expect(style().height).toBe(TOOLBAR_HEIGHT);
     await screen.unmount();
     useSettings.getState().setShowToolbarText(false);
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onUnit={onUnit} />);
     expect(screen.queryByText('UNIT')).toBeNull();
+    expect(style().height).toBe(TOOLBAR_HEIGHT_ICONS);
     await fireEvent.press(screen.getByLabelText('UNIT'));
     expect(onUnit).toHaveBeenCalled();
   });

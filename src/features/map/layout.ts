@@ -4,6 +4,8 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 export const EDGE = 4;
 export const GAP = 8;
 export const TOOLBAR_HEIGHT = 50;
+/** The toolbar with its text hidden (icons only). */
+export const TOOLBAR_HEIGHT_ICONS = 42;
 export const CONTROL_SIZE = 40;
 /** Height of the Mapbox logo/attribution row. */
 export const LOGO_ROW_HEIGHT = 28;
@@ -35,24 +37,29 @@ export function isLandscape(width: number, height: number): boolean {
  * Top of the Mapbox logo row, measured from the safe area: under the full-width toolbar in
  * portrait, near the top edge in landscape.
  */
-export function ornamentRowTop(landscape: boolean): number {
-  return landscape ? LANDSCAPE_LOGO_TOP : EDGE + TOOLBAR_HEIGHT + GAP;
+export function ornamentRowTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
+  return landscape ? LANDSCAPE_LOGO_TOP : EDGE + toolbar + GAP;
+}
+
+/** Toolbar height for the Show toolbar text setting. */
+export function toolbarHeight(showText: boolean): number {
+  return showText ? TOOLBAR_HEIGHT : TOOLBAR_HEIGHT_ICONS;
 }
 
 /** Height of the Mapbox wordmark itself (the logo row reserves more). */
 export const LOGO_WORDMARK_HEIGHT = 22;
 
 /** Top of the top-left stack (GPS readout, location notice), from the safe area: right under the wordmark. */
-export function topLeftStackTop(landscape: boolean): number {
-  return ornamentRowTop(landscape) + LOGO_WORDMARK_HEIGHT;
+export function topLeftStackTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
+  return ornamentRowTop(landscape, toolbar) + LOGO_WORDMARK_HEIGHT;
 }
 
 /**
  * Location banner top (from the safe area): below the Mapbox logo row and below the toolbar,
  * whichever is lower. In landscape the toolbar is top-right, so the logo row alone is too high.
  */
-export function bannerTop(landscape: boolean): number {
-  return Math.max(ornamentRowTop(landscape) + LOGO_ROW_HEIGHT, EDGE + TOOLBAR_HEIGHT + GAP);
+export function bannerTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
+  return Math.max(ornamentRowTop(landscape, toolbar) + LOGO_ROW_HEIGHT, EDGE + toolbar + GAP);
 }
 
 /**
@@ -63,9 +70,19 @@ export function bannerTop(landscape: boolean): number {
  * `insets` are added to the margins. Mapbox on iOS already measures ornament margins from the
  * safe area, so pass zero insets there.
  */
-export function ornamentPositions({ landscape, insets, leftOffset = 0 }: { landscape: boolean; insets: Insets; leftOffset?: number }) {
+export function ornamentPositions({
+  landscape,
+  insets,
+  leftOffset = 0,
+  toolbarHeight: toolbar = TOOLBAR_HEIGHT,
+}: {
+  landscape: boolean;
+  insets: Insets;
+  leftOffset?: number;
+  toolbarHeight?: number;
+}) {
   const left = insets.left + EDGE + leftOffset;
-  const top = insets.top + ornamentRowTop(landscape);
+  const top = insets.top + ornamentRowTop(landscape, toolbar);
   return {
     attribution: { top: top - attributionRaise(landscape), left },
     logo: { top, left: left + ATTRIBUTION_WIDTH },

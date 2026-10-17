@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { notifyInfo } from '@/features/feedback/feedback';
 import type { MissionCamera } from '@/features/missions/repository';
+import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { LatLon } from '@/lib/geo/types';
 import { wrapLon } from '@/lib/geo/units/angle';
 import { useInteraction } from '@/stores/interaction';
@@ -60,6 +61,7 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
     notifyInfo(`${BASEMAP_LABELS[basemap]} map is unavailable — showing Satellite.`);
   };
   const insets = useSafeAreaInsets();
+  const toolbar = useToolbarHeight();
   // Mapbox on iOS measures ornament margins from the safe area already.
   // A left drawer covers the top-left corner; keep the logo row visible right of it. The drawer
   // width counts from the screen edge, the ornament margin from the safe area: subtract the inset.
@@ -68,6 +70,7 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
     landscape,
     insets: Platform.OS === 'ios' ? NO_INSETS : insets,
     leftOffset,
+    toolbarHeight: toolbar,
   });
   const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
 

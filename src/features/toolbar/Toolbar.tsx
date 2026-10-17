@@ -3,9 +3,10 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { EDGE, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { EDGE } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { useToolbarHeight } from './use-toolbar-height';
 import { ToolButton } from './ToolButton';
 
 export type ToolId = 'unit' | 'point' | 'line' | 'polygon' | 'measure' | 'layers' | 'plot';
@@ -30,6 +31,7 @@ type Props = {
  */
 export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, onSettings }: Props) {
   const insets = useSafeAreaInsets();
+  const height = useToolbarHeight();
   const position = landscape
     ? { top: insets.top + EDGE, right: insets.right + EDGE }
     : { top: insets.top + EDGE, left: insets.left + EDGE, right: insets.right + EDGE };
@@ -49,7 +51,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
   return (
     <View
       testID="toolbar"
-      style={[position, { height: TOOLBAR_HEIGHT }]}
+      style={[position, { height }]}
       className="absolute flex-row items-center rounded-3xl border border-border bg-surface-chrome px-2">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
       <Divider />

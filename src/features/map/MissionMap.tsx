@@ -15,6 +15,7 @@ import { QuickPlotCard } from '@/features/quick-plot/QuickPlotCard';
 import { QuickPlotEntry } from '@/features/quick-plot/QuickPlotEntry';
 import type { ItemRef } from '@/features/symbology/categories';
 import { Toolbar } from '@/features/toolbar/Toolbar';
+import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
 import { useDraft } from '@/stores/draft';
@@ -43,7 +44,7 @@ import { QuickPlotLayer } from './layers/QuickPlotLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { cameraPaddingFor, EDGE, GAP, isLandscape, TOOLBAR_HEIGHT } from './layout';
+import { cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
 
 const EASE = { animationMode: 'easeTo' as const };
 /** ~5 m: the idle camera center counts as the move's target. */
@@ -62,6 +63,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const ctx = useCommandContext();
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
+  const toolbar = useToolbarHeight();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [initialCamera] = useState(() => savedCamera ?? WORLD_CAMERA);
@@ -413,7 +415,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {panel || plotTemp ? null : <MapBottomLeft landscape={landscape} />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
-      <Toast top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} />
+      <Toast top={insets.top + EDGE + toolbar + GAP} />
     </View>
   );
 }

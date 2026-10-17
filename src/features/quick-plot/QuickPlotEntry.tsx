@@ -6,7 +6,8 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { MapButton } from '@/features/map/controls/MapButton';
-import { EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { EDGE, GAP } from '@/features/map/layout';
+import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { describeVector } from '@/lib/geo/vector';
 import { useInteraction } from '@/stores/interaction';
@@ -28,6 +29,7 @@ function prefill(): MgrsParts {
 
 /** Quick plot grid entry: centered under the toolbar (above the keyboard), four MGRS fields and Plot. */
 export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
+  const toolbar = useToolbarHeight();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
@@ -72,7 +74,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   );
 
   return (
-    <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP }}>
+    <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + toolbar + GAP }}>
       <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-border bg-surface-chrome p-3">
         <View testID="quick-plot-row" className="flex-row items-start gap-1">
           <View className="flex-1">
