@@ -6,7 +6,7 @@ import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MeasureCard } from './MeasureCard';
+import { MeasureBar } from './MeasureBar';
 
 const C = { lat: 38.91, lon: -77 };
 
@@ -19,10 +19,9 @@ beforeEach(() => {
   useMeasure.getState().startMeasure();
 });
 
-describe('MeasureCard', () => {
+describe('MeasureBar', () => {
   it('asks for a start, then sets points at the crosshair and shows the readout', async () => {
-    await renderWithProviders(<MeasureCard />);
-    expect(screen.getByText('Measure')).toBeTruthy();
+    await renderWithProviders(<MeasureBar />);
     expect(screen.getByText('Set start')).toBeTruthy();
     expect(screen.queryByLabelText('Restart')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
@@ -33,7 +32,7 @@ describe('MeasureCard', () => {
 
   it('has no From me button; measures and stops', async () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
-    await renderWithProviders(<MeasureCard />);
+    await renderWithProviders(<MeasureBar />);
     expect(screen.queryByLabelText('From me')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Set at crosshair'));
     expect(screen.getByText('1.11 km · 000° TRUE')).toBeTruthy();
@@ -41,13 +40,11 @@ describe('MeasureCard', () => {
     expect(useMeasure.getState().active).toBe(false);
   });
 
-  it('keeps everything on one line, shrinking the readout text to fit', async () => {
-    useMeasure.getState().place({ lat: 38.9, lon: -77 });
-    useMeasure.getState().place(C);
-    await renderWithProviders(<MeasureCard />);
-    const readout = screen.getByText('1.11 km · 000° TRUE');
-    expect(readout.props.numberOfLines).toBe(1);
-    expect(readout.props.adjustsFontSizeToFit).toBe(true);
-    expect(screen.getByTestId('measure-row')).toHaveStyle({ flexDirection: 'row' });
+  it('looks like the other tap-mode bars, with compact icon buttons', async () => {
+    await renderWithProviders(<MeasureBar />);
+    expect(screen.getByTestId('measure-bar')).toBeTruthy();
+    expect(screen.getByLabelText('Set at crosshair').props.className).toContain('min-h-10');
+    expect(screen.queryByText('Set at crosshair')).toBeNull();
+    expect(screen.getByLabelText('Stop measuring').props.className).toContain('min-h-10');
   });
 });

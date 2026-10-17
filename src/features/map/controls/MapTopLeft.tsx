@@ -3,8 +3,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { LocationBanner } from '@/features/location/LocationBanner';
-import { MeasureCard } from '@/features/measure/MeasureCard';
-import { useMeasure } from '@/stores/measure';
 import { useQuickPlot } from '@/stores/quick-plot';
 
 import { bannerTop, CONTROL_SIZE, EDGE, GAP, topLeftStackTop } from '../layout';
@@ -14,7 +12,6 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
   const insets = useSafeAreaInsets();
   const drawer = panel?.side === 'left' ? panel.size : 0;
   const top = topLeftStackTop(landscape);
-  const measuring = useMeasure((s) => s.active);
   // The quick plot entry card sits where the notice would; the notice would cover its fields.
   const plotEntryOpen = useQuickPlot((s) => s.entryOpen);
   return (
@@ -27,14 +24,8 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
         left: Math.max(insets.left, drawer) + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
-      {/* Like the notice, the card starts below the toolbar (which reaches under it in landscape). */}
-      {measuring ? (
-        <View testID="measure-card-slot" style={{ marginTop: Math.max(0, bannerTop(landscape) - top) }}>
-          <MeasureCard />
-        </View>
-      ) : null}
       {/* The notice hides while a panel is open. It sits below the toolbar (it would reach under it in landscape). */}
-      {panel || plotEntryOpen ? null : <LocationBanner marginTop={measuring ? 0 : Math.max(0, bannerTop(landscape) - top)} />}
+      {panel || plotEntryOpen ? null : <LocationBanner marginTop={Math.max(0, bannerTop(landscape) - top)} />}
     </View>
   );
 }

@@ -644,10 +644,13 @@ describe('MapScreen', () => {
       expect(await screen.findByText('Layers')).toBeTruthy();
       await fireEvent.press(screen.getByLabelText('MEASURE'));
       expect(useMenu.getState().stack).toEqual([]);
-      expect(screen.getByTestId('measure-card')).toBeTruthy();
+      expect(screen.getByTestId('measure-bar')).toBeTruthy();
+      // The bar takes your grid card's place.
+      expect(screen.queryByTestId('gps-readout')).toBeNull();
       expect(screen.getByLabelText('MEASURE')).toBeSelected();
       await fireEvent.press(screen.getByLabelText('MEASURE'));
-      expect(screen.queryByTestId('measure-card')).toBeNull();
+      expect(screen.queryByTestId('measure-bar')).toBeNull();
+      expect(screen.getByTestId('gps-readout')).toBeTruthy();
     });
 
     it('a map tap sets the start; a unit tap snaps the end without opening the unit; long-press does nothing', async () => {
@@ -679,7 +682,7 @@ describe('MapScreen', () => {
       expect(useMeasure.getState().start).toEqual({ lat: 38.9, lon: -77 });
       await fireEvent.press(screen.getByLabelText('LAYERS'));
       expect(useMeasure.getState().active).toBe(false);
-      expect(screen.queryByTestId('measure-card')).toBeNull();
+      expect(screen.queryByTestId('measure-bar')).toBeNull();
     });
   });
 

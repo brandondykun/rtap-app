@@ -8,6 +8,7 @@ import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { openItemMenu } from '@/features/map-items/menus/item-menus';
+import { MeasureBar } from '@/features/measure/MeasureBar';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { QuickPlotCard } from '@/features/quick-plot/QuickPlotCard';
@@ -402,6 +403,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             <LineDrawBar />
           ) : placing ? (
             <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
+          ) : measuring ? (
+            <MeasureBar />
           ) : null
         }
       />

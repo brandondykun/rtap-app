@@ -32,12 +32,13 @@ describe('MapTopLeft', () => {
   });
 
 
-  it.each([[false], [true]])('drops the measure card below the toolbar (landscape=%s)', async (landscape) => {
+  it('keeps the location notice in place while measuring (the measure bar is at the bottom)', async () => {
     useMeasure.getState().startMeasure();
-    await renderWithProviders(<MapTopLeft landscape={landscape} panel={null} />);
-    expect(screen.getByTestId('measure-card-slot')).toHaveStyle({ marginTop: bannerTop(landscape) - topLeftStackTop(landscape) });
+    await renderWithProviders(<MapTopLeft landscape={false} panel={null} />);
+    await act(async () => usePresence.getState().setLocationStatus('denied'));
+    expect(screen.queryByTestId('measure-bar')).toBeNull();
+    expect(screen.getByTestId('location-banner')).toHaveStyle({ marginTop: bannerTop(false) - topLeftStackTop(false) });
   });
-
 
   it('hides the location notice while the quick plot entry is up (it would cover the grid fields)', async () => {
     useQuickPlot.getState().open();
