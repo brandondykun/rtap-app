@@ -59,13 +59,21 @@ describe('QuickPlotCard', () => {
     expect(screen.queryByText('Discard')).toBeNull();
   });
 
-  it('puts the grid and the buttons on one line in landscape', async () => {
-    await renderWithProviders(<QuickPlotCard landscape />);
-    const row = within(screen.getByTestId('quick-plot-card-row'));
-    expect(row.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
-    for (const label of ['Discard', 'Save unit', 'Save point']) expect(row.getByLabelText(label)).toBeTruthy();
+  it.each([[false], [true]])('puts the grid on its own line, above the buttons (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+    const buttons = within(screen.getByTestId('quick-plot-card-buttons'));
+    for (const label of ['Discard', 'Save unit', 'Save point']) expect(buttons.getByLabelText(label)).toBeTruthy();
+    expect(buttons.queryByText(formatCoordinate(T, 'mgrs'))).toBeNull();
+    expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
   });
 
+  it.each([[false], [true]])('uses compact buttons, like the other map bars (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+    for (const label of ['Discard', 'Save unit', 'Save point']) {
+      expect(screen.getByLabelText(label).props.className).toContain('py-2');
+      expect(screen.getByLabelText(label).props.className).not.toContain('py-3');
+    }
+  });
 
   it.each([[false], [true]])('puts the trash button after Save unit and Save point (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
