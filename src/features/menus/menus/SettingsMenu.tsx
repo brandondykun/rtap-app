@@ -119,6 +119,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   return (
     <View>
       <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
+      <MenuSection label="Basemap">
+        <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
+        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
+      </MenuSection>
       <MenuSection label="Coordinates">
         <MenuSegmented<CoordinateFormat>
           options={[
@@ -184,10 +188,6 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           </>
         ) : null}
         <ModelDeclinationHint />
-      </MenuSection>
-      <MenuSection label="Basemap">
-        <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
-        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Map">
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />

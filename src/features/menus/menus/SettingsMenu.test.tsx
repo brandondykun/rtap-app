@@ -139,7 +139,9 @@ describe('SettingsMenu', () => {
 
   it('switches the basemap', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getByText('Basemap')).toBeTruthy();
+    // First section, right under the header.
+    const sections = screen.getAllByText(/^(Basemap|Coordinates|Angles|Altitude|North reference|Declination|Map)$/).map((t) => t.props.children);
+    expect(sections[0]).toBe('Basemap');
     expect(screen.getByLabelText('Satellite')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('Topo'));
     expect(useSettings.getState().basemap).toBe('topo');
