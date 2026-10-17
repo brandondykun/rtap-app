@@ -60,6 +60,16 @@ function isNear(a: LatLon, b: LatLon) {
   return Math.abs(a.lat - b.lat) < ARRIVED_DEG && Math.abs(a.lon - b.lon) < ARRIVED_DEG / Math.max(Math.cos((b.lat * Math.PI) / 180), 0.01);
 }
 
+/** A map tap this soon after an item tap is the same touch reported twice, not a tap on a blank spot. */
+const SAME_TOUCH_MS = 400;
+const ITEM_VIEW_MENUS = new Set(['unit.edit', 'point.edit', 'line.edit', 'polygon.edit']);
+
+/** An item's menu is open read-only (selected), not being edited. */
+function isViewingItem(): boolean {
+  const id = topMenu(useMenu.getState())?.id;
+  return id !== undefined && ITEM_VIEW_MENUS.has(id) && useDraft.getState().locked;
+}
+
 export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {
   const ctx = useCommandContext();
   const { width, height } = useWindowDimensions();
@@ -288,6 +298,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     } else if (d.selectedVertex !== null && d.insertAfter === null) d.moveVertex(d.selectedVertex, at);
     else d.addVertex(at);
   };
+  // When an item was last tapped: a blank-map tap right after it is the same touch (see onMapPress).
+  const lastItemPressAt = useRef(0);
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
     if (useQuickPlot.getState().entryOpen) {
@@ -300,6 +312,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else if (placingCategory) placeAt(placingCategory, coord);
     else if (isDrawing()) placeDraftPoint(coord);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
+    else if (isViewingItem() && Date.now() - lastItemPressAt.current > SAME_TOUCH_MS) {
+      // A tap on a blank spot clears the selection (an item being viewed, not one being edited).
+      useMenu.getState().closeMenu();
+    }
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
     // Measuring snaps to the symbol itself (lines pass no itemAt: the tap point is used).
@@ -309,6 +325,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else if (isDrawing()) placeDraftPoint(at);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(at, 'press');
     else {
+      lastItemPressAt.current = Date.now();
       notifySelected();
       openItemMenu(itemId, item);
     }

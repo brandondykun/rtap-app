@@ -11,7 +11,7 @@ import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
-import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
 import { INITIAL_PLACING, usePlacing } from '@/stores/placing';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { makeTestContext } from '@/lib/db/test-database';
@@ -478,6 +478,50 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Unit');
     expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
     expect(screen.getByLabelText('Name').props.editable).toBe(false);
+  });
+
+  it('a tap on a blank spot clears the selection, but never while editing or with another menu open', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    const tapItem = () =>
+      act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
+      );
+    const tapBlank = () =>
+      act(async () =>
+        (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.2, 38.7] }, properties: {} }),
+      );
+
+    await tapItem();
+    await screen.findByDisplayValue('HOS-1');
+    // Mapbox delivers a symbol tap only to its source; a blank tap right after it is the same touch on some builds.
+    await tapBlank();
+    expect(screen.getByDisplayValue('HOS-1')).toBeTruthy();
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
+    await tapBlank();
+    expect(useMenu.getState().stack).toEqual([]);
+    expect(useDraft.getState().mode).toBeNull();
+    jest.restoreAllMocks();
+
+    // Editing: a blank tap must not throw away the changes.
+    await tapItem();
+    await fireEvent.press(await screen.findByLabelText('Edit'));
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
+    await tapBlank();
+    expect(topMenu(useMenu.getState())?.id).toBe('unit.edit');
+    jest.restoreAllMocks();
+
+    // Another menu (Layers) is not a selection.
+    await act(async () => useMenu.getState().openMenu('layers', {}));
+    jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
+    await tapBlank();
+    expect(topMenu(useMenu.getState())?.id).toBe('layers');
+    jest.restoreAllMocks();
   });
 
   it('long-press while viewing a unit starts a new unit there', async () => {
