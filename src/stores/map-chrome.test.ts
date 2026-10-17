@@ -13,4 +13,14 @@ describe('map chrome', () => {
     chrome().clearSelfCard('portrait-slot');
     expect(chrome().selfCard).toEqual({ width: 0, height: 0 });
   });
+
+  it('keeps the readout size separate from your grid card size', () => {
+    const chrome = () => useMapChrome.getState();
+    chrome().setSelfCard({ width: 250, height: 56 }, 'slot');
+    chrome().setReadoutCard({ width: 200, height: 52 });
+    chrome().clearSelfCard('slot');
+    expect(chrome().readoutCard).toEqual({ width: 200, height: 52 });
+    chrome().clearReadoutCard();
+    expect(chrome().readoutCard).toEqual({ width: 0, height: 0 });
+  });
 });

@@ -34,7 +34,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
  * Right-edge controls: north-up under the toolbar (only while the map is rotated); zoom (shown per Settings, also while a panel is open) and your grid card (tap to recenter) at the bottom.
- * In portrait the card sits bottom left instead, under the crosshair readout, so both grids line up.
+ * In portrait the card sits bottom left instead, right above the crosshair readout, so both grids line up.
  * An action bar takes the card's place while it is up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar }: Props) {
@@ -44,6 +44,8 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const showZoom = useSettings((s) => s.showZoomButtons);
   const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
+  // The crosshair readout (zero while hidden, e.g. under a panel) sits under the portrait card.
+  const readout = useMapChrome((s) => s.readoutCard.height);
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   // A tall bottom sheet (full detent) can leave no room below north-up: hide the card and zoom rather than overlap.
@@ -79,7 +81,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
           pointerEvents="box-none"
           className="absolute items-start"
           // Clear of the zoom column on the right.
-          style={{ bottom, left: insets.left + EDGE, right: insets.right + EDGE + CONTROL_SIZE + GAP }}>
+          style={{ bottom: bottom + (readout > 0 ? readout + GAP : 0), left: insets.left + EDGE, right: insets.right + EDGE + CONTROL_SIZE + GAP }}>
           {selfCard}
         </View>
       ) : null}

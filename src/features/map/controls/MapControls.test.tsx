@@ -6,7 +6,7 @@ import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { EDGE } from '../layout';
+import { EDGE, GAP } from '../layout';
 import { MapControls } from './MapControls';
 
 beforeEach(() => {
@@ -95,11 +95,13 @@ describe('MapControls', () => {
     expect(screen.getByLabelText('Recenter on me')).toBe(screen.getByTestId('gps-readout'));
   });
 
-  it('puts your grid card bottom left in portrait, lined up with the crosshair readout', async () => {
+  it('puts your grid card bottom left in portrait, right above the crosshair readout', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} />);
     expect(screen.getByTestId('map-controls-bottom')).not.toContainElement(screen.getByTestId('gps-readout'));
     expect(screen.getByTestId('self-card-left')).toContainElement(screen.getByTestId('gps-readout'));
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: EDGE, bottom: EDGE });
+    await act(async () => useMapChrome.getState().setReadoutCard({ width: 200, height: 52 }));
+    expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: EDGE + 52 + GAP });
   });
 
   it('keeps the portrait card above a bottom sheet', async () => {

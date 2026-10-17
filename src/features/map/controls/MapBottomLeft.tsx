@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,20 +9,26 @@ import { ReadoutCard } from './ReadoutCard';
 
 /**
  * Bottom-left: the crosshair readout card. In landscape it sits beside your grid card (bottom right); in
- * portrait it sits right above it (bottom left, lined up). An action bar in the card's place counts the same.
+ * portrait your grid card sits right above it (bottom left, lined up), so it reports its size. An action
+ * bar in the grid card's place counts the same.
  */
 export function MapBottomLeft({ landscape }: { landscape: boolean }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { lift, right } = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
+  const { right } = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
+  useEffect(() => () => useMapChrome.getState().clearReadoutCard(), []);
   return (
     <View
       testID="map-bottom-left"
       pointerEvents="box-none"
       className="absolute"
+      onLayout={(e) => {
+        const { width: w, height } = e.nativeEvent.layout;
+        useMapChrome.getState().setReadoutCard({ width: w, height });
+      }}
       style={{
         left: insets.left + EDGE,
-        bottom: insets.bottom + EDGE + lift,
+        bottom: insets.bottom + EDGE,
         maxWidth: width - insets.left - insets.right - 2 * EDGE - right,
       }}>
       <ReadoutCard />
