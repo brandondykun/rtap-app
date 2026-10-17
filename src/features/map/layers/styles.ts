@@ -1,5 +1,6 @@
 import type { FillLayerStyle, LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
+import type { LabelSize } from '@/stores/settings';
 import type { SemanticToken } from '@/theme/tokens';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
@@ -18,6 +19,13 @@ export const MARKER_ICON_SIZE = 0.8;
 export const POINT_ICON_SIZE = 0.76;
 /** Per-feature size from its `category` property (set by the selectors from itemCategory). */
 const ICON_SIZE_BY_CATEGORY: SymbolLayerStyle['iconSize'] = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE, MARKER_ICON_SIZE];
+/** Item label text sizes in pt for the Label text size setting (medium is the original size). */
+export const LABEL_TEXT_SIZES: Record<LabelSize, number> = { small: 10, medium: 12, large: 15 };
+// Label offsets are in ems; these are the distances in pt (at 12 pt: 1.3, 0.9 and 3.3 em).
+const POINT_LABEL_GAP_PT = 15.6;
+const LINE_LABEL_GAP_PT = 10.8;
+const DRAFT_LABEL_GAP_PT = 39.6;
+
 /** Chip padding around label text, [top, right, bottom, left] in pt. */
 const LABEL_CHIP_PADDING: [number, number, number, number] = [0, 2, 0, 2];
 
@@ -30,15 +38,15 @@ export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
 };
 
 /** Label chips below each symbol; labels may hide each other when crowded (never the symbols). */
-export function makePointLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+export function makePointLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
   return {
     textField: ['get', 'name'],
     textFont: MAP_LABEL_FONT,
-    textSize: 12,
+    textSize,
     textColor: colors['map-label-text'],
     textAnchor: 'top',
     // Just below the scaled symbol (half its height ≈ 13 pt).
-    textOffset: [0, 1.3],
+    textOffset: [0, POINT_LABEL_GAP_PT / textSize],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,
@@ -73,14 +81,14 @@ export const DRAFT_SYMBOL_STYLE: SymbolLayerStyle = {
 };
 
 /** Amber "HOS-4 · NEW" chip below the draft; always shown. */
-export function makeDraftLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+export function makeDraftLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
   return {
     textField: ['get', 'label'],
     textFont: MAP_LABEL_FONT,
-    textSize: 12,
+    textSize,
     textColor: colors['on-accent'],
     textAnchor: 'top',
-    textOffset: [0, 3.3],
+    textOffset: [0, DRAFT_LABEL_GAP_PT / textSize],
     iconImage: MAP_IMAGE_IDS.labelChipAccent,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,
@@ -145,8 +153,8 @@ export const LINE_FLOT_STYLE: SymbolLayerStyle = {
 };
 
 /** "PL RED" chips at both ends of a line, beside the end point. */
-export function makeLineLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
-  return { ...makePointLabelStyle(colors), textField: ['get', 'label'], textAnchor: 'left', textOffset: [0.9, 0] };
+export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
+  return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'left', textOffset: [LINE_LABEL_GAP_PT / textSize, 0] };
 }
 
 /** Measure readout chip: dark text on an amber chip at the line's midpoint. */
@@ -172,6 +180,6 @@ export function makePolygonFillStyle(colors: Record<SemanticToken, string>): Fil
 }
 
 /** "OBJ IRON" chip centered in the polygon. */
-export function makePolygonLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
-  return { ...makePointLabelStyle(colors), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
+export function makePolygonLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
+  return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
 }

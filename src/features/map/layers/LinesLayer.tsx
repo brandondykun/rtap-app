@@ -12,6 +12,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { LINE_ARROW_STYLE, LINE_FLOT_STYLE, makeLineDashedStyle, makeLineHaloStyle, makeLineLabelStyle, makeLineStyle } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof LineLayer>['filter'];
 const NO_ITEMS: MapItemSnapshot[] = [];
@@ -25,6 +26,7 @@ export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) 
   const ctx = useCommandContext();
   const { colors } = useTheme();
   const showLabels = useSettings((s) => s.showMapLabels);
+  const labelSize = useLabelTextSize();
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const select = useMemo(() => createLineFeatureSelector(), []);
@@ -35,9 +37,9 @@ export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) 
       halo: makeLineHaloStyle(colors),
       solid: makeLineStyle(colors),
       dashed: makeLineDashedStyle(colors),
-      label: { ...makeLineLabelStyle(colors), visibility: showLabels ? 'visible' : 'none' } as const,
+      label: { ...makeLineLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' } as const,
     }),
-    [colors, showLabels],
+    [colors, showLabels, labelSize],
   );
 
   return (

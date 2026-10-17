@@ -9,6 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 import { draftLineFeatures } from './draft-line-features';
 import { LINE_ARROW_STYLE, LINE_FLOT_STYLE, makeLineDashedStyle, makeLineHaloStyle, makeLineLabelStyle, makeLineStyle, makeRangeLabelStyle } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const role = (r: string, extra?: unknown[]) => (extra ? ['all', ['==', ['get', 'role'], r], extra] : ['==', ['get', 'role'], r]) as unknown as Filter;
@@ -33,6 +34,7 @@ export function DraftLineLayer({ onVertexPress, onPress }: { onVertexPress?: (in
   const lineType = useDraft((s) => s.lineType);
   const name = useDraft((s) => s.name);
   const showDistances = useSettings((s) => s.showLineDistances);
+  const labelSize = useLabelTextSize();
   const shape = useMemo(
     () => draftLineFeatures({ vertices, selected, lineType, name, showDistances }),
     [vertices, selected, lineType, name, showDistances],
@@ -43,10 +45,10 @@ export function DraftLineLayer({ onVertexPress, onPress }: { onVertexPress?: (in
       solid: makeLineStyle(colors),
       dashed: makeLineDashedStyle(colors),
       segment: makeRangeLabelStyle(colors),
-      label: makeLineLabelStyle(colors),
+      label: makeLineLabelStyle(colors, labelSize),
       vertex: { ...VERTEX_STYLE, textColor: colors['surface-input'] },
     }),
-    [colors],
+    [colors, labelSize],
   );
 
   return (

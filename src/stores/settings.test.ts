@@ -52,6 +52,13 @@ describe('settings store', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
+  it('sets and persists the label text size (medium by default)', () => {
+    expect(useSettings.getState().labelSize).toBe('medium');
+    useSettings.getState().setLabelSize('large');
+    expect(useSettings.getState().labelSize).toBe('large');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ labelSize: 'large' });
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');

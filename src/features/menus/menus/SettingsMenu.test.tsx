@@ -149,6 +149,15 @@ describe('SettingsMenu', () => {
     expect(screen.getByText('Offline map downloads use Satellite.')).toBeTruthy();
   });
 
+  it('sets the label text size (Medium by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('Label text size')).toBeTruthy();
+    expect(screen.getByLabelText('Medium')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Small'));
+    expect(useSettings.getState().labelSize).toBe('small');
+    expect(screen.getByLabelText('Small')).toBeSelected();
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

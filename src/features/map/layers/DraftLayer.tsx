@@ -17,6 +17,7 @@ import {
   makeRangeLabelStyle,
   makeRangeLineStyle,
 } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const filter = (f: unknown) => f as Filter;
@@ -37,7 +38,8 @@ export function DraftLayer() {
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
 
-  const labelStyle = useMemo(() => makeDraftLabelStyle(colors), [colors]);
+  const labelSize = useLabelTextSize();
+  const labelStyle = useMemo(() => makeDraftLabelStyle(colors, labelSize), [colors, labelSize]);
   const lineStyle = useMemo(() => makeRangeLineStyle(colors), [colors]);
   const rangeLabelStyle = useMemo(() => makeRangeLabelStyle(colors), [colors]);
 

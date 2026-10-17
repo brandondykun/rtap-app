@@ -10,6 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
 import { makeDraftLabelStyle, makeRangeLabelStyle, makeRangeLineStyle } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const role = (r: string) => ['==', ['get', 'role'], r] as unknown as Filter;
@@ -28,7 +29,11 @@ export function QuickPlotLayer() {
     const v = self ? describeVector(self, temp, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
     return quickPlotFeatures(temp, self, v ? `${v.distanceLabel} · ${v.bearingLabel}` : null);
   }, [temp, self, angleUnit, northRef, declinationOverrideDeg]);
-  const styles = useMemo(() => ({ line: makeRangeLineStyle(colors), range: makeRangeLabelStyle(colors), label: makeDraftLabelStyle(colors) }), [colors]);
+  const labelSize = useLabelTextSize();
+  const styles = useMemo(
+    () => ({ line: makeRangeLineStyle(colors), range: makeRangeLabelStyle(colors), label: makeDraftLabelStyle(colors, labelSize) }),
+    [colors, labelSize],
+  );
 
   return (
     <ShapeSource id="quick-plot" shape={shape}>

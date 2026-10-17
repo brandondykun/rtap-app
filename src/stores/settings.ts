@@ -9,6 +9,8 @@ export type CoordinateFormat = 'mgrs' | 'latlon';
 export type Basemap = 'satellite' | 'hybrid' | 'topo' | 'dark';
 export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dark'];
 export type AltitudeUnit = 'm' | 'ft';
+/** Text size of the name labels on map items. */
+export type LabelSize = 'small' | 'medium' | 'large';
 
 type SettingsValues = {
   coordinateFormat: CoordinateFormat;
@@ -26,6 +28,7 @@ type SettingsValues = {
   showToolbarText: boolean;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
+  labelSize: LabelSize;
 };
 
 type SettingsActions = {
@@ -38,6 +41,7 @@ type SettingsActions = {
   setShowZoomButtons: (show: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
   toggleMapLabels: () => void;
+  setLabelSize: (size: LabelSize) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -57,6 +61,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showZoomButtons: true,
   showToolbarText: true,
   showMapLabels: true,
+  labelSize: 'medium',
 };
 
 const syncStorage: StateStorage = {
@@ -88,6 +93,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
+    labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
   };
 }
 
@@ -104,6 +110,7 @@ export const useSettings = create<SettingsState>()(
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
+      setLabelSize: (labelSize) => set({ labelSize }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -116,7 +123,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showToolbarText, showMapLabels }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showToolbarText, showMapLabels, labelSize }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -127,6 +134,7 @@ export const useSettings = create<SettingsState>()(
         showZoomButtons,
         showToolbarText,
         showMapLabels,
+        labelSize,
       }),
     },
   ),

@@ -12,6 +12,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type LayerFilter = ComponentProps<typeof SymbolLayer>['filter'];
 
@@ -35,7 +36,11 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
   const shape = useMemo(() => select(items), [select, items]);
   const filter = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds) as unknown as LayerFilter, [hiddenIds, excludeId]);
   const showLabels = useSettings((s) => s.showMapLabels);
-  const labelStyle = useMemo(() => ({ ...makePointLabelStyle(colors), visibility: showLabels ? 'visible' : 'none' }) as const, [colors, showLabels]);
+  const labelSize = useLabelTextSize();
+  const labelStyle = useMemo(
+    () => ({ ...makePointLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' }) as const,
+    [colors, showLabels, labelSize],
+  );
 
   return (
     <ShapeSource

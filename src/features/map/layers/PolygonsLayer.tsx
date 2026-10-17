@@ -12,6 +12,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { makeLineDashedStyle, makeLineHaloStyle, makeLineStyle, makePolygonFillStyle, makePolygonLabelStyle } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof LineLayer>['filter'];
 const NO_ITEMS: MapItemSnapshot[] = [];
@@ -26,6 +27,7 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
   const ctx = useCommandContext();
   const { colors } = useTheme();
   const showLabels = useSettings((s) => s.showMapLabels);
+  const labelSize = useLabelTextSize();
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const select = useMemo(() => createPolygonFeatureSelector(), []);
@@ -37,9 +39,9 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
       halo: makeLineHaloStyle(colors),
       solid: makeLineStyle(colors),
       dashed: makeLineDashedStyle(colors),
-      label: { ...makePolygonLabelStyle(colors), visibility: showLabels ? 'visible' : 'none' } as const,
+      label: { ...makePolygonLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' } as const,
     }),
-    [colors, showLabels],
+    [colors, showLabels, labelSize],
   );
 
   return (

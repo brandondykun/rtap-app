@@ -11,7 +11,7 @@ import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatEastWest, formatEastWestBoth } from './settings-format';
@@ -71,6 +71,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setDeclinationOverride = useSettings((s) => s.setDeclinationOverride);
   const basemap = useSettings((s) => s.basemap);
   const setBasemap = useSettings((s) => s.setBasemap);
+  const labelSize = useSettings((s) => s.labelSize);
+  const setLabelSize = useSettings((s) => s.setLabelSize);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const showToolbarText = useSettings((s) => s.showToolbarText);
@@ -188,6 +190,17 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           </>
         ) : null}
         <ModelDeclinationHint />
+      </MenuSection>
+      <MenuSection label="Label text size">
+        <MenuSegmented<LabelSize>
+          options={[
+            { value: 'small', label: 'Small' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'large', label: 'Large' },
+          ]}
+          value={labelSize}
+          onChange={setLabelSize}
+        />
       </MenuSection>
       <MenuSection label="Map">
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />

@@ -16,6 +16,7 @@ import {
   makePolygonLabelStyle,
   makeRangeLabelStyle,
 } from './styles';
+import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const role = (r: string, extra?: unknown[]) => (extra ? ['all', ['==', ['get', 'role'], r], extra] : ['==', ['get', 'role'], r]) as unknown as Filter;
@@ -43,6 +44,7 @@ export function DraftPolygonLayer({ onVertexPress, onPress }: { onVertexPress?: 
   const polygonType = useDraft((s) => s.polygonType);
   const name = useDraft((s) => s.name);
   const showDistances = useSettings((s) => s.showLineDistances);
+  const labelSize = useLabelTextSize();
   // The fill gets its own untappable source: a touchable fill would swallow taps on items inside an open polygon.
   const { fills, shape } = useMemo(() => {
     const all = draftPolygonFeatures({ polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances });
@@ -58,10 +60,10 @@ export function DraftPolygonLayer({ onVertexPress, onPress }: { onVertexPress?: 
       solid: makeLineStyle(colors),
       dashed: makeLineDashedStyle(colors),
       chip: makeRangeLabelStyle(colors),
-      label: makePolygonLabelStyle(colors),
+      label: makePolygonLabelStyle(colors, labelSize),
       vertex: { ...VERTEX_STYLE, textColor: colors['surface-input'] },
     }),
-    [colors],
+    [colors, labelSize],
   );
 
   return (

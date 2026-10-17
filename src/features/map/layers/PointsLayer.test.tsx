@@ -86,4 +86,15 @@ describe('PointsLayer', () => {
     expect(props.SymbolLayer['points-labels'].style).toMatchObject({ visibility: 'none' });
     useSettings.setState(DEFAULT_SETTINGS);
   });
+
+  it('sizes its labels by the label text size setting', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    const ctx = makeTestContext();
+    await renderWithProviders(<PointsLayer missionId="m1" />, ctx);
+    const props = mapboxMock().__props;
+    expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textSize: 12 });
+    await act(async () => useSettings.getState().setLabelSize('large'));
+    expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textSize: 15 });
+    useSettings.setState(DEFAULT_SETTINGS);
+  });
 });
