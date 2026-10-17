@@ -23,7 +23,7 @@ type Props = {
   onLayers?: () => void;
   onPlot?: () => void;
   onSettings?: () => void;
-  /** The Labels toggle at the far right: a label icon while map labels show, a crossed-out one while hidden. */
+  /** The Labels toggle, right of the tools and before Settings: a label icon while map labels show, a crossed-out one while hidden. */
   labelsOn?: boolean;
   onLabels?: () => void;
 };
@@ -69,9 +69,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
           {tools}
         </ScrollView>
       )}
-      <Divider />
-      <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
-      {/* A toggle, not a tool: only the icon shows its state (no highlight). */}
+      {/* A toggle, not a tool: right of the scrolling tools; only the icon shows its state (no highlight). */}
       <BarIcon
         icon={labelsOn ? 'label-outline' : 'label-off-outline'}
         iconTestID={labelsOn ? 'labels-icon-on' : 'labels-icon-off'}
@@ -79,6 +77,8 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
         selected={labelsOn}
         onPress={onLabels}
       />
+      <Divider />
+      <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
     </View>
   );
 }
