@@ -25,9 +25,11 @@ type Props = {
 
 /** Height of your grid card before it is first laid out (two lines). */
 const SELF_CARD_HEIGHT = 56;
+/** Zoom in and zoom out, with the divider between them. */
+const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
- * Right-edge controls: north-up under the toolbar; zoom (unless turned off in Settings) and your grid card (tap to recenter) at the bottom.
+ * Right-edge controls: north-up under the toolbar; zoom (shown per Settings, also while a panel is open) and your grid card (tap to recenter) at the bottom.
  * In portrait the card sits bottom left instead, under the crosshair readout, so both grids line up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape }: Props) {
@@ -38,8 +40,9 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
-  // A tall bottom sheet (full detent) can leave no room below north-up: hide the card rather than overlap.
-  const noRoom = panel?.side === 'bottom' && height - panel.size < insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + cardHeight + EDGE;
+  // A tall bottom sheet (full detent) can leave no room below north-up: hide the card and zoom rather than overlap.
+  const room = panel?.side === 'bottom' ? height - panel.size - (insets.top + EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE) : Infinity;
+  const noRoom = room < cardHeight;
   const selfCard = (
     <SelfCardSlot onHeight={setCardHeight}>
       <GpsReadout following={following} disabled={!canRecenter} onPress={onRecenter} />
@@ -56,7 +59,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {panel || !showZoom ? null : (
+        {!showZoom || room < ZOOM_HEIGHT ? null : (
           <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
             <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
             <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />

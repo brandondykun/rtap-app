@@ -59,16 +59,19 @@ describe('MapControls', () => {
     expect(h.onRecenter).not.toHaveBeenCalled();
   });
 
-  it('hides zoom and lifts your grid card above a bottom sheet', async () => {
+  it('keeps zoom while a panel is open, lifted above a bottom sheet', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} />);
-    expect(screen.queryByLabelText('Zoom in')).toBeNull();
+    expect(screen.getByLabelText('Zoom in')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(320 + EDGE);
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
+    expect(screen.getByLabelText('Zoom in')).toBeTruthy();
   });
 
-  it('hides your grid card when a full sheet leaves no room for it', async () => {
+  it('hides zoom and your grid card when a full sheet leaves no room for them', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} />);
     expect(screen.queryByLabelText('Recenter on me')).toBeNull();
+    expect(screen.queryByLabelText('Zoom in')).toBeNull();
   });
 
   it('puts your grid card under zoom in landscape, with no GPS toggle', async () => {

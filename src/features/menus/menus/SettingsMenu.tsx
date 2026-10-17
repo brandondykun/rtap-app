@@ -175,7 +175,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <ModelDeclinationHint />
       </MenuSection>
       <MenuSection label="Map">
-        <MenuToggle label="Zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
+        <MenuToggle label="Zoom buttons visible" value={showZoomButtons} onValueChange={setShowZoomButtons} />
       </MenuSection>
     </View>
   );

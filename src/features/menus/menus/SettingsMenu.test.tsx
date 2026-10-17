@@ -124,10 +124,10 @@ describe('SettingsMenu', () => {
 
   it('shows or hides the zoom buttons (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getByLabelText('Zoom buttons').props.value).toBe(true);
-    await fireEvent(screen.getByLabelText('Zoom buttons'), 'valueChange', false);
+    expect(screen.getByLabelText('Zoom buttons visible').props.value).toBe(true);
+    await fireEvent(screen.getByLabelText('Zoom buttons visible'), 'valueChange', false);
     expect(useSettings.getState().showZoomButtons).toBe(false);
-    expect(screen.getByLabelText('Zoom buttons').props.value).toBe(false);
+    expect(screen.getByLabelText('Zoom buttons visible').props.value).toBe(false);
   });
 
   it('closes', async () => {
