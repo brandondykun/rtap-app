@@ -14,6 +14,6 @@ describe('PlaceBar', () => {
     await fireEvent.press(screen.getByLabelText('Cancel'));
     expect(onAtCenter).toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalled();
-    expect(screen.getByLabelText('Add at center').props.className).toContain('py-1');
+    expect(screen.getByLabelText('Add at center').props.className).toContain('py-2');
   });
 });

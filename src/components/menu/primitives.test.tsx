@@ -52,7 +52,7 @@ describe('menu primitives', () => {
       </>,
     );
     expect(screen.getByLabelText('Normal').props.className).toContain('px-4 py-3');
-    expect(screen.getByLabelText('Small').props.className).toContain('px-2 py-1');
+    expect(screen.getByLabelText('Small').props.className).toContain('px-3 py-2');
     expect(screen.getByLabelText('Small').props.className).not.toContain('py-3');
   });
 

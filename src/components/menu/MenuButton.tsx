@@ -30,7 +30,7 @@ export function MenuButton({
       accessibilityState={{ disabled, selected: active }}
       disabled={disabled}
       onPress={onPress}
-      className={`flex-row items-center justify-center border ${compact ? 'gap-1 rounded-lg px-2 py-1' : 'gap-2 rounded-xl px-4 py-3'} ${active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'} ${disabled ? 'opacity-40' : ''}`}>
+      className={`flex-row items-center justify-center border ${compact ? 'gap-1.5 rounded-lg px-3 py-2' : 'gap-2 rounded-xl px-4 py-3'} ${active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'} ${disabled ? 'opacity-40' : ''}`}>
       {typeof icon === 'string' ? <Icon name={icon} size={compact ? 16 : 18} color={active ? colors.accent : colors.text} /> : icon}
       {iconOnly ? null : <Text className={`${compact ? 'text-sm' : ''} font-semibold ${active ? 'text-accent' : 'text-text'}`}>{label}</Text>}
     </Pressable>
