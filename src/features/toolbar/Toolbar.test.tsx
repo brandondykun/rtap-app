@@ -115,16 +115,20 @@ describe('Toolbar', () => {
     expect(onPlot).toHaveBeenCalled();
   });
 
-  it('has a LABELS toggle after LAYERS that shows whether labels are on', async () => {
+  it('ends with a Labels toggle after Settings that swaps its icon, with no highlight', async () => {
     const onLabels = jest.fn();
-    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onLayers={jest.fn()} labelsOn onLabels={onLabels} />);
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onSettings={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(order.filter((l) => ['LAYERS', 'LABELS', 'PLOT'].includes(l))).toEqual(['LAYERS', 'LABELS', 'PLOT']);
-    expect(screen.getByLabelText('LABELS')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('LABELS'));
+    expect(order.slice(-2)).toEqual(['Settings', 'Labels']);
+    const on = screen.getByLabelText('Labels');
+    expect(on).toBeSelected();
+    expect(on.props.className).not.toContain('bg-accent-subtle');
+    expect(screen.getByTestId('labels-icon-on')).toBeTruthy();
+    await fireEvent.press(on);
     expect(onLabels).toHaveBeenCalled();
     await screen.unmount();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} labelsOn={false} onLabels={onLabels} />);
-    expect(screen.getByLabelText('LABELS')).not.toBeSelected();
+    expect(screen.getByLabelText('Labels')).not.toBeSelected();
+    expect(screen.getByTestId('labels-icon-off')).toBeTruthy();
   });
 });
