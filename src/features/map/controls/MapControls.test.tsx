@@ -22,6 +22,7 @@ function handlers() {
 describe('MapControls', () => {
   it('calls the camera actions', async () => {
     const h = handlers();
+    useInteraction.getState().setCamera({ center: { lat: 0, lon: 0 }, zoom: 3, bearing: 30 });
     await renderWithProviders(<MapControls following={false} canRecenter {...h} panel={null} landscape={false} />);
     await fireEvent.press(screen.getByLabelText('North up'));
     await fireEvent.press(screen.getByLabelText('Zoom in'));
@@ -31,6 +32,19 @@ describe('MapControls', () => {
     expect(h.onZoomIn).toHaveBeenCalledTimes(1);
     expect(h.onZoomOut).toHaveBeenCalledTimes(1);
     expect(h.onRecenter).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides north-up while the map points north and brings it back once rotated', async () => {
+    const h = handlers();
+    await renderWithProviders(<MapControls following={false} canRecenter {...h} panel={null} landscape={false} />);
+    expect(screen.queryByLabelText('North up')).toBeNull();
+    expect(screen.getByTestId('north-up', { includeHiddenElements: true })).toHaveProp('pointerEvents', 'none');
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 0, lon: 0 }, zoom: 3, bearing: 12 }));
+    expect(screen.getByLabelText('North up')).toBeTruthy();
+    expect(screen.getByTestId('north-up')).toHaveProp('pointerEvents', 'auto');
+    // Within a fraction of a degree (either side of 0/360) counts as north.
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 0, lon: 0 }, zoom: 3, bearing: 359.8 }));
+    expect(screen.queryByLabelText('North up')).toBeNull();
   });
 
   it('hides the zoom buttons when the setting is off', async () => {

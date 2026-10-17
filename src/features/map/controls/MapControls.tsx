@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { PanelFrame } from '@/components/menu/panel-geometry';
@@ -31,7 +32,7 @@ const SELF_CARD_HEIGHT = 56;
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
- * Right-edge controls: north-up under the toolbar; zoom (shown per Settings, also while a panel is open) and your grid card (tap to recenter) at the bottom.
+ * Right-edge controls: north-up under the toolbar (only while the map is rotated); zoom (shown per Settings, also while a panel is open) and your grid card (tap to recenter) at the bottom.
  * In portrait the card sits bottom left instead, under the crosshair readout, so both grids line up.
  * An action bar takes the card's place while it is up.
  */
@@ -56,11 +57,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   );
   return (
     <>
-      <View className="absolute" style={{ top: insets.top + EDGE + TOOLBAR_HEIGHT + GAP, right }}>
-        <MapButton label="North up" onPress={onNorthUp}>
-          <NorthNeedle />
-        </MapButton>
-      </View>
+      <NorthUpButton top={insets.top + EDGE + TOOLBAR_HEIGHT + GAP} right={right} onPress={onNorthUp} />
       <View
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
@@ -102,6 +99,33 @@ function SelfCardSlot({ onHeight, children }: { onHeight: (height: number) => vo
       }}>
       {children}
     </View>
+  );
+}
+
+/** Bearings this close to 0/360° count as north up (the camera eases in and can stop a hair off). */
+const NORTH_TOLERANCE_DEG = 0.5;
+
+function isNorthUp(bearing: number): boolean {
+  const d = ((bearing % 360) + 360) % 360;
+  return Math.min(d, 360 - d) < NORTH_TOLERANCE_DEG;
+}
+
+/** North-up fades out while the map already points north (so after it is pressed) and back in once rotated. */
+function NorthUpButton({ top, right, onPress }: { top: number; right: number; onPress: () => void }) {
+  const hidden = useInteraction((s) => isNorthUp(s.cameraBearing));
+  const fade = useAnimatedStyle(() => ({ opacity: withTiming(hidden ? 0 : 1, { duration: 200 }) }), [hidden]);
+  return (
+    <Animated.View
+      testID="north-up"
+      className="absolute"
+      pointerEvents={hidden ? 'none' : 'auto'}
+      accessibilityElementsHidden={hidden}
+      importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
+      style={[{ top, right }, fade]}>
+      <MapButton label="North up" onPress={onPress}>
+        <NorthNeedle />
+      </MapButton>
+    </Animated.View>
   );
 }
 
