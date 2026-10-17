@@ -19,7 +19,7 @@ export function ToolButton({ icon, label, active = false, onPress }: Props) {
       onPress={onPress}
       className={`min-w-12 items-center rounded-xl px-2 py-0.5 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={18} color={color} />
-      <Text style={{ color }} className="text-xs font-semibold tracking-wider">
+      <Text style={{ color }} className="text-[10px] font-semibold tracking-wider">
         {label}
       </Text>
     </Pressable>

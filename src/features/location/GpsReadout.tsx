@@ -34,17 +34,17 @@ export function GpsReadout({ following, disabled, onPress }: Props) {
       onPress={onPress}
       className={`rounded-2xl border bg-surface-chrome px-3 py-2 ${following ? 'border-accent' : 'border-border'}`}>
       <View className="flex-row items-center gap-2">
-        <Icon name="navigation" size={20} color={colors.self} />
+        <Icon name="navigation" size={16} color={colors.self} />
         {fix && !off ? (
-          <Text testID="gps-position" className="font-mono-bold text-lg text-text">
+          <Text testID="gps-position" className="font-mono-bold text-base text-text">
             {formatCoordinate(fix.position, coordinateFormat)}
           </Text>
         ) : (
-          <Text className="text-sm text-text-muted">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
+          <Text className="text-xs text-text-muted">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
         )}
       </View>
       {fix && !off ? (
-        <Text testID="gps-altitude" className="mt-0.5 font-mono text-sm text-text-muted">
+        <Text testID="gps-altitude" className="mt-0.5 font-mono text-xs text-text-muted">
           {`ALT ${formatLength(fix.altitudeM, unit)} · ACC ±${formatLength(fix.accuracyM, unit)}`}
         </Text>
       ) : null}

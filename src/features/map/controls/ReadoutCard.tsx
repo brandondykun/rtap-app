@@ -22,15 +22,15 @@ export function ReadoutCard() {
   const r = describeReadout(center, self, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
 
   return (
-    <View testID="readout-card" className="self-start rounded-2xl border border-border bg-surface-chrome px-4 py-3">
+    <View testID="readout-card" className="self-start rounded-2xl border border-border bg-surface-chrome px-3 py-2">
       <View className="flex-row items-center gap-2">
-        <CrosshairGlyph size={18} color={colors['text-muted']} />
-        <Text testID="readout-coordinate" className="shrink font-mono-bold text-xl text-text" adjustsFontSizeToFit numberOfLines={1}>
+        <CrosshairGlyph size={16} color={colors['text-muted']} />
+        <Text testID="readout-coordinate" className="shrink font-mono-bold text-base text-text" adjustsFontSizeToFit numberOfLines={1}>
           {r.coordinate}
         </Text>
       </View>
-      <View className="mt-1 flex-row items-center">
-        <Text testID="readout-range" className="font-mono text-sm text-text-muted">{`${r.distance} ·`}</Text>
+      <View className="mt-0.5 flex-row items-center">
+        <Text testID="readout-range" className="font-mono text-xs text-text-muted">{`${r.distance} ·`}</Text>
         <Pressable
           testID="readout-bearing"
           accessibilityRole="button"
@@ -38,7 +38,7 @@ export function ReadoutCard() {
           hitSlop={12}
           onPress={toggleGridMagnetic}
           className="ml-1">
-          <Text className="font-mono text-sm text-text-muted">{`${r.bearing} ${r.ref}`}</Text>
+          <Text className="font-mono text-xs text-text-muted">{`${r.bearing} ${r.ref}`}</Text>
         </Pressable>
       </View>
     </View>

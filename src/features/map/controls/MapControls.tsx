@@ -23,7 +23,7 @@ type Props = {
 };
 
 /** Height of your grid card before it is first laid out (two lines). */
-const SELF_CARD_HEIGHT = 64;
+const SELF_CARD_HEIGHT = 56;
 
 /**
  * Right-edge controls: north-up under the toolbar; zoom and your grid card (tap to recenter) at the bottom.
