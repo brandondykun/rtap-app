@@ -27,7 +27,7 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
       disabled={disabled}
       onPress={onPress}
       // Icon only: a bigger icon in a taller pill, so the button and its active highlight keep their size.
-      className={`min-w-12 items-center rounded-xl px-2 ${showText ? 'py-0.5' : 'py-1.5'} ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
+      className={`min-w-12 items-center rounded-xl px-2 ${showText ? 'py-1' : 'py-1.5'} ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={showText ? 18 : 22} color={color} />
       {showText ? (
         <Text style={{ color }} className="text-[10px] font-semibold tracking-wider">
