@@ -92,7 +92,7 @@ describe('MapScreen', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it('pads the camera and hides the readout while a panel is open', async () => {
+  it('pads the camera and keeps the readout, without your grid card, while a panel is open', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
@@ -108,7 +108,8 @@ describe('MapScreen', () => {
     );
     const padded = mapboxMock().__camera.setCamera.mock.calls.at(-1)?.[0] as { padding: { paddingBottom: number } };
     expect(padded.padding.paddingBottom).toBeGreaterThan(0);
-    expect(screen.queryByTestId('readout-coordinate')).toBeNull();
+    expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
 
     await act(async () => useMenu.getState().closeMenu());
     await waitFor(() =>
@@ -117,6 +118,7 @@ describe('MapScreen', () => {
       ),
     );
     expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
   it('keeps the recenter zoom (follow effect does not override it)', async () => {
@@ -282,16 +284,18 @@ describe('MapScreen', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
-  it('always shows your grid card, also with a panel open, and has no GPS toggle', async () => {
+  it('shows the crosshair readout in place of your grid card while a panel is open, and has no GPS toggle', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     expect(await screen.findByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByTestId('readout-card')).toBeTruthy();
     expect(screen.queryByLabelText('GPS')).toBeNull();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByTestId('readout-card')).toBeTruthy();
   });
 
   it('UNIT shows the tap bar and no menu; a map tap opens Add unit at the tap', async () => {
@@ -312,7 +316,9 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'unit', coord: { lat: 38.95, lon: -77.1 } });
     expect(screen.queryByTestId('place-bar')).toBeNull();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    // The Add unit menu is open: the crosshair readout shows, not your grid card.
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByTestId('readout-card')).toBeTruthy();
   });
 
   it('POINT: Add at center opens Add point at the crosshair; switching from UNIT changes the bar', async () => {

@@ -102,6 +102,15 @@ export function cameraPaddingFor(panel: PanelFrame | null): CameraPadding {
 }
 
 /**
+ * Height left for bottom controls between north-up and a bottom sheet (a full detent can leave none).
+ * Infinity without a bottom sheet.
+ */
+export function roomAboveSheet(windowHeight: number, panel: PanelFrame | null, insetTop: number, toolbar: number): number {
+  if (panel?.side !== 'bottom') return Infinity;
+  return windowHeight - panel.size - (insetTop + EDGE + toolbar + GAP + CONTROL_SIZE + GAP + EDGE);
+}
+
+/**
  * How a bar along the bottom keeps clear of your grid card (bottom left) and the zoom column (right):
  * `beside` keeps it right of the card, otherwise it is raised above the card. `left` and `right`
  * exclude the safe area and the edge margin.

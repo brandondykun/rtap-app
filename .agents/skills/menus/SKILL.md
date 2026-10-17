@@ -26,8 +26,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
   primary action (`trailing`) that is disabled until the input is valid.
 - **Detents:** smallest first; menus open at `half` when listed. Landscape is always a drawer.
 - **The map stays interactive.** No backdrop. While a panel is open the camera is padded by
-  the panel area, the crosshair centers in the visible map, and the readout and location banner hide
-  (`MissionMap`). The zoom buttons follow only their Settings toggle.
+  the panel area, the crosshair centers in the visible map, your grid card and the location banner hide, and
+  the crosshair readout stays (above a bottom sheet) (`MissionMap`). The zoom buttons follow only their Settings toggle.
 - **No system dialogs.** Destructive actions use `MenuActions` (second tap confirms).
 - **Writes** go through commands; report failures with `notifyError`, successes with
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.

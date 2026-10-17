@@ -11,6 +11,7 @@ import {
   LOGO_ROW_HEIGHT,
   ornamentPositions,
   ornamentRowTop,
+  roomAboveSheet,
   selfCardClearance,
   TOOLBAR_HEIGHT,
   TOOLBAR_HEIGHT_ICONS,
@@ -68,6 +69,13 @@ describe('map layout', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS, leftOffset: 400 });
     expect(p.attribution.left).toBe(EDGE + 400);
     expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
+  });
+
+  it('measures the room between north-up and a bottom sheet', () => {
+    const below = EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE;
+    expect(roomAboveSheet(800, { side: 'bottom', size: 300 }, 20, TOOLBAR_HEIGHT)).toBe(800 - 300 - 20 - below);
+    expect(roomAboveSheet(800, { side: 'left', size: 300 }, 20, TOOLBAR_HEIGHT)).toBe(Infinity);
+    expect(roomAboveSheet(800, null, 20, TOOLBAR_HEIGHT)).toBe(Infinity);
   });
 
   it('keeps bottom bars beside or above your grid card, and clear of the zoom column', () => {

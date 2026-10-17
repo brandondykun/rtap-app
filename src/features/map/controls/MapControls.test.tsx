@@ -101,8 +101,8 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE + 52 + GAP });
   });
 
-  it('keeps your landscape grid card right of a left drawer', async () => {
-    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
+  it('keeps a landscape action bar right of a left drawer', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape bar={<View testID="bar" />} />);
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: 360 + EDGE });
   });
 
@@ -117,8 +117,16 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE });
   });
 
-  it('keeps the portrait card above a bottom sheet', async () => {
-    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} />);
+  it.each([
+    [false, { side: 'bottom', size: 320 }],
+    [true, { side: 'left', size: 360 }],
+  ] as const)('hides your grid card while a panel is open (landscape=%s)', async (landscape, panel) => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={panel} landscape={landscape} />);
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+  });
+
+  it('keeps an action bar above a bottom sheet', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} bar={<View testID="bar" />} />);
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: 320 + EDGE });
   });
 

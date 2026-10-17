@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +11,7 @@ import { useMapChrome } from '@/stores/map-chrome';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { CONTROL_SIZE, EDGE, GAP } from '../layout';
+import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
 import { MapButton } from './MapButton';
 
 type Props = {
@@ -27,15 +27,13 @@ type Props = {
   bar?: ReactNode;
 };
 
-/** Height of your grid card before it is first laid out (two lines). */
-const SELF_CARD_HEIGHT = 56;
 /** Zoom in and zoom out, with the divider between them. */
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
  * Right-edge controls: north-up under the toolbar (only while the map is rotated) and zoom (shown per Settings, also while a panel is open) at the bottom.
  * Your grid card (tap to recenter) sits bottom left: in portrait right above the crosshair readout, so both grids line up; in landscape
- * the readout sits under zoom instead. An action bar takes the card's place while it is up.
+ * the readout sits under zoom instead. It hides while a panel is open (the readout stays). An action bar takes the card's place while it is up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar }: Props) {
   const insets = useSafeAreaInsets();
@@ -47,16 +45,11 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   // The crosshair readout (zero while hidden, e.g. under a panel): under your card in portrait, under zoom in landscape.
   const readout = useMapChrome((s) => s.readoutCard);
   const readoutLift = readout.height > 0 ? readout.height + GAP : 0;
-  // The last measured height, kept while hidden so the room check below cannot flip back and forth.
-  const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
-  // A tall bottom sheet (full detent) can leave no room below north-up: hide the card and zoom rather than overlap.
-  const room = panel?.side === 'bottom' ? height - panel.size - (insets.top + EDGE + toolbar + GAP + CONTROL_SIZE + GAP + EDGE) : Infinity;
-  // The action bar always shows: it is how the user finishes the mode.
-  const noRoom = !bar && room < cardHeight;
-  const selfCard = bar ? (
-    <SelfCardSlot onHeight={() => {}}>{bar}</SelfCardSlot>
-  ) : (
-    <SelfCardSlot onHeight={setCardHeight}>
+  // A tall bottom sheet (full detent) can leave no room below north-up: hide zoom rather than overlap.
+  const room = roomAboveSheet(height, panel, insets.top, toolbar);
+  // The action bar always shows: it is how the user finishes the mode. Your grid card gives way to an open panel.
+  const selfCard = bar ? <SelfCardSlot>{bar}</SelfCardSlot> : panel ? null : (
+    <SelfCardSlot>
       <GpsReadout following={following} disabled={!canRecenter} onPress={onRecenter} />
     </SelfCardSlot>
   );
@@ -75,7 +68,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
           </View>
         )}
       </View>
-      {noRoom ? null : (
+      {selfCard ? (
         <View
           testID="self-card-left"
           pointerEvents="box-none"
@@ -88,13 +81,13 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
           }}>
           {selfCard}
         </View>
-      )}
+      ) : null}
     </>
   );
 }
 
 /** Reports the size of what fills the card's spot (your grid card or an action bar) to the controls that keep clear of it, and zero once it hides. */
-function SelfCardSlot({ onHeight, children }: { onHeight: (height: number) => void; children: ReactNode }) {
+function SelfCardSlot({ children }: { children: ReactNode }) {
   const id = useId();
   useEffect(() => () => useMapChrome.getState().clearSelfCard(id), [id]);
   return (
@@ -103,7 +96,6 @@ function SelfCardSlot({ onHeight, children }: { onHeight: (height: number) => vo
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
         useMapChrome.getState().setSelfCard({ width, height }, id);
-        onHeight(height);
       }}>
       {children}
     </View>
