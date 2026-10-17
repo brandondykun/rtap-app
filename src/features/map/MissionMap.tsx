@@ -45,7 +45,7 @@ import { QuickPlotLayer } from './layers/QuickPlotLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
+import { barTakesReadoutSpot, cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
 
 const EASE = { animationMode: 'easeTo' as const };
 /** ~5 m: the idle camera center counts as the move's target. */
@@ -433,7 +433,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
-      {plotTemp ? null : <MapBottomLeft landscape={landscape} panel={panel} />}
+      {plotTemp || barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring)) ? null : <MapBottomLeft landscape={landscape} panel={panel} />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />

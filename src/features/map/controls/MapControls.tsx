@@ -11,7 +11,7 @@ import { useMapChrome } from '@/stores/map-chrome';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
+import { barTakesReadoutSpot, CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
 import { MapButton } from './MapButton';
 
 type Props = {
@@ -33,7 +33,8 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 /**
  * Right-edge controls: north-up under the toolbar (only while the map is rotated) and zoom (shown per Settings, also while a panel is open) at the bottom.
  * Your grid card (tap to recenter) sits bottom left: in portrait right above the crosshair readout, so both grids line up; in landscape
- * the readout sits under zoom instead. It hides while a panel is open (the readout stays). An action bar takes the card's place while it is up.
+ * the readout sits under zoom instead. It hides while a panel is open (the readout stays). An action bar takes the card's place while it is up,
+ * or the readout's in landscape with a drawer open.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar }: Props) {
   const insets = useSafeAreaInsets();
@@ -53,6 +54,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       <GpsReadout following={following} disabled={!canRecenter} onPress={onRecenter} />
     </SelfCardSlot>
   );
+  const underZoom = barTakesReadoutSpot(landscape, panel, !!bar);
   return (
     <>
       <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} />
@@ -67,8 +69,9 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
             <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
           </View>
         )}
+        {underZoom ? selfCard : null}
       </View>
-      {selfCard ? (
+      {selfCard && !underZoom ? (
         <View
           testID="self-card-left"
           pointerEvents="box-none"

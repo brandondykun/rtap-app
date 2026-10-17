@@ -2,6 +2,7 @@ import {
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
   bannerTop,
+  barTakesReadoutSpot,
   cameraPaddingFor,
   CONTROL_SIZE,
   EDGE,
@@ -69,6 +70,14 @@ describe('map layout', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS, leftOffset: 400 });
     expect(p.attribution.left).toBe(EDGE + 400);
     expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
+  });
+
+  it('gives the readout spot to an action bar only in landscape with a drawer open', () => {
+    const drawer = { side: 'left', size: 360 } as const;
+    expect(barTakesReadoutSpot(true, drawer, true)).toBe(true);
+    expect(barTakesReadoutSpot(true, drawer, false)).toBe(false);
+    expect(barTakesReadoutSpot(true, null, true)).toBe(false);
+    expect(barTakesReadoutSpot(false, { side: 'bottom', size: 300 }, true)).toBe(false);
   });
 
   it('measures the room between north-up and a bottom sheet', () => {

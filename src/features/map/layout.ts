@@ -102,6 +102,14 @@ export function cameraPaddingFor(panel: PanelFrame | null): CameraPadding {
 }
 
 /**
+ * In landscape with a drawer open (drawing a line or polygon) there is no room for both an action bar and
+ * the crosshair readout: the bar takes the readout's spot, under zoom.
+ */
+export function barTakesReadoutSpot(landscape: boolean, panel: PanelFrame | null, hasBar: boolean): boolean {
+  return landscape && panel !== null && hasBar;
+}
+
+/**
  * Height left for bottom controls between north-up and a bottom sheet (a full detent can leave none).
  * Infinity without a bottom sheet.
  */

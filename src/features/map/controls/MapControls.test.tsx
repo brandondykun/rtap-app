@@ -101,9 +101,11 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE + 52 + GAP });
   });
 
-  it('keeps a landscape action bar right of a left drawer', async () => {
+  it('puts a landscape action bar under zoom, in the readout spot, while a drawer is open', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape bar={<View testID="bar" />} />);
-    expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: 360 + EDGE });
+    expect(screen.queryByTestId('self-card-left')).toBeNull();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE });
   });
 
   it('puts your grid card bottom left in portrait, right above the crosshair readout', async () => {
