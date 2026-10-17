@@ -15,7 +15,7 @@ type Props = {
   onPress: () => void;
 };
 
-/** The user's own position and altitude, bottom right; tapping it recenters the map on the user. */
+/** The user's own position and altitude, bottom left; tapping it recenters the map on the user. */
 export function GpsReadout({ following, disabled, onPress }: Props) {
   const fix = usePresence((s) => s.selfPosition);
   const status = usePresence((s) => s.locationStatus);

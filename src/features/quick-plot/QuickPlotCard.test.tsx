@@ -49,7 +49,8 @@ describe('QuickPlotCard', () => {
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE + 64 + GAP, right: EDGE + CONTROL_SIZE + GAP });
     await screen.unmount();
     await renderWithProviders(<QuickPlotCard landscape />);
-    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE, right: EDGE + 250 + GAP });
+    // Landscape: your grid card is bottom left, so the card sits right of it, clear of zoom.
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE, left: EDGE + 250 + GAP, right: EDGE + CONTROL_SIZE + GAP });
   });
 
   it('shows Discard as a trash icon only', async () => {

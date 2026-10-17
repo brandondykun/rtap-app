@@ -31,9 +31,10 @@ describe('MapBottomLeft', () => {
     expect(useMapChrome.getState().readoutCard).toEqual({ width: 0, height: 0 });
   });
 
-  it('sits beside your grid card in landscape', async () => {
+  it('sits bottom right in landscape, under the zoom buttons', async () => {
     await renderWithProviders(<MapBottomLeft landscape />);
     await act(async () => useMapChrome.getState().setSelfCard(CARD));
-    expect(screen.getByTestId('map-bottom-left')).toHaveStyle({ bottom: EDGE });
+    expect(screen.getByTestId('map-bottom-left')).toHaveStyle({ right: EDGE, bottom: EDGE });
+    expect(screen.getByTestId('map-bottom-left').props.style.left).toBeUndefined();
   });
 });

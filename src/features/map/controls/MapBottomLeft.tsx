@@ -8,14 +8,14 @@ import { EDGE, selfCardClearance } from '../layout';
 import { ReadoutCard } from './ReadoutCard';
 
 /**
- * Bottom-left: the crosshair readout card. In landscape it sits beside your grid card (bottom right); in
- * portrait your grid card sits right above it (bottom left, lined up), so it reports its size. An action
- * bar in the grid card's place counts the same.
+ * The crosshair readout card. In portrait it sits bottom left with your grid card right above it (lined
+ * up); in landscape it sits bottom right under the zoom buttons, with your grid card bottom left. It reports
+ * its size so those controls keep clear of it.
  */
 export function MapBottomLeft({ landscape }: { landscape: boolean }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { right } = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
+  const { left, right } = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
   useEffect(() => () => useMapChrome.getState().clearReadoutCard(), []);
   return (
     <View
@@ -27,9 +27,9 @@ export function MapBottomLeft({ landscape }: { landscape: boolean }) {
         useMapChrome.getState().setReadoutCard({ width: w, height });
       }}
       style={{
-        left: insets.left + EDGE,
+        ...(landscape ? { right: insets.right + EDGE } : { left: insets.left + EDGE }),
         bottom: insets.bottom + EDGE,
-        maxWidth: width - insets.left - insets.right - 2 * EDGE - right,
+        maxWidth: width - insets.left - insets.right - 2 * EDGE - (landscape ? left : right),
       }}>
       <ReadoutCard />
     </View>

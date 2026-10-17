@@ -88,11 +88,22 @@ describe('MapControls', () => {
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
   });
 
-  it('puts your grid card under zoom in landscape, with no GPS toggle', async () => {
+  it('puts your grid card bottom left in landscape, with zoom lifted above the crosshair readout', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape />);
     expect(screen.queryByLabelText('GPS')).toBeNull();
-    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
+    expect(screen.getByTestId('map-controls-bottom')).not.toContainElement(screen.getByTestId('gps-readout'));
+    expect(screen.getByTestId('self-card-left')).toContainElement(screen.getByTestId('gps-readout'));
     expect(screen.getByLabelText('Recenter on me')).toBe(screen.getByTestId('gps-readout'));
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE });
+    await act(async () => useMapChrome.getState().setReadoutCard({ width: 200, height: 52 }));
+    // The readout is under zoom on the right: the card stays down, zoom lifts, and the card keeps clear of the readout.
+    expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE + 200 + GAP });
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE + 52 + GAP });
+  });
+
+  it('keeps your landscape grid card right of a left drawer', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
+    expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: 360 + EDGE });
   });
 
   it('puts your grid card bottom left in portrait, right above the crosshair readout', async () => {
@@ -102,6 +113,8 @@ describe('MapControls', () => {
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: EDGE, bottom: EDGE });
     await act(async () => useMapChrome.getState().setReadoutCard({ width: 200, height: 52 }));
     expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: EDGE + 52 + GAP });
+    // Portrait: the readout is on the left, so zoom stays down.
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE });
   });
 
   it('keeps the portrait card above a bottom sheet', async () => {
@@ -112,8 +125,7 @@ describe('MapControls', () => {
   it.each([[true], [false]])('shows an action bar in place of your grid card (landscape=%s)', async (landscape) => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} bar={<View testID="bar" />} />);
     expect(screen.queryByTestId('gps-readout')).toBeNull();
-    const slot = landscape ? screen.getByTestId('map-controls-bottom') : screen.getByTestId('self-card-left');
-    expect(slot).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('self-card-left')).toContainElement(screen.getByTestId('bar'));
   });
 
   it('keeps the action bar even when a full sheet leaves no room for your grid card', async () => {

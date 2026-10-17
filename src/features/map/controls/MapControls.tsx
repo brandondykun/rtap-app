@@ -33,9 +33,9 @@ const SELF_CARD_HEIGHT = 56;
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
- * Right-edge controls: north-up under the toolbar (only while the map is rotated); zoom (shown per Settings, also while a panel is open) and your grid card (tap to recenter) at the bottom.
- * In portrait the card sits bottom left instead, right above the crosshair readout, so both grids line up.
- * An action bar takes the card's place while it is up.
+ * Right-edge controls: north-up under the toolbar (only while the map is rotated) and zoom (shown per Settings, also while a panel is open) at the bottom.
+ * Your grid card (tap to recenter) sits bottom left: in portrait right above the crosshair readout, so both grids line up; in landscape
+ * the readout sits under zoom instead. An action bar takes the card's place while it is up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar }: Props) {
   const insets = useSafeAreaInsets();
@@ -44,8 +44,9 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const showZoom = useSettings((s) => s.showZoomButtons);
   const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
-  // The crosshair readout (zero while hidden, e.g. under a panel) sits under the portrait card.
-  const readout = useMapChrome((s) => s.readoutCard.height);
+  // The crosshair readout (zero while hidden, e.g. under a panel): under your card in portrait, under zoom in landscape.
+  const readout = useMapChrome((s) => s.readoutCard);
+  const readoutLift = readout.height > 0 ? readout.height + GAP : 0;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   // A tall bottom sheet (full detent) can leave no room below north-up: hide the card and zoom rather than overlap.
@@ -65,7 +66,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       <View
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
-        style={{ bottom, right }}>
+        style={{ bottom: bottom + (landscape ? readoutLift : 0), right }}>
         {!showZoom || room < ZOOM_HEIGHT ? null : (
           <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
             <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
@@ -73,18 +74,21 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
             <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
           </View>
         )}
-        {landscape && !noRoom ? selfCard : null}
       </View>
-      {!landscape && !noRoom ? (
+      {noRoom ? null : (
         <View
           testID="self-card-left"
           pointerEvents="box-none"
           className="absolute items-start"
-          // Clear of the zoom column on the right.
-          style={{ bottom: bottom + (readout > 0 ? readout + GAP : 0), left: insets.left + EDGE, right: insets.right + EDGE + CONTROL_SIZE + GAP }}>
+          // Clear of a left drawer, and of the right column (zoom, plus the readout in landscape).
+          style={{
+            bottom: bottom + (landscape ? 0 : readoutLift),
+            left: Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) + EDGE,
+            right: insets.right + EDGE + (landscape && readout.width > 0 ? Math.max(CONTROL_SIZE, readout.width) : CONTROL_SIZE) + GAP,
+          }}>
           {selfCard}
         </View>
-      ) : null}
+      )}
     </>
   );
 }

@@ -70,11 +70,11 @@ describe('map layout', () => {
     expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
   });
 
-  it('keeps bottom bars beside or above your grid card, and only clear of the zoom column while it is hidden', () => {
+  it('keeps bottom bars beside or above your grid card, and clear of the zoom column', () => {
     const card = { width: 250, height: 64 };
-    expect(selfCardClearance(card, true)).toEqual({ lift: 0, right: 250 + GAP });
-    expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, right: CONTROL_SIZE + GAP });
-    expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance(card, true)).toEqual({ lift: 0, left: 250 + GAP, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, left: 0, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, left: 0, right: CONTROL_SIZE + GAP });
   });
 
   it('shrinks the toolbar when its text is hidden, and moves what sits under it up to match', () => {

@@ -20,8 +20,8 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   const temp = useQuickPlot((s) => s.temp);
   const clearance = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
   if (!temp) return null;
-  // Beside your grid card in landscape, above it in portrait; clear of the zoom column either way.
-  const left = insets.left + EDGE;
+  // Right of your grid card (bottom left) in landscape, above it in portrait; clear of the zoom column either way.
+  const left = insets.left + EDGE + clearance.left;
   const right = insets.right + EDGE + clearance.right;
   const available = width - left - right;
   const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, available) : available;

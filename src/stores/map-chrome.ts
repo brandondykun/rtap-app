@@ -7,7 +7,7 @@ type MapChromeValues = {
   selfCard: ChromeSize;
   /** The slot that reported `selfCard`. */
   selfCardOwner: string | null;
-  /** The crosshair readout card, as laid out; zero while hidden. In portrait your grid card sits above it. */
+  /** The crosshair readout card, as laid out; zero while hidden. Your grid card (portrait) or zoom (landscape) sits above it. */
   readoutCard: ChromeSize;
 };
 type MapChromeActions = {
