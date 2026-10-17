@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
+import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { renderWithProviders } from '@/test-utils/render';
@@ -11,6 +12,7 @@ import { QuickPlotCard } from './QuickPlotCard';
 const T = { lat: 38.91, lon: -77 };
 
 beforeEach(() => {
+  useMapChrome.setState(INITIAL_MAP_CHROME);
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   useMenu.setState(INITIAL_MENU);
   useQuickPlot.getState().plot(T);
@@ -36,9 +38,18 @@ describe('QuickPlotCard', () => {
   });
 
 
-  it.each([[false], [true]])('leaves the zoom and recenter column clear (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('leaves the zoom column clear (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP });
+  });
+
+  it('sits above your grid card in portrait and beside it in landscape', async () => {
+    useMapChrome.getState().setSelfCard({ width: 250, height: 64 });
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE + 64 + GAP, right: EDGE + CONTROL_SIZE + GAP });
+    await screen.unmount();
+    await renderWithProviders(<QuickPlotCard landscape />);
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE, right: EDGE + 250 + GAP });
   });
 
   it('shows Discard as a trash icon only', async () => {

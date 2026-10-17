@@ -2,15 +2,19 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
+import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { EDGE } from '../layout';
 import { MapControls } from './MapControls';
 
-beforeEach(() => useInteraction.setState(INITIAL_INTERACTION));
+beforeEach(() => {
+  useInteraction.setState(INITIAL_INTERACTION);
+  useMapChrome.setState(INITIAL_MAP_CHROME);
+});
 
 function handlers() {
-  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn(), gpsOn: false, onGps: jest.fn() };
+  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn() };
 }
 
 describe('MapControls', () => {
@@ -33,7 +37,7 @@ describe('MapControls', () => {
     expect(StyleSheet.flatten(screen.getByTestId('north-needle').props.style).transform).toEqual([{ rotate: '-30deg' }]);
   });
 
-  it('shows follow state on the recenter button', async () => {
+  it('shows follow state on your grid card', async () => {
     await renderWithProviders(<MapControls following canRecenter {...handlers()} panel={null} />);
     expect(screen.getByLabelText('Recenter on me')).toBeSelected();
   });
@@ -45,28 +49,30 @@ describe('MapControls', () => {
     expect(h.onRecenter).not.toHaveBeenCalled();
   });
 
-  it('hides zoom and lifts recenter above a bottom sheet', async () => {
+  it('hides zoom and lifts your grid card above a bottom sheet', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} />);
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
     expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(320 + EDGE);
   });
 
-  it('hides recenter when a full sheet leaves no room for it', async () => {
+  it('hides your grid card when a full sheet leaves no room for it', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} />);
     expect(screen.queryByLabelText('Recenter on me')).toBeNull();
   });
 
-  it('has a GPS toggle under north-up that is highlighted only while on', async () => {
-    const h = handlers();
-    await renderWithProviders(<MapControls following={false} canRecenter {...h} panel={null} />);
-    const north = screen.getByLabelText('North up');
-    const gps = screen.getByLabelText('GPS');
-    expect(gps.parent?.parent).toBe(north.parent?.parent);
-    expect(gps).not.toBeSelected();
-    await fireEvent.press(gps);
-    expect(h.onGps).toHaveBeenCalledTimes(1);
-    await renderWithProviders(<MapControls following={false} canRecenter {...h} gpsOn panel={null} />);
-    expect(screen.getByLabelText('GPS')).toBeSelected();
+  it('puts your grid card where the recenter button was, under zoom, with no GPS toggle', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} />);
+    expect(screen.queryByLabelText('GPS')).toBeNull();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
+    expect(screen.getByLabelText('Recenter on me')).toBe(screen.getByTestId('gps-readout'));
+  });
+
+  it('reports the card size for the bottom bars, and zero once it hides', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} />);
+    await fireEvent(screen.getByTestId('self-card-slot'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 250, height: 64 } } });
+    expect(useMapChrome.getState().selfCard).toEqual({ width: 250, height: 64 });
+    await screen.unmount();
+    expect(useMapChrome.getState().selfCard).toEqual({ width: 0, height: 0 });
   });
 });

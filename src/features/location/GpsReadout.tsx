@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
@@ -8,8 +8,15 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { formatLength } from './gps-format';
 
-/** The user's own position and altitude, shown while the GPS toolbar toggle is on. */
-export function GpsReadout() {
+type Props = {
+  /** The camera is following the user: outlined in amber, like an active map button. */
+  following: boolean;
+  disabled: boolean;
+  onPress: () => void;
+};
+
+/** The user's own position and altitude, bottom right; tapping it recenters the map on the user. */
+export function GpsReadout({ following, disabled, onPress }: Props) {
   const fix = usePresence((s) => s.selfPosition);
   const status = usePresence((s) => s.locationStatus);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -18,7 +25,14 @@ export function GpsReadout() {
   const off = status === 'denied' || status === 'unavailable';
 
   return (
-    <View testID="gps-readout" className="self-start rounded-2xl border border-border bg-surface-chrome px-3 py-2">
+    <Pressable
+      testID="gps-readout"
+      accessibilityRole="button"
+      accessibilityLabel="Recenter on me"
+      accessibilityState={{ selected: following, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className={`rounded-2xl border bg-surface-chrome px-3 py-2 ${following ? 'border-accent' : 'border-border'}`}>
       <View className="flex-row items-center gap-2">
         <Icon name="navigation" size={20} color={colors.self} />
         {fix && !off ? (
@@ -34,6 +48,6 @@ export function GpsReadout() {
           {`ALT ${formatLength(fix.altitudeM, unit)} · ACC ±${formatLength(fix.accuracyM, unit)}`}
         </Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }

@@ -17,8 +17,6 @@ type SettingsValues = {
   /** Manual declination in degrees (east positive); null = use the WMM model. */
   declinationOverrideDeg: number | null;
   basemap: Basemap;
-  /** The GPS toolbar toggle: show the user's position and altitude top-left. */
-  showGps: boolean;
   altitudeUnit: AltitudeUnit;
   /** Distance chips between the points of the line being viewed or edited. */
   showLineDistances: boolean;
@@ -29,7 +27,6 @@ type SettingsActions = {
   setAngleUnit: (unit: AngleUnit) => void;
   setNorthRef: (ref: NorthRef) => void;
   setBasemap: (basemap: Basemap) => void;
-  toggleShowGps: () => void;
   setAltitudeUnit: (unit: AltitudeUnit) => void;
   setShowLineDistances: (show: boolean) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
@@ -46,7 +43,6 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   northRef: 'grid',
   declinationOverrideDeg: null,
   basemap: 'satellite',
-  showGps: false,
   altitudeUnit: 'm',
   showLineDistances: true,
 };
@@ -75,7 +71,6 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
         ? decl
         : current.declinationOverrideDeg,
     basemap: pick(p.basemap, BASEMAPS, current.basemap),
-    showGps: typeof p.showGps === 'boolean' ? p.showGps : current.showGps,
     altitudeUnit: pick(p.altitudeUnit, ['m', 'ft'], current.altitudeUnit),
     showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
   };
@@ -89,7 +84,6 @@ export const useSettings = create<SettingsState>()(
       setAngleUnit: (angleUnit) => set({ angleUnit }),
       setNorthRef: (northRef) => set({ northRef }),
       setBasemap: (basemap) => set({ basemap }),
-      toggleShowGps: () => set({ showGps: !get().showGps }),
       setAltitudeUnit: (altitudeUnit) => set({ altitudeUnit }),
       setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
@@ -104,13 +98,12 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, showGps, altitudeUnit, showLineDistances }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
         declinationOverrideDeg,
         basemap,
-        showGps,
         altitudeUnit,
         showLineDistances,
       }),

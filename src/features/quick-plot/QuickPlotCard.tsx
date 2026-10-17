@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MenuButton } from '@/components/menu/MenuButton';
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
-import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
+import { EDGE, selfCardClearance } from '@/features/map/layout';
+import { useMapChrome } from '@/stores/map-chrome';
 import { useMenu } from '@/stores/menu';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -17,10 +18,11 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
   const temp = useQuickPlot((s) => s.temp);
+  const clearance = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
   if (!temp) return null;
-  // Clear of the zoom / recenter column on the right edge.
+  // Beside your grid card in landscape, above it in portrait; clear of the zoom column either way.
   const left = insets.left + EDGE;
-  const right = insets.right + EDGE + CONTROL_SIZE + GAP;
+  const right = insets.right + EDGE + clearance.right;
   const available = width - left - right;
   const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, available) : available;
 
@@ -55,7 +57,7 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   );
 
   return (
-    <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE, left, right }}>
+    <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
       <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-3 rounded-2xl border border-accent bg-surface-chrome p-3">
         {landscape ? (
           // Landscape: one compact line.

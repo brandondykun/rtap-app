@@ -83,3 +83,13 @@ export function cameraPaddingFor(panel: PanelFrame | null): CameraPadding {
     paddingLeft: panel?.side === 'left' ? panel.size : 0,
   };
 }
+
+/**
+ * How a bar along the bottom keeps clear of your grid card (bottom right, under the zoom buttons):
+ * `beside` keeps it left of the card, otherwise it is raised above the card and only clears the
+ * zoom column. `right` excludes the safe area and the edge margin.
+ */
+export function selfCardClearance(card: { width: number; height: number }, beside: boolean): { lift: number; right: number } {
+  if (card.height === 0) return { lift: 0, right: CONTROL_SIZE + GAP };
+  return beside ? { lift: 0, right: Math.max(CONTROL_SIZE, card.width) + GAP } : { lift: card.height + GAP, right: CONTROL_SIZE + GAP };
+}

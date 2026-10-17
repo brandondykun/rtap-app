@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
@@ -9,6 +9,8 @@ import { GpsReadout } from './GpsReadout';
 const fix = (altitudeM: number | null) =>
   usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 4.6, timestamp: 1, altitudeM });
 
+const PROPS = { following: false, disabled: false, onPress: () => {} };
+
 beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
@@ -16,13 +18,13 @@ beforeEach(() => {
 
 describe('GpsReadout', () => {
   it('waits for the first fix', async () => {
-    await renderWithProviders(<GpsReadout />);
+    await renderWithProviders(<GpsReadout {...PROPS} />);
     expect(screen.getByText('Waiting for GPS…')).toBeTruthy();
     expect(screen.queryByTestId('gps-altitude')).toBeNull();
   });
 
   it('shows the position in the coordinate format and altitude and accuracy in the altitude unit', async () => {
-    await renderWithProviders(<GpsReadout />);
+    await renderWithProviders(<GpsReadout {...PROPS} />);
     await act(async () => fix(142.4));
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
@@ -36,14 +38,27 @@ describe('GpsReadout', () => {
   });
 
   it('shows a dash when the altitude is unknown', async () => {
-    await renderWithProviders(<GpsReadout />);
+    await renderWithProviders(<GpsReadout {...PROPS} />);
     await act(async () => fix(null));
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT — · ACC ±5 m');
   });
 
   it('says location is off when it is denied', async () => {
-    await renderWithProviders(<GpsReadout />);
+    await renderWithProviders(<GpsReadout {...PROPS} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByText('Location is off')).toBeTruthy();
+  });
+
+  it('recenters on press, shows following, and does nothing while disabled', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<GpsReadout following disabled={false} onPress={onPress} />);
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Recenter on me')).toBeSelected();
+    await screen.unmount();
+    await renderWithProviders(<GpsReadout following={false} disabled onPress={onPress} />);
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Recenter on me')).not.toBeSelected();
   });
 });

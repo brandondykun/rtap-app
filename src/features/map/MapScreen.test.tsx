@@ -14,7 +14,6 @@ import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PLACING, usePlacing } from '@/stores/placing';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
-import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
@@ -267,26 +266,17 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
-  it('the GPS button shows and hides the GPS readout, independent of the menus', async () => {
-    useSettings.setState(DEFAULT_SETTINGS);
+  it('always shows your grid card bottom right, also with a panel open, and has no GPS toggle', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    await fireEvent.press(await screen.findByLabelText('GPS'));
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByLabelText('GPS')).toBeSelected();
-    // A panel hides the bottom-left readouts, GPS included, but never changes the toggle.
+    expect(await screen.findByTestId('gps-readout')).toBeTruthy();
+    expect(screen.queryByLabelText('GPS')).toBeNull();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
-    expect(screen.getByLabelText('GPS')).toBeSelected();
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('GPS'));
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    expect(screen.getByLabelText('GPS')).not.toBeSelected();
   });
 
   it('UNIT shows the tap bar and no menu; a map tap opens Add unit at the tap', async () => {

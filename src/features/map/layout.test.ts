@@ -3,6 +3,7 @@ import {
   ATTRIBUTION_WIDTH,
   bannerTop,
   cameraPaddingFor,
+  CONTROL_SIZE,
   EDGE,
   GAP,
   isLandscape,
@@ -10,6 +11,7 @@ import {
   LOGO_ROW_HEIGHT,
   ornamentPositions,
   ornamentRowTop,
+  selfCardClearance,
   TOOLBAR_HEIGHT,
 } from './layout';
 
@@ -64,5 +66,12 @@ describe('map layout', () => {
     const p = ornamentPositions({ landscape: true, insets: NO_INSETS, leftOffset: 400 });
     expect(p.attribution.left).toBe(EDGE + 400);
     expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
+  });
+
+  it('keeps bottom bars beside or above your grid card, and only clear of the zoom column while it is hidden', () => {
+    const card = { width: 250, height: 64 };
+    expect(selfCardClearance(card, true)).toEqual({ lift: 0, right: 250 + GAP });
+    expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, right: CONTROL_SIZE + GAP });
   });
 });

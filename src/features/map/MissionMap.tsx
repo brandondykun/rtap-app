@@ -23,7 +23,6 @@ import { useQuickPlot } from '@/stores/quick-plot';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePlacing, type PlacingCategory } from '@/stores/placing';
 import { usePresence } from '@/stores/presence';
-import { useSettings } from '@/stores/settings';
 
 import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
@@ -69,8 +68,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const centeredOnSelf = useRef(savedCamera !== null);
   const followMode = useInteraction((s) => s.followMode);
   const setFollowMode = useInteraction((s) => s.setFollowMode);
-  const showGps = useSettings((s) => s.showGps);
-  const toggleShowGps = useSettings((s) => s.toggleShowGps);
   // Boolean selector: a GPS fix must not re-render the map tree; fixes are handled in a store subscription.
   const hasSelfPosition = usePresence((s) => s.selfPosition !== null);
   // Only a camera the app or user actually moved is worth persisting (not the untouched open).
@@ -398,8 +395,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
-        gpsOn={showGps}
-        onGps={toggleShowGps}
         panel={panel}
       />
       {lineDrawing ? <LineDrawBar panel={panel} /> : null}
@@ -407,7 +402,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
       {panel || plotTemp ? null : (
         <MapBottomLeft
-          footerBeside={landscape}
+          landscape={landscape}
           footer={
             placing ? <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} /> : null
           }
