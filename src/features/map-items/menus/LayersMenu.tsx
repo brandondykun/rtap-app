@@ -54,7 +54,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   // The tab chosen last; until then the first tab that has items.
   const tab = chosenTab ?? TABS.find((t) => byTab[t.id] > 0)?.id ?? 'unit';
   const tabInfo = TABS.find((t) => t.id === tab)!;
-  const { rows, matched, total, hiddenIds } = useMemo(() => layerRows(items, hidden, query, undefined, tab), [items, hidden, query, tab]);
+  const { rows, matched, total, hiddenIds, visibleIds } = useMemo(() => layerRows(items, hidden, query, undefined, tab), [items, hidden, query, tab]);
   const tabOptions = TABS.map((t) => ({
     value: t.id,
     label: t.label,
@@ -69,6 +69,11 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
       if (!r.ok) notifyError('Could not change visibility.');
+    });
+  };
+  const hideAll = () => {
+    void setItemsHidden(ctx, visibleIds, true).then((r) => {
+      if (!r.ok) notifyError('Could not hide the items.');
     });
   };
   const showAll = () => {
@@ -99,9 +104,10 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             autoCorrect={false}
           />
         ) : null}
-        {/* Hidden count and Show all cover this tab only. */}
-        <View className="flex-row items-center justify-between gap-3">
-          <Text testID="layers-hidden" className="text-sm text-text-muted">{`${count(hiddenIds.length)} hidden`}</Text>
+        {/* Hidden count, Hide all and Show all cover this tab only (not narrowed by search). */}
+        <View className="flex-row items-center gap-2">
+          <Text testID="layers-hidden" className="mr-auto text-sm text-text-muted">{`${count(hiddenIds.length)} hidden`}</Text>
+          <MenuButton label="Hide all" icon="eye-off-outline" onPress={hideAll} disabled={visibleIds.length === 0} />
           <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         </View>
         {total === 0 ? <Text className="text-sm text-text-muted">{tabInfo.empty}</Text> : null}

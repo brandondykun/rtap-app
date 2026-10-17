@@ -45,6 +45,8 @@ export type LayerRows = {
   polygons: number;
   /** Hidden items in the chosen category (all categories when none is chosen). */
   hiddenIds: string[];
+  /** Shown items in the chosen category (all categories when none is chosen). Like hiddenIds, search does not narrow it. */
+  visibleIds: string[];
 };
 
 /**
@@ -103,5 +105,6 @@ export function layerRows(
     lines: counts.line,
     polygons: counts.polygon,
     hiddenIds: inTab.filter((i) => hidden.has(i.id)).map((i) => i.id),
+    visibleIds: inTab.filter((i) => !hidden.has(i.id)).map((i) => i.id),
   };
 }

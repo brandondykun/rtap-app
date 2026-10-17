@@ -47,6 +47,23 @@ describe('LayersMenu', () => {
     await fireEvent.press(screen.getByLabelText('Polygons'));
     expect(screen.getByText('No polygons yet. Use POLYGON to draw one.')).toBeTruthy();
     expect(screen.getByLabelText('Show all')).toBeDisabled();
+    expect(screen.getByLabelText('Hide all')).toBeDisabled();
+  });
+
+  it('hides all items in the open tab only', async () => {
+    const ctx = makeTestContext();
+    const a = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+    const b = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
+    const l = await placeLine(ctx, { missionId: 'm1', points: [at, { lat: at.lat + 0.01, lon: at.lon }], lineType: 'phase-line', name: 'RED' });
+    if (!a.ok || !b.ok || !l.ok) throw new Error('setup');
+    await openLayers(ctx);
+    expect(await screen.findByText('HOS-1')).toBeTruthy();
+    expect(screen.getByLabelText('Show all')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('Hide all'));
+    await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
+    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('2 hidden'));
+    expect(screen.getByLabelText('Hide all')).toBeDisabled();
+    expect(screen.getByLabelText('Show all')).toBeEnabled();
   });
 
   it('lists points, hides and shows them, and shows all', async () => {

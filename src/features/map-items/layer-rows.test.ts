@@ -18,6 +18,9 @@ describe('layerRows', () => {
     expect(r.rows.map((x) => x.name)).toEqual(['FRD-1', 'hos-2', 'HOS-10', 'OBJ IRON']);
     expect(r.rows.find((x) => x.id === 'b')?.hidden).toBe(true);
     expect(r.hiddenIds).toEqual(['b']);
+    expect(r.visibleIds).toEqual(['a', 'c', 'd']);
+    // Search narrows the rows, not what Hide all / Show all cover.
+    expect(layerRows(items, ['b'], 'frd').visibleIds).toEqual(['a', 'c', 'd']);
     expect(r).toMatchObject({ total: 4, matched: 4 });
     expect(r.rows[0].coord).toEqual(at);
   });
@@ -87,7 +90,7 @@ describe('layerRows', () => {
     const all = [item('a', 'HOS-1', composeSidc('hostile', 'infantry')), item('b', 'CP-1', 'GFGPGPPK------X'), line];
     const r = layerRows(all, ['a', 'l'], '', LAYER_ROW_LIMIT, 'line');
     expect(r.rows.map((x) => x.id)).toEqual(['l']);
-    expect(r).toMatchObject({ total: 1, matched: 1, hiddenIds: ['l'], units: 1, points: 1, lines: 1, polygons: 0 });
+    expect(r).toMatchObject({ total: 1, matched: 1, hiddenIds: ['l'], visibleIds: [], units: 1, points: 1, lines: 1, polygons: 0 });
     expect(layerRows(all, [], 'hos', LAYER_ROW_LIMIT, 'point').rows).toEqual([]);
   });
 });
