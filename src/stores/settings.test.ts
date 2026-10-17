@@ -36,6 +36,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
   });
 
+  it('sets and persists the center grid (shown by default)', () => {
+    expect(useSettings.getState().showCenterGrid).toBe(true);
+    useSettings.getState().setShowCenterGrid(false);
+    expect(useSettings.getState().showCenterGrid).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showCenterGrid: false });
+  });
+
   it('sets and persists the toolbar text (shown by default)', () => {
     expect(useSettings.getState().showToolbarText).toBe(true);
     useSettings.getState().setShowToolbarText(false);

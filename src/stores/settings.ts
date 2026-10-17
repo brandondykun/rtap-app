@@ -24,6 +24,8 @@ type SettingsValues = {
   showLineDistances: boolean;
   /** The zoom in / zoom out buttons on the map (pinch still zooms). */
   showZoomButtons: boolean;
+  /** The crosshair (map center) readout card. */
+  showCenterGrid: boolean;
   /** Labels under the toolbar icons; off leaves icons only. */
   showToolbarText: boolean;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
@@ -39,6 +41,7 @@ type SettingsActions = {
   setAltitudeUnit: (unit: AltitudeUnit) => void;
   setShowLineDistances: (show: boolean) => void;
   setShowZoomButtons: (show: boolean) => void;
+  setShowCenterGrid: (show: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
   toggleMapLabels: () => void;
   setLabelSize: (size: LabelSize) => void;
@@ -59,6 +62,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   altitudeUnit: 'm',
   showLineDistances: true,
   showZoomButtons: true,
+  showCenterGrid: true,
   showToolbarText: true,
   showMapLabels: true,
   labelSize: 'medium',
@@ -91,6 +95,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     altitudeUnit: pick(p.altitudeUnit, ['m', 'ft'], current.altitudeUnit),
     showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
+    showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
@@ -108,6 +113,7 @@ export const useSettings = create<SettingsState>()(
       setAltitudeUnit: (altitudeUnit) => set({ altitudeUnit }),
       setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
+      setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       setLabelSize: (labelSize) => set({ labelSize }),
@@ -123,7 +129,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showToolbarText, showMapLabels, labelSize }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, labelSize }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -132,6 +138,7 @@ export const useSettings = create<SettingsState>()(
         altitudeUnit,
         showLineDistances,
         showZoomButtons,
+        showCenterGrid,
         showToolbarText,
         showMapLabels,
         labelSize,

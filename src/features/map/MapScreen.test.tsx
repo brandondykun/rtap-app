@@ -121,6 +121,17 @@ describe('MapScreen', () => {
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
+  it('hides the crosshair readout when Show center grid is off', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    expect(await screen.findByTestId('readout-card')).toBeTruthy();
+    await act(async () => useSettings.getState().setShowCenterGrid(false));
+    expect(screen.queryByTestId('readout-card')).toBeNull();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+  });
+
   it('keeps the recenter zoom (follow effect does not override it)', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

@@ -109,6 +109,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const plotTemp = useQuickPlot((s) => s.temp);
   const quickPlotting = plotEntryOpen || plotTemp !== null;
   const placing = usePlacing((s) => s.category);
+  const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const lineDrawing = useDraft((s) => (s.category === 'line' || s.category === 'polygon') && s.mode !== null && !s.locked);
   const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
@@ -433,7 +434,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
-      {plotTemp || barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring)) ? null : <MapBottomLeft landscape={landscape} panel={panel} />}
+      {!showCenterGrid || plotTemp || barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring)) ? null : <MapBottomLeft landscape={landscape} panel={panel} />}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />

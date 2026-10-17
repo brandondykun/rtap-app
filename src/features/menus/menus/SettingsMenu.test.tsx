@@ -130,6 +130,14 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Show zoom buttons').props.value).toBe(false);
   });
 
+  it('shows or hides the center grid (shown by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Show center grid').props.value).toBe(true);
+    await fireEvent(screen.getByLabelText('Show center grid'), 'valueChange', false);
+    expect(useSettings.getState().showCenterGrid).toBe(false);
+    expect(screen.getByLabelText('Show center grid').props.value).toBe(false);
+  });
+
   it('shows or hides the toolbar text (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show toolbar text').props.value).toBe(true);

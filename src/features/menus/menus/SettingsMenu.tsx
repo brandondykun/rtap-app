@@ -75,6 +75,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setLabelSize = useSettings((s) => s.setLabelSize);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
+  const showCenterGrid = useSettings((s) => s.showCenterGrid);
+  const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const showToolbarText = useSettings((s) => s.showToolbarText);
   const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
   const [text, setText] = useState(override === null ? '' : String(override));
@@ -204,6 +206,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       </MenuSection>
       <MenuSection label="Map">
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
+        <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
         <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
       </MenuSection>
     </View>
