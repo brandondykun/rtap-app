@@ -106,7 +106,7 @@ describe('MapControls', () => {
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
-  it('docks ME over CTR full width in portrait, under zoom and locate on the right', async () => {
+  it('docks CTR over ME full width in portrait, under zoom and locate on the right', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} showCenter />);
     const bottom = screen.getByTestId('map-controls-bottom');
     expect(bottom).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE });

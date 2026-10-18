@@ -43,7 +43,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
- * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (ME over CTR);
+ * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (CTR over ME);
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
  * An action bar takes the dock's or your card's place while it is up.
  */

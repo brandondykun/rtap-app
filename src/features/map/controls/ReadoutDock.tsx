@@ -13,15 +13,15 @@ import { describeReadout, formatCoordinate } from '../interaction/readout';
 import { CardLead } from './CardLead';
 
 /**
- * Portrait only, docked full width at the bottom: ME (your grid, altitude over accuracy) over CTR (the crosshair's grid,
- * distance over bearing from you). The CTR row follows `showCenter`. Recentering is the locate button above it.
+ * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME
+ * (your grid, altitude over accuracy). The CTR row follows `showCenter`. Recentering is the locate button above it.
  */
 export function ReadoutDock({ showCenter }: { showCenter: boolean }) {
   return (
     <View testID="readout-dock" className="mx-2 rounded-2xl border border-border bg-surface-chrome px-3">
-      <SelfRow />
-      {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
       {showCenter ? <CenterRow /> : null}
+      {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
+      <SelfRow />
     </View>
   );
 }

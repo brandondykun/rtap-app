@@ -20,12 +20,12 @@ beforeEach(() => {
 });
 
 describe('ReadoutDock', () => {
-  it('puts ME (your grid, altitude over accuracy) over CTR (the crosshair grid, distance over bearing from you)', async () => {
+  it('puts CTR (the crosshair grid, distance over bearing from you) over ME (your grid, altitude over accuracy)', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
     await renderWithProviders(<ReadoutDock showCenter />);
     const rows = (screen.getByTestId('readout-dock').children as { props: { testID?: string } }[]).map((c) => c.props.testID);
-    expect(rows).toEqual(['dock-self', 'dock-divider', 'dock-center']);
+    expect(rows).toEqual(['dock-center', 'dock-divider', 'dock-self']);
     // A little in from the screen edges, more than the buttons above it.
     expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}142 m±5 m$/);
