@@ -3,6 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { SelfCard } from './SelfCard';
 
@@ -27,6 +28,9 @@ describe('SelfCard', () => {
     expect(screen.getByTestId('gps-line')).toHaveTextContent(/ME18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
+    // Like the portrait dock: your grid in the friendly blue, the ME tag in your location blue.
+    expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').self });
   });
 
   it('waits for the first fix', async () => {
