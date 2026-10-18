@@ -8,7 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { formatCoordinate } from '../interaction/readout';
 import { CardLead } from './CardLead';
 
-/** CTR and the crosshair's grid. Positioned by MapControls: over your card in portrait, bottom left in landscape. */
+/** Landscape: CTR and the crosshair's grid, bottom left (MapBottomLeft). Portrait shows it in the dock's CTR row instead. */
 export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }) {
   const { colors } = useTheme();
   const center = useInteraction((s) => s.cameraCenter);

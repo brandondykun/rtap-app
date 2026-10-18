@@ -110,7 +110,7 @@ describe('MapScreen', () => {
     expect(padded.padding.paddingBottom).toBeGreaterThan(0);
     // Both cards stay while a panel is open.
     expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
 
     await act(async () => useMenu.getState().closeMenu());
     await waitFor(() =>
@@ -119,18 +119,18 @@ describe('MapScreen', () => {
       ),
     );
     expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
   });
 
-  it('hides the center card when Show center grid is off', async () => {
+  it('drops the CTR row when Show center grid is off', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    expect(await screen.findByTestId('center-card')).toBeTruthy();
+    expect(await screen.findByTestId('dock-center')).toBeTruthy();
     await act(async () => useSettings.getState().setShowCenterGrid(false));
-    expect(screen.queryByTestId('center-card')).toBeNull();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.queryByTestId('dock-center')).toBeNull();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
   });
 
   it('keeps the recenter zoom (follow effect does not override it)', async () => {
@@ -301,13 +301,13 @@ describe('MapScreen', () => {
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    expect(await screen.findByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByTestId('center-card')).toBeTruthy();
+    expect(await screen.findByTestId('dock-self')).toBeTruthy();
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
     expect(screen.queryByLabelText('GPS')).toBeNull();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByTestId('center-card')).toBeTruthy();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
   });
 
   it('UNIT shows the tap bar and no menu; a map tap opens Add unit at the tap', async () => {
@@ -318,9 +318,8 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     expect(screen.getByText('Tap map')).toBeTruthy();
-    // The bar takes your card's place; the center card stays.
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    expect(screen.getByTestId('center-card')).toBeTruthy();
+    // The bar takes the dock's place.
+    expect(screen.queryByTestId('readout-dock')).toBeNull();
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useDraft.getState().mode).toBeNull();
     await act(async () =>
@@ -329,9 +328,9 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'unit', coord: { lat: 38.95, lon: -77.1 } });
     expect(screen.queryByTestId('place-bar')).toBeNull();
-    // The Add unit menu is open: your card is back, beside the center card.
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByTestId('center-card')).toBeTruthy();
+    // The Add unit menu is open: the dock is back.
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
   });
 
   it('POINT: Add at center opens Add point at the crosshair; switching from UNIT changes the bar', async () => {
@@ -724,12 +723,12 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('MEASURE'));
       expect(useMenu.getState().stack).toEqual([]);
       expect(screen.getByTestId('measure-bar')).toBeTruthy();
-      // The bar takes your grid card's place.
-      expect(screen.queryByTestId('gps-readout')).toBeNull();
+      // The bar takes the dock's place.
+      expect(screen.queryByTestId('dock-self')).toBeNull();
       expect(screen.getByLabelText('MEASURE')).toBeSelected();
       await fireEvent.press(screen.getByLabelText('MEASURE'));
       expect(screen.queryByTestId('measure-bar')).toBeNull();
-      expect(screen.getByTestId('gps-readout')).toBeTruthy();
+      expect(screen.getByTestId('dock-self')).toBeTruthy();
     });
 
     it('a map tap sets the start; a unit tap snaps the end without opening the unit; long-press does nothing', async () => {

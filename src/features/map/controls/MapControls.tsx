@@ -11,9 +11,9 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
-import { CenterCard } from './CenterCard';
 import { MapBottomLeft } from './MapBottomLeft';
 import { MapButton } from './MapButton';
+import { ReadoutDock } from './ReadoutDock';
 import { SelfCard } from './SelfCard';
 
 type Props = {
@@ -27,23 +27,25 @@ type Props = {
   landscape: boolean;
   /** A tap-mode action bar (placing, drawing) shown in place of your card while it is up. */
   bar?: ReactNode;
-  /** The center card (CTR grid): over your card in portrait, bottom left in landscape. */
+  /** The center grid: the dock's CTR row in portrait, the center card bottom left in landscape. */
   showCenter?: boolean;
 };
 
 /** Height of your card before it is first laid out (two lines). */
 const SELF_CARD_HEIGHT = 56;
-/** Height of the center card before it is first laid out (one line). */
-const CENTER_CARD_HEIGHT = 36;
-/** Space between zoom and your card (gap-3). */
+/** Height of the portrait dock before it is first laid out: one row, or two with the divider. */
+const DOCK_ROW_HEIGHT = 50;
+const DOCK_HEIGHT = 2 * DOCK_ROW_HEIGHT + 1;
+/** Space between the buttons and the card under them (gap-3). */
 const STACK_GAP = 12;
 /** Zoom in and zoom out, with the divider between them. */
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
- * Right-edge controls: north-up under the toolbar (only while the map is rotated); zoom (shown per Settings) and your card
- * (ME grid over ALT · ACC; tap to recenter) at the bottom, also while a panel is open. An action bar takes your card's place while it is up.
- * In portrait the center card sits between them, right above your card; in landscape it sits bottom left.
+ * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
+ * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (ME over CTR);
+ * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
+ * An action bar takes the dock's or your card's place while it is up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, showCenter = false }: Props) {
   const insets = useSafeAreaInsets();
@@ -54,9 +56,43 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
-  const [centerHeight, setCenterHeight] = useState(CENTER_CARD_HEIGHT);
-  // A tall bottom sheet can leave too little room below north-up: zoom gives way first, then the center card, then your card.
+  const [dockHeight, setDockHeight] = useState<number | null>(null);
+  // A tall bottom sheet can leave too little room below north-up: the buttons give way first, then the cards.
   const room = roomAboveSheet(height, panel, insets.top, toolbar);
+  const zoom = (
+    <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
+      <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
+      <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
+      <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
+    </View>
+  );
+
+  if (!landscape) {
+    const dockSize = dockHeight ?? (showCenter ? DOCK_HEIGHT : DOCK_ROW_HEIGHT);
+    // The action bar always shows: it is how the user finishes the mode.
+    const docked = bar ? (
+      <SelfCardSlot>{bar}</SelfCardSlot>
+    ) : room < dockSize ? null : (
+      <SelfCardSlot onHeight={setDockHeight}>
+        <ReadoutDock showCenter={showCenter} />
+      </SelfCardSlot>
+    );
+    const below = docked ? dockSize + STACK_GAP : 0;
+    const locate = room >= CONTROL_SIZE + below;
+    return (
+      <>
+        <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} />
+        <View testID="map-controls-bottom" pointerEvents="box-none" className="absolute gap-3" style={{ bottom, left: insets.left + EDGE, right }}>
+          <View pointerEvents="box-none" className="items-end gap-3">
+            {showZoom && locate && room >= ZOOM_HEIGHT + STACK_GAP + CONTROL_SIZE + below ? zoom : null}
+            {locate ? <MapButton label="Recenter on me" icon="crosshairs-gps" active={following} disabled={!canRecenter} onPress={onRecenter} /> : null}
+          </View>
+          {docked}
+        </View>
+      </>
+    );
+  }
+
   // The action bar always shows: it is how the user finishes the mode.
   const card = bar ? (
     <SelfCardSlot>{bar}</SelfCardSlot>
@@ -65,9 +101,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       <SelfCard following={following} disabled={!canRecenter} onRecenter={onRecenter} />
     </SelfCardSlot>
   );
-  const stacked = card ? cardHeight + STACK_GAP : 0;
-  const center = showCenter && !landscape && room >= stacked + centerHeight ? <CenterCard onHeight={setCenterHeight} /> : null;
-  const below = stacked + (center ? centerHeight + STACK_GAP : 0);
+  const below = card ? cardHeight + STACK_GAP : 0;
   return (
     <>
       <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} />
@@ -75,17 +109,10 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {!showZoom || room < ZOOM_HEIGHT + below ? null : (
-          <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
-            <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
-            <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
-            <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
-          </View>
-        )}
-        {center}
+        {!showZoom || room < ZOOM_HEIGHT + below ? null : zoom}
         {card}
       </View>
-      {showCenter && landscape ? <MapBottomLeft panel={panel} /> : null}
+      {showCenter ? <MapBottomLeft panel={panel} /> : null}
     </>
   );
 }
