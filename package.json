@@ -55,6 +55,7 @@
     "jest": "~29.7.0",
     "jest-expo": "~57.0.6",
     "milsymbol": "^3.0.4",
+    "patch-package": "^8.0.1",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
@@ -67,7 +68,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "build:symbols": "tsx scripts/build-symbols.ts",
-    "build:map-images": "tsx scripts/build-map-images.ts"
+    "build:map-images": "tsx scripts/build-map-images.ts",
+    "postinstall": "patch-package"
   },
   "private": true,
   "jest": {

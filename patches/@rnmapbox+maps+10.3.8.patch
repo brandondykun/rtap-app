@@ -1,0 +1,13 @@
+diff --git a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
+index 3b25490..63ae750 100644
+--- a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
++++ b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
+@@ -733,6 +733,8 @@ open class RNMBXMapView: UIView, RCTInvalidating {
+   }
+ 
+   func applyAttribution() {
++    // White (i) so it reads on the dark chrome and satellite imagery.
++    mapView.ornaments.attributionButton.tintColor = .white
+     if let visibility = attributionEnabled {
+       mapView.ornaments.options.attributionButton.visibility = visibility
+     }
