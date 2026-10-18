@@ -111,12 +111,19 @@ export function roomAboveSheet(windowHeight: number, panel: PanelFrame | null, i
 }
 
 /**
- * How a bar along the bottom keeps clear of the grid card (bottom left) and the zoom column (right):
- * `beside` keeps it right of the card, otherwise it is raised above the card. `left` and `right`
- * exclude the safe area and the edge margin.
+ * How something along the bottom keeps clear of your card (bottom right, under the zoom buttons):
+ * `beside` keeps it left of the card, otherwise it is raised above the card and only clears the
+ * zoom column. `right` excludes the safe area and the edge margin.
  */
-export function selfCardClearance(card: { width: number; height: number }, beside: boolean): { lift: number; left: number; right: number } {
-  const right = CONTROL_SIZE + GAP;
-  if (card.height === 0) return { lift: 0, left: 0, right };
-  return beside ? { lift: 0, left: card.width + GAP, right } : { lift: card.height + GAP, left: 0, right };
+export function selfCardClearance(card: { width: number; height: number }, beside: boolean): { lift: number; right: number } {
+  if (card.height === 0) return { lift: 0, right: CONTROL_SIZE + GAP };
+  return beside ? { lift: 0, right: Math.max(CONTROL_SIZE, card.width) + GAP } : { lift: card.height + GAP, right: CONTROL_SIZE + GAP };
+}
+
+/**
+ * In landscape with a drawer open (drawing a line or polygon) there is no room for both an action bar and
+ * the center card: the center card hides while the bar is up.
+ */
+export function barTakesReadoutSpot(landscape: boolean, panel: PanelFrame | null, hasBar: boolean): boolean {
+  return landscape && panel !== null && hasBar;
 }

@@ -6,7 +6,7 @@ import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { CONTROL_SIZE, EDGE, GAP } from '../layout';
+import { EDGE } from '../layout';
 import { MapControls } from './MapControls';
 
 beforeEach(() => {
@@ -81,42 +81,40 @@ describe('MapControls', () => {
     expect(screen.getByLabelText('Zoom in')).toBeTruthy();
   });
 
-  it('hides zoom and the grid card when a full sheet leaves no room for them', async () => {
+  it('hides zoom and your card when a full sheet leaves no room for them', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} />);
-    expect(screen.queryByTestId('grid-card')).toBeNull();
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
   });
 
-  it.each([[true], [false]])('puts the grid card bottom left, with zoom alone bottom right (landscape=%s)', async (landscape) => {
+  it.each([[true], [false]])('puts your card bottom right under zoom, with no GPS toggle (landscape=%s)', async (landscape) => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} />);
     expect(screen.queryByLabelText('GPS')).toBeNull();
-    expect(screen.getByTestId('map-controls-bottom')).not.toContainElement(screen.getByTestId('grid-card'));
-    expect(screen.getByTestId('self-card-left')).toContainElement(screen.getByTestId('grid-card'));
-    expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE + CONTROL_SIZE + GAP });
-    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE });
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE, right: EDGE });
+    expect(screen.queryByTestId('center-card')).toBeNull();
   });
 
-  it('keeps the grid card, both lines, while a panel is open: above a bottom sheet, right of a left drawer', async () => {
+  it('keeps your card while a panel is open, above a bottom sheet', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} />);
-    expect(screen.getByTestId('center-line')).toBeTruthy();
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: 320 + EDGE });
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
     await screen.unmount();
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
-    expect(screen.getByTestId('grid-card')).toBeTruthy();
-    expect(screen.getByTestId('self-card-left')).toHaveStyle({ left: 360 + EDGE, bottom: EDGE });
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
   it('keeps an action bar above a bottom sheet', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: 320 }} landscape={false} bar={<View testID="bar" />} />);
-    expect(screen.getByTestId('self-card-left')).toHaveStyle({ bottom: 320 + EDGE });
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
   });
 
-  it.each([[true], [false]])('shows an action bar in place of your grid card (landscape=%s)', async (landscape) => {
+  it.each([[true], [false]])('shows an action bar in place of your card, bottom right (landscape=%s)', async (landscape) => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} bar={<View testID="bar" />} />);
-    expect(screen.queryByTestId('grid-card')).toBeNull();
-    expect(screen.getByTestId('self-card-left')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
   });
 
   it('keeps the action bar even when a full sheet leaves no room for your grid card', async () => {

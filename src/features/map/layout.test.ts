@@ -2,6 +2,7 @@ import {
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
   bannerTop,
+  barTakesReadoutSpot,
   cameraPaddingFor,
   CONTROL_SIZE,
   EDGE,
@@ -78,11 +79,19 @@ describe('map layout', () => {
     expect(roomAboveSheet(800, null, 20, TOOLBAR_HEIGHT)).toBe(Infinity);
   });
 
-  it('keeps bottom bars beside or above your grid card, and clear of the zoom column', () => {
+  it('gives the readout spot to an action bar only in landscape with a drawer open', () => {
+    const drawer = { side: 'left', size: 360 } as const;
+    expect(barTakesReadoutSpot(true, drawer, true)).toBe(true);
+    expect(barTakesReadoutSpot(true, drawer, false)).toBe(false);
+    expect(barTakesReadoutSpot(true, null, true)).toBe(false);
+    expect(barTakesReadoutSpot(false, { side: 'bottom', size: 300 }, true)).toBe(false);
+  });
+
+  it('keeps bottom bars beside or above your card (bottom right), and only clear of the zoom column while it is hidden', () => {
     const card = { width: 250, height: 64 };
-    expect(selfCardClearance(card, true)).toEqual({ lift: 0, left: 250 + GAP, right: CONTROL_SIZE + GAP });
-    expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, left: 0, right: CONTROL_SIZE + GAP });
-    expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, left: 0, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance(card, true)).toEqual({ lift: 0, right: 250 + GAP });
+    expect(selfCardClearance(card, false)).toEqual({ lift: 64 + GAP, right: CONTROL_SIZE + GAP });
+    expect(selfCardClearance({ width: 0, height: 0 }, true)).toEqual({ lift: 0, right: CONTROL_SIZE + GAP });
   });
 
   it('shrinks the toolbar when its text is hidden, and moves what sits under it up to match', () => {

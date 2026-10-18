@@ -11,8 +11,8 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
-import { GridCard } from './GridCard';
 import { MapButton } from './MapButton';
+import { SelfCard } from './SelfCard';
 
 type Props = {
   following: boolean;
@@ -23,19 +23,20 @@ type Props = {
   onRecenter: () => void;
   panel: PanelFrame | null;
   landscape: boolean;
-  /** A tap-mode action bar (placing, drawing) shown in place of the grid card while it is up. */
+  /** A tap-mode action bar (placing, drawing) shown in place of your card while it is up. */
   bar?: ReactNode;
 };
 
-/** Height of the grid card before it is first laid out (two lines). */
-const GRID_CARD_HEIGHT = 56;
+/** Height of your card before it is first laid out (two lines). */
+const SELF_CARD_HEIGHT = 56;
+/** Space between zoom and your card (gap-3). */
+const STACK_GAP = 12;
 /** Zoom in and zoom out, with the divider between them. */
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
- * Right-edge controls: north-up under the toolbar (only while the map is rotated) and zoom (shown per Settings, also while a panel is open) at the bottom.
- * The grid card (CTR over ME; tap ME to recenter) sits bottom left, also while a panel is open: above a bottom sheet, right of a left drawer.
- * An action bar takes its place while it is up.
+ * Right-edge controls: north-up under the toolbar (only while the map is rotated); zoom (shown per Settings) and your card
+ * (ME grid over ALT · ACC; tap to recenter) at the bottom, also while a panel is open. An action bar takes your card's place while it is up.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar }: Props) {
   const insets = useSafeAreaInsets();
@@ -45,15 +46,15 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
-  const [cardHeight, setCardHeight] = useState(GRID_CARD_HEIGHT);
-  // A tall bottom sheet (full detent) can leave no room below north-up: hide zoom and the card rather than overlap.
+  const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
+  // A tall bottom sheet can leave too little room below north-up: zoom gives way first, then your card, rather than overlap.
   const room = roomAboveSheet(height, panel, insets.top, toolbar);
   // The action bar always shows: it is how the user finishes the mode.
   const card = bar ? (
     <SelfCardSlot>{bar}</SelfCardSlot>
   ) : room < cardHeight ? null : (
     <SelfCardSlot onHeight={setCardHeight}>
-      <GridCard following={following} disabled={!canRecenter} onRecenter={onRecenter} />
+      <SelfCard following={following} disabled={!canRecenter} onRecenter={onRecenter} />
     </SelfCardSlot>
   );
   return (
@@ -63,33 +64,20 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {!showZoom || room < ZOOM_HEIGHT ? null : (
+        {!showZoom || room < ZOOM_HEIGHT + (card ? cardHeight + STACK_GAP : 0) ? null : (
           <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
             <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
             <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
             <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />
           </View>
         )}
+        {card}
       </View>
-      {card ? (
-        <View
-          testID="self-card-left"
-          pointerEvents="box-none"
-          className="absolute items-start"
-          // Clear of a left drawer, and of the zoom column on the right.
-          style={{
-            bottom,
-            left: Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) + EDGE,
-            right: insets.right + EDGE + CONTROL_SIZE + GAP,
-          }}>
-          {card}
-        </View>
-      ) : null}
     </>
   );
 }
 
-/** Reports the size of what fills the card's spot (the grid card or an action bar) to the controls that keep clear of it, and zero once it hides. */
+/** Reports the size of what fills your card's spot (your card or an action bar) to the controls that keep clear of it, and zero once it hides. */
 function SelfCardSlot({ onHeight, children }: { onHeight?: (height: number) => void; children: ReactNode }) {
   const id = useId();
   useEffect(() => () => useMapChrome.getState().clearSelfCard(id), [id]);
