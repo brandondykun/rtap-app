@@ -18,7 +18,7 @@ import { CardLead } from './CardLead';
  */
 export function ReadoutDock({ showCenter }: { showCenter: boolean }) {
   return (
-    <View testID="readout-dock" className="rounded-2xl border border-border bg-surface-chrome px-3">
+    <View testID="readout-dock" className="mx-2 rounded-2xl border border-border bg-surface-chrome px-3">
       <SelfRow />
       {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
       {showCenter ? <CenterRow /> : null}

@@ -26,6 +26,8 @@ describe('ReadoutDock', () => {
     await renderWithProviders(<ReadoutDock showCenter />);
     const rows = (screen.getByTestId('readout-dock').children as { props: { testID?: string } }[]).map((c) => c.props.testID);
     expect(rows).toEqual(['dock-self', 'dock-divider', 'dock-center']);
+    // A little in from the screen edges, more than the buttons above it.
+    expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}142 m±5 m$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('142 m');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±5 m');
