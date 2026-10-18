@@ -5,6 +5,7 @@ import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { ReadoutDock } from './ReadoutDock';
 
@@ -29,6 +30,9 @@ describe('ReadoutDock', () => {
     // A little in from the screen edges, more than the buttons above it.
     expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}142 m±5 m$/);
+    // Your grid in the friendly blue; the crosshair grid stays plain.
+    expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').friendly });
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('142 m');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±5 m');
     expect(screen.getByTestId('dock-center')).toHaveTextContent(/CTR/);

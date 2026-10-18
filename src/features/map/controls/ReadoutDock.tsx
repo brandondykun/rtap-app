@@ -42,9 +42,9 @@ function Row({ testID, lead, children, top, bottom }: { testID: string; lead: Re
   );
 }
 
-function Grid({ testID, children }: { testID: string; children: string }) {
+function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
   return (
-    <Text testID={testID} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+    <Text testID={testID} style={color ? { color } : undefined} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </Text>
   );
@@ -77,7 +77,7 @@ function SelfRow() {
         ) : null
       }>
       {shown ? (
-        <Grid testID="gps-position">{formatCoordinate(shown.position, coordinateFormat)}</Grid>
+        <Grid testID="gps-position" color={colors.friendly}>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
       ) : (
         <Text className="text-xs text-text-muted">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
       )}
