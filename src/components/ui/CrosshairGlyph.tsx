@@ -21,7 +21,7 @@ export function CrosshairGlyph({ size = FULL, color }: { size?: number; color: s
       <View style={{ position: 'absolute', backgroundColor: color, width: thickness, height: arm, bottom: 0 }} />
       <View style={{ position: 'absolute', backgroundColor: color, height: thickness, width: arm, left: 0 }} />
       <View style={{ position: 'absolute', backgroundColor: color, height: thickness, width: arm, right: 0 }} />
-      <View style={{ backgroundColor: color, width: dot, height: dot, borderRadius: dot / 2 }} />
+      <View testID="crosshair-dot" style={{ backgroundColor: color, width: dot, height: dot, borderRadius: dot / 2 }} />
     </View>
   );
 }

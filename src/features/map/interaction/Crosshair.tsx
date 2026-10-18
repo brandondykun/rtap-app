@@ -4,7 +4,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useTheme } from '@/theme/ThemeProvider';
 
-/** Thin cross with a center dot at the center of the visible map (beside any open panel). */
+/** Red thin cross with a center dot at the center of the visible map (beside any open panel). */
 export function Crosshair({ panel }: { panel: PanelFrame | null }) {
   const { colors } = useTheme();
   const frame = {
@@ -13,7 +13,7 @@ export function Crosshair({ panel }: { panel: PanelFrame | null }) {
   };
   return (
     <View testID="crosshair-frame" pointerEvents="none" style={[StyleSheet.absoluteFill, frame]} className="items-center justify-center">
-      <CrosshairGlyph color={colors.text} />
+      <CrosshairGlyph color={colors.danger} />
     </View>
   );
 }

@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { Crosshair } from './Crosshair';
 
@@ -10,6 +11,11 @@ function frameStyle() {
 }
 
 describe('Crosshair', () => {
+  it('is red', async () => {
+    await renderWithProviders(<Crosshair panel={null} />);
+    expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').danger });
+  });
+
   it('centers on the whole map without a panel', async () => {
     await renderWithProviders(<Crosshair panel={null} />);
     expect(frameStyle()).toMatchObject({ bottom: 0, left: 0 });

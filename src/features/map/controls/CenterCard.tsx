@@ -18,8 +18,8 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       testID="center-card"
       onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}
       className="flex-row items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-3 py-2">
-      <CardLead icon={<CrosshairGlyph size={14} color={colors['text-muted']} />} tag="CTR" />
-      <Text testID="readout-coordinate" className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+      <CardLead icon={<CrosshairGlyph size={14} color={colors.danger} />} tag="CTR" />
+      <Text testID="readout-coordinate" style={{ color: colors.danger }} className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
         {center ? formatCoordinate(center, coordinateFormat) : '—'}
       </Text>
     </View>

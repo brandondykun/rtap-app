@@ -97,7 +97,7 @@ function CenterRow() {
   return (
     <Row
       testID="dock-center"
-      lead={<CardLead icon={<CrosshairGlyph size={14} color={colors['text-muted']} />} tag="CTR" />}
+      lead={<CardLead icon={<CrosshairGlyph size={14} color={colors.danger} />} tag="CTR" />}
       top={
         <Text testID="readout-range" accessibilityLabel={`Distance from you ${r.distance}`} className="font-mono text-xs text-accent">
           {r.distance}
@@ -108,7 +108,7 @@ function CenterRow() {
           {r.bearing}
         </Text>
       }>
-      <Grid testID="readout-coordinate">{r.coordinate}</Grid>
+      <Grid testID="readout-coordinate" color={colors.danger}>{r.coordinate}</Grid>
     </Row>
   );
 }

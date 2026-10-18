@@ -4,6 +4,7 @@ import { formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { CenterCard } from './CenterCard';
 
@@ -20,6 +21,7 @@ describe('CenterCard', () => {
     await renderWithProviders(<CenterCard />);
     expect(screen.getByTestId('center-card')).toHaveTextContent(`CTR${formatCoordinate(DC, 'mgrs')}`);
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(DC, 'mgrs'));
+    expect(screen.getByTestId('readout-coordinate')).toHaveStyle({ color: themeColors('dark').danger });
     expect(screen.queryByTestId('readout-range')).toBeNull();
     expect(screen.queryByTestId('readout-bearing')).toBeNull();
   });
