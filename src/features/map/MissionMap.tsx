@@ -31,7 +31,6 @@ import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { LineDrawBar } from './controls/LineDrawBar';
-import { MapBottomLeft } from './controls/MapBottomLeft';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
@@ -422,6 +421,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onRecenter={recenter}
         panel={panel}
         landscape={landscape}
+        showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring))}
         bar={
           lineDrawing ? (
             <LineDrawBar />
@@ -434,9 +434,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
-      {!showCenterGrid || plotTemp || barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring)) ? null : (
-        <MapBottomLeft landscape={landscape} panel={panel} />
-      )}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />

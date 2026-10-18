@@ -27,7 +27,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
 - **Detents:** smallest first; menus open at `half` when listed. Landscape is always a drawer.
 - **The map stays interactive.** No backdrop. While a panel is open the camera is padded by
   the panel area, the crosshair centers in the visible map, the location banner hides, and both grid cards
-  stay, above a bottom sheet (center card bottom left, your card bottom right; `MissionMap`). The zoom buttons follow only their Settings toggle.
+  stay: bottom right above a bottom sheet (center card over your card), or in landscape your card bottom
+  right and the center card bottom left, right of the drawer (`MapControls`). The zoom buttons follow only their Settings toggle.
 - **No system dialogs.** Destructive actions use `MenuActions` (second tap confirms).
 - **Writes** go through commands; report failures with `notifyError`, successes with
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.

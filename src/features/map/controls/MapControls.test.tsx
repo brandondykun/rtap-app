@@ -6,7 +6,7 @@ import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { EDGE } from '../layout';
+import { CONTROL_SIZE, EDGE, GAP, TOOLBAR_HEIGHT } from '../layout';
 import { MapControls } from './MapControls';
 
 beforeEach(() => {
@@ -102,6 +102,41 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
     await screen.unmount();
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+  });
+
+  it('stacks zoom, the center card and your card on the right in portrait', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} showCenter />);
+    const column = screen.getByTestId('map-controls-bottom');
+    expect(column).toContainElement(screen.getByTestId('center-card'));
+    const ids = (column.children as { props: { testID?: string } }[]).map((c) => c.props.testID);
+    expect(ids.slice(1)).toEqual(['center-card', 'self-card-slot']);
+    expect(screen.queryByTestId('map-bottom-left')).toBeNull();
+  });
+
+  it('keeps the center card bottom left in landscape', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape showCenter />);
+    expect(screen.getByTestId('map-controls-bottom')).not.toContainElement(screen.getByTestId('center-card'));
+    expect(screen.getByTestId('map-bottom-left')).toContainElement(screen.getByTestId('center-card'));
+  });
+
+  it.each([[true], [false]])('leaves the center card out when it is not shown (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} />);
+    expect(screen.queryByTestId('center-card')).toBeNull();
+  });
+
+  it('gives way zoom first, then the center card, when a bottom sheet leaves too little room', async () => {
+    const { height } = Dimensions.get('window');
+    // Just enough for your card and the center card, not zoom too.
+    const roomFor = (h: number) => height - h - (EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE);
+    const size = roomFor(56 + 12 + 36 + 20);
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} showCenter />);
+    expect(screen.queryByLabelText('Zoom in')).toBeNull();
+    expect(screen.getByTestId('center-card')).toBeTruthy();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    await screen.unmount();
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: roomFor(56 + 20) }} landscape={false} showCenter />);
+    expect(screen.queryByTestId('center-card')).toBeNull();
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
