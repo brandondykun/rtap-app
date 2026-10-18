@@ -102,14 +102,6 @@ export function cameraPaddingFor(panel: PanelFrame | null): CameraPadding {
 }
 
 /**
- * In landscape with a drawer open (drawing a line or polygon) there is no room for both an action bar and
- * the crosshair readout: the bar takes the readout's spot, under zoom.
- */
-export function barTakesReadoutSpot(landscape: boolean, panel: PanelFrame | null, hasBar: boolean): boolean {
-  return landscape && panel !== null && hasBar;
-}
-
-/**
  * Height left for bottom controls between north-up and a bottom sheet (a full detent can leave none).
  * Infinity without a bottom sheet.
  */
@@ -119,7 +111,7 @@ export function roomAboveSheet(windowHeight: number, panel: PanelFrame | null, i
 }
 
 /**
- * How a bar along the bottom keeps clear of your grid card (bottom left) and the zoom column (right):
+ * How a bar along the bottom keeps clear of the grid card (bottom left) and the zoom column (right):
  * `beside` keeps it right of the card, otherwise it is raised above the card. `left` and `right`
  * exclude the safe area and the edge margin.
  */

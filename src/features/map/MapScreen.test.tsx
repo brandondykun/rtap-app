@@ -108,8 +108,9 @@ describe('MapScreen', () => {
     );
     const padded = mapboxMock().__camera.setCamera.mock.calls.at(-1)?.[0] as { padding: { paddingBottom: number } };
     expect(padded.padding.paddingBottom).toBeGreaterThan(0);
+    // The grid card keeps both lines while a panel is open.
     expect(screen.getByTestId('readout-coordinate')).toBeTruthy();
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
 
     await act(async () => useMenu.getState().closeMenu());
     await waitFor(() =>
@@ -121,14 +122,14 @@ describe('MapScreen', () => {
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
-  it('hides the crosshair readout when Show center grid is off', async () => {
+  it('drops the CTR line from the grid card when Show center grid is off', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
-    expect(await screen.findByTestId('readout-card')).toBeTruthy();
+    expect(await screen.findByTestId('center-line')).toBeTruthy();
     await act(async () => useSettings.getState().setShowCenterGrid(false));
-    expect(screen.queryByTestId('readout-card')).toBeNull();
+    expect(screen.queryByTestId('center-line')).toBeNull();
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
@@ -295,18 +296,18 @@ describe('MapScreen', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
-  it('shows the crosshair readout in place of your grid card while a panel is open, and has no GPS toggle', async () => {
+  it('keeps the whole grid card while a panel is open, and has no GPS toggle', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     expect(await screen.findByTestId('gps-readout')).toBeTruthy();
-    expect(screen.getByTestId('readout-card')).toBeTruthy();
+    expect(screen.getByTestId('center-line')).toBeTruthy();
     expect(screen.queryByLabelText('GPS')).toBeNull();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    expect(screen.getByTestId('readout-card')).toBeTruthy();
+    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByTestId('center-line')).toBeTruthy();
   });
 
   it('UNIT shows the tap bar and no menu; a map tap opens Add unit at the tap', async () => {
@@ -317,8 +318,8 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     expect(screen.getByText('Tap map')).toBeTruthy();
-    // The bar takes your grid card's place.
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    // The bar takes the grid card's place, both lines.
+    expect(screen.queryByTestId('grid-card')).toBeNull();
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useDraft.getState().mode).toBeNull();
     await act(async () =>
@@ -327,9 +328,8 @@ describe('MapScreen', () => {
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'unit', coord: { lat: 38.95, lon: -77.1 } });
     expect(screen.queryByTestId('place-bar')).toBeNull();
-    // The Add unit menu is open: the crosshair readout shows, not your grid card.
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    expect(screen.getByTestId('readout-card')).toBeTruthy();
+    // The Add unit menu is open: the grid card is back.
+    expect(screen.getByTestId('grid-card')).toBeTruthy();
   });
 
   it('POINT: Add at center opens Add point at the crosshair; switching from UNIT changes the bar', async () => {
