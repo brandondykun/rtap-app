@@ -108,7 +108,7 @@ function CenterRow() {
           {r.bearing}
         </Text>
       }>
-      <Grid testID="readout-coordinate" color={colors.danger}>{r.coordinate}</Grid>
+      <Grid testID="readout-coordinate">{r.coordinate}</Grid>
     </Row>
   );
 }

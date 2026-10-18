@@ -21,7 +21,7 @@ describe('CenterCard', () => {
     await renderWithProviders(<CenterCard />);
     expect(screen.getByTestId('center-card')).toHaveTextContent(`CTR${formatCoordinate(DC, 'mgrs')}`);
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(DC, 'mgrs'));
-    expect(screen.getByTestId('readout-coordinate')).toHaveStyle({ color: themeColors('dark').danger });
+    expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     expect(screen.queryByTestId('readout-range')).toBeNull();
     expect(screen.queryByTestId('readout-bearing')).toBeNull();
   });
