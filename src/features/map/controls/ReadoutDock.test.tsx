@@ -34,6 +34,8 @@ describe('ReadoutDock', () => {
     // Your grid in the friendly blue; the crosshair grid stays plain.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
+    // The CTR icon is the app's crosshair: white arms, amber dot.
+    expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('142 m');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±5 m');
     expect(screen.getByTestId('dock-center')).toHaveTextContent(/CTR/);

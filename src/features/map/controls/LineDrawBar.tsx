@@ -3,13 +3,11 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
-import { useTheme } from '@/theme/ThemeProvider';
 
 import { MapHintBar } from './MapHintBar';
 
 /** While drawing a line or polygon: CTR (add at center) or Move to CTR, and Undo/Done; for a circle, Set center / Set edge at CTR. */
 export function LineDrawBar() {
-  const { colors } = useTheme();
   const selected = useDraft((s) => s.selectedVertex);
   const insertAfter = useDraft((s) => s.insertAfter);
   const canUndo = useDraft((s) => s.history.length > 0);
@@ -41,7 +39,7 @@ export function LineDrawBar() {
       {centerLabel === 'Add at center' ? (
         <CenterButton compact onPress={atCenter} />
       ) : (
-        <MenuButton compact label={centerLabel} text={centerText} icon={<CrosshairGlyph size={14} color={colors.text} />} onPress={atCenter} />
+        <MenuButton compact label={centerLabel} text={centerText} icon={<CrosshairGlyph size={14} />} onPress={atCenter} />
       )}
       {circle ? null : moving ? (
         <MenuButton compact label="Done" icon="check" onPress={() => useDraft.getState().selectVertex(null)} />

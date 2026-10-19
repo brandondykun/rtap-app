@@ -22,6 +22,8 @@ describe('CenterCard', () => {
     expect(screen.getByTestId('center-card')).toHaveTextContent(`CTR${formatCoordinate(DC, 'mgrs')}`);
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(DC, 'mgrs'));
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
+    // The CTR icon is the app's crosshair: white arms, amber dot.
+    expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
     expect(screen.queryByTestId('readout-range')).toBeNull();
     expect(screen.queryByTestId('readout-bearing')).toBeNull();
   });

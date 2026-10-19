@@ -72,7 +72,7 @@ export function AboutScreen() {
           <View className="gap-2">
             <SectionTitle>Toolbar guide</SectionTitle>
             <View testID="about-tip" accessible className="flex-row items-center gap-4 rounded-2xl border border-border bg-surface-input px-4 py-4">
-              <CrosshairGlyph size={44} color={colors.text} dotColor={colors.accent} />
+              <CrosshairGlyph size={44} />
               <Text className="flex-1 text-base text-text">
                 <Text className="font-bold">Two ways to place anything:</Text>
                 {' tap the map, or line up the crosshair and press '}

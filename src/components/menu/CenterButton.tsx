@@ -1,5 +1,4 @@
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
-import { useTheme } from '@/theme/ThemeProvider';
 
 import { MenuButton } from './MenuButton';
 
@@ -15,6 +14,5 @@ export function CenterButton({
   compact?: boolean;
   disabled?: boolean;
 }) {
-  const { colors } = useTheme();
-  return <MenuButton compact={compact} label={label} text="CTR" icon={<CrosshairGlyph size={compact ? 14 : 18} color={colors.text} />} onPress={onPress} disabled={disabled} />;
+  return <MenuButton compact={compact} label={label} text="CTR" icon={<CrosshairGlyph size={compact ? 14 : 18} />} onPress={onPress} disabled={disabled} />;
 }

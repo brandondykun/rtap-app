@@ -11,9 +11,10 @@ function frameStyle() {
 }
 
 describe('Crosshair', () => {
-  it('is red', async () => {
+  it('is the app crosshair: white arms, amber dot', async () => {
     await renderWithProviders(<Crosshair panel={null} />);
-    expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').danger });
+    expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
+    for (const arm of screen.getAllByTestId('crosshair-arm')) expect(arm).toHaveStyle({ backgroundColor: themeColors('dark').text });
   });
 
   it('centers on the whole map without a panel', async () => {

@@ -103,7 +103,6 @@ function SelfRow({ following, disabled, onRecenter }: SelfProps) {
 }
 
 function CenterRow() {
-  const { colors } = useTheme();
   const center = useInteraction((s) => s.cameraCenter);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -114,7 +113,7 @@ function CenterRow() {
   return (
     <Row
       testID="dock-center"
-      lead={<CardLead icon={<CrosshairGlyph size={14} color={colors.danger} />} tag="CTR" />}
+      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />}
       top={
         <Text testID="readout-range" accessibilityLabel={`Distance from you ${r.distance}`} className="font-mono text-xs text-accent">
           {r.distance}
