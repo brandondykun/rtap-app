@@ -32,7 +32,7 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
   const { colors } = useTheme();
   const searching = query !== null;
   const title = (
-    <View className={landscape ? 'flex-1 flex-row items-baseline gap-4' : 'flex-1'}>
+    <View className="flex-1">
       <Text className="text-3xl font-bold uppercase tracking-widest text-text">Missions</Text>
       {showControls ? <Text className="text-base text-text-muted">{subtitle}</Text> : null}
     </View>
@@ -94,12 +94,20 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
   );
 
   if (landscape) {
+    // One row when everything fits. On narrower screens the controls wrap onto a second row and the
+    // subtitle under the title, so nothing overlaps. The title group sizes to its content (it may
+    // shrink to the row and wrap inside); the controls take the rest of their row, right-aligned.
     return (
-      <View className="flex-row items-center gap-3 px-4 pb-3 pt-4">
-        {title}
-        {extra}
-        {filters}
-        {buttons}
+      <View testID="missions-header" className="flex-row flex-wrap items-center gap-3 px-4 pb-3 pt-4">
+        <View testID="missions-title" className="shrink flex-row flex-wrap items-baseline gap-x-4 gap-y-1">
+          <Text className="text-3xl font-bold uppercase tracking-widest text-text">Missions</Text>
+          {showControls ? <Text className="text-base text-text-muted">{subtitle}</Text> : null}
+          {extra}
+        </View>
+        <View testID="missions-controls" className="grow flex-row items-center justify-end gap-3">
+          {filters}
+          {buttons}
+        </View>
       </View>
     );
   }
