@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 import { TOOLBAR_HEIGHT, TOOLBAR_HEIGHT_ICONS } from '@/features/map/layout';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { Toolbar } from './Toolbar';
 
@@ -43,7 +44,11 @@ describe('Toolbar', () => {
   });
 
   /** A divider turns a softer white while tools hide behind it. */
-  const lit = (side: 'start' | 'end') => screen.getByTestId(`divider-${side}`).props.className.includes('bg-text-muted');
+  const lit = (side: 'start' | 'end') => {
+    const color = StyleSheet.flatten(screen.getByTestId(`divider-${side}`).props.style).backgroundColor;
+    expect([themeColors('dark')['text-muted'], themeColors('dark').border]).toContain(color);
+    return color === themeColors('dark')['text-muted'];
+  };
 
   it('shades and brightens a divider while tools are scrolled out of sight behind it', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);

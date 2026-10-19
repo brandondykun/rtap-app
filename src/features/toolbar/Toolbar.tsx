@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -152,10 +153,12 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
 
 /**
  * `flush` drops the margin on the tools' side, so the portrait scroller clips right at the line;
- * the scroller's own padding keeps the first and last tool off the line at rest. `lit` turns the line a soft
+ * the scroller's own padding keeps the first and last tool off the line at rest. `lit` fades the line to a soft
  * white while tools are scrolled out of sight behind it.
  */
 function Divider({ side, flush, lit }: { side: 'start' | 'end'; flush: boolean; lit: boolean }) {
   const margin = !flush ? 'mx-1.5' : side === 'start' ? 'ml-1.5' : 'mr-1.5';
-  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px ${lit ? 'bg-text-muted' : 'bg-border'}`} />;
+  const { colors } = useTheme();
+  const color = useAnimatedStyle(() => ({ backgroundColor: withTiming(lit ? colors['text-muted'] : colors.border, { duration: 250 }) }), [lit, colors]);
+  return <Animated.View testID={`divider-${side}`} className={`${margin} h-7 w-px`} style={color} />;
 }
