@@ -3,7 +3,9 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { renderWithProviders } from '@/test-utils/render';
 
 import type { MissionSummary } from '../repository';
+import { snapshotFile } from '../snapshot-files';
 import { MissionCard } from './MissionCard';
+import { MissionThumb } from './MissionThumb';
 import { PinnedMissionCard } from './PinnedMissionCard';
 
 const NOW = 1_000_000_000;
@@ -75,5 +77,22 @@ describe('PinnedMissionCard', () => {
   it('hides the grid square without a saved camera', async () => {
     await renderWithProviders(<PinnedMissionCard mission={mission({ camera: null })} counts={counts} now={NOW} {...handlers()} />);
     expect(screen.queryByText('18S UJ')).toBeNull();
+  });
+});
+
+describe('MissionThumb', () => {
+  it('renders from the deterministic picture path, not the stored absolute uri', async () => {
+    // An app update or reinstall can move the iOS container: the stored path goes stale.
+    const snapshot = { uri: 'file:///var/old-container/Documents/mission-snapshots/m1.jpg', takenAt: 7 };
+    await renderWithProviders(<MissionThumb missionId="m1" snapshot={snapshot} className="h-10 w-10" iconSize={16} />);
+    // expo-image hands the native view an array of sources.
+    expect([screen.getByTestId('mission-thumb').props.source].flat()[0]).toMatchObject({ uri: snapshotFile('m1').uri, cacheKey: 'm1-7' });
+  });
+
+  it('falls back to the placeholder when the picture fails to load', async () => {
+    await renderWithProviders(<MissionThumb missionId="m1" snapshot={{ uri: 'file:///x.jpg', takenAt: 7 }} className="h-10 w-10" iconSize={16} />);
+    await fireEvent(screen.getByTestId('mission-thumb'), 'error', { nativeEvent: { error: 'missing' } });
+    expect(screen.queryByTestId('mission-thumb')).toBeNull();
+    expect(screen.getByTestId('mission-thumb-placeholder')).toBeTruthy();
   });
 });
