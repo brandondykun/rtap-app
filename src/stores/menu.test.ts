@@ -66,4 +66,31 @@ describe('menu store', () => {
     expect(listener).not.toHaveBeenCalled();
     expect(useMenu.getState().panelFrame).toBeNull();
   });
+
+  describe('minimized drawer', () => {
+    beforeEach(() => useMenu.setState(INITIAL_MENU));
+
+    it('starts open and can be minimized and restored without touching the menu', () => {
+      useMenu.getState().openMenu('app.root', {});
+      expect(useMenu.getState().panelMinimized).toBe(false);
+      useMenu.getState().setPanelMinimized(true);
+      expect(useMenu.getState().panelMinimized).toBe(true);
+      expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['app.root']);
+      useMenu.getState().setPanelMinimized(false);
+      expect(useMenu.getState().panelMinimized).toBe(false);
+    });
+
+    it('opens again when another menu is opened or pushed, and resets when the menu closes', () => {
+      useMenu.getState().openMenu('app.root', {});
+      useMenu.getState().setPanelMinimized(true);
+      useMenu.getState().openMenu('settings', {});
+      expect(useMenu.getState().panelMinimized).toBe(false);
+      useMenu.getState().setPanelMinimized(true);
+      useMenu.getState().pushMenu('layers', {});
+      expect(useMenu.getState().panelMinimized).toBe(false);
+      useMenu.getState().setPanelMinimized(true);
+      useMenu.getState().closeMenu();
+      expect(useMenu.getState().panelMinimized).toBe(false);
+    });
+  });
 });

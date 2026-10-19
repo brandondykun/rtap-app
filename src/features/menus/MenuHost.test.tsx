@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { renderWithProviders } from '@/test-utils/render';
@@ -29,5 +29,19 @@ describe('MenuHost', () => {
     await act(async () => useMenu.getState().closeMenu());
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useMenu.getState().panelFrame).toBeNull();
+  });
+
+  it('minimizes the landscape drawer with its tab and reopens it for the next menu', async () => {
+    await renderWithProviders(<MenuHost landscape missionId="m1" />);
+    await act(async () => useMenu.getState().openMenu('app.root', {}));
+    await fireEvent.press(screen.getByLabelText('Hide menu'));
+    expect(useMenu.getState().panelMinimized).toBe(true);
+    expect(useMenu.getState().panelFrame).toBeNull();
+    // Nothing happened to the menu itself.
+    expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['app.root']);
+    expect(screen.getByText('Switch mission', { includeHiddenElements: true })).toBeTruthy();
+    await act(async () => useMenu.getState().openMenu('settings', {}));
+    expect(useMenu.getState().panelMinimized).toBe(false);
+    expect(useMenu.getState().panelFrame).toMatchObject({ side: 'left' });
   });
 });

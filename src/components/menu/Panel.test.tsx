@@ -1,9 +1,16 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Dimensions, Keyboard, Text } from 'react-native';
+
+import { ThemeProvider } from '@/theme/ThemeProvider';
+
 
 import { Panel } from './Panel';
 import { detentHeights, drawerWidth } from './panel-geometry';
+
+const Theme = ({ children }: { children: ReactNode }) => <ThemeProvider theme="dark">{children}</ThemeProvider>;
+const render = (ui: ReactElement) => rtlRender(ui, { wrapper: Theme });
 
 const INSETS = { top: 0, right: 0, bottom: 0, left: 0 }; // the global safe-area mock reports zero insets
 const TOP_RESERVED = 76;
@@ -104,5 +111,53 @@ describe('Panel', () => {
     await act(async () => hide());
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
     spy.mockRestore();
+  });
+
+  describe('minimizing the landscape drawer', () => {
+    const drawer = (props: { minimized: boolean; onMinimizedChange?: (m: boolean) => void; onFrameChange?: jest.Mock; landscape?: boolean }) => (
+      <Panel
+        landscape={props.landscape ?? true}
+        detents={['half', 'full']}
+        initialDetent="half"
+        topReserved={TOP_RESERVED}
+        title="Add unit"
+        minimized={props.minimized}
+        onMinimizedChange={props.onMinimizedChange ?? jest.fn()}
+        onFrameChange={props.onFrameChange ?? jest.fn()}>
+        <Text>content</Text>
+      </Panel>
+    );
+
+    it('has an edge tab that hides the drawer', async () => {
+      const onMinimizedChange = jest.fn();
+      await render(drawer({ minimized: false, onMinimizedChange }));
+      await fireEvent.press(screen.getByLabelText('Hide menu'));
+      expect(onMinimizedChange).toHaveBeenCalledWith(true);
+    });
+
+    it('while minimized, frees the whole map, keeps the menu mounted, and the tab brings it back', async () => {
+      const onMinimizedChange = jest.fn();
+      const onFrameChange = jest.fn();
+      await render(drawer({ minimized: true, onMinimizedChange, onFrameChange }));
+      // No frame: the map, crosshair and controls use the full width.
+      expect(onFrameChange).toHaveBeenLastCalledWith(null);
+      // Still mounted, but hidden from screen readers while off screen.
+      expect(screen.getByText('content', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.queryByText('content')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('Show Add unit'));
+      expect(onMinimizedChange).toHaveBeenCalledWith(false);
+    });
+
+    it('reports its width again when restored', async () => {
+      const onFrameChange = jest.fn();
+      const { rerender } = await render(drawer({ minimized: true, onFrameChange }));
+      await rerender(drawer({ minimized: false, onFrameChange }));
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
+    });
+
+    it('has no tab in portrait (the sheet already drags down)', async () => {
+      await render(drawer({ minimized: false, landscape: false }));
+      expect(screen.queryByLabelText('Hide menu')).toBeNull();
+    });
   });
 });

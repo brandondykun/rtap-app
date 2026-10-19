@@ -17,6 +17,8 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
   const toolbar = useToolbarHeight();
   const top = useMenu((s) => topMenu(s));
   const setPanelFrame = useMenu((s) => s.setPanelFrame);
+  const minimized = useMenu((s) => s.panelMinimized);
+  const setMinimized = useMenu((s) => s.setPanelMinimized);
   const definition = top ? MENU_REGISTRY[top.id] : undefined;
 
   useEffect(() => {
@@ -34,6 +36,9 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         detents={definition.detents}
         initialDetent={initialDetent}
         topReserved={insets.top + EDGE + toolbar + GAP}
+        title={definition.title}
+        minimized={minimized}
+        onMinimizedChange={setMinimized}
         onFrameChange={setPanelFrame}>
         <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
       </Panel>

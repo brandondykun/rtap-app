@@ -25,6 +25,10 @@ description: Use whenever you add or change a menu, panel content, or anything o
 - **Families:** `app` menus have a leading "Close"; `action` menus have "Cancel" plus one amber
   primary action (`trailing`) that is disabled until the input is valid.
 - **Detents:** smallest first; menus open at `half` when listed. Landscape is always a drawer.
+- **Minimizing (landscape):** the drawer's edge tab slides it off screen (`panelMinimized` in the menu
+  store) and back; nothing else happens and the menu stays mounted. While minimized the Panel reports no
+  frame, so the map, crosshair and controls use the whole screen. Opening, pushing or closing a menu
+  shows the drawer again.
 - **The map stays interactive.** No backdrop. While a panel is open the camera is padded by
   the panel area, the crosshair centers in the visible map, the location banner hides, and the grid readouts
   stay: the full-width dock (CTR over ME) above a bottom sheet, or in landscape your card bottom

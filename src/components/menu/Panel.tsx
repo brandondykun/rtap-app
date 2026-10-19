@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Icon } from '@/components/ui/Icon';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { detentHeights, drawerWidth, snapIndex, type Detent, type PanelFrame } from './panel-geometry';
 
@@ -13,16 +16,28 @@ type Props = {
   initialDetent: Detent;
   /** Space a full-height sheet leaves free at the top (safe area + toolbar). */
   topReserved: number;
-  onFrameChange: (frame: PanelFrame) => void;
+  /** The menu's name, for the reopen tab's screen-reader label. */
+  title?: string;
+  /** Landscape: the drawer is slid off screen with only its edge tab showing (the menu stays mounted). */
+  minimized?: boolean;
+  onMinimizedChange?: (minimized: boolean) => void;
+  /** Null while the drawer is minimized: the map, crosshair and controls then use the whole screen. */
+  onFrameChange: (frame: PanelFrame | null) => void;
   children: ReactNode;
 };
+
+/** The minimize / reopen tab on the drawer's right edge. */
+const TAB_WIDTH = 28;
+const TAB_HEIGHT = 64;
+const SLIDE_MS = 220;
 
 /**
  * The one container for every menu: a bottom sheet in portrait, a left drawer in landscape. It has
  * no backdrop — the map stays interactive. The element tree is identical in both orientations, so
  * rotating never remounts the menu (a half-typed form survives).
  */
-export function Panel({ landscape, detents, initialDetent, topReserved, onFrameChange, children }: Props) {
+export function Panel({ landscape, detents, initialDetent, topReserved, title, minimized = false, onMinimizedChange, onFrameChange, children }: Props) {
+  const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const metrics = { width, height, insets, topReserved };
@@ -36,11 +51,16 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
   if (!detents.includes(chosen)) setDetent(initialDetent);
   const detent = detents.includes(chosen) ? chosen : initialDetent;
   const target = landscape ? drawerWidth(metrics) : heights[detent];
+  // Only the landscape drawer minimizes; the portrait sheet already drags down to its peek.
+  const hidden = landscape && minimized;
   const detentRef = useRef(detent);
   const restore = useRef<Detent | null>(null);
   const onFrameRef = useRef(onFrameChange);
   const size = useSharedValue(0);
   const dragStart = useSharedValue(0);
+  /** Drawer slide (0 open, -width minimized) and the tab's left edge (the drawer's edge, or the screen's). */
+  const offset = useSharedValue(0);
+  const tabLeft = useSharedValue(0);
 
   useEffect(() => {
     detentRef.current = detent;
@@ -49,8 +69,14 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
 
   useEffect(() => {
     size.set(withTiming(target, { duration: 220 }));
-    onFrameRef.current({ side: landscape ? 'left' : 'bottom', size: target });
-  }, [target, landscape, size]);
+    onFrameRef.current(hidden ? null : { side: landscape ? 'left' : 'bottom', size: target });
+  }, [target, landscape, hidden, size]);
+
+  useEffect(() => {
+    offset.set(withTiming(hidden ? -target : 0, { duration: SLIDE_MS }));
+    // Minimized, the tab rests just inside the safe area so it never sits under the notch.
+    tabLeft.set(withTiming(hidden ? insets.left : target, { duration: SLIDE_MS }));
+  }, [hidden, target, insets.left, offset, tabLeft]);
 
   // Keep a focused field visible: the sheet opens fully while the keyboard is up.
   useEffect(() => {
@@ -86,14 +112,22 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
     });
 
   const animated = useAnimatedStyle(
-    () => (landscape ? { width: size.get(), height: '100%' } : { width: '100%', height: size.get() }),
+    () =>
+      landscape
+        ? { width: size.get(), height: '100%', transform: [{ translateX: offset.get() }] }
+        : { width: '100%', height: size.get() },
     [landscape],
   );
+  const tabStyle = useAnimatedStyle(() => ({ left: tabLeft.get() }));
 
-  return (
+  const drawer = (
     <Animated.View
       testID="menu-panel"
       style={[{ position: 'absolute', left: 0, bottom: 0 }, animated]}
+      pointerEvents={hidden ? 'none' : 'auto'}
+      // Off screen, its content must not be reachable by VoiceOver/TalkBack either.
+      accessibilityElementsHidden={hidden}
+      importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
       className={landscape ? 'border-r border-border bg-surface' : 'rounded-t-3xl border-t border-border bg-surface'}>
       <View style={{ flex: 1, paddingLeft: landscape ? insets.left : 0, paddingTop: landscape ? insets.top : 0 }}>
         {landscape ? null : (
@@ -111,5 +145,23 @@ export function Panel({ landscape, detents, initialDetent, topReserved, onFrameC
         </ScrollView>
       </View>
     </Animated.View>
+  );
+  if (!landscape) return drawer;
+  return (
+    <>
+      {drawer}
+      <Animated.View
+        style={[{ position: 'absolute', top: '50%', marginTop: -TAB_HEIGHT / 2, width: TAB_WIDTH, height: TAB_HEIGHT }, tabStyle]}>
+        <Pressable
+          testID="menu-panel-tab"
+          accessibilityRole="button"
+          accessibilityLabel={hidden ? `Show ${title ?? 'menu'}` : 'Hide menu'}
+          onPress={() => onMinimizedChange?.(!hidden)}
+          hitSlop={{ top: 8, bottom: 8, right: 12 }}
+          className="h-full w-full items-center justify-center rounded-r-xl border border-l-0 border-border bg-surface active:opacity-70">
+          <Icon name={hidden ? 'chevron-right' : 'chevron-left'} size={22} color={colors.text} />
+        </Pressable>
+      </Animated.View>
+    </>
   );
 }
