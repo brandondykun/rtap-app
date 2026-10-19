@@ -1,29 +1,42 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
-import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Icon } from '@/components/ui/Icon';
 import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
 import { notifySuccess } from '@/features/feedback/feedback';
+import { isLandscape } from '@/features/map/layout';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
+import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { deleteMission } from './commands';
-import { formatCategoryCounts, formatLastOpened } from './format';
-import { observeMissionCategoryCounts, observeMissionSummaries, type MissionSummary } from './repository';
+import { formatCategoryCounts } from './format';
+import { MissionCard } from './list/MissionCard';
+import { MissionsHeader } from './list/MissionsHeader';
+import { PinnedMissionCard } from './list/PinnedMissionCard';
+import { filterMissions, formatMissionTotals, NO_COUNTS, pinnedMission, sortHeading, sortMissions } from './mission-list';
+import { observeCountsByMission, observeMissionSummaries, type CategoryCounts, type MissionSummary } from './repository';
 
-type Counts = { units: number; points: number; lines: number; polygons: number };
-const NO_COUNTS: Counts = { units: 0, points: 0, lines: 0, polygons: 0 };
+const NO_COUNT_MAP: ReadonlyMap<string, CategoryCounts> = new Map();
 
 export function MissionsScreen() {
   const ctx = useCommandContext();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const landscape = isLandscape(width, height);
   const missions = useObservable<MissionSummary[] | null>(() => observeMissionSummaries(ctx.db), null, [ctx]);
+  const idsKey = (missions ?? []).map((m) => m.id).join(',');
+  const counts = useObservable(() => observeCountsByMission(ctx.db, idsKey ? idsKey.split(',') : []), NO_COUNT_MAP, [ctx, idsKey]);
+  const countsOf = (id: string) => counts.get(id) ?? NO_COUNTS;
+  const sort = useSettings((s) => s.missionSort);
+  const setSort = useSettings((s) => s.setMissionSort);
+  const [query, setQuery] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now);
   useFocusEffect(
     useCallback(() => {
@@ -32,27 +45,35 @@ export function MissionsScreen() {
   );
 
   const openCreate = () => router.push('/missions/new');
-  const openMission = (missionId: string) =>
-    router.push({ pathname: '/missions/[missionId]', params: { missionId } });
+  const openMission = (missionId: string) => router.push({ pathname: '/missions/[missionId]', params: { missionId } });
 
   // Swipe-to-delete: one row open at a time, and every delete goes through the confirmation.
   const openRow = useRef<SwipeableMethods | null>(null);
-  const [pending, setPending] = useState<{ id: string; name: string; counts: Counts } | null>(null);
+  const [pending, setPending] = useState<{ id: string; name: string; counts: CategoryCounts } | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleting = useRef(false);
-  const rowOpened = (row: SwipeableMethods) => {
-    if (openRow.current && openRow.current !== row) openRow.current.close();
-    openRow.current = row;
-  };
-  const openRename = (missionId: string) => {
-    openRow.current?.close();
-    router.push({ pathname: '/missions/rename/[missionId]', params: { missionId } });
-  };
-  const askDelete = (mission: MissionSummary, counts: Counts) => {
-    openRow.current?.close();
-    setDeleteError(null);
-    setPending({ id: mission.id, name: mission.name, counts });
-  };
+  const rowOpened = useCallback(
+    (row: SwipeableMethods) => {
+      if (openRow.current && openRow.current !== row) openRow.current.close();
+      openRow.current = row;
+    },
+    [openRow],
+  );
+  const openRename = useCallback(
+    (missionId: string) => {
+      openRow.current?.close();
+      router.push({ pathname: '/missions/rename/[missionId]', params: { missionId } });
+    },
+    [router],
+  );
+  const askDelete = useCallback(
+    (mission: MissionSummary, counts: CategoryCounts) => {
+      openRow.current?.close();
+      setDeleteError(null);
+      setPending({ id: mission.id, name: mission.name, counts });
+    },
+    [openRow],
+  );
   const confirmDelete = async () => {
     if (!pending || deleting.current) return;
     deleting.current = true;
@@ -72,44 +93,77 @@ export function MissionsScreen() {
     if (result.ok) openMission(result.value.missionId);
   };
 
+  const all = missions ?? [];
+  const pinned = query === null ? pinnedMission(all) : null;
+  const listed = sortMissions(filterMissions(all, query ?? ''), sort, counts).filter((m) => m.id !== pinned?.id);
+  const units = all.reduce((n, m) => n + countsOf(m.id).units, 0);
+  const heading = query === null && listed.length > 0 ? sortHeading(sort) : null;
+  const cardProps = (m: MissionSummary) => ({
+    mission: m,
+    counts: countsOf(m.id),
+    now,
+    onOpen: () => openMission(m.id),
+    onRename: () => openRename(m.id),
+    onDelete: () => askDelete(m, countsOf(m.id)),
+    onOpenActions: rowOpened,
+  });
+
+  const list = (
+    <FlatList
+      data={listed}
+      keyExtractor={(m) => m.id}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={
+        <>
+          {!landscape && pinned ? (
+            <View className="mb-3">
+              <PinnedMissionCard {...cardProps(pinned)} />
+            </View>
+          ) : null}
+          {heading ? <Text className="mt-2 text-sm font-bold tracking-widest text-text-muted">{heading}</Text> : null}
+        </>
+      }
+      ListEmptyComponent={
+        query?.trim() ? <Text className="py-8 text-center text-base text-text-muted">{`No missions match “${query.trim()}”`}</Text> : null
+      }
+      ListFooterComponent={<SwipeHint />}
+      contentContainerStyle={{ paddingHorizontal: landscape ? 0 : 16, paddingBottom: insets.bottom + 16, gap: 12 }}
+      renderItem={({ item }) => <MissionCard {...cardProps(item)} />}
+    />
+  );
+
   return (
-    <View
-      className="flex-1 bg-surface"
-      style={{ paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}>
-      <View className="flex-row items-center justify-between px-4 pb-3 pt-4">
-        <Text className="text-lg font-semibold uppercase tracking-widest text-text">Missions</Text>
-        <View className="flex-row items-center gap-3">
-          {__DEV__ ? (
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}>
+      <MissionsHeader
+        landscape={landscape}
+        subtitle={formatMissionTotals(all.length, units)}
+        showControls={all.length > 0}
+        sort={sort}
+        onSort={setSort}
+        query={query}
+        onQuery={setQuery}
+        onNew={openCreate}
+        extra={
+          __DEV__ ? (
             <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8}>
               <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
             </Pressable>
-          ) : null}
-          {missions && missions.length > 0 ? (
-            <Pressable accessibilityRole="button" onPress={openCreate} className="rounded-xl bg-accent px-4 py-2">
-              <Text className="font-bold text-on-accent">+ New</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
+          ) : null
+        }
+      />
       {missions === null ? null : missions.length === 0 ? (
         <EmptyState onCreate={openCreate} />
+      ) : landscape ? (
+        <View className="flex-1 flex-row gap-4 px-4" style={{ paddingBottom: pinned ? insets.bottom + 16 : 0 }}>
+          {pinned ? (
+            <View testID="pinned-column" className="flex-1">
+              <PinnedMissionCard {...cardProps(pinned)} fill />
+            </View>
+          ) : null}
+          <View className="flex-1">{list}</View>
+        </View>
       ) : (
-        <FlatList
-          ListHeaderComponent={<Text className="text-sm text-text-muted">Swipe a mission left to edit or delete it.</Text>}
-          data={missions}
-          keyExtractor={(m) => m.id}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 16, gap: 8 }}
-          renderItem={({ item }) => (
-            <MissionRow
-              mission={item}
-              now={now}
-              onPress={() => openMission(item.id)}
-              onRename={() => openRename(item.id)}
-              onDelete={(counts) => askDelete(item, counts)}
-              onOpenActions={rowOpened}
-            />
-          )}
-        />
+        list
       )}
       <ConfirmDialog
         visible={pending !== null}
@@ -124,74 +178,13 @@ export function MissionsScreen() {
   );
 }
 
-type MissionRowProps = {
-  mission: MissionSummary;
-  now: number;
-  onPress: () => void;
-  onRename: () => void;
-  onDelete: (counts: Counts) => void;
-  onOpenActions: (row: SwipeableMethods) => void;
-};
-
-function MissionRow({ mission, now, onPress, onRename, onDelete, onOpenActions }: MissionRowProps) {
-  const ctx = useCommandContext();
-  const counts = useObservable(() => observeMissionCategoryCounts(ctx.db, mission.id), NO_COUNTS, [ctx, mission.id]);
-  const row = useRef<SwipeableMethods>(null);
+function SwipeHint() {
   const { colors } = useTheme();
   return (
-    <ReanimatedSwipeable
-      ref={row}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      onSwipeableWillOpen={() => {
-        if (row.current) onOpenActions(row.current);
-      }}
-      renderRightActions={() => (
-        <View className="ml-2 flex-row gap-2">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${mission.name}`}
-            onPress={onRename}
-            className="w-20 items-center justify-center gap-1 rounded-2xl border border-border bg-surface-raised active:opacity-60">
-            <Icon name="pencil-outline" size={20} color={colors.text} />
-            <Text className="font-semibold text-text">Edit</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Delete ${mission.name}`}
-            onPress={() => onDelete(counts)}
-            className="w-20 items-center justify-center gap-1 rounded-2xl bg-danger active:opacity-60">
-            <Icon name="trash-can-outline" size={20} color={colors.text} />
-            <Text className="font-bold text-text">Delete</Text>
-          </Pressable>
-        </View>
-      )}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${mission.name}`}
-        // Swiping is hard to find with VoiceOver, so Rename and Delete are also accessibility actions.
-        accessibilityActions={[
-          { name: 'rename', label: 'Rename' },
-          { name: 'delete', label: 'Delete' },
-        ]}
-        onAccessibilityAction={(e) => {
-          if (e.nativeEvent.actionName === 'rename') onRename();
-          if (e.nativeEvent.actionName === 'delete') onDelete(counts);
-        }}
-        onPress={onPress}
-        className="flex-row items-center gap-2 rounded-2xl border border-border bg-surface-raised py-3 pl-4 pr-3 active:opacity-80">
-        <View className="flex-1">
-          <Text numberOfLines={1} className="text-base font-semibold text-text">
-            {mission.name}
-          </Text>
-          <Text className="mt-1 text-sm text-text-muted">
-            {`${formatCategoryCounts(counts)} · ${formatLastOpened(mission.lastOpenedAt, now)}`}
-          </Text>
-        </View>
-        <Icon name="chevron-right" size={24} color={colors['text-muted']} />
-      </Pressable>
-    </ReanimatedSwipeable>
+    <View className="mt-4 flex-row items-center justify-center gap-2">
+      <Icon name="chevron-left" size={18} color={colors['text-muted']} />
+      <Text className="text-sm text-text-muted">Swipe a mission for edit & delete</Text>
+    </View>
   );
 }
 

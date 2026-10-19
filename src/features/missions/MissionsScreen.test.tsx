@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 
 import { placePoint } from '@/features/map-items/commands';
 import { makeTestContext } from '@/lib/db/test-database';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { createMission, markMissionOpened } from './commands';
@@ -18,6 +19,9 @@ jest.mock('expo-router', () => ({
 const mockSeed = jest.fn(async (..._args: unknown[]) => ({ ok: true as const, value: { missionId: 'seeded' } }));
 jest.mock('@/features/dev/commands', () => ({ PERF_SEED_COUNT: 5000, seedPerformanceMission: (...a: unknown[]) => mockSeed(...a) }));
 
+const mockDims = { width: 390, height: 844, scale: 3, fontScale: 1 };
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: () => mockDims }));
+
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };
 
@@ -31,18 +35,22 @@ beforeAll(() => {
   });
 });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  Object.assign(mockDims, { width: 390, height: 844 });
+  useSettings.setState(DEFAULT_SETTINGS);
+});
 
 describe('MissionsScreen', () => {
   it('shows an empty state that opens the create sheet', async () => {
     await renderWithProviders(<MissionsScreen />);
     expect(await screen.findByText('No missions yet')).toBeTruthy();
-    expect(screen.queryByText('Swipe a mission left to edit or delete it.')).toBeNull();
+    expect(screen.queryByText('Swipe a mission for edit & delete')).toBeNull();
     await fireEvent.press(screen.getByText('Create mission'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
 
-  it('lists missions, last opened first, with item counts', async () => {
+  it('pins the last-opened mission and lists the rest under EARLIER with counts', async () => {
     const ctx = makeTestContext();
     const iron = await createMission(ctx, { name: 'Op Iron' });
     const cobra = await createMission(ctx, { name: 'Op Cobra' });
@@ -53,10 +61,76 @@ describe('MissionsScreen', () => {
 
     await renderWithProviders(<MissionsScreen />, ctx);
 
-    expect(await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · Never opened')).toBeTruthy();
-    expect(screen.getByText(/^0 units · 0 points · 0 lines · 0 polygons · Opened /)).toBeTruthy();
-    const names = screen.getAllByText(/^Op /).map((node) => node.props.children);
-    expect(names).toEqual(['Op Cobra', 'Op Iron']);
+    expect(await screen.findByText('2 missions · 2 units plotted')).toBeTruthy();
+    expect(screen.getByText('Last opened')).toBeTruthy();
+    expect(screen.getByLabelText('Resume Op Cobra')).toBeTruthy();
+    expect(screen.getByText('EARLIER')).toBeTruthy();
+    expect(await screen.findByLabelText('2 units · 0 points · 0 lines · 0 polygons')).toBeTruthy();
+    expect(screen.getByText('Never opened')).toBeTruthy();
+    // The pinned mission is not listed again.
+    expect(screen.getAllByLabelText('Open Op Cobra')).toHaveLength(1);
+  });
+
+  it('Resume opens the pinned mission', async () => {
+    const ctx = makeTestContext();
+    const cobra = await createMission(ctx, { name: 'Op Cobra' });
+    if (!cobra.ok) throw new Error('setup');
+    await markMissionOpened(ctx, cobra.value.id);
+    await renderWithProviders(<MissionsScreen />, ctx);
+    await fireEvent.press(await screen.findByLabelText('Resume Op Cobra'));
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/missions/[missionId]', params: { missionId: cobra.value.id } });
+  });
+
+  it('sorts with the chips and remembers the choice', async () => {
+    const ctx = makeTestContext();
+    for (const name of ['bravo', 'Alpha', 'charlie']) await createMission(ctx, { name });
+    const big = await createMission(ctx, { name: 'zulu' });
+    if (!big.ok) throw new Error('setup');
+    await placePoint(ctx, { missionId: big.value.id, coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    await renderWithProviders(<MissionsScreen />, ctx);
+    const order = () => screen.getAllByLabelText(/^Open /).map((n) => n.props.accessibilityLabel);
+
+    await screen.findByText('EARLIER');
+    expect(order()).toEqual(['Open Alpha', 'Open bravo', 'Open charlie', 'Open zulu']);
+    await fireEvent.press(screen.getByLabelText('Most items'));
+    expect(screen.getByText('MOST ITEMS')).toBeTruthy();
+    await waitFor(() => expect(order()[0]).toBe('Open zulu'));
+    await fireEvent.press(screen.getByLabelText('Name'));
+    expect(screen.getByText('BY NAME')).toBeTruthy();
+    expect(useSettings.getState().missionSort).toBe('name');
+  });
+
+  it('searches by name: hides the pinned card, filters, and says when nothing matches', async () => {
+    const ctx = makeTestContext();
+    const iron = await createMission(ctx, { name: 'Op Iron' });
+    const cobra = await createMission(ctx, { name: 'Op Cobra' });
+    if (!iron.ok || !cobra.ok) throw new Error('setup');
+    await markMissionOpened(ctx, cobra.value.id);
+    await renderWithProviders(<MissionsScreen />, ctx);
+
+    await fireEvent.press(await screen.findByLabelText('Search missions'));
+    expect(screen.queryByText('Last opened')).toBeNull();
+    expect(screen.queryByText('EARLIER')).toBeNull();
+    await fireEvent.changeText(screen.getByPlaceholderText('Search by name'), 'iron');
+    expect(screen.getByLabelText('Open Op Iron')).toBeTruthy();
+    expect(screen.queryByLabelText('Open Op Cobra')).toBeNull();
+    await fireEvent.changeText(screen.getByPlaceholderText('Search by name'), 'zzz');
+    expect(screen.getByText('No missions match “zzz”')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Cancel'));
+    expect(screen.getByText('Last opened')).toBeTruthy();
+  });
+
+  it('puts the pinned card in its own column in landscape', async () => {
+    Object.assign(mockDims, { width: 844, height: 390 });
+    const ctx = makeTestContext();
+    const cobra = await createMission(ctx, { name: 'Op Cobra' });
+    await createMission(ctx, { name: 'Op Iron' });
+    if (!cobra.ok) throw new Error('setup');
+    await markMissionOpened(ctx, cobra.value.id);
+    await renderWithProviders(<MissionsScreen />, ctx);
+    expect(await screen.findByTestId('pinned-column')).toBeTruthy();
+    expect(screen.getByText('Last opened')).toBeTruthy();
+    expect(screen.getByLabelText('Open Op Iron')).toBeTruthy();
   });
 
   it('opens a mission and offers New when the list is not empty', async () => {
@@ -70,8 +144,8 @@ describe('MissionsScreen', () => {
       pathname: '/missions/[missionId]',
       params: { missionId: iron.value.id },
     });
-    expect(screen.getByText('Swipe a mission left to edit or delete it.')).toBeTruthy();
-    await fireEvent.press(screen.getByText('+ New'));
+    expect(screen.getByText('Swipe a mission for edit & delete')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('New mission'));
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
 
@@ -91,7 +165,7 @@ describe('MissionsScreen', () => {
       await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
       await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc: HOSTILE_INF, name: 'HOS-2' });
       await renderWithProviders(<MissionsScreen />, ctx);
-      await screen.findByText('2 units · 0 points · 0 lines · 0 polygons · Never opened');
+      await screen.findByLabelText('2 units · 0 points · 0 lines · 0 polygons');
       return { ctx, ironId: iron.value.id };
     }
 
