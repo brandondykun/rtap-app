@@ -60,5 +60,6 @@ describe('LineDrawBar', () => {
   it('uses compact buttons', async () => {
     await renderWithProviders(<LineDrawBar />);
     expect(screen.getByLabelText('Add at center').props.className).toContain('py-2');
+    expect(screen.getByLabelText('Add at center')).toHaveTextContent('CTR', { exact: true });
   });
 });

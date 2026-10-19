@@ -265,7 +265,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
     else useMenu.getState().openMenu('polygon.add', {});
   };
-  // UNIT / POINT wait for a map tap (or Add at center) before their Add menu opens.
+  // UNIT / POINT wait for a map tap (or CTR) before their Add menu opens.
   const togglePlacing = (category: PlacingCategory) => {
     const p = usePlacing.getState();
     if (topId === `${category}.add` || p.category === category) {

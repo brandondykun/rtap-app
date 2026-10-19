@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-/** What UNIT / POINT is waiting to place: the next map tap (or Add at center) opens its Add menu. */
+/** What UNIT / POINT is waiting to place: the next map tap (or CTR) opens its Add menu. */
 export type PlacingCategory = 'unit' | 'point';
 
 type PlacingValues = { category: PlacingCategory | null };

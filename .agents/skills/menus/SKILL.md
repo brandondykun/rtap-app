@@ -10,7 +10,7 @@ description: Use whenever you add or change a menu, panel content, or anything o
    (`{}` when there are none). `MenuId` and `MenuParams<I>` come from it.
 2. **Component** — `src/features/<feature>/menus/<Name>Menu.tsx`, typed
    `MenuComponentProps<'<id>'>` (`params`, `missionId`). Compose only
-   `src/components/menu/*`: `MenuHeader`, `MenuSection`, `MenuRow`, `MenuButton`,
+   `src/components/menu/*`: `MenuHeader`, `MenuSection`, `MenuRow`, `MenuButton`, `CenterButton`,
    `MenuToggle`, `TextField` (shared, in `src/components/ui`), `MenuSegmented`, `MenuSelect`, `MenuActions`, `MenuListItem`,
    `MenuVertexRow` (one point of a line), `MgrsInput` (backspace in an empty field hops to the previous one).
    No raw colors, no new one-off controls — add a primitive instead.
@@ -29,6 +29,8 @@ description: Use whenever you add or change a menu, panel content, or anything o
   the panel area, the crosshair centers in the visible map, the location banner hides, and the grid readouts
   stay: the full-width dock (CTR over ME) above a bottom sheet, or in landscape your card bottom
   right and the center card bottom left, right of the drawer (`MapControls`). The zoom buttons follow only their Settings toggle.
+- **Acting at the crosshair** (add at center): always `CenterButton`, the crosshair glyph and the text CTR,
+  never "Add at center" as visible text (it stays the screen-reader label).
 - **No system dialogs.** Destructive actions use `MenuActions` (second tap confirms).
 - **Writes** go through commands; report failures with `notifyError`, successes with
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.

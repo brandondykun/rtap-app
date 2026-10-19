@@ -15,5 +15,7 @@ describe('PlaceBar', () => {
     expect(onAtCenter).toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalled();
     expect(screen.getByLabelText('Add at center').props.className).toContain('py-2');
+    // The standard center button: the crosshair and CTR.
+    expect(screen.getByLabelText('Add at center')).toHaveTextContent('CTR', { exact: true });
   });
 });
