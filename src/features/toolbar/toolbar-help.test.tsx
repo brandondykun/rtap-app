@@ -3,19 +3,29 @@ import { screen } from '@testing-library/react-native';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { Toolbar } from './Toolbar';
-import { TOOLBAR_HELP } from './toolbar-help';
+import { HELP_GROUPS, TOOLBAR_HELP } from './toolbar-help';
 
 describe('TOOLBAR_HELP', () => {
-  it('describes every toolbar button, in toolbar order', async () => {
+  it('describes every toolbar button exactly once', async () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
     const buttons = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(TOOLBAR_HELP.map((h) => h.label)).toEqual(buttons);
+    expect(TOOLBAR_HELP.map((h) => h.label).sort()).toEqual([...buttons].sort());
   });
 
-  it('gives each button an icon and a sentence of help', () => {
+  it('groups the buttons as on the About page, in this order', () => {
+    const byGroup = (g: string) => TOOLBAR_HELP.filter((h) => h.group === g).map((h) => h.label);
+    expect(HELP_GROUPS.map((g) => g.title)).toEqual(['Plot on the map', 'Read the map', 'App']);
+    expect(byGroup('plot')).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'PLOT']);
+    expect(byGroup('read')).toEqual(['MEASURE', 'LAYERS', 'LABELS']);
+    expect(byGroup('app')).toEqual(['Menu', 'Settings']);
+  });
+
+  it('gives each button an icon and a short line of help', () => {
     for (const h of TOOLBAR_HELP) {
       expect(h.icon).toBeTruthy();
-      expect(h.help.length).toBeGreaterThan(20);
+      expect(h.help.length).toBeGreaterThan(10);
     }
+    expect(TOOLBAR_HELP.find((h) => h.label === 'UNIT')?.help).toBe('Place a unit, then pick its affiliation and type.');
+    expect(TOOLBAR_HELP.find((h) => h.label === 'Settings')?.help).toBe('App preferences.');
   });
 });

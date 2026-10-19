@@ -17,14 +17,28 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 afterEach(() => jest.restoreAllMocks());
 
 describe('AboutScreen', () => {
-  it('shows the app name, version and attribution', async () => {
+  it('shows the identity card: amber mark, RTAP, tagline, builders and version', async () => {
     await renderWithProviders(<AboutScreen />);
+    const card = screen.getByTestId('about-identity');
     expect(screen.getByText('RTAP').props.className).toContain('text-accent');
-    expect(screen.getByText('Realtime Team Awareness Platform')).toBeTruthy();
+    expect(card).toHaveTextContent(/RTAP.*Realtime Team Awareness Platform.*Built by military and geospatial professionals\..*Version/);
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
+    expect(screen.getByTestId('about-mark').props.className).toContain('bg-accent');
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
-    expect(screen.getByText('Built by military and geospatial professionals.')).toBeTruthy();
-    expect(screen.getByText('For training and military simulation. Not for real-world military use or targeting.')).toBeTruthy();
+  });
+
+  it('warns that it is for training and simulation only', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByTestId('about-warning')).toHaveTextContent(/Training & simulation only.*Not for real-world military use or targeting\./i);
+  });
+
+  it('opens the toolbar guide with the two ways to place anything', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByText('Toolbar guide')).toBeTruthy();
+    expect(screen.getByTestId('about-tip')).toHaveTextContent(
+      'Two ways to place anything: tap the map, or line up the crosshair and press CTR for precision.',
+    );
+    expect(screen.getByText('CTR').props.className).toContain('text-accent');
   });
 
   it('draws its own header: a large Back button and the About title', async () => {
@@ -58,13 +72,15 @@ describe('AboutScreen', () => {
     expect(header.paddingTop).toBe(59);
   });
 
-  it('explains every toolbar button with its icon and name', async () => {
+  it('lists every toolbar button under its group, with its icon tile, name and help', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('Toolbar')).toBeTruthy();
+    for (const title of ['Plot on the map', 'Read the map', 'App']) expect(screen.getByText(title)).toBeTruthy();
     for (const h of TOOLBAR_HELP) {
       const row = screen.getByTestId(`help-${h.label}`);
-      expect(row).toHaveTextContent(new RegExp(`${h.label}.*${h.help.slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+      expect(row).toHaveTextContent(new RegExp(`${h.label}.*${h.help.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+      expect(screen.getByTestId(`help-${h.label}`).parent).toBeTruthy();
     }
+    expect(screen.getByTestId('help-tile-PLOT')).toBeTruthy();
   });
 
   it('keeps its content inside the safe area in landscape and scrolls', async () => {
