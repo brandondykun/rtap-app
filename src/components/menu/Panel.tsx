@@ -27,7 +27,9 @@ type Props = {
   children: ReactNode;
 };
 
-/** The minimize / reopen tab on the drawer's right edge. */
+/** The full-height rail on the open drawer's right edge (inside its width), which hides it. */
+const RAIL_WIDTH = 32;
+/** The floating button that shows the minimized drawer again. */
 const TAB_WIDTH = 28;
 const TAB_HEIGHT = 64;
 const SLIDE_MS = 220;
@@ -116,9 +118,6 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
         : { width: '100%', height: size.get() },
     [landscape],
   );
-  // Minimized, the tab becomes a floating button just past the notch (never touching the screen edge).
-  // A CSS transition slides it along with the drawer.
-  const tabFrame = { left: hidden ? Math.max(insets.left, EDGE) : target, width: TAB_WIDTH };
 
   const drawer = (
     <Animated.View
@@ -128,7 +127,9 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
       // Off screen, its content must not be reachable by VoiceOver/TalkBack either.
       accessibilityElementsHidden={hidden}
       importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
-      className={landscape ? 'border-r border-border bg-surface' : 'rounded-t-3xl border-t border-border bg-surface'}>
+      className={
+        landscape ? 'flex-row overflow-hidden rounded-r-2xl border-r border-border bg-surface' : 'rounded-t-3xl border-t border-border bg-surface'
+      }>
       <View style={{ flex: 1, paddingLeft: landscape ? insets.left : 0, paddingTop: landscape ? insets.top : 0 }}>
         {landscape ? null : (
           <GestureDetector gesture={pan}>
@@ -144,36 +145,38 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
           {children}
         </ScrollView>
       </View>
+      {landscape ? (
+        // The whole right edge hides the drawer; the menu content gives up this width.
+        <Pressable
+          testID="menu-panel-rail"
+          accessibilityRole="button"
+          accessibilityLabel="Hide menu"
+          onPress={() => onMinimizedChange?.(true)}
+          style={{ width: RAIL_WIDTH }}
+          className="h-full items-center justify-center border-l border-border bg-surface-raised active:opacity-70">
+          <Icon name="chevron-left" size={24} color={colors.text} />
+        </Pressable>
+      ) : null}
     </Animated.View>
   );
-  if (!landscape) return drawer;
+  if (!hidden) return drawer;
   return (
     <>
       {drawer}
-      <Animated.View
+      {/* Minimized: a floating button just past the notch (never touching the screen edge) brings it back. */}
+      <View
         testID="menu-panel-tab-frame"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          marginTop: -TAB_HEIGHT / 2,
-          height: TAB_HEIGHT,
-          ...tabFrame,
-          transitionProperty: ['left', 'width'],
-          transitionDuration: SLIDE_MS,
-        }}>
+        style={{ position: 'absolute', top: '50%', marginTop: -TAB_HEIGHT / 2, height: TAB_HEIGHT, width: TAB_WIDTH, left: Math.max(insets.left, EDGE) }}>
         <Pressable
           testID="menu-panel-tab"
           accessibilityRole="button"
-          accessibilityLabel={hidden ? `Show ${title ?? 'menu'}` : 'Hide menu'}
-          onPress={() => onMinimizedChange?.(!hidden)}
+          accessibilityLabel={`Show ${title ?? 'menu'}`}
+          onPress={() => onMinimizedChange?.(false)}
           hitSlop={{ top: 8, bottom: 8, right: 12 }}
-          className={`h-full w-full items-center justify-center border border-border bg-surface active:opacity-70 ${
-            // Attached to the open drawer's edge; a free-standing button when minimized.
-            hidden ? 'rounded-xl' : 'rounded-r-xl border-l-0'
-          }`}>
-          <Icon name={hidden ? 'chevron-right' : 'chevron-left'} size={22} color={colors.text} />
+          className="h-full w-full items-center justify-center rounded-xl border border-border bg-surface active:opacity-70">
+          <Icon name="chevron-right" size={22} color={colors.text} />
         </Pressable>
-      </Animated.View>
+      </View>
     </>
   );
 }

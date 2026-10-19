@@ -129,10 +129,18 @@ describe('Panel', () => {
       </Panel>
     );
 
-    it('has an edge tab that hides the drawer', async () => {
+    it('has a full-height rail on its right edge, holding just a chevron, that hides the drawer', async () => {
       const onMinimizedChange = jest.fn();
       await render(drawer({ minimized: false, onMinimizedChange }));
-      await fireEvent.press(screen.getByLabelText('Hide menu'));
+      const rail = screen.getByLabelText('Hide menu');
+      expect(rail.props.testID).toBe('menu-panel-rail');
+      // Part of the drawer (inside it, not floating beside it), spanning its height.
+      expect(screen.getByTestId('menu-panel')).toContainElement(rail);
+      expect(rail.props.className).toContain('h-full');
+      expect(screen.queryByText(/hide/i)).toBeNull();
+      // No floating button while the drawer is open.
+      expect(screen.queryByTestId('menu-panel-tab')).toBeNull();
+      await fireEvent.press(rail);
       expect(onMinimizedChange).toHaveBeenCalledWith(true);
     });
 
@@ -178,18 +186,10 @@ describe('Panel', () => {
       expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style).left).toBe(4);
     });
 
-    it('keeps the open tab on the drawer edge at its normal width', async () => {
-      await render(drawer({ minimized: false }));
-      const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
-      expect(frame.left).toBe(drawerWidth(metrics()));
-      expect(frame.width).toBe(28);
-      // Attached to the drawer: square on the drawer side.
-      expect(screen.getByTestId('menu-panel-tab').props.className).toContain('rounded-r-xl');
-    });
-
-    it('has no tab in portrait (the sheet already drags down)', async () => {
+    it('has no rail or tab in portrait (the sheet already drags down)', async () => {
       await render(drawer({ minimized: false, landscape: false }));
       expect(screen.queryByLabelText('Hide menu')).toBeNull();
+      expect(screen.queryByTestId('menu-panel-rail')).toBeNull();
     });
   });
 });
