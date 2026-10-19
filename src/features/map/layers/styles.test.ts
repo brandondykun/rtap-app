@@ -39,6 +39,79 @@ describe('line styles', () => {
   });
 });
 
+/** Evaluates the few style expression operators the line labels use, for one feature's properties. */
+function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
+  if (!Array.isArray(expr)) return expr;
+  const [op, ...args] = expr as [string, ...unknown[]];
+  const v = (e: unknown) => evaluate(e, props) as number;
+  switch (op) {
+    case 'literal':
+      return args[0];
+    case 'get':
+      return props[args[0] as string];
+    case '+':
+      return args.reduce<number>((sum, a) => sum + v(a), 0);
+    case '-':
+      return v(args[0]) - v(args[1]);
+    case '%':
+      return v(args[0]) % v(args[1]);
+    case '<':
+      return v(args[0]) < v(args[1]);
+    case 'case':
+      return evaluate(evaluate(args[0], props) ? args[1] : args[2], props);
+    default:
+      throw new Error(`unsupported operator ${op}`);
+  }
+}
+
+describe('line end labels', () => {
+  const colors = themeColors('dark');
+  /** How an end label with this outward bearing draws while the map is turned to `mapBearing`. */
+  const label = (bearing: number, mapBearing: number, size = LABEL_TEXT_SIZES.medium) => {
+    const style = makeLineLabelStyle(colors, size, mapBearing);
+    const at = (e: unknown) => evaluate(e, { bearing });
+    const rotate = at(style.textRotate) as number;
+    return {
+      style,
+      /** Reading direction on screen, degrees clockwise from screen-up: 90 reads left to right. */
+      reads: (((rotate + 90 - mapBearing) % 360) + 360) % 360,
+      anchor: at(style.textAnchor),
+      offsetPt: (at(style.textOffset) as number[]).map((o) => o * size),
+      iconRotate: at(style.iconRotate),
+    };
+  };
+
+  it('turns with the map and follows the end segment, its chip turning with it', () => {
+    const l = label(30, 0);
+    expect(l.style).toMatchObject({ textRotationAlignment: 'map', iconRotationAlignment: 'map' });
+    expect(l.iconRotate).toBe(evaluate(l.style.textRotate, { bearing: 30 }));
+    expect(l.reads).toBeCloseTo(30);
+  });
+
+  it('reads outward from the end when that points right on screen, starting just past the end', () => {
+    for (const [bearing, mapBearing] of [[90, 0], [0, 0], [10, 300], [300, 200]]) {
+      const l = label(bearing, mapBearing);
+      expect(l.reads).toBeCloseTo((((bearing - mapBearing) % 360) + 360) % 360);
+      expect(l.anchor).toBe('left');
+      expect(l.offsetPt[0]).toBeCloseTo(10.8);
+      expect(l.offsetPt[1]).toBe(0);
+    }
+  });
+
+  it('never reads upside down: an end pointing left on screen reads toward the end, finishing just past it', () => {
+    for (const [bearing, mapBearing] of [[270, 0], [180, 0], [200, 10], [90, 180]]) {
+      const l = label(bearing, mapBearing);
+      expect(l.reads).toBeLessThan(180);
+      expect(l.anchor).toBe('right');
+      expect(l.offsetPt[0]).toBeCloseTo(-10.8);
+    }
+  });
+
+  it('keeps the same gap past the end at every text size', () => {
+    for (const size of Object.values(LABEL_TEXT_SIZES)) expect(label(90, 0, size).offsetPt[0]).toBeCloseTo(10.8);
+  });
+});
+
 describe('polygon styles', () => {
   it('fills in light friendly blue', () => {
     const colors = themeColors('dark');
@@ -71,7 +144,6 @@ describe('label text sizes', () => {
       expect(makeDraftLabelStyle(colors, size).textSize).toBe(size);
       // Offsets are in ems, so they must shrink as the text grows to stay put in points.
       for (const t of POINT_TYPES) expect(pointGap(makePointLabelStyle(colors, size), t.sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), t.sidc));
-      expect(pt(makeLineLabelStyle(colors, size), 0)).toBeCloseTo(pt(makeLineLabelStyle(colors), 0));
       expect(pt(makeDraftLabelStyle(colors, size), 1)).toBeCloseTo(pt(makeDraftLabelStyle(colors), 1));
     }
   });

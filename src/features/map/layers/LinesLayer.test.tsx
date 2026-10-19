@@ -4,6 +4,7 @@ import { placeLine } from '@/features/map-items/commands';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { useInteraction } from '@/stores/interaction';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -51,5 +52,23 @@ describe('LinesLayer', () => {
     await act(async () => useSettings.getState().toggleMapLabels());
     expect(props.SymbolLayer['lines-label'].style).toMatchObject({ visibility: 'none' });
     useSettings.setState(DEFAULT_SETTINGS);
+  });
+
+  it('keeps end labels upright as the map turns, restyling only every 15 degrees', async () => {
+    const ctx = makeTestContext();
+    const r = await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'phase-line', name: 'RED' });
+    if (!r.ok) throw new Error('setup');
+    const camera = { center: P[0], zoom: 13 };
+    useInteraction.getState().setCamera({ ...camera, bearing: 0 });
+    await renderWithProviders(<LinesLayer missionId="m1" excludeId={null} />, ctx);
+    const props = mapboxMock().__props;
+    const style = () => props.SymbolLayer['lines-label'].style;
+    await waitFor(() => expect(style()).toMatchObject({ textRotationAlignment: 'map' }));
+    const north = style();
+    await act(async () => useInteraction.getState().setCamera({ ...camera, bearing: 5 }));
+    expect(style()).toBe(north);
+    await act(async () => useInteraction.getState().setCamera({ ...camera, bearing: 100 }));
+    expect(JSON.stringify(style().textRotate)).not.toBe(JSON.stringify(north.textRotate));
+    useInteraction.getState().setCamera({ ...camera, bearing: 0 });
   });
 });

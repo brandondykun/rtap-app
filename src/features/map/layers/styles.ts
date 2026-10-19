@@ -156,9 +156,26 @@ export const LINE_FLOT_STYLE: SymbolLayerStyle = {
   iconIgnorePlacement: true,
 };
 
-/** "PL RED" chips at both ends of a line, beside the end point. */
-export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
-  return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'left', textOffset: [LINE_LABEL_GAP_PT / textSize, 0] };
+/**
+ * "PL RED" chips at both ends of a line, just past the end and turned to follow its end segment.
+ * `bearing` is the segment's outward direction; text never reads upside down, so an end pointing left
+ * on screen (given the map's own `mapBearing`) is turned half around and reads toward the end instead.
+ */
+export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium, mapBearing = 0): SymbolLayerStyle {
+  const gap = LINE_LABEL_GAP_PT / textSize;
+  // The end's direction on screen, 0–360 clockwise from up: below 180 it points right.
+  const pointsRight = ['<', ['%', ['+', ['get', 'bearing'], 720 - mapBearing], 360], 180];
+  const rotate = ['case', pointsRight, ['-', ['get', 'bearing'], 90], ['+', ['get', 'bearing'], 90]];
+  return {
+    ...makePointLabelStyle(colors, textSize),
+    textField: ['get', 'label'],
+    textRotationAlignment: 'map',
+    textRotate: rotate as SymbolLayerStyle['textRotate'],
+    textAnchor: ['case', pointsRight, 'left', 'right'] as SymbolLayerStyle['textAnchor'],
+    textOffset: ['case', pointsRight, ['literal', [gap, 0]], ['literal', [-gap, 0]]] as SymbolLayerStyle['textOffset'],
+    iconRotationAlignment: 'map',
+    iconRotate: rotate as SymbolLayerStyle['iconRotate'],
+  };
 }
 
 /** Measure readout chip: dark text on an amber chip at the line's midpoint. */
