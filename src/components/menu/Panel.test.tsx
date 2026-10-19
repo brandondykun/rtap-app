@@ -140,6 +140,8 @@ describe('Panel', () => {
       // A slim rail: it should not take much from the menu.
       expect(StyleSheet.flatten(rail.props.style).width).toBe(16);
       expect(screen.queryByText(/hide/i)).toBeNull();
+      // Square corners: the drawer's right edge (where the rail sits) is not rounded.
+      expect(screen.getByTestId('menu-panel').props.className).not.toMatch(/rounded/);
       // No floating button while the drawer is open.
       expect(screen.queryByTestId('menu-panel-tab')).toBeNull();
       await fireEvent.press(rail);

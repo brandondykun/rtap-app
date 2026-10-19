@@ -143,7 +143,7 @@ export function Panel({
       accessibilityElementsHidden={hidden}
       importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
       className={
-        landscape ? 'flex-row overflow-hidden rounded-r-2xl border-r border-border bg-surface' : 'rounded-t-3xl border-t border-border bg-surface'
+        landscape ? 'flex-row border-r border-border bg-surface' : 'rounded-t-3xl border-t border-border bg-surface'
       }>
       <View style={{ flex: 1, paddingLeft: landscape ? insets.left : 0, paddingTop: landscape ? insets.top : 0 }}>
         {landscape ? null : (
