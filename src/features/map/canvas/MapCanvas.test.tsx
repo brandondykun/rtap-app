@@ -34,6 +34,8 @@ async function renderCanvas(overrides: Partial<Parameters<typeof MapCanvas>[0]> 
     onUserGesture: jest.fn(),
     landscape: false,
     panel: null,
+    symbolImages: {},
+    onSymbolMissing: jest.fn(),
     ...overrides,
   };
   await renderWithProviders(
@@ -54,6 +56,15 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Images.main.images).toBe(MAP_IMAGES);
     expect(mapboxMock().__props.MapView.main.compassEnabled).toBe(false);
     expect(mapboxMock().__props.MapView.main.scaleBarEnabled).toBe(false);
+  });
+
+  it('registers symbol images and asks for missing ones', async () => {
+    const onSymbolMissing = jest.fn();
+    await renderCanvas({ symbolImages: { SFGPU: { url: 'file:///s/SFGPU.png', scale: 3 } }, onSymbolMissing });
+    const images = mapboxMock().__props.Images.symbols;
+    expect(images.images).toEqual({ SFGPU: { url: 'file:///s/SFGPU.png', scale: 3 } });
+    (images.onImageMissing as (k: string) => void)('SHGPU');
+    expect(onSymbolMissing).toHaveBeenCalledWith('SHGPU');
   });
 
   it('keeps the Mapbox logo row right of a left drawer', async () => {

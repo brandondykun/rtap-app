@@ -31,7 +31,8 @@ export const Camera = forwardRef(function Camera(props: Props, ref) {
 });
 
 export function Images(props: Props) {
-  __props.Images.main = props;
+  // The runtime-symbols instance is the one with onImageMissing (Images has no testID prop).
+  __props.Images[props.onImageMissing ? 'symbols' : 'main'] = props;
   return null;
 }
 

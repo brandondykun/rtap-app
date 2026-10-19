@@ -42,10 +42,13 @@ type Props = {
   onPress?: (coord: LatLon) => void;
   landscape: boolean;
   panel: PanelFrame | null;
+  /** Runtime symbol images by SIDC (useSymbolImages) and the request for one the map reports missing. */
+  symbolImages: Record<string, { url: string; scale: number }>;
+  onSymbolMissing: (sidc: string) => void;
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
+export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, symbolImages, onSymbolMissing, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
   // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
   // this session so points and the self icon still render. Choosing a basemap again retries it.
@@ -115,6 +118,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
       }}>
       <Camera ref={cameraRef} defaultSettings={toCameraStop(initialCamera)} />
       <Images images={MAP_IMAGES} />
+      <Images images={symbolImages} onImageMissing={onSymbolMissing} />
       {children}
     </MapView>
   );
