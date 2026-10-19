@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { isKnownSidc } from '@/features/symbology/categories';
+
 import { getSymbolImage } from './get-symbol-image';
 
 type Entry = { url: string; scale: number };
@@ -11,9 +13,14 @@ type Entry = { url: string; scale: number };
 export function useSymbolImages(sidcs: readonly string[]): { images: Record<string, Entry>; request: (sidc: string) => void } {
   const [images, setImages] = useState<Record<string, Entry>>({});
   const [extra, setExtra] = useState<readonly string[]>([]);
-  const request = useCallback((sidc: string) => setExtra((e) => (e.includes(sidc) ? e : [...e, sidc])), []);
-  const key = [...new Set([...sidcs, ...extra])].sort().join('|');
   const requested = useRef(new Set<string>());
+  // The map also reports its own images (label-chip, self, draft-ring…) missing while they load: never draw
+  // those. A symbol already being drawn (or drawn) needs no second request either.
+  const request = useCallback((sidc: string) => {
+    if (!isKnownSidc(sidc) || requested.current.has(sidc)) return;
+    setExtra((e) => (e.includes(sidc) ? e : [...e, sidc]));
+  }, []);
+  const key = [...new Set([...sidcs, ...extra])].sort().join('|');
   const mounted = useRef(true);
 
   useEffect(() => {

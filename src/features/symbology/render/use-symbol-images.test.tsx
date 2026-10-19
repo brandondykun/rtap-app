@@ -5,6 +5,8 @@ import { useSymbolImages } from './use-symbol-images';
 const mockGet = jest.fn(async (sidc: string) => ({ uri: `file:///s/${sidc}.png`, scale: 3 }));
 jest.mock('./get-symbol-image', () => ({ getSymbolImage: (s: string) => mockGet(s) }));
 
+const HOSTILE_INF = 'SHGPUCI--------';
+
 beforeEach(() => mockGet.mockClear());
 
 describe('useSymbolImages', () => {
@@ -27,8 +29,33 @@ describe('useSymbolImages', () => {
 
   it('fetches a symbol the map reports missing', async () => {
     const { result } = await renderHook(() => useSymbolImages([]));
-    await act(async () => result.current.request('Z'));
-    await waitFor(() => expect(result.current.images.Z).toBeTruthy());
+    await act(async () => result.current.request(HOSTILE_INF));
+    await waitFor(() => expect(result.current.images[HOSTILE_INF]).toBeTruthy());
+  });
+
+  it('ignores missing images that are not symbols (the map\'s own label-chip, self, draft-ring…)', async () => {
+    const { result } = await renderHook(() => useSymbolImages([]));
+    const before = result.current.images;
+    await act(async () => {
+      result.current.request('label-chip');
+      result.current.request('self');
+      result.current.request('draft-ring');
+    });
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(result.current.images).toBe(before);
+  });
+
+  it('does not re-request (or re-render for) a missing symbol already among the mission\'s', async () => {
+    let renders = 0;
+    const { result } = await renderHook(() => {
+      renders++;
+      return useSymbolImages([HOSTILE_INF]);
+    });
+    await waitFor(() => expect(result.current.images[HOSTILE_INF]).toBeTruthy());
+    const settled = renders;
+    await act(async () => result.current.request(HOSTILE_INF));
+    expect(renders).toBe(settled);
+    expect(mockGet).toHaveBeenCalledTimes(1);
   });
 
   it('leaves a symbol out when it cannot be drawn', async () => {
