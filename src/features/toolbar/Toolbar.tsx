@@ -59,7 +59,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       style={[position, { height }]}
       className="absolute flex-row items-center rounded-3xl border border-border bg-surface-chrome px-2">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
-      <Divider />
+      <Divider side="start" flush={!landscape} />
       {landscape ? (
         <View className="flex-row items-center gap-1">{tools}</View>
       ) : (
@@ -67,11 +67,11 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
           horizontal
           showsHorizontalScrollIndicator={false}
           style={{ flex: 1 }}
-          contentContainerStyle={{ alignItems: 'center', gap: 4 }}>
+          contentContainerStyle={{ alignItems: 'center', gap: 4, paddingHorizontal: 6 }}>
           {tools}
         </ScrollView>
       )}
-      <Divider />
+      <Divider side="end" flush={!landscape} />
       <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
     </View>
   );
@@ -94,6 +94,11 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
   );
 }
 
-function Divider() {
-  return <View className="mx-1.5 h-7 w-px bg-border" />;
+/**
+ * `flush` drops the margin on the tools' side, so the portrait scroller clips right at the line;
+ * the scroller's own padding keeps the first and last tool off the line at rest.
+ */
+function Divider({ side, flush }: { side: 'start' | 'end'; flush: boolean }) {
+  const margin = !flush ? 'mx-1.5' : side === 'start' ? 'ml-1.5' : 'mr-1.5';
+  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px bg-border`} />;
 }

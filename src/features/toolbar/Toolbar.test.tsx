@@ -34,6 +34,14 @@ describe('Toolbar', () => {
     expect(style().right).toBeDefined();
   });
 
+  it('clips the portrait tools right at the dividers: no margin on their inner sides', async () => {
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
+    expect(screen.getByTestId('divider-start').props.className).toContain('ml-1.5');
+    expect(screen.getByTestId('divider-start').props.className).not.toContain('mr-1.5');
+    expect(screen.getByTestId('divider-end').props.className).toContain('mr-1.5');
+    expect(screen.getByTestId('divider-end').props.className).not.toContain('ml-1.5');
+  });
+
   it('anchors top-right and sizes to content in landscape', async () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
     expect(style().left).toBeUndefined();
