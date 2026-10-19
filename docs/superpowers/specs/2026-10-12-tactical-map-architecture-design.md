@@ -314,10 +314,7 @@ lib/geo/
 - The map never remounts on orientation change.
 
 ### 8.2 Symbology (`features/symbology`)
-- **MVP:** a build-time Node script renders the preset SIDCs with `milsymbol` into
-  `@2x`/`@3x` PNGs under `assets/symbols/`, registered via rnmapbox `<Images>`.
-- **Later:** runtime rasterization (Skia) for arbitrary SIDCs, cached on disk by SIDC.
-- Both sit behind `getSymbolImage(sidc)`; layers do not change.
+- Symbols render on the device with milsymbol + Skia, cached on disk by SIDC (see docs/superpowers/specs/2026-10-19-runtime-symbols-and-echelon-design.md); both sit behind `getSymbolImage(sidc)`; layers do not change.
 
 ### 8.3 Self and teammate icons
 - **Look (mockups):** white-ringed `sky-400` disc with a dark navigation arrow, a translucent

@@ -10,7 +10,7 @@ export type PointType =
   | 'target-reference-point'
   | 'target';
 
-/** The app's landing-zone code: milsymbol has no LZ point, so scripts/build-symbols.ts draws it. */
+/** The app's landing-zone code: milsymbol has no LZ point, so render/symbol-svg.ts draws it. */
 export const LANDING_ZONE_SIDC = 'GFGPAAL-------X';
 
 /** A point type. `drawAs`: another SIDC whose graphic the build draws for it (stand-in artwork). */

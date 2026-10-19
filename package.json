@@ -70,7 +70,6 @@
     "lint": "expo lint",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "build:symbols": "tsx scripts/build-symbols.ts",
     "build:map-images": "tsx scripts/build-map-images.ts",
     "postinstall": "patch-package"
   },

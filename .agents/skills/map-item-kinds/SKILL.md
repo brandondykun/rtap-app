@@ -35,8 +35,8 @@ Points are the reference implementation; follow the same path for each new kind.
 
 Units and points share `kind = 'point'`. `itemCategory(sidc)` decides which; never test SIDC
 prefixes elsewhere. To add a point type: add a row to `POINT_TYPES` (id, label, prefix, SIDC),
-run `npm run build:symbols` (a custom SVG in `scripts/build-symbols.ts` if milsymbol cannot draw
-it; point images are padded so the symbol's anchor is the image center), and extend
+the symbol renders at runtime from its SIDC (`render/symbol-svg.ts` draws a custom SVG if milsymbol
+cannot draw it; point images are padded so the symbol's anchor is the image center), and extend
 `point-types.test.ts`. Add/Edit menus are `AddItemPanel` / `EditItemPanel` with a category and a
 form (`UnitForm`, `PointForm`) built from `form/LocationSection` and `useAutoName`.
 
