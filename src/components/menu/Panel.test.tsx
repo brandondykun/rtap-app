@@ -1,7 +1,8 @@
 import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { Dimensions, Keyboard, Text } from 'react-native';
+import { Dimensions, Keyboard, StyleSheet, Text } from 'react-native';
+import * as SafeArea from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -153,6 +154,28 @@ describe('Panel', () => {
       const { rerender } = await render(drawer({ minimized: true, onFrameChange }));
       await rerender(drawer({ minimized: false, onFrameChange }));
       expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
+    });
+
+    it('anchors the minimized tab to the screen edge, spanning the notch side, instead of floating', async () => {
+      // The global safe-area mock is itself a jest.fn: restoring a spy would drop its zero insets, so put them back instead.
+      const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 0, right: 0, bottom: 21, left: 59 });
+      try {
+        await render(drawer({ minimized: true }));
+        const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
+        expect(frame.left).toBe(0);
+        expect(frame.width).toBe(59 + 28);
+        // The chevron sits past the notch, in the part of the tab that shows.
+        expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab').props.style)?.paddingLeft).toBe(59);
+      } finally {
+        insets.mockReturnValue(INSETS);
+      }
+    });
+
+    it('keeps the open tab on the drawer edge at its normal width', async () => {
+      await render(drawer({ minimized: false }));
+      const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
+      expect(frame.left).toBe(drawerWidth(metrics()));
+      expect(frame.width).toBe(28);
     });
 
     it('has no tab in portrait (the sheet already drags down)', async () => {

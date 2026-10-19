@@ -58,9 +58,8 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
   const onFrameRef = useRef(onFrameChange);
   const size = useSharedValue(0);
   const dragStart = useSharedValue(0);
-  /** Drawer slide (0 open, -width minimized) and the tab's left edge (the drawer's edge, or the screen's). */
+  /** Drawer slide: 0 open, -width minimized. */
   const offset = useSharedValue(0);
-  const tabLeft = useSharedValue(0);
 
   useEffect(() => {
     detentRef.current = detent;
@@ -74,9 +73,7 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
 
   useEffect(() => {
     offset.set(withTiming(hidden ? -target : 0, { duration: SLIDE_MS }));
-    // Minimized, the tab rests just inside the safe area so it never sits under the notch.
-    tabLeft.set(withTiming(hidden ? insets.left : target, { duration: SLIDE_MS }));
-  }, [hidden, target, insets.left, offset, tabLeft]);
+  }, [hidden, target, offset]);
 
   // Keep a focused field visible: the sheet opens fully while the keyboard is up.
   useEffect(() => {
@@ -118,7 +115,9 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
         : { width: '100%', height: size.get() },
     [landscape],
   );
-  const tabStyle = useAnimatedStyle(() => ({ left: tabLeft.get() }));
+  // Minimized, the tab grows out of the screen edge across the notch side (rather than floating beside
+  // it), its chevron past the notch. A CSS transition slides it along with the drawer.
+  const tabFrame = hidden ? { left: 0, width: insets.left + TAB_WIDTH } : { left: target, width: TAB_WIDTH };
 
   const drawer = (
     <Animated.View
@@ -151,13 +150,23 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
     <>
       {drawer}
       <Animated.View
-        style={[{ position: 'absolute', top: '50%', marginTop: -TAB_HEIGHT / 2, width: TAB_WIDTH, height: TAB_HEIGHT }, tabStyle]}>
+        testID="menu-panel-tab-frame"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          marginTop: -TAB_HEIGHT / 2,
+          height: TAB_HEIGHT,
+          ...tabFrame,
+          transitionProperty: ['left', 'width'],
+          transitionDuration: SLIDE_MS,
+        }}>
         <Pressable
           testID="menu-panel-tab"
           accessibilityRole="button"
           accessibilityLabel={hidden ? `Show ${title ?? 'menu'}` : 'Hide menu'}
           onPress={() => onMinimizedChange?.(!hidden)}
           hitSlop={{ top: 8, bottom: 8, right: 12 }}
+          style={{ paddingLeft: hidden ? insets.left : 0 }}
           className="h-full w-full items-center justify-center rounded-r-xl border border-l-0 border-border bg-surface active:opacity-70">
           <Icon name={hidden ? 'chevron-right' : 'chevron-left'} size={22} color={colors.text} />
         </Pressable>
