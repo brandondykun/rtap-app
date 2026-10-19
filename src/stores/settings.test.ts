@@ -16,6 +16,12 @@ describe('settings store', () => {
     expect(s.basemap).toBe('satellite');
   });
 
+  it('defaults the missions sort to Recent and remembers a change', () => {
+    expect(useSettings.getState().missionSort).toBe('recent');
+    useSettings.getState().setMissionSort('most');
+    expect(useSettings.getState().missionSort).toBe('most');
+  });
+
   it('sets and persists the basemap', () => {
     useSettings.getState().setBasemap('topo');
     expect(useSettings.getState().basemap).toBe('topo');

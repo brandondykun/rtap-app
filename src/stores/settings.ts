@@ -11,6 +11,8 @@ export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dar
 export type AltitudeUnit = 'm' | 'ft';
 /** Text size of the name labels on map items. */
 export type LabelSize = 'small' | 'medium' | 'large';
+export type MissionSort = 'recent' | 'name' | 'most';
+export const MISSION_SORTS: readonly MissionSort[] = ['recent', 'name', 'most'];
 
 type SettingsValues = {
   coordinateFormat: CoordinateFormat;
@@ -31,6 +33,7 @@ type SettingsValues = {
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
   labelSize: LabelSize;
+  missionSort: MissionSort;
 };
 
 type SettingsActions = {
@@ -45,6 +48,7 @@ type SettingsActions = {
   setShowToolbarText: (show: boolean) => void;
   toggleMapLabels: () => void;
   setLabelSize: (size: LabelSize) => void;
+  setMissionSort: (sort: MissionSort) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -66,6 +70,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showToolbarText: true,
   showMapLabels: true,
   labelSize: 'medium',
+  missionSort: 'recent',
 };
 
 const syncStorage: StateStorage = {
@@ -99,6 +104,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
+    missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
   };
 }
 
@@ -117,6 +123,7 @@ export const useSettings = create<SettingsState>()(
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       setLabelSize: (labelSize) => set({ labelSize }),
+      setMissionSort: (missionSort) => set({ missionSort }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -129,7 +136,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, labelSize }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, labelSize, missionSort }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -142,6 +149,7 @@ export const useSettings = create<SettingsState>()(
         showToolbarText,
         showMapLabels,
         labelSize,
+        missionSort,
       }),
     },
   ),
