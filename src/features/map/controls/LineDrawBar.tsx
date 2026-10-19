@@ -7,7 +7,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { MapHintBar } from './MapHintBar';
 
-/** While drawing a line or polygon: CTR (add at center) or Move to center, and Undo/Done; for a circle, Set center / Set edge at the crosshair. */
+/** While drawing a line or polygon: CTR (add at center) or Move to CTR, and Undo/Done; for a circle, Set center / Set edge at CTR. */
 export function LineDrawBar() {
   const { colors } = useTheme();
   const selected = useDraft((s) => s.selectedVertex);
@@ -27,14 +27,21 @@ export function LineDrawBar() {
     } else if (moving) d.moveVertex(selected!, center);
     else d.addVertex(center);
   };
-  const centerLabel = circle ? (hasCenter ? 'Set edge at crosshair' : 'Set center at crosshair') : moving ? 'Move to center' : 'Add at center';
+  // Visible text says CTR; the label spells it out for screen readers.
+  const [centerLabel, centerText] = circle
+    ? hasCenter
+      ? ['Set edge at crosshair', 'Set edge at CTR']
+      : ['Set center at crosshair', 'Set center at CTR']
+    : moving
+      ? ['Move to center', 'Move to CTR']
+      : ['Add at center', 'CTR'];
 
   return (
     <MapHintBar testID="line-draw-bar" hint="Tap map">
       {centerLabel === 'Add at center' ? (
         <CenterButton compact onPress={atCenter} />
       ) : (
-        <MenuButton compact label={centerLabel} icon={<CrosshairGlyph size={14} color={colors.text} />} onPress={atCenter} />
+        <MenuButton compact label={centerLabel} text={centerText} icon={<CrosshairGlyph size={14} color={colors.text} />} onPress={atCenter} />
       )}
       {circle ? null : moving ? (
         <MenuButton compact label="Done" icon="check" onPress={() => useDraft.getState().selectVertex(null)} />

@@ -122,6 +122,7 @@ describe('AddUnitMenu', () => {
   it('Center moves the draft to the crosshair', async () => {
     await open();
     await act(async () => useDraft.getState().setCoord(OTHER, 'press'));
+    expect(screen.getByLabelText('Center')).toHaveTextContent('CTR', { exact: true });
     await fireEvent.press(screen.getByLabelText('Center'));
     expect(useDraft.getState()).toMatchObject({ coord: CENTER, coordSource: 'crosshair' });
   });

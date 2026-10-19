@@ -24,7 +24,7 @@ describe('MeasureBar', () => {
     await renderWithProviders(<MeasureBar />);
     expect(screen.getByText('Set start')).toBeTruthy();
     expect(screen.queryByLabelText('Restart')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('Set at crosshair'));
+    await fireEvent.press(screen.getByLabelText('Set at CTR'));
     expect(useMeasure.getState().start).toEqual(C);
     // No live end: the card asks for the end instead of measuring to the crosshair.
     expect(screen.getByText('Set end')).toBeTruthy();
@@ -34,7 +34,7 @@ describe('MeasureBar', () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureBar />);
     expect(screen.queryByLabelText('From me')).toBeNull();
-    await fireEvent.press(screen.getByLabelText('Set at crosshair'));
+    await fireEvent.press(screen.getByLabelText('Set at CTR'));
     expect(screen.getByText('1.11 km · 000° TRUE')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Stop measuring'));
     expect(useMeasure.getState().active).toBe(false);
@@ -43,8 +43,8 @@ describe('MeasureBar', () => {
   it('looks like the other tap-mode bars, with compact icon buttons', async () => {
     await renderWithProviders(<MeasureBar />);
     expect(screen.getByTestId('measure-bar')).toBeTruthy();
-    expect(screen.getByLabelText('Set at crosshair').props.className).toContain('min-h-10');
-    expect(screen.queryByText('Set at crosshair')).toBeNull();
+    expect(screen.getByLabelText('Set at CTR').props.className).toContain('min-h-10');
+    expect(screen.queryByText('Set at CTR')).toBeNull();
     expect(screen.getByLabelText('Stop measuring').props.className).toContain('min-h-10');
   });
 });

@@ -35,6 +35,7 @@ describe('LineDrawBar', () => {
     });
     await renderWithProviders(<LineDrawBar />);
     expect(screen.getByText('Tap map')).toBeTruthy();
+    expect(screen.getByLabelText('Move to center')).toHaveTextContent('Move to CTR', { exact: true });
     await fireEvent.press(screen.getByLabelText('Move to center'));
     expect(useDraft.getState().vertices[0]).toEqual(C);
     await fireEvent.press(screen.getByLabelText('Done'));
@@ -49,9 +50,11 @@ describe('LineDrawBar', () => {
       useDraft.getState().setPolygonShape('circle');
     });
     await renderWithProviders(<LineDrawBar />);
+    expect(screen.getByLabelText('Set center at crosshair')).toHaveTextContent('Set center at CTR', { exact: true });
     await fireEvent.press(screen.getByLabelText('Set center at crosshair'));
     expect(useDraft.getState().coord).toEqual(C);
     await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9045, lon: -77 }, zoom: 14, bearing: 0 }));
+    expect(screen.getByLabelText('Set edge at crosshair')).toHaveTextContent('Set edge at CTR', { exact: true });
     await fireEvent.press(screen.getByLabelText('Set edge at crosshair'));
     expect(useDraft.getState().circleRadiusM).toBeCloseTo(500, -1);
     expect(screen.queryByLabelText('Undo')).toBeNull();
