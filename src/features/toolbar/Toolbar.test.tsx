@@ -42,8 +42,8 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('divider-end').props.className).not.toContain('ml-1.5');
   });
 
-  /** A divider turns bright white while tools hide behind it. */
-  const lit = (side: 'start' | 'end') => screen.getByTestId(`divider-${side}`).props.className.includes('bg-text');
+  /** A divider turns a softer white while tools hide behind it. */
+  const lit = (side: 'start' | 'end') => screen.getByTestId(`divider-${side}`).props.className.includes('bg-text-muted');
 
   it('shades and brightens a divider while tools are scrolled out of sight behind it', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);

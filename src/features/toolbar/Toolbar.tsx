@@ -95,7 +95,7 @@ function useOverflow() {
 
 /**
  * The portrait tools, scrolling sideways. While tools are scrolled out of sight behind a divider, a shade
- * fades them out against that divider (which also turns bright) to show more are hidden there.
+ * fades them out against that divider (which also lightens) to show more are hidden there.
  */
 function ToolScroller({ overflow, children }: { overflow: Overflow; children: ReactNode }) {
   const { colors } = useTheme();
@@ -152,10 +152,10 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
 
 /**
  * `flush` drops the margin on the tools' side, so the portrait scroller clips right at the line;
- * the scroller's own padding keeps the first and last tool off the line at rest. `lit` turns the line bright
+ * the scroller's own padding keeps the first and last tool off the line at rest. `lit` turns the line a soft
  * white while tools are scrolled out of sight behind it.
  */
 function Divider({ side, flush, lit }: { side: 'start' | 'end'; flush: boolean; lit: boolean }) {
   const margin = !flush ? 'mx-1.5' : side === 'start' ? 'ml-1.5' : 'mr-1.5';
-  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px ${lit ? 'bg-text' : 'bg-border'}`} />;
+  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px ${lit ? 'bg-text-muted' : 'bg-border'}`} />;
 }
