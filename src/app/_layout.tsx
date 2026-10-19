@@ -16,7 +16,17 @@ void SplashScreen.preventAutoHideAsync();
 function ThemedStack() {
   const { colors } = useTheme();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.surface },
+        // Every screen carries the dark header look, even with its header hidden: during a push iOS draws
+        // the bar and back button with the previous screen's settings, so a default (light) look there
+        // flashes before the new screen's applies.
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.text,
+        headerShadowVisible: false,
+      }}>
       <Stack.Screen
         name="missions/new"
         options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }}
@@ -32,9 +42,6 @@ function ThemedStack() {
           headerShown: true,
           title: 'About',
           headerBackTitle: 'Back',
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
-          headerShadowVisible: false,
         }}
       />
       {/* Edge swipes belong to the map, never to navigation. */}
