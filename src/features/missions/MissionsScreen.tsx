@@ -154,9 +154,11 @@ export function MissionsScreen() {
       {missions === null ? null : missions.length === 0 ? (
         <EmptyState onCreate={openCreate} />
       ) : landscape ? (
-        <View className="flex-1 flex-row gap-4 px-4" style={{ paddingBottom: pinned ? insets.bottom + 16 : 0 }}>
+        // The list scrolls to the bottom edge (its content carries the bottom inset); only the pinned
+        // card keeps a margin there.
+        <View testID="landscape-columns" className="flex-1 flex-row gap-4 px-4">
           {pinned ? (
-            <View testID="pinned-column" className="flex-1">
+            <View testID="pinned-column" className="flex-1" style={{ paddingBottom: insets.bottom + 16 }}>
               <PinnedMissionCard {...cardProps(pinned)} fill />
             </View>
           ) : null}

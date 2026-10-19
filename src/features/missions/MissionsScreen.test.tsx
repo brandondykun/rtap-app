@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { placePoint } from '@/features/map-items/commands';
@@ -131,6 +132,20 @@ describe('MissionsScreen', () => {
     expect(await screen.findByTestId('pinned-column')).toBeTruthy();
     expect(screen.getByText('Last opened')).toBeTruthy();
     expect(screen.getByLabelText('Open Op Iron')).toBeTruthy();
+  });
+
+  it('lets the landscape list scroll to the bottom edge; only the pinned card keeps a bottom margin', async () => {
+    Object.assign(mockDims, { width: 844, height: 390 });
+    const ctx = makeTestContext();
+    const cobra = await createMission(ctx, { name: 'Op Cobra' });
+    await createMission(ctx, { name: 'Op Iron' });
+    if (!cobra.ok) throw new Error('setup');
+    await markMissionOpened(ctx, cobra.value.id);
+    await renderWithProviders(<MissionsScreen />, ctx);
+    const pinnedColumn = await screen.findByTestId('pinned-column');
+    // The row holding both columns reaches the bottom of the screen.
+    expect(StyleSheet.flatten(screen.getByTestId('landscape-columns').props.style)?.paddingBottom ?? 0).toBe(0);
+    expect(StyleSheet.flatten(pinnedColumn.props.style).paddingBottom).toBeGreaterThan(0);
   });
 
   it('opens a mission and offers New when the list is not empty', async () => {
