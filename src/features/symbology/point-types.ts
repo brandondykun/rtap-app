@@ -13,7 +13,7 @@ export type PointType =
 /** The app's landing-zone code: milsymbol has no LZ point, so render/symbol-svg.ts draws it. */
 export const LANDING_ZONE_SIDC = 'GFGPAAL-------X';
 
-/** A point type. `drawAs`: another SIDC whose graphic the build draws for it (stand-in artwork). */
+/** A point type. `drawAs`: another SIDC whose graphic the renderer draws for it (stand-in artwork). */
 export type PointTypeInfo = { id: PointType; label: string; prefix: string; sidc: string; drawAs?: string };
 
 const TRP_SIDC = 'GFGPDPT-------X';

@@ -94,6 +94,16 @@ describe('EditUnitMenu', () => {
     expect(pointCoord(item!.geometry)?.lat).toBeCloseTo(OTHER.lat, 3);
   });
 
+  it('Save stores the new echelon in the symbol', async () => {
+    const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.press(screen.getByLabelText('Echelon: Unspecified'));
+    await fireEvent.press(screen.getByText('Company'));
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    expect((await findItem(ctx.db, id))?.sidc).toBe(composeSidc('friend', 'armor', 'company'));
+  });
+
   it('Cancel drops unsaved changes and returns to the read-only view', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));
