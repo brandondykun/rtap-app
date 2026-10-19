@@ -1,4 +1,4 @@
-import { itemCategory, KNOWN_SIDCS, type ItemCategory } from '@/features/symbology/categories';
+import { itemCategory, isKnownSidc, type ItemCategory } from '@/features/symbology/categories';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { parsePointGeometry, type PointGeometry } from './geometry';
@@ -37,7 +37,7 @@ export function createPointFeatureSelector(): (items: readonly MapItemSnapshot[]
           geometry,
           properties: {
             id: item.id,
-            sidc: item.sidc && KNOWN_SIDCS.has(item.sidc) ? item.sidc : DEFAULT_SIDC,
+            sidc: item.sidc && isKnownSidc(item.sidc) ? item.sidc : DEFAULT_SIDC,
             name: item.name,
             category: itemCategory(item),
           },

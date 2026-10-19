@@ -1,4 +1,4 @@
-import { itemCategory, KNOWN_SIDCS, typeLabel } from './categories';
+import { isKnownSidc, itemCategory, typeLabel } from './categories';
 import { POINT_TYPES } from './point-types';
 import { composeSidc, PRESET_SIDCS } from './presets';
 
@@ -11,8 +11,13 @@ describe('itemCategory', () => {
     expect(itemCategory({ kind: 'polygon', sidc: null })).toBe('polygon');
   });
 
-  it('knows every unit preset and point SIDC', () => {
-    expect(KNOWN_SIDCS.size).toBe(PRESET_SIDCS.length + POINT_TYPES.length);
+  it('knows every composable unit SIDC (any echelon) and every point type', () => {
+    expect(isKnownSidc('SFGPUCI----E---')).toBe(true);
+    expect(isKnownSidc('SHGPU----------')).toBe(true);
+    expect(isKnownSidc('GFGPGPPK------X')).toBe(true);
+    expect(isKnownSidc('XYZ')).toBe(false);
+    for (const sidc of PRESET_SIDCS) expect(isKnownSidc(sidc)).toBe(true);
+    for (const t of POINT_TYPES) expect(isKnownSidc(t.sidc)).toBe(true);
   });
 
   it('labels the type of units and points', () => {

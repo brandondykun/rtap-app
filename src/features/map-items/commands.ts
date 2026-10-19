@@ -1,6 +1,6 @@
 import { Q } from '@nozbe/watermelondb';
 
-import { KNOWN_SIDCS } from '@/features/symbology/categories';
+import { isKnownSidc } from '@/features/symbology/categories';
 import { lineStyle, type LineType } from '@/features/symbology/line-types';
 import { MAX_RADIUS_M, polygonStyle, polygonStyleOf, type PolygonType } from '@/features/symbology/polygon-types';
 import type { CommandContext } from '@/lib/db/command-context';
@@ -27,7 +27,7 @@ export async function placePoint(
   input: PlacePointInput,
 ): Promise<Result<{ id: string }, 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'write_failed'>> {
   if (!isValidLatLon(input.coord)) return err('invalid_coordinate', 'Coordinate is out of range');
-  if (!KNOWN_SIDCS.has(input.sidc)) return err('invalid_symbol', `Unknown symbol ${input.sidc}`);
+  if (!isKnownSidc(input.sidc)) return err('invalid_symbol', `Unknown symbol ${input.sidc}`);
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Name is required');
   try {
@@ -58,7 +58,7 @@ export async function updateItem(
   patch: UpdateItemPatch,
 ): Promise<Result<void, 'not_found' | 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'write_failed'>> {
   if (patch.coord && !isValidLatLon(patch.coord)) return err('invalid_coordinate', 'Coordinate is out of range');
-  if (patch.sidc !== undefined && !KNOWN_SIDCS.has(patch.sidc)) return err('invalid_symbol', `Unknown symbol ${patch.sidc}`);
+  if (patch.sidc !== undefined && !isKnownSidc(patch.sidc)) return err('invalid_symbol', `Unknown symbol ${patch.sidc}`);
   if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
   const item = await findItem(ctx.db, id);
   if (!item) return err('not_found', `No item ${id}`);

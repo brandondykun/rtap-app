@@ -1,5 +1,5 @@
 import { POINT_SIDCS, POINT_TYPES, pointTypeForSidc } from './point-types';
-import { decomposeSidc, PRESET_SIDCS, UNIT_TYPES } from './presets';
+import { decomposeSidc, UNIT_TYPES } from './presets';
 
 /** Units carry an affiliation and unit type; points are control measures (checkpoint, LZ, …); lines are control lines; polygons are areas. */
 export type ItemCategory = 'unit' | 'point' | 'line' | 'polygon';
@@ -13,8 +13,12 @@ export function itemCategory(item: ItemRef): ItemCategory {
   return pointTypeForSidc(item.sidc) ? 'point' : 'unit';
 }
 
-/** Every SIDC the app has an image for; anything else draws as DEFAULT_SIDC. */
-export const KNOWN_SIDCS: ReadonlySet<string> = new Set([...PRESET_SIDCS, ...POINT_SIDCS]);
+const POINT_SIDC_SET: ReadonlySet<string> = new Set(POINT_SIDCS);
+
+/** A SIDC the app can draw and edit: any composable ground unit (any echelon) or a point type; anything else draws as DEFAULT_SIDC. */
+export function isKnownSidc(sidc: string): boolean {
+  return POINT_SIDC_SET.has(sidc) || decomposeSidc(sidc) !== null;
+}
 
 /** The type's display label ("Checkpoint", "Infantry"), or null when the code is unknown. */
 export function typeLabel(sidc: string | null): string | null {

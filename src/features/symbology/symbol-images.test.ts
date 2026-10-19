@@ -1,11 +1,11 @@
-import { KNOWN_SIDCS } from './categories';
 import { POINT_SIDCS } from './point-types';
+import { PRESET_SIDCS } from './presets';
 import { SYMBOL_IMAGES, SYMBOL_THUMBNAILS } from './symbol-images.generated';
 import { symbolThumbnail } from './symbol-thumbnail';
 
 describe('generated symbol images', () => {
   it('has an image for every unit preset and point type', () => {
-    expect(Object.keys(SYMBOL_IMAGES).sort()).toEqual([...KNOWN_SIDCS].sort());
+    expect(Object.keys(SYMBOL_IMAGES).sort()).toEqual([...PRESET_SIDCS, ...POINT_SIDCS].sort());
   });
 });
 

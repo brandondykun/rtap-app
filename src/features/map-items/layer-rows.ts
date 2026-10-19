@@ -1,4 +1,4 @@
-import { itemCategory, KNOWN_SIDCS, typeLabel, type ItemCategory } from '@/features/symbology/categories';
+import { itemCategory, isKnownSidc, typeLabel, type ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo, lineTypeOf, type LineType } from '@/features/symbology/line-types';
 import { polygonStyleOf, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
@@ -88,7 +88,7 @@ export function layerRows(
         id: i.id,
         kind: i.kind,
         name: i.name,
-        sidc: !isLine && !isPolygon && i.sidc && KNOWN_SIDCS.has(i.sidc) ? i.sidc : DEFAULT_SIDC,
+        sidc: !isLine && !isPolygon && i.sidc && isKnownSidc(i.sidc) ? i.sidc : DEFAULT_SIDC,
         hidden: hidden.has(i.id),
         coord: isLine || isPolygon ? null : pointCoord(i.geometry),
         lineType: isLine ? lineTypeOf(i.style) : null,
