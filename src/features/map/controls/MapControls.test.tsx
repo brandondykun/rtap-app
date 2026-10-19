@@ -165,6 +165,20 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
   });
 
+  it('floats a bar over the dock, centered, in portrait when asked, and keeps it in your card spot in landscape', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} barOverDock showCenter />);
+    const [, over, slot] = screen.getByTestId('map-controls-bottom').children as { props: { testID?: string } }[];
+    expect(over.props.testID).toBe('bar-over-dock');
+    expect(over).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('bar-over-dock').props.className).toContain('items-center');
+    expect(slot).toContainElement(screen.getByTestId('readout-dock'));
+    await screen.unmount();
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} barOverDock />);
+    expect(screen.queryByTestId('bar-over-dock')).toBeNull();
+    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+  });
+
   it('keeps the action bar even when a full sheet leaves no room for your grid card', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} bar={<View testID="bar" />} />);

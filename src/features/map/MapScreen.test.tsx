@@ -318,8 +318,9 @@ describe('MapScreen', () => {
     await fireEvent.press(await screen.findByLabelText('UNIT'));
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     expect(screen.getByText('Tap map')).toBeTruthy();
-    // The bar takes the dock's place.
-    expect(screen.queryByTestId('readout-dock')).toBeNull();
+    // The bar floats over the dock, which stays.
+    expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('place-bar'));
+    expect(screen.getByTestId('readout-dock')).toBeTruthy();
     expect(screen.queryByTestId('menu-panel')).toBeNull();
     expect(useDraft.getState().mode).toBeNull();
     await act(async () =>

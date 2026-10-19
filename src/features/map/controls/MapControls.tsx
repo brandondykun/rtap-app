@@ -27,6 +27,8 @@ type Props = {
   landscape: boolean;
   /** A tap-mode action bar (placing, drawing) shown in place of your card while it is up. */
   bar?: ReactNode;
+  /** In portrait, float the bar centered over the dock instead of in its place (placing a unit or point). */
+  barOverDock?: boolean;
   /** The center grid: the dock's CTR row in portrait, the center card bottom left in landscape. */
   showCenter?: boolean;
 };
@@ -36,6 +38,8 @@ const SELF_CARD_HEIGHT = 56;
 /** Height of the portrait dock before it is first laid out: one row, or two with the divider. */
 const DOCK_ROW_HEIGHT = 50;
 const DOCK_HEIGHT = 2 * DOCK_ROW_HEIGHT + 1;
+/** Height of a tap-mode bar before it is first laid out (compact buttons plus padding). */
+const BAR_HEIGHT = 58;
 /** Space between the buttons and the card under them (gap-3). */
 const STACK_GAP = 12;
 /** Zoom in and zoom out, with the divider between them. */
@@ -45,9 +49,9 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
  * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (CTR over ME);
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
- * An action bar takes the dock's or your card's place while it is up.
+ * An action bar takes the dock's or your card's place while it is up; in portrait it can float centered over the dock instead.
  */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, showCenter = false }: Props) {
+export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
@@ -57,6 +61,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
   const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   const [dockHeight, setDockHeight] = useState<number | null>(null);
+  const [barHeight, setBarHeight] = useState(BAR_HEIGHT);
   // A tall bottom sheet can leave too little room below north-up: the buttons give way first, then the cards.
   const room = roomAboveSheet(height, panel, insets.top, toolbar);
   const zoom = (
@@ -69,15 +74,16 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
 
   if (!landscape) {
     const dockSize = dockHeight ?? (showCenter ? DOCK_HEIGHT : DOCK_ROW_HEIGHT);
-    // The action bar always shows: it is how the user finishes the mode.
-    const docked = bar ? (
+    // The action bar always shows: it is how the user finishes the mode. Floating over the dock, it leaves the dock less room.
+    const over = bar && barOverDock;
+    const docked = bar && !over ? (
       <SelfCardSlot>{bar}</SelfCardSlot>
-    ) : room < dockSize ? null : (
+    ) : room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
       <SelfCardSlot onHeight={setDockHeight}>
         <ReadoutDock showCenter={showCenter} />
       </SelfCardSlot>
     );
-    const below = docked ? dockSize + STACK_GAP : 0;
+    const below = (docked ? dockSize + STACK_GAP : 0) + (over ? barHeight + STACK_GAP : 0);
     const locate = room >= CONTROL_SIZE + below;
     return (
       <>
@@ -87,6 +93,11 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
             {showZoom && locate && room >= ZOOM_HEIGHT + STACK_GAP + CONTROL_SIZE + below ? zoom : null}
             {locate ? <MapButton label="Recenter on me" icon="crosshairs-gps" active={following} disabled={!canRecenter} onPress={onRecenter} /> : null}
           </View>
+          {over ? (
+            <View testID="bar-over-dock" pointerEvents="box-none" className="items-center" onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
+              {bar}
+            </View>
+          ) : null}
           {docked}
         </View>
       </>

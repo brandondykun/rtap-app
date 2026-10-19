@@ -422,6 +422,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         panel={panel}
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring))}
+        barOverDock={!lineDrawing && !!placing}
         bar={
           lineDrawing ? (
             <LineDrawBar />
