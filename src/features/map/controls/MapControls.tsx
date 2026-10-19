@@ -47,7 +47,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 
 /**
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
- * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (CTR over ME);
+ * - portrait: zoom (shown per Settings) on the right, over the full-width dock (CTR over ME; tap ME to recenter);
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
  * An action bar takes the dock's or your card's place while it is up (centered in portrait); in portrait it can float centered over the dock instead.
  */
@@ -84,18 +84,16 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       </SelfCardSlot>
     ) : room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
       <SelfCardSlot onHeight={setDockHeight}>
-        <ReadoutDock showCenter={showCenter} />
+        <ReadoutDock showCenter={showCenter} following={following} disabled={!canRecenter} onRecenter={onRecenter} />
       </SelfCardSlot>
     );
     const below = (docked ? dockSize + STACK_GAP : 0) + (over ? barHeight + STACK_GAP : 0);
-    const locate = room >= CONTROL_SIZE + below;
     return (
       <>
         <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} />
         <View testID="map-controls-bottom" pointerEvents="box-none" className="absolute gap-3" style={{ bottom, left: insets.left + EDGE, right }}>
           <View pointerEvents="box-none" className="items-end gap-3">
-            {showZoom && locate && room >= ZOOM_HEIGHT + STACK_GAP + CONTROL_SIZE + below ? zoom : null}
-            {locate ? <MapButton label="Recenter on me" icon="crosshairs-gps" active={following} disabled={!canRecenter} onPress={onRecenter} /> : null}
+            {showZoom && room >= ZOOM_HEIGHT + below ? zoom : null}
           </View>
           {over ? (
             <View testID="bar-over-dock" pointerEvents="box-none" className="items-center" onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>

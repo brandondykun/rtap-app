@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -11,6 +11,7 @@ import { ReadoutDock } from './ReadoutDock';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 const CENTER = { lat: 38.905, lon: -77.03 };
+const PROPS = { following: false, disabled: false, onRecenter: () => {} };
 
 const fix = (altitudeM: number | null) => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 4.6, timestamp: 1, altitudeM });
 
@@ -24,7 +25,7 @@ describe('ReadoutDock', () => {
   it('puts CTR (the crosshair grid, distance over bearing from you) over ME (your grid, altitude over accuracy)', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
-    await renderWithProviders(<ReadoutDock showCenter />);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     const rows = (screen.getByTestId('readout-dock').children as { props: { testID?: string } }[]).map((c) => c.props.testID);
     expect(rows).toEqual(['dock-center', 'dock-divider', 'dock-self']);
     // A little in from the screen edges, more than the buttons above it.
@@ -43,7 +44,7 @@ describe('ReadoutDock', () => {
 
   it('leaves the CTR row out when the center grid is not shown', async () => {
     fix(10);
-    await renderWithProviders(<ReadoutDock showCenter={false} />);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
     expect(screen.queryByTestId('dock-center')).toBeNull();
     expect(screen.queryByTestId('dock-divider')).toBeNull();
     expect(screen.getByTestId('dock-self')).toBeTruthy();
@@ -51,7 +52,7 @@ describe('ReadoutDock', () => {
 
   it('waits for GPS without a fix, with dashes for distance and bearing', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
-    await renderWithProviders(<ReadoutDock showCenter />);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/Waiting for GPS…/);
     expect(screen.queryByTestId('gps-altitude')).toBeNull();
     expect(screen.getByTestId('readout-range')).toHaveTextContent('—');
@@ -59,7 +60,7 @@ describe('ReadoutDock', () => {
   });
 
   it('says location is off when it is denied', async () => {
-    await renderWithProviders(<ReadoutDock showCenter />);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/Location is off/);
   });
@@ -67,8 +68,22 @@ describe('ReadoutDock', () => {
   it('shows altitude and accuracy in the altitude unit, and a dash for an unknown altitude', async () => {
     useSettings.getState().setAltitudeUnit('ft');
     fix(null);
-    await renderWithProviders(<ReadoutDock showCenter={false} />);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('—');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
+  });
+
+  it('recenters when the ME row is tapped, outlines the dock in amber while following, and does nothing while disabled', async () => {
+    const onRecenter = jest.fn();
+    await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} showCenter />);
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
+    expect(onRecenter).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('dock-self')).toBeSelected();
+    expect(screen.getByTestId('readout-dock').props.className).toContain('border-accent');
+    await screen.unmount();
+    await renderWithProviders(<ReadoutDock following={false} disabled onRecenter={onRecenter} showCenter />);
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
+    expect(onRecenter).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
   });
 });

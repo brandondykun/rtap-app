@@ -61,9 +61,14 @@ describe('MapControls', () => {
     expect(StyleSheet.flatten(screen.getByTestId('north-needle').props.style).transform).toEqual([{ rotate: '-30deg' }]);
   });
 
-  it('shows follow state on the locate button', async () => {
-    await renderWithProviders(<MapControls following canRecenter {...handlers()} panel={null} landscape={false} />);
+  it('recenters from the ME row in portrait, with no locate button', async () => {
+    const h = handlers();
+    await renderWithProviders(<MapControls following canRecenter {...h} panel={null} landscape={false} />);
+    expect(screen.getAllByLabelText('Recenter on me')).toHaveLength(1);
+    expect(screen.getByLabelText('Recenter on me')).toBe(screen.getByTestId('dock-self'));
     expect(screen.getByLabelText('Recenter on me')).toBeSelected();
+    await fireEvent.press(screen.getByTestId('dock-self'));
+    expect(h.onRecenter).toHaveBeenCalledTimes(1);
   });
 
   it('disables recenter without a fix', async () => {
@@ -81,12 +86,11 @@ describe('MapControls', () => {
     expect(screen.getByLabelText('Zoom in')).toBeTruthy();
   });
 
-  it('hides zoom, locate and the dock when a full sheet leaves no room for them', async () => {
+  it('hides zoom and the dock when a full sheet leaves no room for them', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} showCenter />);
     expect(screen.queryByTestId('readout-dock')).toBeNull();
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
-    expect(screen.queryByLabelText('Recenter on me')).toBeNull();
   });
 
   it('puts your card bottom right under zoom in landscape, with no GPS toggle', async () => {
@@ -106,13 +110,12 @@ describe('MapControls', () => {
     expect(screen.getByTestId('gps-readout')).toBeTruthy();
   });
 
-  it('docks CTR over ME full width in portrait, under zoom and locate on the right', async () => {
+  it('docks CTR over ME full width in portrait, under zoom on the right', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} showCenter />);
     const bottom = screen.getByTestId('map-controls-bottom');
     expect(bottom).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE });
     const [buttons, slot] = bottom.children as { props: { testID?: string } }[];
     expect(buttons).toContainElement(screen.getByLabelText('Zoom in'));
-    expect(buttons).toContainElement(screen.getByLabelText('Recenter on me'));
     expect(slot.props.testID).toBe('self-card-slot');
     expect(slot).toContainElement(screen.getByTestId('dock-self'));
     expect(slot).toContainElement(screen.getByTestId('dock-center'));
@@ -133,23 +136,23 @@ describe('MapControls', () => {
     expect(screen.queryByTestId('dock-center')).toBeNull();
   });
 
-  it('gives way zoom first, then locate, then the dock, when a bottom sheet leaves too little room', async () => {
+  it('gives way zoom first, then the dock, when a bottom sheet leaves too little room', async () => {
     const { height } = Dimensions.get('window');
     const roomFor = (h: number) => height - h - (EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE);
     const dock = 2 * 50 + 1;
     const render = async (room: number) => {
       await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: roomFor(room) }} landscape={false} showCenter />);
     };
-    // Room for the dock and locate, not zoom too.
-    await render(dock + 12 + CONTROL_SIZE + 20);
+    // Room for the dock, not zoom too.
+    await render(dock + 12 + 2 * CONTROL_SIZE - 10);
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
-    expect(screen.getByLabelText('Recenter on me')).toBeTruthy();
     expect(screen.getByTestId('readout-dock')).toBeTruthy();
     await screen.unmount();
-    // Room for the dock alone.
-    await render(dock + 20);
-    expect(screen.queryByLabelText('Recenter on me')).toBeNull();
-    expect(screen.getByTestId('readout-dock')).toBeTruthy();
+    await render(dock + 12 + 2 * CONTROL_SIZE + 10);
+    expect(screen.getByLabelText('Zoom in')).toBeTruthy();
+    await screen.unmount();
+    await render(dock - 10);
+    expect(screen.queryByTestId('readout-dock')).toBeNull();
   });
 
   it('keeps an action bar above a bottom sheet', async () => {
