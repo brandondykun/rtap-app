@@ -36,12 +36,19 @@ describe('symbol cache', () => {
     expect(rasterize).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps trimmed point thumbnails separate, and trims only points', async () => {
+  it('keeps trimmed thumbnails separate from map images, for points and units alike', async () => {
     const { cache, rasterize } = setup();
     expect((await cache.get('GFGPGPPK------X', { trimmed: true }))!.uri).toMatch(/GFGPGPPK------X@3-trim\.png$/);
     expect(rasterize).toHaveBeenLastCalledWith(expect.any(String), 3, true);
-    // Units are not padded, so their thumbnail is the map image.
-    expect((await cache.get('SFGPU----------', { trimmed: true }))!.uri).toMatch(/SFGPU----------@3\.png$/);
+    // Units are padded around their anchor too (an echelon mark sits above the frame): crop their thumbnail.
+    expect((await cache.get('SFGPUCI----E---', { trimmed: true }))!.uri).toMatch(/SFGPUCI----E---@3-trim\.png$/);
+    expect(rasterize).toHaveBeenLastCalledWith(expect.any(String), 3, true);
+    expect((await cache.get('SFGPUCI----E---'))!.uri).toMatch(/SFGPUCI----E---@3\.png$/);
+    expect(rasterize).toHaveBeenLastCalledWith(expect.any(String), 3, false);
+  });
+
+  it('stores images under render version 2 (units are now anchor-centered)', () => {
+    expect(SYMBOL_RENDER_VERSION).toBe(2);
   });
 
   it('deletes other version folders on first use', async () => {

@@ -31,13 +31,26 @@ function thickenStrokes(svg: string, factor: number): string {
   return svg.replace(/stroke-width="([\d.]+)"/g, (_, w: string) => `stroke-width="${Number(w) * factor}"`);
 }
 
-/** Tactical points are anchored where the graphic marks the spot; pad so the anchor is the image center. */
-function centeredOnAnchor(symbol: InstanceType<typeof ms.Symbol>, lineScale: number): string {
+/** Skia ignores `dominant-baseline`: move each middle-baseline label's baseline down by 0.35em instead. */
+function middleBaselineAsShift(svg: string): string {
+  return svg.replace(/<text\b[^>]*\sdominant-baseline="middle"[^>]*>/g, (tag) => {
+    const fontSize = Number(/\sfont-size="([\d.]+)"/.exec(tag)?.[1] ?? 0);
+    return tag
+      .replace(/\sdominant-baseline="middle"/, '')
+      .replace(/\sy="(-?[\d.]+)"/, (_, y: string) => ` y="${Number(y) + 0.35 * fontSize}"`);
+  });
+}
+
+/**
+ * Mapbox centers an image on its coordinate, so pad the symbol until its anchor (where it marks the
+ * spot: a point's tip, a unit frame's center below any echelon mark) is the image center.
+ */
+function centeredOnAnchor(symbol: InstanceType<typeof ms.Symbol>, lineScale: number, pad: number): string {
   const { x, y } = symbol.getAnchor();
   const { width, height } = symbol.getSize();
-  const w = 2 * Math.max(x, width - x) + 2 * STROKE_PAD;
-  const h = 2 * Math.max(y, height - y) + 2 * STROKE_PAD;
-  const inner = thickenStrokes(symbol.asSVG(), lineScale).replace('<svg ', '<svg overflow="visible" ');
+  const w = 2 * Math.max(x, width - x) + 2 * pad;
+  const h = 2 * Math.max(y, height - y) + 2 * pad;
+  const inner = middleBaselineAsShift(thickenStrokes(symbol.asSVG(), lineScale)).replace('<svg ', '<svg overflow="visible" ');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
     `<g transform="translate(${w / 2 - x} ${h / 2 - y})">${inner}</g></svg>`
@@ -49,18 +62,21 @@ function landingZoneSvg(): string {
   const size = SYMBOL_SIZE + 6;
   const c = size / 2;
   const r = SYMBOL_SIZE / 2 - 2;
+  const label = (paint: string) =>
+    `<text x="${c}" y="${c + 4.5}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" ${paint}>LZ</text>`;
   const stroke = (color: string, width: number) => `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="${width}"/>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
     stroke(colors['point-symbol-halo'], POINT_LINE_PX + 2 * POINT_HALO_PX) +
     stroke(POINT_COLOR, POINT_LINE_PX) +
-    `<text x="${c}" y="${c + 4.5}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" ` +
-    `fill="${POINT_COLOR}" stroke="${colors['point-symbol-halo']}" stroke-width="${2 * POINT_HALO_PX}" paint-order="stroke">LZ</text>` +
+    // Skia ignores paint-order: draw the halo text first, then the fill on top.
+    label(`fill="none" stroke="${colors['point-symbol-halo']}" stroke-width="${2 * POINT_HALO_PX}" stroke-linejoin="round"`) +
+    label(`fill="${POINT_COLOR}"`) +
     `</svg>`
   );
 }
 
-/** The map image for any SIDC, as SVG: units filled by affiliation, points anchor-centered, the LZ hand-drawn. */
+/** The map image for any SIDC, as SVG, centered on its anchor: units filled by affiliation, the LZ hand-drawn. */
 export function symbolSvg(sidc: string): string {
   if (sidc === LANDING_ZONE_SIDC) return landingZoneSvg();
   const point = POINT_BY_SIDC.get(sidc);
@@ -71,7 +87,8 @@ export function symbolSvg(sidc: string): string {
       outlineColor: colors['point-symbol-halo'],
       outlineWidth: POINT_OUTLINE_WIDTH,
     });
-    return centeredOnAnchor(symbol, POINT_LINE_SCALE);
+    return centeredOnAnchor(symbol, POINT_LINE_SCALE, STROKE_PAD);
   }
-  return new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: UNIT_FILL[sidc[1]] ?? colors.unknown, strokeWidth: UNIT_STROKE_WIDTH }).asSVG();
+  const unit = new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: UNIT_FILL[sidc[1]] ?? colors.unknown, strokeWidth: UNIT_STROKE_WIDTH });
+  return centeredOnAnchor(unit, 1, 0);
 }

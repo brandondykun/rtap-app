@@ -1,9 +1,7 @@
 import { Directory, File } from 'expo-file-system';
 
-import { isPointSidc } from './symbol-svg';
-
 /** Bump whenever symbol drawing or colors change: older cached images are deleted on first use. */
-export const SYMBOL_RENDER_VERSION = 1;
+export const SYMBOL_RENDER_VERSION = 2;
 
 export type SymbolImage = { uri: string; scale: number };
 
@@ -53,8 +51,8 @@ export function createSymbolCache({ root, scale, svgFor, rasterize, log = consol
 
   return {
     get(sidc: string, opts: { trimmed?: boolean } = {}): Promise<SymbolImage | null> {
-      // Only points are padded around their anchor; a unit's thumbnail is its map image.
-      const trim = !!opts.trimmed && isPointSidc(sidc);
+      // Map images are padded around their anchor; a thumbnail is cropped to what is drawn.
+      const trim = !!opts.trimmed;
       const key = `${sidc}@${scale}${trim ? '-trim' : ''}`;
       let job = pending.get(key);
       if (!job) {
