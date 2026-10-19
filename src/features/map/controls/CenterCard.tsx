@@ -34,9 +34,9 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       </View>
       <Text
         testID="center-vector"
-        accessibilityLabel={`Distance from you ${r.distance}, bearing ${r.bearing} ${r.ref}`}
+        accessibilityLabel={`Distance from you ${r.distance}, direction ${r.bearing} ${r.ref}`}
         className="mt-0.5 font-mono text-xs text-text-muted">
-        {`DIST ${r.distance} · BRG ${r.bearing}`}
+        {`DIST ${r.distance} · DIR ${r.bearing}`}
       </Text>
     </View>
   );

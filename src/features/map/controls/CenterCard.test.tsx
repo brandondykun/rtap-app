@@ -34,7 +34,7 @@ describe('CenterCard', () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix();
     await renderWithProviders(<CenterCard />);
-    expect(screen.getByTestId('center-vector')).toHaveTextContent(/^DIST 987 m · BRG \d{3}°$/);
+    expect(screen.getByTestId('center-vector')).toHaveTextContent(/^DIST 987 m · DIR \d{3}°$/);
     // Same small, muted style as the ME card's ALT · ACC line, so the two cards match in size.
     expect(screen.getByTestId('center-vector').props.className).toContain('text-xs');
     expect(screen.getByTestId('center-vector').props.className).toContain('mt-0.5');
@@ -43,7 +43,7 @@ describe('CenterCard', () => {
   it('shows dashes for distance and bearing until there is a GPS fix', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     await renderWithProviders(<CenterCard />);
-    expect(screen.getByTestId('center-vector')).toHaveTextContent('DIST — · BRG —');
+    expect(screen.getByTestId('center-vector')).toHaveTextContent('DIST — · DIR —');
   });
 
   it('follows the coordinate format', async () => {
