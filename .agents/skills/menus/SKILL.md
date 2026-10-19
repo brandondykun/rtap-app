@@ -32,6 +32,9 @@ description: Use whenever you add or change a menu, panel content, or anything o
 - **Acting at the crosshair** (add at center): always `CenterButton`, the crosshair glyph and the text CTR,
   never "Add at center" as visible text (it stays the screen-reader label). Other crosshair actions say CTR
   too (Move to CTR, Set edge at CTR) through `MenuButton`'s `text`.
+- **The crosshair** is always `CrosshairGlyph` (`src/components/ui`), sized with `size`: white arms with
+  an amber center dot by default, everywhere (the map center, CTR buttons and readouts, guides). Never draw
+  a crosshair by hand or pass colors, except where amber would vanish (on an amber button: one dark color).
 - **No system dialogs.** Destructive actions use `MenuActions` (second tap confirms).
 - **Writes** go through commands; report failures with `notifyError`, successes with
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.
