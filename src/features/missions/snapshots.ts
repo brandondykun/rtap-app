@@ -17,9 +17,9 @@ export async function saveMissionSnapshot(
   missionId: string,
   sourceUri: string,
 ): Promise<Result<MissionSnapshot, 'not_found' | 'write_failed'>> {
-  // A capture can finish after the mission was deleted: do not bring back its row or file.
-  if (!(await findMission(ctx.db, missionId))) return err('not_found', `No mission ${missionId}`);
   try {
+    // A capture can finish after the mission was deleted: do not bring back its row or file.
+    if (!(await findMission(ctx.db, missionId))) return err('not_found', `No mission ${missionId}`);
     const context = ImageManipulator.manipulate(sourceUri);
     context.resize({ width: SNAPSHOT_WIDTH, height: null });
     const image = await context.renderAsync();
@@ -29,7 +29,11 @@ export async function saveMissionSnapshot(
     await new File(saved.uri).move(destination, { overwrite: true });
     const snapshot = { uri: destination.uri, takenAt: ctx.now() };
     const recorded = await recordMissionSnapshot(ctx, missionId, snapshot);
-    if (!recorded.ok) return err('write_failed', recorded.message);
+    if (!recorded.ok) {
+      // Deleted while the picture was processed (or the write failed): leave no stray file.
+      deleteQuietly(destination);
+      return err(recorded.error, recorded.message);
+    }
     return ok(snapshot);
   } catch (e) {
     return err('write_failed', String(e));

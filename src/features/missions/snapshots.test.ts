@@ -52,6 +52,35 @@ describe('saveMissionSnapshot', () => {
     expect(await findMissionViewState(ctx.db, id)).toBeNull();
   });
 
+  it('deletes the captured image when the mission is already gone', async () => {
+    const { ctx, id } = await opened();
+    await deleteMission(ctx, id);
+    fs.__files.add('file:///cache/snap.png');
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    expect(result).toMatchObject({ ok: false, error: 'not_found' });
+    expect(fs.__files.has('file:///cache/snap.png')).toBe(false);
+  });
+
+  it('leaves no view state or file when the mission is deleted while the picture is processed', async () => {
+    const { ctx, id } = await opened();
+    const manipulate = ImageManipulator.manipulate as jest.Mock;
+    const real = manipulate.getMockImplementation() as (uri: string) => { renderAsync: () => Promise<unknown> };
+    manipulate.mockImplementationOnce((uri: string) => {
+      const context = real(uri);
+      const render = context.renderAsync;
+      // Deleted after the first guard, before the picture is moved and recorded.
+      context.renderAsync = async () => {
+        await deleteMission(ctx, id);
+        return render();
+      };
+      return context;
+    });
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    expect(result).toMatchObject({ ok: false, error: 'not_found' });
+    expect(await findMissionViewState(ctx.db, id)).toBeNull();
+    expect([...fs.__files]).toEqual([]);
+  });
+
   it('reports a failure without throwing', async () => {
     const { ctx, id } = await opened();
     (ImageManipulator.manipulate as jest.Mock).mockImplementationOnce(() => {

@@ -56,8 +56,11 @@ async function upsertViewState(
   ctx: CommandContext,
   missionId: string,
   apply: (state: MissionViewState) => void,
-): Promise<void> {
-  await ctx.db.write(async () => {
+  { requireMission = false }: { requireMission?: boolean } = {},
+): Promise<boolean> {
+  return ctx.db.write(async () => {
+    // Checked inside the write so a delete cannot land between the check and the upsert.
+    if (requireMission && !(await findMission(ctx.db, missionId))) return false;
     const existing = await findMissionViewState(ctx.db, missionId);
     if (existing) {
       await existing.update(apply);
@@ -70,6 +73,7 @@ async function upsertViewState(
         apply(s);
       });
     }
+    return true;
   });
 }
 
@@ -100,12 +104,22 @@ export async function saveMissionCamera(
   }
 }
 
-export async function recordMissionSnapshot(ctx: CommandContext, missionId: string, snapshot: MissionSnapshot): Promise<Result<void, 'write_failed'>> {
+/** Records the mission's picture; a mission deleted meanwhile gets no view state back. */
+export async function recordMissionSnapshot(
+  ctx: CommandContext,
+  missionId: string,
+  snapshot: MissionSnapshot,
+): Promise<Result<void, 'not_found' | 'write_failed'>> {
   try {
-    await upsertViewState(ctx, missionId, (s) => {
-      s.snapshot = JSON.stringify(snapshot);
-    });
-    return ok(undefined);
+    const recorded = await upsertViewState(
+      ctx,
+      missionId,
+      (s) => {
+        s.snapshot = JSON.stringify(snapshot);
+      },
+      { requireMission: true },
+    );
+    return recorded ? ok(undefined) : err('not_found', `No mission ${missionId}`);
   } catch (e) {
     return err('write_failed', String(e));
   }
