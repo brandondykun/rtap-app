@@ -12,8 +12,9 @@ export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
   const router = useRouter();
   const close = useMenu((s) => s.closeMenu);
   const switchMission = () => {
-    close();
-    // The mission screen pictures the map as it is removed (useMissionSnapshot's beforeRemove).
+    // The mission screen pictures the map as it is removed (useMissionSnapshot's beforeRemove) and
+    // closes the menu as it unmounts. Closing here would run first (the router acts after the next
+    // render), sliding the map back to full width and dropping the panel the picture is cropped by.
     if (router.canGoBack()) router.back();
     else router.replace('/');
   };
