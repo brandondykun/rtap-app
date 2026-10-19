@@ -23,7 +23,9 @@ describe('AboutScreen', () => {
     expect(screen.getByText('RTAP').props.className).toContain('text-accent');
     expect(card).toHaveTextContent(/RTAP.*Realtime Team Awareness Platform.*Built by military and geospatial professionals\..*Version/);
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
-    expect(screen.getByTestId('about-mark').props.className).toContain('bg-accent');
+    // The real app icon, not a stand-in glyph.
+    expect(screen.getByTestId('about-app-icon').props.source).toBeTruthy();
+    expect(screen.queryByTestId('about-mark')).toBeNull();
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
   });
 
@@ -80,7 +82,10 @@ describe('AboutScreen', () => {
       expect(row).toHaveTextContent(new RegExp(`${h.label}.*${h.help.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
       expect(screen.getByTestId(`help-${h.label}`).parent).toBeTruthy();
     }
-    expect(screen.getByTestId('help-tile-PLOT')).toBeTruthy();
+    // Every tile icon uses the same color (PLOT is no longer amber).
+    const plotIcon = screen.getByTestId('help-icon-PLOT');
+    const unitIcon = screen.getByTestId('help-icon-UNIT');
+    expect(StyleSheet.flatten(plotIcon.props.style).color).toBe(StyleSheet.flatten(unitIcon.props.style).color);
   });
 
   it('keeps its content inside the safe area in landscape and scrolls', async () => {

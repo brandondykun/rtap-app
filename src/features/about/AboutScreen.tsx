@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +9,8 @@ import { Icon } from '@/components/ui/Icon';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
+
+const APP_ICON = require('../../../assets/images/icon.png');
 
 /** Readable line length on wide (landscape, tablet) screens. */
 const MAX_CONTENT_WIDTH = 720;
@@ -108,13 +111,17 @@ function SectionTitle({ children }: { children: string }) {
 }
 
 function IdentityCard({ version }: { version: string }) {
-  const { colors } = useTheme();
   return (
     <View testID="about-identity" className="gap-3 rounded-2xl border border-border bg-surface-raised p-4">
       <View className="flex-row items-center gap-4">
-        <View testID="about-mark" className="h-16 w-16 items-center justify-center rounded-2xl bg-accent">
-          <Icon name="crosshairs" size={36} color={colors['on-accent']} />
-        </View>
+        {/* The app's own icon, rounded like on the home screen; the border lifts its dark tile off the card. */}
+        <Image
+          testID="about-app-icon"
+          source={APP_ICON}
+          accessibilityLabel="RTAP app icon"
+          className="h-16 w-16 rounded-2xl border border-border"
+          style={{ width: 64, height: 64, borderRadius: 16 }}
+        />
         <View className="flex-1">
           <Text className="text-4xl font-bold tracking-widest text-accent">RTAP</Text>
           <Text className="text-base text-text">Realtime Team Awareness Platform</Text>
@@ -134,7 +141,7 @@ function HelpRow({ help, first }: { help: ToolbarHelp; first: boolean }) {
   return (
     <View testID={`help-${help.label}`} accessible className={`flex-row items-center gap-4 px-3 py-3 ${first ? '' : 'border-t border-border'}`}>
       <View testID={`help-tile-${help.label}`} className="h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface-input">
-        <Icon name={help.icon} size={24} color={help.accent ? colors.accent : colors.text} />
+        <Icon testID={`help-icon-${help.label}`} name={help.icon} size={24} color={colors.text} />
       </View>
       <View className="flex-1">
         <Text className="text-base font-bold uppercase tracking-widest text-text">{help.label}</Text>

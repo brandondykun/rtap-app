@@ -27,5 +27,6 @@ describe('TOOLBAR_HELP', () => {
     }
     expect(TOOLBAR_HELP.find((h) => h.label === 'UNIT')?.help).toBe('Place a unit, then pick its affiliation and type.');
     expect(TOOLBAR_HELP.find((h) => h.label === 'Settings')?.help).toBe('App preferences.');
+    expect(TOOLBAR_HELP.some((h) => 'accent' in h)).toBe(false);
   });
 });

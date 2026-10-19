@@ -9,8 +9,8 @@ export const HELP_GROUPS: readonly { id: HelpGroup; title: string }[] = [
   { id: 'app', title: 'App' },
 ];
 
-/** `label` matches the toolbar button's accessibility label; `accent` draws the icon in amber. */
-export type ToolbarHelp = { label: string; icon: IconName; help: string; group: HelpGroup; accent?: boolean };
+/** `label` matches the toolbar button's accessibility label. */
+export type ToolbarHelp = { label: string; icon: IconName; help: string; group: HelpGroup };
 
 /** What each toolbar button does (shown on the About page), grouped and in page order. */
 export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
@@ -18,7 +18,7 @@ export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
   { group: 'plot', label: 'POINT', icon: 'map-marker-outline', help: 'Mark a checkpoint, OP, landing zone or rally point.' },
   { group: 'plot', label: 'LINE', icon: 'vector-polyline', help: 'Draw a phase line or route, point by point.' },
   { group: 'plot', label: 'POLYGON', icon: 'pentagon-outline', help: 'Outline an area, like an objective or boundary.' },
-  { group: 'plot', label: 'PLOT', icon: 'target', help: 'Type a grid to drop a temp point, then save it or discard it.', accent: true },
+  { group: 'plot', label: 'PLOT', icon: 'target', help: 'Type a grid to drop a temp point, then save it or discard it.' },
   { group: 'read', label: 'MEASURE', icon: 'ruler', help: 'Distance and bearing between two places.' },
   { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons.' },
   { group: 'read', label: 'LABELS', icon: 'label-outline', help: 'Turn the names on map items on or off.' },
