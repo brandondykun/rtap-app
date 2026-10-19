@@ -134,6 +134,15 @@ describe('AddUnitMenu', () => {
   });
 
 
+  it('offers an Echelon picker that defaults to Unspecified and sets the symbol', async () => {
+    await open();
+    expect(screen.getByLabelText('Echelon: Unspecified')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Echelon: Unspecified'));
+    await fireEvent.press(screen.getByText('Company'));
+    expect(useDraft.getState().echelon).toBe('company');
+    expect(screen.getByLabelText('Echelon: Company')).toBeTruthy();
+  });
+
   it('lists unit types alphabetically', async () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));

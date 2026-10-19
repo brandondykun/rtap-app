@@ -6,7 +6,7 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
-import { AFFILIATIONS, composeSidc, UNIT_TYPES, type Affiliation, type UnitType } from '@/features/symbology/presets';
+import { AFFILIATIONS, composeSidc, ECHELONS, UNIT_TYPES, type Affiliation, type Echelon, type UnitType } from '@/features/symbology/presets';
 import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
@@ -17,16 +17,20 @@ import { useAutoName } from './form/use-auto-name';
 const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
 // Listed alphabetically in the dropdown.
 const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label })).sort((a, b) => a.label.localeCompare(b.label));
+// Kept in size order (team up to division), not alphabetical.
+const ECHELON_OPTIONS = ECHELONS.map((e) => ({ value: e.id, label: e.label }));
 
 /** The Add/Edit unit form. It edits only the draft store; the menu decides when to write. */
 export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const affiliation = useDraft((s) => s.affiliation);
   const unitType = useDraft((s) => s.unitType);
+  const echelon = useDraft((s) => s.echelon);
   const name = useDraft((s) => s.name);
   const notes = useDraft((s) => s.notes);
   const locked = useDraft((s) => s.locked);
   const setAffiliation = useDraft((s) => s.setAffiliation);
   const setUnitType = useDraft((s) => s.setUnitType);
+  const setEchelon = useDraft((s) => s.setEchelon);
   const setName = useDraft((s) => s.setName);
   const setNotes = useDraft((s) => s.setNotes);
   const [showNotes, setShowNotes] = useState(notes !== '');
@@ -58,6 +62,9 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
           <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
         </View>
         {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
+      </MenuSection>
+      <MenuSection label="Echelon">
+        <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
       </MenuSection>
     </View>
   );

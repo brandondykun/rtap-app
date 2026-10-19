@@ -66,6 +66,16 @@ describe('EditUnitMenu', () => {
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', notes: 'hull down' });
   });
 
+  it('shows the stored echelon when editing a unit', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'armor', 'battalion'), name: 'HOS-4' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('HOS-4');
+    expect(screen.getByLabelText('Echelon: Battalion')).toBeTruthy();
+  });
+
   it('Edit unlocks the form; Save writes and returns to the read-only view', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));

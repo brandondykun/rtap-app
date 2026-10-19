@@ -54,14 +54,14 @@ describe('DraftLayer', () => {
   });
 
   it('labels a selected point with its name only', async () => {
-    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-2', notes: '' });
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
     expect(shape.features[0].properties.label).toBe('FRD-2');
   });
 
   it('labels an edit draft EDIT', async () => {
-    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', name: 'FRD-2', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-2', notes: '' });
     useDraft.getState().setLocked(false);
     await renderWithProviders(<DraftLayer />);
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;

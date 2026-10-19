@@ -6,7 +6,7 @@ import type { ItemCategory } from '@/features/symbology/categories';
 import type { LineType } from '@/features/symbology/line-types';
 import { MAX_RADIUS_M, type PolygonType } from '@/features/symbology/polygon-types';
 import type { PointType } from '@/features/symbology/point-types';
-import type { Affiliation, UnitType } from '@/features/symbology/presets';
+import type { Affiliation, Echelon, UnitType } from '@/features/symbology/presets';
 import { inverse } from '@/lib/geo/measure/geodesic';
 import type { LatLon } from '@/lib/geo/types';
 
@@ -31,6 +31,7 @@ export type DraftValues = {
   coordInputValid: boolean;
   affiliation: Affiliation;
   unitType: UnitType;
+  echelon: Echelon;
   pointType: PointType;
   name: string;
   /** True once the user edits the name (even clearing it); auto-names never overwrite it. */
@@ -67,6 +68,7 @@ type DraftActions = {
     category: ItemCategory;
     affiliation: Affiliation;
     unitType: UnitType;
+    echelon: Echelon;
     pointType: PointType;
     name: string;
     notes: string;
@@ -75,6 +77,7 @@ type DraftActions = {
   setCoordInputValid: (valid: boolean) => void;
   setAffiliation: (affiliation: Affiliation) => void;
   setUnitType: (unitType: UnitType) => void;
+  setEchelon: (echelon: Echelon) => void;
   setPointType: (pointType: PointType) => void;
   setName: (name: string) => void;
   setAutoName: (name: string) => void;
@@ -116,6 +119,7 @@ export const INITIAL_DRAFT: DraftValues = {
   coordInputValid: true,
   affiliation: 'hostile',
   unitType: 'unspecified',
+  echelon: 'unspecified',
   pointType: 'checkpoint',
   name: '',
   nameEdited: false,
@@ -172,6 +176,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       category,
       affiliation: unitPreset?.affiliation ?? s.remembered.affiliation,
       unitType: unitPreset?.unitType ?? s.remembered.unitType,
+      // Not remembered: a new unit always starts at Unspecified.
+      echelon: 'unspecified',
       pointType: s.remembered.pointType,
       mode: 'add',
       coord: isValid(coord) ? coord : null,
@@ -179,7 +185,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev + 1,
       focusRev: s.focusRev,
     })),
-  startEdit: ({ itemId, coord, category, affiliation, unitType, pointType, name, notes }) =>
+  startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
@@ -193,6 +199,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       focusRev: s.focusRev,
       affiliation,
       unitType,
+      echelon,
       name,
       nameEdited: true,
       notes,
@@ -209,6 +216,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       name: s.nameEdited ? s.name : '',
       remembered: s.mode === 'add' ? { ...s.remembered, affiliation } : s.remembered,
     })),
+  setEchelon: (echelon) => set({ echelon }),
   setUnitType: (unitType) =>
     set((s) => ({ unitType, remembered: s.mode === 'add' ? { ...s.remembered, unitType } : s.remembered })),
   setPointType: (pointType) =>

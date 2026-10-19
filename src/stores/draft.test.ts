@@ -60,7 +60,7 @@ describe('draft store', () => {
     useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
     useDraft.getState().setAffiliation('friend');
     useDraft.getState().clear();
-    useDraft.getState().startEdit({ itemId: 'i1', coord: B, category: 'unit', pointType: 'checkpoint', affiliation: 'unknown', unitType: 'medical', name: 'UNK-1', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: B, category: 'unit', pointType: 'checkpoint', affiliation: 'unknown', unitType: 'medical', echelon: 'unspecified', name: 'UNK-1', notes: '' });
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: 'i1', nameEdited: true, coordSource: 'item' });
     useDraft.getState().clear();
     expect(useDraft.getState()).toMatchObject({ mode: null, coord: null, affiliation: 'friend' });
@@ -86,7 +86,7 @@ describe('draft store', () => {
     expect(useDraft.getState().picking).toBe(true);
     useDraft.getState().setCoord(B, 'press');
     expect(useDraft.getState()).toMatchObject({ coord: B, picking: false });
-    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', name: 'FRD-1', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: '' });
     useDraft.getState().setPicking(true);
     expect(useDraft.getState().picking).toBe(false);
   });
@@ -115,7 +115,7 @@ describe('categories', () => {
   });
 
   it('does not remember a point type changed while editing', () => {
-    useDraft.getState().startEdit({ itemId: 'a', coord: A, category: 'point', pointType: 'checkpoint', affiliation: 'unknown', unitType: 'unspecified', name: 'CP-1', notes: '' });
+    useDraft.getState().startEdit({ itemId: 'a', coord: A, category: 'point', pointType: 'checkpoint', affiliation: 'unknown', unitType: 'unspecified', echelon: 'unspecified', name: 'CP-1', notes: '' });
     useDraft.getState().setLocked(false);
     useDraft.getState().setPointType('start-point');
     expect(useDraft.getState().remembered.pointType).toBe('checkpoint');
@@ -219,5 +219,16 @@ describe('polygon drafts', () => {
     d().clear();
     d().startAddPolygon();
     expect(d().polygonType).toBe('engagement-area');
+  });
+
+  it('defaults new units to an unspecified echelon and keeps the echelon when editing', () => {
+    useDraft.getState().startAdd({ coord: null, source: 'crosshair', category: 'unit' });
+    expect(useDraft.getState().echelon).toBe('unspecified');
+    useDraft.getState().setEchelon('company');
+    expect(useDraft.getState().echelon).toBe('company');
+    useDraft.getState().startAdd({ coord: null, source: 'crosshair', category: 'unit' });
+    expect(useDraft.getState().echelon).toBe('unspecified');
+    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', affiliation: 'friend', unitType: 'armor', echelon: 'battalion', pointType: 'checkpoint', name: 'A', notes: '' });
+    expect(useDraft.getState().echelon).toBe('battalion');
   });
 });

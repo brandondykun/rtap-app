@@ -33,13 +33,14 @@ const symbolAdapter: ItemAdapter = {
   select: (item) => {
     const at = pointCoord(item.geometry);
     if (!at) return false;
-    const unit = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const };
+    const unit = (item.sidc ? decomposeSidc(item.sidc) : null) ?? { affiliation: 'unknown' as const, unitType: 'unspecified' as const, echelon: 'unspecified' as const };
     useDraft.getState().startEdit({
       itemId: item.id,
       coord: at,
       category: pointTypeForSidc(item.sidc) ? 'point' : 'unit',
       affiliation: unit.affiliation,
       unitType: unit.unitType,
+      echelon: unit.echelon,
       pointType: pointTypeForSidc(item.sidc) ?? 'checkpoint',
       name: item.name,
       notes: item.notes ?? '',
