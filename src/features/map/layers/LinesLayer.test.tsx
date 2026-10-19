@@ -62,7 +62,7 @@ describe('LinesLayer', () => {
     useInteraction.getState().setCamera({ ...camera, bearing: 0 });
     await renderWithProviders(<LinesLayer missionId="m1" excludeId={null} />, ctx);
     const props = mapboxMock().__props;
-    const style = () => props.SymbolLayer['lines-label'].style;
+    const style = () => props.SymbolLayer['lines-label'].style as { textRotate: unknown };
     await waitFor(() => expect(style()).toMatchObject({ textRotationAlignment: 'map' }));
     const north = style();
     await act(async () => useInteraction.getState().setCamera({ ...camera, bearing: 5 }));

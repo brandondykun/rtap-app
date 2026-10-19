@@ -156,25 +156,42 @@ export const LINE_FLOT_STYLE: SymbolLayerStyle = {
   iconIgnorePlacement: true,
 };
 
+/** Interpolation stops for a vector that depends on a bearing, one every 15°; straight lines between them stay within 1%. */
+function byBearing(bearing: unknown, vector: (radians: number) => [number, number]): unknown {
+  const stops: unknown[] = [];
+  for (let deg = 0; deg <= 360; deg += 15) stops.push(deg, ['literal', vector((deg * Math.PI) / 180)]);
+  return ['interpolate', ['linear'], bearing, ...stops];
+}
+
 /**
  * "PL RED" chips at both ends of a line, just past the end and turned to follow its end segment.
  * `bearing` is the segment's outward direction; text never reads upside down, so an end pointing left
  * on screen (given the map's own `mapBearing`) is turned half around and reads toward the end instead.
+ *
+ * Mapbox moves rotated text by its offset without turning the offset, but turns the chip's offset with
+ * the chip. So the text offset already points along the line, and the icon offset takes the chip back
+ * from there to the same spot.
  */
 export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium, mapBearing = 0): SymbolLayerStyle {
-  const gap = LINE_LABEL_GAP_PT / textSize;
+  const gap = LINE_LABEL_GAP_PT;
+  const bearing = ['%', ['+', ['get', 'bearing'], 360], 360];
   // The end's direction on screen, 0–360 clockwise from up: below 180 it points right.
-  const pointsRight = ['<', ['%', ['+', ['get', 'bearing'], 720 - mapBearing], 360], 180];
-  const rotate = ['case', pointsRight, ['-', ['get', 'bearing'], 90], ['+', ['get', 'bearing'], 90]];
+  const pointsRight: unknown = ['<', ['%', ['+', ['get', 'bearing'], 720 - mapBearing], 360], 180];
+  const rotate: unknown = ['case', pointsRight, ['-', ['get', 'bearing'], 90], ['+', ['get', 'bearing'], 90]];
+  // `gap` pt past the end along the bearing, in the map's frame (x right, y down), in ems.
+  const textOffset = byBearing(bearing, (b) => [(gap * Math.sin(b)) / textSize, (-gap * Math.cos(b)) / textSize]);
+  // In the chip's turned frame the gap is straight ahead (or behind, when flipped); the text offset is already applied.
+  const iconOffset = (side: 1 | -1) => byBearing(bearing, (b) => [side * gap - gap * Math.sin(b), gap * Math.cos(b)]);
   return {
     ...makePointLabelStyle(colors, textSize),
     textField: ['get', 'label'],
     textRotationAlignment: 'map',
     textRotate: rotate as SymbolLayerStyle['textRotate'],
     textAnchor: ['case', pointsRight, 'left', 'right'] as SymbolLayerStyle['textAnchor'],
-    textOffset: ['case', pointsRight, ['literal', [gap, 0]], ['literal', [-gap, 0]]] as SymbolLayerStyle['textOffset'],
+    textOffset: textOffset as SymbolLayerStyle['textOffset'],
     iconRotationAlignment: 'map',
     iconRotate: rotate as SymbolLayerStyle['iconRotate'],
+    iconOffset: ['case', pointsRight, iconOffset(1), iconOffset(-1)] as SymbolLayerStyle['iconOffset'],
   };
 }
 

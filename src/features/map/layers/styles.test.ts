@@ -59,6 +59,19 @@ function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
       return v(args[0]) < v(args[1]);
     case 'case':
       return evaluate(evaluate(args[0], props) ? args[1] : args[2], props);
+    case 'interpolate': {
+      // ['interpolate', ['linear'], input, stop, output, …] with number-array outputs.
+      const x = v(args[1]);
+      const stops = args.slice(2);
+      for (let i = 0; i + 3 < stops.length; i += 2) {
+        const [x0, x1] = [stops[i] as number, stops[i + 2] as number];
+        if (x > x1) continue;
+        const [y0, y1] = [evaluate(stops[i + 1], props), evaluate(stops[i + 3], props)] as number[][];
+        const t = (x - x0) / (x1 - x0);
+        return y0.map((y, k) => y + t * (y1[k] - y));
+      }
+      return evaluate(stops[stops.length - 1], props);
+    }
     default:
       throw new Error(`unsupported operator ${op}`);
   }
@@ -66,19 +79,33 @@ function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
 
 describe('line end labels', () => {
   const colors = themeColors('dark');
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  /** Turns a map-frame vector (x right, y down) clockwise by `deg`, as Mapbox turns a rotated symbol. */
+  const turn = ([x, y]: number[], deg: number) => [x * Math.cos(rad(deg)) - y * Math.sin(rad(deg)), x * Math.sin(rad(deg)) + y * Math.cos(rad(deg))];
   /** How an end label with this outward bearing draws while the map is turned to `mapBearing`. */
   const label = (bearing: number, mapBearing: number, size = LABEL_TEXT_SIZES.medium) => {
     const style = makeLineLabelStyle(colors, size, mapBearing);
     const at = (e: unknown) => evaluate(e, { bearing });
     const rotate = at(style.textRotate) as number;
+    const textPt = (at(style.textOffset) as number[]).map((o) => o * size);
+    const iconPt = at(style.iconOffset) as number[];
     return {
       style,
       /** Reading direction on screen, degrees clockwise from screen-up: 90 reads left to right. */
       reads: (((rotate + 90 - mapBearing) % 360) + 360) % 360,
       anchor: at(style.textAnchor),
-      offsetPt: (at(style.textOffset) as number[]).map((o) => o * size),
       iconRotate: at(style.iconRotate),
+      // Mapbox moves the text by its offset without turning it, but fits the chip around the offset
+      // text box (plus the icon offset) and then turns the chip: both must land at the same spot.
+      textAt: textPt,
+      chipAt: turn([textPt[0] + iconPt[0], textPt[1] + iconPt[1]], rotate),
     };
+  };
+  /** The point `gap` pt past the end, along its outward bearing, in the map frame. */
+  const pastEnd = (bearing: number, gap = 10.8) => [gap * Math.sin(rad(bearing)), -gap * Math.cos(rad(bearing))];
+  const expectAt = (actual: number[], expected: number[]) => {
+    expect(actual[0]).toBeCloseTo(expected[0], 0);
+    expect(actual[1]).toBeCloseTo(expected[1], 0);
   };
 
   it('turns with the map and follows the end segment, its chip turning with it', () => {
@@ -89,26 +116,31 @@ describe('line end labels', () => {
   });
 
   it('reads outward from the end when that points right on screen, starting just past the end', () => {
-    for (const [bearing, mapBearing] of [[90, 0], [0, 0], [10, 300], [300, 200]]) {
+    for (const [bearing, mapBearing] of [[90, 0], [0, 0], [10, 300], [300, 200], [120, 0], [37, 0]]) {
       const l = label(bearing, mapBearing);
       expect(l.reads).toBeCloseTo((((bearing - mapBearing) % 360) + 360) % 360);
       expect(l.anchor).toBe('left');
-      expect(l.offsetPt[0]).toBeCloseTo(10.8);
-      expect(l.offsetPt[1]).toBe(0);
+      expectAt(l.textAt, pastEnd(bearing));
+      expectAt(l.chipAt, pastEnd(bearing));
     }
   });
 
   it('never reads upside down: an end pointing left on screen reads toward the end, finishing just past it', () => {
-    for (const [bearing, mapBearing] of [[270, 0], [180, 0], [200, 10], [90, 180]]) {
+    for (const [bearing, mapBearing] of [[270, 0], [180, 0], [200, 10], [90, 180], [300, 0], [217, 0]]) {
       const l = label(bearing, mapBearing);
       expect(l.reads).toBeLessThan(180);
       expect(l.anchor).toBe('right');
-      expect(l.offsetPt[0]).toBeCloseTo(-10.8);
+      expectAt(l.textAt, pastEnd(bearing));
+      expectAt(l.chipAt, pastEnd(bearing));
     }
   });
 
   it('keeps the same gap past the end at every text size', () => {
-    for (const size of Object.values(LABEL_TEXT_SIZES)) expect(label(90, 0, size).offsetPt[0]).toBeCloseTo(10.8);
+    for (const size of Object.values(LABEL_TEXT_SIZES)) {
+      const l = label(120, 0, size);
+      expectAt(l.textAt, pastEnd(120));
+      expectAt(l.chipAt, pastEnd(120));
+    }
   });
 });
 
