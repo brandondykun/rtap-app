@@ -2,6 +2,7 @@ import {
   DRAWER_MAX_WIDTH,
   DRAWER_MIN_WIDTH,
   detentHeights,
+  DRAWER_FRACTION,
   drawerWidth,
   FLING_VELOCITY,
   MIN_HALF_HEIGHT,
@@ -29,7 +30,15 @@ describe('panel geometry', () => {
   });
 
   it('sizes the drawer from the screen width, including the left inset', () => {
-    expect(drawerWidth(phoneLandscape)).toBe(47 + Math.min(DRAWER_MAX_WIDTH, Math.max(DRAWER_MIN_WIDTH, Math.round(844 * 0.4))));
+    expect(drawerWidth(phoneLandscape)).toBe(47 + Math.min(DRAWER_MAX_WIDTH, Math.max(DRAWER_MIN_WIDTH, Math.round(844 * DRAWER_FRACTION))));
+  });
+
+  it('keeps the drawer slim to leave more map beside it: 36% of the width, 280 to 380 pt', () => {
+    // iPhone landscape: 844 pt wide.
+    expect(drawerWidth(phoneLandscape)).toBe(47 + 304);
+    // Small phone (667 pt) is held at the minimum; iPad (1366 pt) at the maximum.
+    expect(drawerWidth({ ...phoneLandscape, width: 667, insets: { ...phoneLandscape.insets, left: 0 } })).toBe(280);
+    expect(drawerWidth({ ...phoneLandscape, width: 1366, insets: { ...phoneLandscape.insets, left: 0 } })).toBe(380);
   });
 
   describe('snapIndex', () => {
