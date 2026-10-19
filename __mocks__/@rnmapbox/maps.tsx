@@ -16,10 +16,13 @@ export const __props: Record<string, Record<string, Props>> = {
 };
 export const __camera = { setCamera: jest.fn() };
 
-export function MapView(props: Props) {
+export const __map = { takeSnap: jest.fn(async (_writeToDisk?: boolean) => 'file:///cache/snap.png') };
+
+export const MapView = forwardRef(function MapView(props: Props, ref) {
   __props.MapView.main = props;
+  useImperativeHandle(ref, () => __map);
   return <View testID="map-view">{props.children}</View>;
-}
+});
 
 export const Camera = forwardRef(function Camera(props: Props, ref) {
   __props.Camera.main = props;

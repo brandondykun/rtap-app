@@ -1,4 +1,4 @@
-import type { Camera, CameraStop } from '@rnmapbox/maps';
+import type { Camera, CameraStop, MapView } from '@rnmapbox/maps';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, Keyboard, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +30,7 @@ import { useSettings } from '@/stores/settings';
 import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
+import { useMissionSnapshot } from './canvas/mission-snapshot';
 import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
@@ -93,6 +94,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     return cameraCenter ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing } : null;
   }, []);
   const saver = useCameraPersistence(ctx, missionId, liveCamera);
+  const mapRef = useRef<MapView>(null);
+  useMissionSnapshot(ctx, missionId, mapRef);
   const markMoved = useCallback(() => {
     cameraMoved.current = true;
     saver.touch();
@@ -374,6 +377,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     <View className="flex-1 bg-surface">
       <MapCanvas
         cameraRef={cameraRef}
+        mapRef={mapRef}
         initialCamera={initialCamera}
         landscape={landscape}
         panel={panel}

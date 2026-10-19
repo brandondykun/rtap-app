@@ -3,6 +3,7 @@ type Props = Record<string, unknown>;
 export type MapboxMock = {
   __props: Record<'MapView' | 'Camera' | 'Images' | 'ShapeSource' | 'SymbolLayer' | 'LineLayer' | 'FillLayer', Record<string, Props>>;
   __camera: { setCamera: jest.Mock };
+  __map: { takeSnap: jest.Mock };
   offlineManager: { createPack: jest.Mock; getPacks: jest.Mock; deletePack: jest.Mock };
   setAccessToken: jest.Mock;
 };

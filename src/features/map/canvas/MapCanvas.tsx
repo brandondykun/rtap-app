@@ -29,6 +29,8 @@ const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 type Props = {
   cameraRef: Ref<Camera>;
+  /** The map view, for pictures of the mission (see mission-snapshot). */
+  mapRef?: Ref<MapView>;
   /** Applied once at mount (uncontrolled camera); later moves go through cameraRef. */
   initialCamera: MissionCamera;
   onCameraIdle: (camera: MissionCamera) => void;
@@ -43,7 +45,7 @@ type Props = {
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
+export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
   // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
   // this session so points and the self icon still render. Choosing a basemap again retries it.
@@ -92,6 +94,7 @@ export function MapCanvas({ cameraRef, initialCamera, onCameraIdle, onUserGestur
 
   return (
     <MapView
+      ref={mapRef}
       style={{ flex: 1 }}
       styleURL={BASEMAP_STYLE_URLS[effectiveBasemap]}
       onMapLoadingError={onMapLoadingError}
