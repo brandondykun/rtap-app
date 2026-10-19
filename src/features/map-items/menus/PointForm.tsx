@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
 import { POINT_TYPES, pointTypePrefix, type PointType } from '@/features/symbology/point-types';
-import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
+import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { LocationSection } from './form/LocationSection';
@@ -16,7 +16,7 @@ import { useAutoName } from './form/use-auto-name';
 const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
   value: t.id,
   label: t.label,
-  icon: <Image source={symbolThumbnail(t.sidc)} style={{ width: 32, height: 26 }} resizeMode="contain" />,
+  icon: <SymbolImage sidc={t.sidc} width={32} height={26} />,
 })).sort((a, b) => a.label.localeCompare(b.label));
 
 /** Add/Edit point form: location, point type, name, notes. Edits only the draft store. */

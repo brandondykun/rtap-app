@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Image, Keyboard, Text, View } from 'react-native';
+import { Keyboard, Text, View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuHeader } from '@/components/menu/MenuHeader';
@@ -13,7 +13,7 @@ import { defineMenu, type MenuComponentProps } from '@/features/menus/define-men
 import type { ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo } from '@/features/symbology/line-types';
 import { polygonTypeInfo } from '@/features/symbology/polygon-types';
-import { symbolThumbnail } from '@/features/symbology/symbol-thumbnail';
+import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { formatDistance } from '@/lib/geo/format/measure';
@@ -138,7 +138,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
                   <LineSample lineType={row.lineType} />
                 </View>
               ) : (
-                <Image source={symbolThumbnail(row.sidc)} style={{ width: 28, height: 20 }} resizeMode="contain" />
+                <SymbolImage sidc={row.sidc} width={28} height={20} />
               )
             }
             onPress={() => {

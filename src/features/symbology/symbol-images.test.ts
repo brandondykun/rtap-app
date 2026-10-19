@@ -1,7 +1,6 @@
 import { POINT_SIDCS } from './point-types';
 import { PRESET_SIDCS } from './presets';
 import { SYMBOL_IMAGES, SYMBOL_THUMBNAILS } from './symbol-images.generated';
-import { symbolThumbnail } from './symbol-thumbnail';
 
 describe('generated symbol images', () => {
   it('has an image for every unit preset and point type', () => {
@@ -10,9 +9,7 @@ describe('generated symbol images', () => {
 });
 
 describe('symbol thumbnails', () => {
-  it('has a tightly cropped thumbnail for every point type and falls back to the map image', () => {
+  it('has a tightly cropped thumbnail for every point type', () => {
     expect(Object.keys(SYMBOL_THUMBNAILS).sort()).toEqual([...POINT_SIDCS].sort());
-    expect(symbolThumbnail('GFGPGPPK------X')).toBe(SYMBOL_THUMBNAILS['GFGPGPPK------X']);
-    expect(symbolThumbnail('SHGPUCI--------')).toBe(SYMBOL_IMAGES['SHGPUCI--------']);
   });
 });

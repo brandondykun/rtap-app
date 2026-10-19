@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
@@ -7,7 +7,7 @@ import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
 import { AFFILIATIONS, composeSidc, UNIT_TYPES, type Affiliation, type UnitType } from '@/features/symbology/presets';
-import { SYMBOL_IMAGES } from '@/features/symbology/symbol-images.generated';
+import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { NAME_PREFIX } from '../naming';
@@ -43,7 +43,7 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
           options={AFFILIATIONS.map((a) => ({
             value: a,
             label: AFFILIATION_LABELS[a],
-            icon: <Image source={SYMBOL_IMAGES[composeSidc(a, 'unspecified')]} style={{ width: 30, height: 22 }} resizeMode="contain" />,
+            icon: <SymbolImage sidc={composeSidc(a, 'unspecified')} width={30} height={22} />,
           }))}
           value={affiliation}
           onChange={setAffiliation}
