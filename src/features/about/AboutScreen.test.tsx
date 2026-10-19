@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { screen } from '@testing-library/react-native';
 import Constants from 'expo-constants';
 import { StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
@@ -9,20 +9,17 @@ import { renderWithProviders } from '@/test-utils/render';
 
 import { AboutScreen } from './AboutScreen';
 
-const mockRouter = { back: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 
 afterEach(() => jest.restoreAllMocks());
 
 describe('AboutScreen', () => {
-  it('shows the app name, version and attribution, and goes back', async () => {
+  it('shows the app name, version and attribution, leaving Back to the native header', async () => {
     await renderWithProviders(<AboutScreen />);
     expect(screen.getByText('RTAP')).toBeTruthy();
     expect(screen.getByText('Realtime Team Awareness Platform')).toBeTruthy();
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Back'));
-    expect(mockRouter.back).toHaveBeenCalled();
+    expect(screen.queryByLabelText('Back')).toBeNull();
   });
 
   it('explains every toolbar button with its icon and name', async () => {
@@ -41,5 +38,7 @@ describe('AboutScreen', () => {
     expect(content.paddingLeft).toBe(59 + 16);
     expect(content.paddingRight).toBe(47 + 16);
     expect(content.paddingBottom).toBe(21 + 24);
+    // The native header sits under the status bar / notch, so the content does not add the top inset.
+    expect(content.paddingTop).toBe(16);
   });
 });

@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
@@ -10,9 +9,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 /** Readable line length on wide (landscape, tablet) screens. */
 const MAX_CONTENT_WIDTH = 720;
 
-/** Full-screen About page (a route, not a menu): app info and what each toolbar button does. */
+/**
+ * Full-screen About page (a route, not a menu): app info and what each toolbar button does. The route
+ * shows the native header, which provides Back and sits below the status bar.
+ */
 export function AboutScreen() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? '—';
@@ -21,16 +22,13 @@ export function AboutScreen() {
       <ScrollView
         testID="about-scroll"
         contentContainerStyle={{
-          paddingTop: insets.top + 12,
+          paddingTop: 16,
           paddingBottom: insets.bottom + 24,
           // Clear of the notch and rounded corners in landscape.
           paddingLeft: insets.left + 16,
           paddingRight: insets.right + 16,
         }}>
         <View className="w-full self-center" style={{ maxWidth: MAX_CONTENT_WIDTH }}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} className="mb-6 self-start py-2" hitSlop={8}>
-            <Text className="text-base text-text-muted">‹ Back</Text>
-          </Pressable>
           <Text className="text-3xl font-bold tracking-widest text-text">RTAP</Text>
           <Text className="mt-1 text-base text-text-muted">Realtime Team Awareness Platform</Text>
           <Text className="mt-4 font-mono text-sm text-text-muted">{`Version ${version}`}</Text>

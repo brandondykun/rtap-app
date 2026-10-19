@@ -25,6 +25,18 @@ function ThemedStack() {
         name="missions/rename/[missionId]"
         options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }}
       />
+      {/* The native header gives About the platform Back button (and swipe back on iOS). */}
+      <Stack.Screen
+        name="about"
+        options={{
+          headerShown: true,
+          title: 'About',
+          headerBackTitle: 'Back',
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
+        }}
+      />
       {/* Edge swipes belong to the map, never to navigation. */}
       <Stack.Screen name="missions/[missionId]" options={{ gestureEnabled: false }} />
     </Stack>
