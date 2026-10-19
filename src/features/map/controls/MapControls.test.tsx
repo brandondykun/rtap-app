@@ -165,6 +165,12 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
   });
 
+  it('centers a bar that takes the dock place in portrait', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} showCenter />);
+    expect(screen.getByTestId('bar-in-dock')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('bar-in-dock').props.className).toContain('items-center');
+  });
+
   it('floats a bar over the dock, centered, in portrait when asked, and keeps it in your card spot in landscape', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} barOverDock showCenter />);
     const [, over, slot] = screen.getByTestId('map-controls-bottom').children as { props: { testID?: string } }[];

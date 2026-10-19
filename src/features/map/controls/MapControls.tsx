@@ -49,7 +49,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
  * - portrait: zoom (shown per Settings) and locate on the right, over the full-width dock (CTR over ME);
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
- * An action bar takes the dock's or your card's place while it is up; in portrait it can float centered over the dock instead.
+ * An action bar takes the dock's or your card's place while it is up (centered in portrait); in portrait it can float centered over the dock instead.
  */
 export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false }: Props) {
   const insets = useSafeAreaInsets();
@@ -77,7 +77,11 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
     // The action bar always shows: it is how the user finishes the mode. Floating over the dock, it leaves the dock less room.
     const over = bar && barOverDock;
     const docked = bar && !over ? (
-      <SelfCardSlot>{bar}</SelfCardSlot>
+      <SelfCardSlot>
+        <View testID="bar-in-dock" pointerEvents="box-none" className="items-center">
+          {bar}
+        </View>
+      </SelfCardSlot>
     ) : room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
       <SelfCardSlot onHeight={setDockHeight}>
         <ReadoutDock showCenter={showCenter} />
