@@ -38,8 +38,20 @@ describe('MissionsHeader in landscape', () => {
     expect(screen.getByTestId('missions-title-row')).toHaveTextContent(/Missions.*Seed 5k/);
   });
 
-  it('lets the search field take the row while searching', async () => {
+  it('while searching, shows only MISSIONS and gives the rest of the row to the search field', async () => {
     await renderWithProviders(<MissionsHeader landscape {...props} query="" />);
     expect(classes('missions-controls')).toContain('flex-1');
+    // The title only takes its own width, so the field never slides over it.
+    expect(classes('missions-title')).toContain('shrink-0');
+    expect(classes('missions-title')).not.toContain('flex-1');
+    expect(screen.getByTestId('missions-title')).toHaveTextContent('Missions', { exact: true });
+    expect(screen.queryByText('Seed 5k')).toBeNull();
+    expect(screen.queryByText('3 missions · 43 units plotted')).toBeNull();
+    expect(screen.getByLabelText('Search by name')).toBeTruthy();
+  });
+
+  it('lets the dev button wrap under MISSIONS rather than overlap when the title column is narrow', async () => {
+    await renderWithProviders(<MissionsHeader landscape {...props} />);
+    expect(classes('missions-title-row')).toContain('flex-wrap');
   });
 });

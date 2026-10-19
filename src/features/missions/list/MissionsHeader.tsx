@@ -99,12 +99,13 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
     // running under them.
     return (
       <View testID="missions-header" className="flex-row items-center gap-3 px-4 pb-3 pt-4">
-        <View testID="missions-title" className="flex-1">
-          <View testID="missions-title-row" className="flex-row items-center gap-3">
+        {/* While searching only MISSIONS stays, at its own width; the field takes the rest of the row. */}
+        <View testID="missions-title" className={searching ? 'shrink-0' : 'flex-1'}>
+          <View testID="missions-title-row" className="flex-row flex-wrap items-center gap-x-3">
             <Text className="text-3xl font-bold uppercase tracking-widest text-text">Missions</Text>
-            {extra}
+            {searching ? null : extra}
           </View>
-          {showControls ? <Text className="text-base text-text-muted">{subtitle}</Text> : null}
+          {showControls && !searching ? <Text className="text-base text-text-muted">{subtitle}</Text> : null}
         </View>
         <View testID="missions-controls" className={`flex-row items-center gap-3 ${searching ? 'flex-1' : 'shrink-0'}`}>
           {filters}
