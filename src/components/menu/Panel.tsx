@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { EDGE } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -21,6 +21,8 @@ type Props = {
   title?: string;
   /** Landscape: the drawer is slid off screen with only its edge tab showing (the menu stays mounted). */
   minimized?: boolean;
+  /** What the minimized button shows: the menu's icon, a label with an amber detail, and their spoken form. */
+  minimizedTab?: { icon: IconName; label: string; detail: string | null; spoken: string };
   onMinimizedChange?: (minimized: boolean) => void;
   /** Null while the drawer is minimized: the map, crosshair and controls then use the whole screen. */
   onFrameChange: (frame: PanelFrame | null) => void;
@@ -29,9 +31,11 @@ type Props = {
 
 /** The full-height rail on the open drawer's right edge (inside its width), which hides it. */
 const RAIL_WIDTH = 16;
-/** The floating button that shows the minimized drawer again. */
-const TAB_WIDTH = 28;
-const TAB_HEIGHT = 64;
+/** The floating button that shows the minimized drawer again: icon, a vertical label, then a chevron. */
+const TAB_WIDTH = 36;
+const TAB_HEIGHT = 180;
+/** Room for the vertical label between the icon and the chevron (the label's length before rotating). */
+const TAB_LABEL_LENGTH = 104;
 const SLIDE_MS = 220;
 
 /**
@@ -39,7 +43,18 @@ const SLIDE_MS = 220;
  * no backdrop — the map stays interactive. The element tree is identical in both orientations, so
  * rotating never remounts the menu (a half-typed form survives).
  */
-export function Panel({ landscape, detents, initialDetent, topReserved, title, minimized = false, onMinimizedChange, onFrameChange, children }: Props) {
+export function Panel({
+  landscape,
+  detents,
+  initialDetent,
+  topReserved,
+  title,
+  minimized = false,
+  minimizedTab,
+  onMinimizedChange,
+  onFrameChange,
+  children,
+}: Props) {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -170,11 +185,25 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
         <Pressable
           testID="menu-panel-tab"
           accessibilityRole="button"
-          accessibilityLabel={`Show ${title ?? 'menu'}`}
+          accessibilityLabel={[`Show ${title ?? 'menu'}`, minimizedTab && minimizedTab.spoken !== title ? minimizedTab.spoken : null].filter(Boolean).join(', ')}
           onPress={() => onMinimizedChange?.(false)}
           hitSlop={{ top: 8, bottom: 8, right: 12 }}
-          className="h-full w-full items-center justify-center rounded-xl border border-border bg-surface active:opacity-70">
-          <Icon name="chevron-right" size={22} color={colors.text} />
+          className="h-full w-full items-center justify-between rounded-xl border border-accent bg-surface py-3 active:opacity-70">
+          <Icon name={minimizedTab?.icon ?? 'menu'} size={20} color={colors.accent} />
+          {minimizedTab ? (
+            // A spine label: laid out at its length, then turned to read bottom to top.
+            <View style={{ height: TAB_LABEL_LENGTH, width: TAB_WIDTH }} className="items-center justify-center">
+              <Text
+                testID="menu-panel-tab-label"
+                numberOfLines={1}
+                style={{ width: TAB_LABEL_LENGTH, transform: [{ rotate: '-90deg' }] }}
+                className="text-center font-mono-bold text-sm text-text">
+                {minimizedTab.label}
+                {minimizedTab.detail ? <Text className="text-accent">{`  ${minimizedTab.detail}`}</Text> : null}
+              </Text>
+            </View>
+          ) : null}
+          <Icon name="chevron-right" size={22} color={colors.accent} />
         </Pressable>
       </View>
     </>

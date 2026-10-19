@@ -18,7 +18,7 @@ export type DraftMode = 'add' | 'edit';
 /** Where the draft coordinate came from; the map follows every source except the crosshair and drawing taps. */
 export type DraftCoordSource = 'crosshair' | 'self' | 'press' | 'typed' | 'item' | 'draw';
 
-type DraftValues = {
+export type DraftValues = {
   mode: DraftMode | null;
   itemId: string | null;
   /** Unit (affiliation + unit type) or point (control-measure type). */

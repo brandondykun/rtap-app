@@ -217,6 +217,7 @@ export const settingsMenu = defineMenu({
   id: 'settings',
   family: 'app',
   title: 'Settings',
+  icon: 'cog-outline',
   detents: ['half', 'full'],
   component: SettingsMenu,
 });

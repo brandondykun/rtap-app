@@ -44,4 +44,13 @@ describe('MenuHost', () => {
     expect(useMenu.getState().panelMinimized).toBe(false);
     expect(useMenu.getState().panelFrame).toMatchObject({ side: 'left' });
   });
+
+  it('tells the minimized button what the open menu is working on', async () => {
+    await renderWithProviders(<MenuHost landscape missionId="m1" />);
+    await act(async () => {
+      useMenu.getState().openMenu('layers', {});
+      useMenu.getState().setPanelMinimized(true);
+    });
+    expect(screen.getByLabelText('Show Layers')).toHaveTextContent(/LAYERS/);
+  });
 });

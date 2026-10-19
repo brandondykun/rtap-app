@@ -162,4 +162,4 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   );
 }
 
-export const layersMenu = defineMenu({ id: 'layers', family: 'app', title: 'Layers', detents: ['half', 'full'], component: LayersMenu });
+export const layersMenu = defineMenu({ id: 'layers', family: 'app', title: 'Layers', icon: 'layers-outline', detents: ['half', 'full'], component: LayersMenu });

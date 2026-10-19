@@ -173,7 +173,7 @@ describe('Panel', () => {
         await render(drawer({ minimized: true }));
         const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
         expect(frame.left).toBe(59);
-        expect(frame.width).toBe(28);
+        expect(frame.width).toBe(36);
         const tab = screen.getByTestId('menu-panel-tab');
         expect(tab.props.className).toContain('rounded-xl');
         expect(tab.props.className).not.toContain('rounded-r-xl');
@@ -181,6 +181,29 @@ describe('Panel', () => {
       } finally {
         insets.mockReturnValue(INSETS);
       }
+    });
+
+    it('shows the open menu on the minimized button: its icon, what it holds, and an expand chevron', async () => {
+      await render(
+        <Panel
+          landscape
+          detents={['half', 'full']}
+          initialDetent="half"
+          topReserved={TOP_RESERVED}
+          title="Add polygon"
+          minimized
+          minimizedTab={{ icon: 'pentagon-outline', label: 'OBJ-1', detail: '3 PTS', spoken: 'OBJ-1, 3 points' }}
+          onMinimizedChange={jest.fn()}
+          onFrameChange={jest.fn()}>
+          <Text>content</Text>
+        </Panel>,
+      );
+      const tab = screen.getByLabelText('Show Add polygon, OBJ-1, 3 points');
+      expect(tab).toHaveTextContent(/OBJ-1.*3 PTS/);
+      // Read bottom to top, like a spine label.
+      expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab-label').props.style).transform).toEqual([{ rotate: '-90deg' }]);
+      expect(screen.getByText('3 PTS').props.className).toContain('text-accent');
+      expect(tab.props.className).toContain('border-accent');
     });
 
     it('keeps the floating button off the screen edge where there is no notch', async () => {

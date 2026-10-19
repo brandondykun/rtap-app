@@ -15,7 +15,7 @@ description: Use whenever you add or change a menu, panel content, or anything o
    `MenuVertexRow` (one point of a line), `MgrsInput` (backspace in an empty field hops to the previous one).
    No raw colors, no new one-off controls — add a primitive instead.
 3. **Definition** — in the same file:
-   `export const xMenu = defineMenu({ id, family, title, detents, component })`.
+   `export const xMenu = defineMenu({ id, family, title, icon, detents, component })` (`icon`: the toolbar icon, shown on the minimized drawer button).
 4. **Register** — add it to `MENU_REGISTRY` in `src/features/menus/registry.ts` (the type
    forces every `MenuId` to be registered).
 5. **Open** — `useMenu.getState().openMenu(id, params)` (replaces the stack) or `pushMenu`

@@ -1,13 +1,16 @@
 import { useEffect, type ComponentType } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Panel } from '@/components/menu/Panel';
 import { EDGE, GAP } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
+import { useDraft } from '@/stores/draft';
 import { topMenu, useMenu } from '@/stores/menu';
 
 import type { MenuComponentProps } from './define-menu';
+import { minimizedSummary } from './minimized-summary';
 import type { MenuId, MenuParams } from './params';
 import { MENU_REGISTRY } from './registry';
 
@@ -18,6 +21,7 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
   const top = useMenu((s) => topMenu(s));
   const setPanelFrame = useMenu((s) => s.setPanelFrame);
   const minimized = useMenu((s) => s.panelMinimized);
+  const draft = useDraft(useShallow((d) => ({ mode: d.mode, category: d.category, name: d.name, vertices: d.vertices, polygonShape: d.polygonShape })));
   const setMinimized = useMenu((s) => s.setPanelMinimized);
   const definition = top ? MENU_REGISTRY[top.id] : undefined;
 
@@ -38,6 +42,7 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         topReserved={insets.top + EDGE + toolbar + GAP}
         title={definition.title}
         minimized={minimized}
+        minimizedTab={{ icon: definition.icon, ...minimizedSummary(top.id, definition.title, draft) }}
         onMinimizedChange={setMinimized}
         onFrameChange={setPanelFrame}>
         <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
