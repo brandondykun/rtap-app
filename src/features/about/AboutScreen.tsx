@@ -25,12 +25,12 @@ export function AboutScreen() {
     <View className="flex-1 bg-surface">
       <View
         testID="about-header"
-        className="border-b border-border bg-surface"
+        className="border-b border-border bg-surface pb-2"
         style={{ paddingTop: insets.top, paddingLeft: insets.left + 8, paddingRight: insets.right + 8 }}>
         <View className="h-11 flex-row items-center">
           <Text
             accessibilityRole="header"
-            className="absolute left-0 right-0 text-center text-xl font-semibold text-text"
+            className="absolute left-0 right-0 text-center text-2xl font-semibold text-text"
             pointerEvents="none">
             About
           </Text>
@@ -41,8 +41,8 @@ export function AboutScreen() {
             hitSlop={8}
             className="min-h-11 min-w-11 flex-row items-center pr-2 active:opacity-50">
             {/* Ionicons' chevron is the thin iOS one (the Material chevron is too heavy). */}
-            <Ionicons testID="about-back-chevron" name="chevron-back" size={30} color={colors.text} />
-            <Text className="text-xl text-text">Back</Text>
+            <Ionicons testID="about-back-chevron" name="chevron-back" size={26} color={colors.text} />
+            <Text className="text-2xl text-text">Back</Text>
           </Pressable>
         </View>
       </View>
@@ -56,7 +56,7 @@ export function AboutScreen() {
           paddingRight: insets.right + 16,
         }}>
         <View className="w-full self-center" style={{ maxWidth: MAX_CONTENT_WIDTH }}>
-          <Text className="text-3xl font-bold tracking-widest text-text">RTAP</Text>
+          <Text className="text-3xl font-bold tracking-widest text-accent">RTAP</Text>
           <Text className="mt-1 text-base text-text-muted">Realtime Team Awareness Platform</Text>
           <Text className="mt-4 font-mono text-sm text-text-muted">{`Version ${version}`}</Text>
           <Text className="mt-6 text-sm text-text">For training and military simulation. Not for real-world military use.</Text>

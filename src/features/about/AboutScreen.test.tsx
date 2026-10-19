@@ -19,7 +19,7 @@ afterEach(() => jest.restoreAllMocks());
 describe('AboutScreen', () => {
   it('shows the app name, version and attribution', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('RTAP')).toBeTruthy();
+    expect(screen.getByText('RTAP').props.className).toContain('text-accent');
     expect(screen.getByText('Realtime Team Awareness Platform')).toBeTruthy();
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
@@ -31,9 +31,11 @@ describe('AboutScreen', () => {
     expect(screen.getByRole('header', { name: 'About' })).toBeTruthy();
     const back = screen.getByLabelText('Back');
     expect(back).toHaveTextContent(/Back$/);
-    // iPhone proportions: 20 pt Back label and title, thin iOS chevron.
-    expect(screen.getByText('Back').props.className).toContain('text-xl');
-    expect(screen.getByRole('header', { name: 'About' }).props.className).toContain('text-xl');
+    // 24 pt Back label and title, a smaller thin iOS chevron, and a little room under the bar.
+    expect(screen.getByText('Back').props.className).toContain('text-2xl');
+    expect(screen.getByRole('header', { name: 'About' }).props.className).toContain('text-2xl');
+    expect(screen.getByTestId('about-back-chevron').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 26 })]));
+    expect(screen.getByTestId('about-header').props.className).toContain('pb-2');
     expect(screen.getByTestId('about-back-chevron')).toHaveTextContent(String.fromCodePoint(Number(Ionicons.glyphMap['chevron-back'])));
     // At least the 44 pt minimum touch target.
     expect(back.props.className).toContain('min-h-11');
