@@ -35,6 +35,7 @@ type Props = {
 export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, onSettings, labelsOn = true, onLabels }: Props) {
   const insets = useSafeAreaInsets();
   const height = useToolbarHeight();
+  const overflow = useOverflow();
   const position = landscape
     ? { top: insets.top + EDGE, right: insets.right + EDGE }
     : { top: insets.top + EDGE, left: insets.left + EDGE, right: insets.right + EDGE };
@@ -59,13 +60,13 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       style={[position, { height }]}
       className="absolute flex-row items-center rounded-3xl border border-border bg-surface-chrome px-2">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
-      <Divider side="start" flush={!landscape} />
+      <Divider side="start" flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (
         <View className="flex-row items-center gap-1">{tools}</View>
       ) : (
-<ToolScroller>{tools}</ToolScroller>
+        <ToolScroller overflow={overflow}>{tools}</ToolScroller>
       )}
-      <Divider side="end" flush={!landscape} />
+      <Divider side="end" flush={!landscape} lit={!landscape && overflow.hiddenEnd} />
       <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
     </View>
   );
@@ -75,12 +76,10 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
 const SLACK = 1;
 const SHADE_WIDTH = 20;
 
-/**
- * The portrait tools, scrolling sideways. While tools are scrolled out of sight behind a divider, a shade
- * fades them out against that divider to show more are hidden there.
- */
-function ToolScroller({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
+type Overflow = ReturnType<typeof useOverflow>;
+
+/** Whether the portrait tools are scrolled out of sight at either end, and the scroller props that track it. */
+function useOverflow() {
   const [width, setWidth] = useState(0);
   const [contentWidth, setContentWidth] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -91,6 +90,16 @@ function ToolScroller({ children }: { children: ReactNode }) {
     // Only re-render when a shade would appear or disappear.
     if (x > SLACK !== hiddenStart || x + width < contentWidth - SLACK !== hiddenEnd) setOffset(x);
   };
+  return { hiddenStart, hiddenEnd, setWidth, setContentWidth, onScroll };
+}
+
+/**
+ * The portrait tools, scrolling sideways. While tools are scrolled out of sight behind a divider, a shade
+ * fades them out against that divider (which also turns bright) to show more are hidden there.
+ */
+function ToolScroller({ overflow, children }: { overflow: Overflow; children: ReactNode }) {
+  const { colors } = useTheme();
+  const { hiddenStart, hiddenEnd, setWidth, setContentWidth, onScroll } = overflow;
   const shade = (side: 'start' | 'end') => (
     <View
       testID={`toolbar-shade-${side}`}
@@ -143,9 +152,10 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
 
 /**
  * `flush` drops the margin on the tools' side, so the portrait scroller clips right at the line;
- * the scroller's own padding keeps the first and last tool off the line at rest.
+ * the scroller's own padding keeps the first and last tool off the line at rest. `lit` turns the line bright
+ * white while tools are scrolled out of sight behind it.
  */
-function Divider({ side, flush }: { side: 'start' | 'end'; flush: boolean }) {
+function Divider({ side, flush, lit }: { side: 'start' | 'end'; flush: boolean; lit: boolean }) {
   const margin = !flush ? 'mx-1.5' : side === 'start' ? 'ml-1.5' : 'mr-1.5';
-  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px bg-border`} />;
+  return <View testID={`divider-${side}`} className={`${margin} h-7 w-px ${lit ? 'bg-text' : 'bg-border'}`} />;
 }
