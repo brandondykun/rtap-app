@@ -1,5 +1,6 @@
 import type { FillLayerStyle, LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
+import { sidcForPointType } from '@/features/symbology/point-types';
 import type { LabelSize } from '@/stores/settings';
 import type { SemanticToken } from '@/theme/tokens';
 
@@ -23,6 +24,9 @@ const ICON_SIZE_BY_CATEGORY: SymbolLayerStyle['iconSize'] = ['match', ['get', 'c
 export const LABEL_TEXT_SIZES: Record<LabelSize, number> = { small: 10, medium: 12, large: 15 };
 // Label offsets are in ems; these are the distances in pt (at 12 pt: 1.3, 0.9 and 3.3 em).
 const POINT_LABEL_GAP_PT = 15.6;
+/** Pin-shaped points mark the spot with their tip, so nothing draws below it: their label sits closer. */
+const PIN_LABEL_GAP_PT = 5;
+const PIN_POINT_SIDCS = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
 const LINE_LABEL_GAP_PT = 10.8;
 const DRAFT_LABEL_GAP_PT = 39.6;
 
@@ -45,8 +49,8 @@ export function makePointLabelStyle(colors: Record<SemanticToken, string>, textS
     textSize,
     textColor: colors['map-label-text'],
     textAnchor: 'top',
-    // Just below the scaled symbol (half its height ≈ 13 pt).
-    textOffset: [0, POINT_LABEL_GAP_PT / textSize],
+    // Just below the scaled symbol (half its height ≈ 13 pt), or just below a pin's tip.
+    textOffset: ['match', ['get', 'sidc'], PIN_POINT_SIDCS, ['literal', [0, PIN_LABEL_GAP_PT / textSize]], ['literal', [0, POINT_LABEL_GAP_PT / textSize]]],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,

@@ -1,3 +1,4 @@
+import { POINT_TYPES, sidcForPointType } from '@/features/symbology/point-types';
 import { themeColors } from '@/theme/tokens';
 
 import {
@@ -49,6 +50,11 @@ describe('polygon styles', () => {
 describe('label text sizes', () => {
   const colors = themeColors('dark');
   const pt = (style: { textOffset?: unknown; textSize?: unknown }, axis: 0 | 1) => (style.textOffset as number[])[axis] * (style.textSize as number);
+  /** The point label's distance below the symbol in pt, for a feature with this SIDC (evaluates the `match`). */
+  const pointGap = (style: { textOffset?: unknown; textSize?: unknown }, sidc: string) => {
+    const [, , sidcs, pin, other] = style.textOffset as [string, unknown, string[], ['literal', number[]], ['literal', number[]]];
+    return (sidcs.includes(sidc) ? pin : other)[1][1] * (style.textSize as number);
+  };
 
   it('is small, medium (the default, 12 pt) or large', () => {
     expect(LABEL_TEXT_SIZES.medium).toBe(12);
@@ -64,9 +70,17 @@ describe('label text sizes', () => {
       expect(makePolygonLabelStyle(colors, size).textSize).toBe(size);
       expect(makeDraftLabelStyle(colors, size).textSize).toBe(size);
       // Offsets are in ems, so they must shrink as the text grows to stay put in points.
-      expect(pt(makePointLabelStyle(colors, size), 1)).toBeCloseTo(pt(makePointLabelStyle(colors), 1));
+      for (const t of POINT_TYPES) expect(pointGap(makePointLabelStyle(colors, size), t.sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), t.sidc));
       expect(pt(makeLineLabelStyle(colors, size), 0)).toBeCloseTo(pt(makeLineLabelStyle(colors), 0));
       expect(pt(makeDraftLabelStyle(colors, size), 1)).toBeCloseTo(pt(makeDraftLabelStyle(colors), 1));
     }
+  });
+
+  it('puts labels of pin-shaped points (CKP, SP, RP, RLY, LU) closer: the pin draws above its tip, not around it', () => {
+    const style = makePointLabelStyle(colors);
+    const pins = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
+    const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s));
+    for (const sidc of pins) expect(pointGap(style, sidc)).toBeLessThan(8);
+    for (const sidc of [...others, 'SFGPUCI----D---']) expect(pointGap(style, sidc)).toBeCloseTo(15.6);
   });
 });
