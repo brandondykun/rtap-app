@@ -1,6 +1,5 @@
 import type { Camera, CameraStop, MapView } from '@rnmapbox/maps';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { map } from 'rxjs';
 import { Dimensions, Keyboard, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,14 +9,13 @@ import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { draftSidc } from '@/features/map-items/draft-sidc';
 import { openItemMenu } from '@/features/map-items/menus/item-menus';
-import { observeMissionItems } from '@/features/map-items/repository';
+import { observeMissionSidcs } from '@/features/map-items/repository';
 import { MeasureBar } from '@/features/measure/MeasureBar';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { QuickPlotCard } from '@/features/quick-plot/QuickPlotCard';
 import { QuickPlotEntry } from '@/features/quick-plot/QuickPlotEntry';
-import { isKnownSidc, type ItemRef } from '@/features/symbology/categories';
-import { DEFAULT_SIDC } from '@/features/symbology/presets';
+import type { ItemRef } from '@/features/symbology/categories';
 import { useSymbolImages } from '@/features/symbology/render/use-symbol-images';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
@@ -99,11 +97,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const { cameraCenter, cameraZoom, cameraBearing } = useInteraction.getState();
     return cameraCenter ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing } : null;
   }, []);
-  const itemSidcs = useObservable(
-    () => observeMissionItems(ctx.db, missionId).pipe(map((items) => [...new Set(items.map((i) => (i.sidc && isKnownSidc(i.sidc) ? i.sidc : DEFAULT_SIDC)))].sort())),
-    [] as string[],
-    [ctx, missionId],
-  );
+  const itemSidcs = useObservable(() => observeMissionSidcs(ctx.db, missionId), [] as string[], [ctx, missionId]);
   const draftSymbol = useDraft((s) => (s.mode && (s.category === 'unit' || s.category === 'point') ? draftSidc(s) : null));
   const symbolSidcs = useMemo(() => (draftSymbol && !itemSidcs.includes(draftSymbol) ? [...itemSidcs, draftSymbol] : itemSidcs), [itemSidcs, draftSymbol]);
   const symbols = useSymbolImages(symbolSidcs);

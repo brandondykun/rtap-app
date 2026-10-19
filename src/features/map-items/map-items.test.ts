@@ -21,6 +21,7 @@ import {
   observeHiddenItemIds,
   observeItem,
   observeMissionItems,
+  observeMissionSidcs,
   suggestName,
 } from './repository';
 
@@ -263,5 +264,33 @@ describe('map items', () => {
       expect(item).toMatchObject({ notes: 'n', style: '{"polygonType":"free-fire-area","shape":"points"}' });
       expect(parsePolygonGeometry(item!.geometry)).toEqual(tri);
     });
+  });
+});
+
+const FRIEND_ARMOR_SIDC = 'SFGPUCA--------';
+const settle = () => new Promise((r) => setTimeout(r, 20));
+
+describe('observeMissionSidcs', () => {
+  it('emits the sorted, distinct symbols only when the set of symbols changes', async () => {
+    const ctx = makeTestContext();
+    const placed = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A' });
+    if (!placed.ok) throw new Error('place failed');
+    const emitted: string[][] = [];
+    const sub = observeMissionSidcs(ctx.db, 'm1').subscribe((s) => emitted.push(s));
+    await settle();
+    expect(emitted).toEqual([[HOSTILE_INF]]);
+
+    // A rename or a move does not change the symbols: the map must not re-render for it.
+    await updateItem(ctx, placed.value.id, { name: 'B' });
+    await updateItem(ctx, placed.value.id, { coord: { lat: 38.9, lon: -77 } });
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'C' });
+    await settle();
+    expect(emitted).toHaveLength(1);
+
+    await updateItem(ctx, placed.value.id, { sidc: FRIEND_ARMOR_SIDC });
+    await settle();
+    expect(emitted.at(-1)).toEqual([FRIEND_ARMOR_SIDC, HOSTILE_INF].sort());
+    expect(emitted).toHaveLength(2);
+    sub.unsubscribe();
   });
 });

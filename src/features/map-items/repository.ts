@@ -1,8 +1,10 @@
 import { Q, type Database } from '@nozbe/watermelondb';
-import { map, type Observable } from 'rxjs';
+import { distinctUntilChanged, map, type Observable } from 'rxjs';
 
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem, MapItemKind } from '@/lib/db/models/MapItem';
+import { isKnownSidc } from '@/features/symbology/categories';
+import { DEFAULT_SIDC } from '@/features/symbology/presets';
 import { Tables } from '@/lib/db/schema';
 
 import { nextNameForPrefix } from './naming';
@@ -39,6 +41,18 @@ export function observeMissionItems(db: Database, missionId: string): Observable
   return missionQuery(db, missionId)
     .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
     .pipe(map((items) => items.map(snapshot)));
+}
+
+/**
+ * The distinct symbols a mission's items use, sorted. Emits only when that set changes, so a rename or
+ * a move (which re-emits every item) does not re-render the map.
+ */
+export function observeMissionSidcs(db: Database, missionId: string): Observable<string[]> {
+  return observeMissionItems(db, missionId).pipe(
+    map((items) => [...new Set(items.map((i) => (i.sidc && isKnownSidc(i.sidc) ? i.sidc : DEFAULT_SIDC)))].sort().join('|')),
+    distinctUntilChanged(),
+    map((key) => (key ? key.split('|') : [])),
+  );
 }
 
 /** One item as a snapshot; null when it does not exist or was deleted. */
