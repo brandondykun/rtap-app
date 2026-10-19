@@ -1,9 +1,10 @@
 import { act, render } from '@testing-library/react-native';
 import type { MapView } from '@rnmapbox/maps';
 import { createRef } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, Dimensions, type AppStateStatus } from 'react-native';
 
 import { makeTestContext } from '@/lib/db/test-database';
+import { INITIAL_MENU, useMenu } from '@/stores/menu';
 
 import { captureWithin, createSnapshotCapture, SNAPSHOT_LEAVE_TIMEOUT_MS, SNAPSHOT_TAKE_TIMEOUT_MS, useMissionSnapshot } from './mission-snapshot';
 
@@ -114,10 +115,31 @@ describe('useMissionSnapshot', () => {
     const view = await render(<Harness mapRef={fakeMap(takeSnap)} />);
     await act(async () => onChange('background'));
     expect(takeSnap).toHaveBeenCalledWith(true);
-    expect(mockSave).toHaveBeenCalledWith(expect.anything(), 'm1', 'file:///s.png');
+    expect(mockSave).toHaveBeenCalledWith(expect.anything(), 'm1', 'file:///s.png', expect.anything());
     takeSnap.mockClear();
     await act(async () => view.unmount());
     expect(takeSnap).toHaveBeenCalledTimes(1);
+  });
+
+  it('records where the open panel covered the map when the picture was taken', async () => {
+    useMenu.setState({ ...INITIAL_MENU, panelFrame: { side: 'left', size: 360 } });
+    let resolve: (uri: string) => void = () => {};
+    const takeSnap = jest.fn(() => new Promise<string>((r) => (resolve = r)));
+    const view = await render(<Harness mapRef={fakeMap(takeSnap)} />);
+    const action = { type: 'GO_BACK' };
+    await act(async () => {
+      fireBeforeRemove(action);
+    });
+    // The menu closes while the snapshot is still being taken: the picture still shows the drawer.
+    useMenu.setState({ panelFrame: null });
+    await act(async () => resolve('file:///s.png'));
+    const { width, height } = Dimensions.get('window');
+    expect(mockSave).toHaveBeenCalledWith(expect.anything(), 'm1', 'file:///s.png', {
+      view: { width, height },
+      panel: { side: 'left', size: 360 },
+    });
+    useMenu.setState(INITIAL_MENU);
+    await act(async () => view.unmount());
   });
 
   it('cannot capture on unmount once React has detached the map ref (Android back)', async () => {
@@ -142,7 +164,7 @@ describe('useMissionSnapshot', () => {
     expect(takeSnap).toHaveBeenCalledTimes(1);
     expect(mockNavigation.dispatch).not.toHaveBeenCalled();
     await act(async () => resolve('file:///s.png'));
-    expect(mockSave).toHaveBeenCalledWith(expect.anything(), 'm1', 'file:///s.png');
+    expect(mockSave).toHaveBeenCalledWith(expect.anything(), 'm1', 'file:///s.png', expect.anything());
     expect(mockNavigation.dispatch).toHaveBeenCalledTimes(1);
     expect(mockNavigation.dispatch).toHaveBeenCalledWith(action);
     // The re-dispatched action was not prevented again and did not take a second picture.

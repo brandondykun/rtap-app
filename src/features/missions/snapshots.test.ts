@@ -8,9 +8,17 @@ import { deleteMissionSnapshot, snapshotFile } from './snapshot-files';
 import { saveMissionSnapshot } from './snapshots';
 
 const fs = jest.requireMock('expo-file-system') as { __files: Set<string> };
-const manip = jest.requireMock('expo-image-manipulator') as { __last: { resize?: unknown; save?: unknown } };
+const manip = jest.requireMock('expo-image-manipulator') as {
+  __source: { width: number; height: number };
+  __last: { crop?: unknown; resize?: unknown; save?: unknown };
+};
 
-beforeEach(() => fs.__files.clear());
+beforeEach(() => {
+  fs.__files.clear();
+  manip.__last.crop = undefined;
+  manip.__last.resize = undefined;
+  Object.assign(manip.__source, { width: 1170, height: 2532 });
+});
 
 async function opened() {
   const ctx = makeTestContext();
@@ -34,6 +42,43 @@ describe('saveMissionSnapshot', () => {
     expect(fs.__files.has(uri)).toBe(true);
     const state = await findMissionViewState(ctx.db, id);
     expect(parseSnapshot(state?.snapshot ?? null)).toEqual(result.value);
+  });
+
+  it('keeps only the map left uncovered by an open drawer, at any screen size', async () => {
+    const { ctx, id } = await opened();
+    // Landscape 3x phone: 844 x 390 pt map with a 360 pt drawer on the left.
+    Object.assign(manip.__source, { width: 2532, height: 1170 });
+    await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png', { view: { width: 844, height: 390 }, panel: { side: 'left', size: 360 } });
+    expect(manip.__last.crop).toEqual({ originX: 1080, originY: 0, width: 1452, height: 1170 });
+    expect(manip.__last.resize).toEqual({ width: 720, height: null });
+    // Landscape 2x tablet: 1366 x 1024 pt map with a 400 pt drawer.
+    Object.assign(manip.__source, { width: 2732, height: 2048 });
+    await saveMissionSnapshot(ctx, id, 'file:///cache/snap2.png', { view: { width: 1366, height: 1024 }, panel: { side: 'left', size: 400 } });
+    expect(manip.__last.crop).toEqual({ originX: 800, originY: 0, width: 1932, height: 2048 });
+  });
+
+  it('keeps only the map above an open bottom sheet', async () => {
+    const { ctx, id } = await opened();
+    await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png', { view: { width: 390, height: 844 }, panel: { side: 'bottom', size: 300 } });
+    expect(manip.__last.crop).toEqual({ originX: 0, originY: 0, width: 1170, height: 1632 });
+  });
+
+  it('never enlarges a small visible part', async () => {
+    const { ctx, id } = await opened();
+    // 2x phone, drawer covers 60%: 534 px left, under the 720 px target.
+    Object.assign(manip.__source, { width: 1334, height: 750 });
+    await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png', { view: { width: 667, height: 375 }, panel: { side: 'left', size: 400 } });
+    expect(manip.__last.resize).toEqual({ width: 534, height: null });
+  });
+
+  it('keeps the previous picture when a panel covers almost all of the map', async () => {
+    const { ctx, id } = await opened();
+    await saveMissionSnapshot(ctx, id, 'file:///cache/first.png');
+    const before = await findMissionViewState(ctx.db, id);
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png', { view: { width: 390, height: 844 }, panel: { side: 'bottom', size: 800 } });
+    expect(result).toMatchObject({ ok: false, error: 'covered' });
+    expect((await findMissionViewState(ctx.db, id))?.snapshot).toBe(before?.snapshot);
+    expect(fs.__files.has('file:///cache/snap.png')).toBe(false);
   });
 
   it('overwrites the previous picture at the same path', async () => {

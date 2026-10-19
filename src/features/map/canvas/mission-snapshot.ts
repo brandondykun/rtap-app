@@ -1,10 +1,12 @@
 import type { MapView } from '@rnmapbox/maps';
 import { useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, type RefObject } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Dimensions } from 'react-native';
 
+import type { MapArea } from '@/features/missions/snapshot-crop';
 import { saveMissionSnapshot } from '@/features/missions/snapshots';
 import type { CommandContext } from '@/lib/db/command-context';
+import { useMenu } from '@/stores/menu';
 
 /** Leaving the mission waits this long for the picture at most. */
 export const SNAPSHOT_LEAVE_TIMEOUT_MS = 1000;
@@ -23,15 +25,15 @@ function settleWithin<T>(promise: Promise<T>, ms: number): Promise<T | undefined
 }
 
 /** One capture at a time; failures keep the previous picture. */
-export function createSnapshotCapture(takeSnap: () => Promise<string | null>, save: (uri: string) => Promise<unknown>): Capture {
+export function createSnapshotCapture<T>(takeSnap: () => Promise<T | null>, save: (shot: T) => Promise<unknown>): Capture {
   let inFlight: Promise<void> | null = null;
   return () => {
     if (inFlight) return inFlight;
     inFlight = (async () => {
       try {
         // A hung native snapshot must not wedge every later capture.
-        const uri = await settleWithin(takeSnap(), SNAPSHOT_TAKE_TIMEOUT_MS);
-        if (uri) await save(uri);
+        const shot = await settleWithin(takeSnap(), SNAPSHOT_TAKE_TIMEOUT_MS);
+        if (shot) await save(shot);
       } catch {
         // Keep the previous picture.
       } finally {
@@ -47,9 +49,20 @@ export async function captureWithin(capture: Capture, timeoutMs = SNAPSHOT_LEAVE
   await settleWithin(capture(), timeoutMs);
 }
 
-/** Reads the ref only when called (from an event), never during render. */
-async function takeMapSnap(mapRef: RefObject<MapView | null>): Promise<string | null> {
-  return mapRef.current ? mapRef.current.takeSnap(true) : null;
+type MapShot = { uri: string; area: MapArea };
+
+/**
+ * Reads the ref only when called (from an event), never during render. The map fills the window, and
+ * an open menu panel covers part of it: note both as the snapshot starts, so it can be cropped to
+ * what was visible even if the panel moves before the snapshot is ready.
+ */
+async function takeMapSnap(mapRef: RefObject<MapView | null>): Promise<MapShot | null> {
+  const map = mapRef.current;
+  if (!map) return null;
+  const { width, height } = Dimensions.get('window');
+  const area: MapArea = { view: { width, height }, panel: useMenu.getState().panelFrame };
+  const uri = await map.takeSnap(true);
+  return uri ? { uri, area } : null;
 }
 
 /**
@@ -62,7 +75,7 @@ export function useMissionSnapshot(ctx: CommandContext, missionId: string, mapRe
     () =>
       createSnapshotCapture(
         () => takeMapSnap(mapRef),
-        (uri) => saveMissionSnapshot(ctx, missionId, uri),
+        (shot) => saveMissionSnapshot(ctx, missionId, shot.uri, shot.area),
       ),
     [ctx, missionId, mapRef],
   );
