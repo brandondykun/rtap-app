@@ -156,19 +156,26 @@ describe('Panel', () => {
       expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
     });
 
-    it('anchors the minimized tab to the screen edge, spanning the notch side, instead of floating', async () => {
+    it('turns the minimized tab into a floating button just past the notch, rounded on all corners', async () => {
       // The global safe-area mock is itself a jest.fn: restoring a spy would drop its zero insets, so put them back instead.
       const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 0, right: 0, bottom: 21, left: 59 });
       try {
         await render(drawer({ minimized: true }));
         const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
-        expect(frame.left).toBe(0);
-        expect(frame.width).toBe(59 + 28);
-        // The chevron sits past the notch, in the part of the tab that shows.
-        expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab').props.style)?.paddingLeft).toBe(59);
+        expect(frame.left).toBe(59);
+        expect(frame.width).toBe(28);
+        const tab = screen.getByTestId('menu-panel-tab');
+        expect(tab.props.className).toContain('rounded-xl');
+        expect(tab.props.className).not.toContain('rounded-r-xl');
+        expect(tab.props.className).not.toContain('border-l-0');
       } finally {
         insets.mockReturnValue(INSETS);
       }
+    });
+
+    it('keeps the floating button off the screen edge where there is no notch', async () => {
+      await render(drawer({ minimized: true }));
+      expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style).left).toBe(4);
     });
 
     it('keeps the open tab on the drawer edge at its normal width', async () => {
@@ -176,6 +183,8 @@ describe('Panel', () => {
       const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
       expect(frame.left).toBe(drawerWidth(metrics()));
       expect(frame.width).toBe(28);
+      // Attached to the drawer: square on the drawer side.
+      expect(screen.getByTestId('menu-panel-tab').props.className).toContain('rounded-r-xl');
     });
 
     it('has no tab in portrait (the sheet already drags down)', async () => {

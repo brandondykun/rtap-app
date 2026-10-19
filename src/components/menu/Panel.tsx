@@ -5,6 +5,7 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
+import { EDGE } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { detentHeights, drawerWidth, snapIndex, type Detent, type PanelFrame } from './panel-geometry';
@@ -115,9 +116,9 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
         : { width: '100%', height: size.get() },
     [landscape],
   );
-  // Minimized, the tab grows out of the screen edge across the notch side (rather than floating beside
-  // it), its chevron past the notch. A CSS transition slides it along with the drawer.
-  const tabFrame = hidden ? { left: 0, width: insets.left + TAB_WIDTH } : { left: target, width: TAB_WIDTH };
+  // Minimized, the tab becomes a floating button just past the notch (never touching the screen edge).
+  // A CSS transition slides it along with the drawer.
+  const tabFrame = { left: hidden ? Math.max(insets.left, EDGE) : target, width: TAB_WIDTH };
 
   const drawer = (
     <Animated.View
@@ -166,8 +167,10 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
           accessibilityLabel={hidden ? `Show ${title ?? 'menu'}` : 'Hide menu'}
           onPress={() => onMinimizedChange?.(!hidden)}
           hitSlop={{ top: 8, bottom: 8, right: 12 }}
-          style={{ paddingLeft: hidden ? insets.left : 0 }}
-          className="h-full w-full items-center justify-center rounded-r-xl border border-l-0 border-border bg-surface active:opacity-70">
+          className={`h-full w-full items-center justify-center border border-border bg-surface active:opacity-70 ${
+            // Attached to the open drawer's edge; a free-standing button when minimized.
+            hidden ? 'rounded-xl' : 'rounded-r-xl border-l-0'
+          }`}>
           <Icon name={hidden ? 'chevron-right' : 'chevron-left'} size={22} color={colors.text} />
         </Pressable>
       </Animated.View>
