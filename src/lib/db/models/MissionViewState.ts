@@ -11,5 +11,7 @@ export class MissionViewState extends Model {
   @field('last_opened_at') lastOpenedAt!: number;
   /** JSON `MissionCamera` or null. */
   @field('camera') camera!: string | null;
+  /** JSON `MissionSnapshot` (this device's map picture) or null. */
+  @field('snapshot') snapshot!: string | null;
   @readonly @date('updated_at') updatedAt!: Date;
 }

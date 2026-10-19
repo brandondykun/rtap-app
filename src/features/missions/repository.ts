@@ -1,5 +1,5 @@
 import { Q, type Database } from '@nozbe/watermelondb';
-import { combineLatest, map, type Observable } from 'rxjs';
+import { combineLatest, map, of, type Observable } from 'rxjs';
 
 import { POINT_SIDCS } from '@/features/symbology/point-types';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -10,11 +10,18 @@ import type { LatLon } from '@/lib/geo/types';
 
 export type MissionCamera = { center: LatLon; zoom: number; bearing: number };
 
+/** A picture of the mission map stored on this device. */
+export type MissionSnapshot = { uri: string; takenAt: number };
+
+export type CategoryCounts = { units: number; points: number; lines: number; polygons: number };
+
 export type MissionSummary = {
   id: string;
   name: string;
   createdAt: number;
   lastOpenedAt: number | null;
+  camera: MissionCamera | null;
+  snapshot: MissionSnapshot | null;
 };
 
 export function sortMissionSummaries(list: MissionSummary[]): MissionSummary[] {
@@ -33,24 +40,29 @@ export function observeMissionSummaries(db: Database): Observable<MissionSummary
   const states$ = db
     .get<MissionViewState>(Tables.missionViewState)
     .query()
-    .observeWithColumns(['last_opened_at']);
+    .observeWithColumns(['last_opened_at', 'camera', 'snapshot']);
   return combineLatest([missions$, states$]).pipe(
     map(([missions, states]) => {
-      const opened = new Map(states.map((s) => [s.missionId, s.lastOpenedAt]));
+      const byMission = new Map(states.map((s) => [s.missionId, s]));
       return sortMissionSummaries(
-        missions.map((m) => ({
-          id: m.id,
-          name: m.name,
-          createdAt: m.createdAt.getTime(),
-          lastOpenedAt: opened.get(m.id) ?? null,
-        })),
+        missions.map((m) => {
+          const state = byMission.get(m.id);
+          return {
+            id: m.id,
+            name: m.name,
+            createdAt: m.createdAt.getTime(),
+            lastOpenedAt: state?.lastOpenedAt ?? null,
+            camera: parseCamera(state?.camera ?? null),
+            snapshot: parseSnapshot(state?.snapshot ?? null),
+          };
+        }),
       );
     }),
   );
 }
 
 /** Units, points, lines and polygons in a mission: lines and polygons by kind, points by symbol code (see itemCategory). */
-export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<{ units: number; points: number; lines: number; polygons: number }> {
+export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<CategoryCounts> {
   const items = db.get<MapItem>(Tables.mapItems);
   const inMission = Q.where('mission_id', missionId);
   return combineLatest([
@@ -59,6 +71,14 @@ export function observeMissionCategoryCounts(db: Database, missionId: string): O
     items.query(inMission, Q.where('kind', 'line')).observeCount(),
     items.query(inMission, Q.where('kind', 'polygon')).observeCount(),
   ]).pipe(map(([symbols, points, lines, polygons]) => ({ units: Math.max(0, symbols - points), points, lines, polygons })));
+}
+
+/** Category counts for each mission id (for sorting by size and the units total). */
+export function observeCountsByMission(db: Database, ids: readonly string[]): Observable<ReadonlyMap<string, CategoryCounts>> {
+  if (ids.length === 0) return of(new Map());
+  return combineLatest(ids.map((id) => observeMissionCategoryCounts(db, id))).pipe(
+    map((counts) => new Map(ids.map((id, i) => [id, counts[i]]))),
+  );
 }
 
 /** Returns null for unknown ids and for soft-deleted (markAsDeleted) missions. */
@@ -91,15 +111,31 @@ export function isValidCamera(value: unknown): value is MissionCamera {
   );
 }
 
-export async function getMissionCamera(db: Database, missionId: string): Promise<MissionCamera | null> {
-  const state = await findMissionViewState(db, missionId);
-  if (!state?.camera) return null;
+export function parseCamera(json: string | null): MissionCamera | null {
+  if (!json) return null;
   try {
-    const parsed: unknown = JSON.parse(state.camera);
+    const parsed: unknown = JSON.parse(json);
     return isValidCamera(parsed) ? parsed : null;
   } catch {
     return null;
   }
+}
+
+export function parseSnapshot(json: string | null): MissionSnapshot | null {
+  if (!json) return null;
+  try {
+    const s = JSON.parse(json) as MissionSnapshot | null;
+    return s && typeof s.uri === 'string' && s.uri.length > 0 && typeof s.takenAt === 'number' && Number.isFinite(s.takenAt)
+      ? { uri: s.uri, takenAt: s.takenAt }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getMissionCamera(db: Database, missionId: string): Promise<MissionCamera | null> {
+  const state = await findMissionViewState(db, missionId);
+  return parseCamera(state?.camera ?? null);
 }
 
 export async function suggestMissionName(db: Database): Promise<string> {

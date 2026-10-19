@@ -65,6 +65,7 @@ async function upsertViewState(
         s.missionId = missionId;
         s.lastOpenedAt = ctx.now();
         s.camera = null;
+        s.snapshot = null;
         apply(s);
       });
     }
