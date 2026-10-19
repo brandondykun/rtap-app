@@ -7,7 +7,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { PointsLayer } from './PointsLayer';
+import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
 
 jest.mock('@rnmapbox/maps');
 
@@ -35,6 +35,18 @@ describe('PointsLayer', () => {
     expect(props.SymbolLayer['points-labels'].filter).toEqual(hiddenFilter([a.value.id]));
     // Hiding never rebuilds the source.
     expect((props.ShapeSource.points.shape as Shape).features).toHaveLength(2);
+  });
+
+  it('shows point labels only from zoom 13 in; symbols show at every zoom', async () => {
+    // Placing thousands of crowded labels is what makes panning lag when zoomed out.
+    const ctx = makeTestContext();
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    await renderWithProviders(<PointsLayer missionId="m1" />, ctx);
+    const props = mapboxMock().__props;
+    await waitFor(() => expect((props.ShapeSource.points.shape as Shape).features).toHaveLength(1));
+    expect(props.SymbolLayer['points-labels'].minZoomLevel).toBe(POINT_LABEL_MIN_ZOOM);
+    expect(POINT_LABEL_MIN_ZOOM).toBe(13);
+    expect(props.SymbolLayer['points-symbols'].minZoomLevel).toBeUndefined();
   });
 
   it('keeps layer styles stable across data updates', async () => {

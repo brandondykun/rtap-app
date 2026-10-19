@@ -16,6 +16,12 @@ import { useLabelTextSize } from './use-label-text-size';
 
 type LayerFilter = ComponentProps<typeof SymbolLayer>['filter'];
 
+/**
+ * Labels show from this zoom in (about 5 km across a phone). Further out they would crowd each other,
+ * and placing thousands of them on every pan is what makes the map lag; the symbols always show.
+ */
+export const POINT_LABEL_MIN_ZOOM = 13;
+
 const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 
@@ -57,7 +63,7 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
         if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude }, { kind: 'point', sidc }, itemAt);
       }}>
       <SymbolLayer id="points-symbols" style={POINT_SYMBOL_STYLE} filter={filter} />
-      <SymbolLayer id="points-labels" style={labelStyle} filter={filter} />
+      <SymbolLayer id="points-labels" style={labelStyle} filter={filter} minZoomLevel={POINT_LABEL_MIN_ZOOM} />
     </ShapeSource>
   );
 }
