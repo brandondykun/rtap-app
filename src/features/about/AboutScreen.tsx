@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -29,7 +30,7 @@ export function AboutScreen() {
         <View className="h-11 flex-row items-center">
           <Text
             accessibilityRole="header"
-            className="absolute left-0 right-0 text-center text-lg font-semibold text-text"
+            className="absolute left-0 right-0 text-center text-xl font-semibold text-text"
             pointerEvents="none">
             About
           </Text>
@@ -39,8 +40,9 @@ export function AboutScreen() {
             onPress={() => router.back()}
             hitSlop={8}
             className="min-h-11 min-w-11 flex-row items-center pr-2 active:opacity-50">
-            <Icon name="chevron-left" size={32} color={colors.text} />
-            <Text className="-ml-1 text-lg text-text">Back</Text>
+            {/* Ionicons' chevron is the thin iOS one (the Material chevron is too heavy). */}
+            <Ionicons testID="about-back-chevron" name="chevron-back" size={30} color={colors.text} />
+            <Text className="text-xl text-text">Back</Text>
           </Pressable>
         </View>
       </View>

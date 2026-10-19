@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { fireEvent, screen } from '@testing-library/react-native';
 import Constants from 'expo-constants';
 import { StyleSheet } from 'react-native';
@@ -30,6 +31,10 @@ describe('AboutScreen', () => {
     expect(screen.getByRole('header', { name: 'About' })).toBeTruthy();
     const back = screen.getByLabelText('Back');
     expect(back).toHaveTextContent(/Back$/);
+    // iPhone proportions: 20 pt Back label and title, thin iOS chevron.
+    expect(screen.getByText('Back').props.className).toContain('text-xl');
+    expect(screen.getByRole('header', { name: 'About' }).props.className).toContain('text-xl');
+    expect(screen.getByTestId('about-back-chevron')).toHaveTextContent(String.fromCodePoint(Number(Ionicons.glyphMap['chevron-back'])));
     // At least the 44 pt minimum touch target.
     expect(back.props.className).toContain('min-h-11');
     expect(back.props.className).toContain('min-w-11');
