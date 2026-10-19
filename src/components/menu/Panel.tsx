@@ -28,7 +28,7 @@ type Props = {
 };
 
 /** The full-height rail on the open drawer's right edge (inside its width), which hides it. */
-const RAIL_WIDTH = 22;
+const RAIL_WIDTH = 16;
 /** The floating button that shows the minimized drawer again. */
 const TAB_WIDTH = 28;
 const TAB_HEIGHT = 64;
@@ -154,7 +154,7 @@ export function Panel({ landscape, detents, initialDetent, topReserved, title, m
           onPress={() => onMinimizedChange?.(true)}
           style={{ width: RAIL_WIDTH }}
           className="h-full items-center justify-center border-l border-border bg-surface-raised active:opacity-70">
-          <Icon name="chevron-left" size={20} color={colors.text} />
+          <Icon name="chevron-left" size={16} color={colors.text} />
         </Pressable>
       ) : null}
     </Animated.View>
