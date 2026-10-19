@@ -54,3 +54,5 @@ jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock
 require('react-native-gesture-handler/jestSetup');
 jest.mock('expo-file-system', () => jest.requireActual('./__mocks__/expo-file-system'));
 jest.mock('expo-image-manipulator', () => jest.requireActual('./__mocks__/expo-image-manipulator'));
+jest.mock('@shopify/react-native-skia', () => ({ Skia: {}, ImageFormat: { PNG: 4 } }));
+jest.mock('@/features/symbology/render/get-symbol-image', () => ({ getSymbolImage: jest.fn(async () => null) }));
