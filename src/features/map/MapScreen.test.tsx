@@ -29,6 +29,7 @@ jest.mock('@/config/env', () => ({ getMapboxToken: () => mockToken }));
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) };
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
+  useNavigation: () => ({ addListener: () => () => {}, dispatch: jest.fn() }),
   useFocusEffect: (effect: () => void | (() => void)) => jest.requireActual('react').useEffect(effect, [effect]),
 }));
 

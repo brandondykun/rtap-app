@@ -7,8 +7,6 @@ import { AppRootMenu } from './AppRootMenu';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) };
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
-const mockCapture = jest.fn(async () => undefined);
-jest.mock('@/features/map/canvas/mission-snapshot', () => ({ captureBeforeLeave: () => mockCapture() }));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -24,12 +22,10 @@ describe('AppRootMenu', () => {
     await waitFor(() => expect(mockRouter.back).toHaveBeenCalled());
   });
 
-  it('captures the map picture before switching mission', async () => {
+  it('leaves the picture to the mission screen (beforeRemove) so it is taken once', async () => {
     await renderWithProviders(<AppRootMenu params={{}} missionId="m1" />);
     await fireEvent.press(screen.getByText('Switch mission'));
-    await waitFor(() => expect(mockRouter.back).toHaveBeenCalled());
-    expect(mockCapture).toHaveBeenCalled();
-    expect(mockCapture.mock.invocationCallOrder[0]).toBeLessThan(mockRouter.back.mock.invocationCallOrder[0]);
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
   });
 
   it('replaces to the list when there is no history', async () => {
