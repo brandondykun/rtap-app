@@ -2,23 +2,41 @@ import { Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useInteraction } from '@/stores/interaction';
+import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
-import { formatCoordinate } from '../interaction/readout';
+import { describeReadout } from '../interaction/readout';
 import { CardLead } from './CardLead';
 
-/** Landscape: CTR and the crosshair's grid, bottom left (MapBottomLeft). Portrait shows it in the dock's CTR row instead. */
+/**
+ * Landscape: CTR and the crosshair's grid, then its distance and bearing from you, bottom left
+ * (MapBottomLeft). Laid out like the ME card (grid, then a small second line) so the two match.
+ * Portrait shows the same in the dock's CTR row instead.
+ */
 export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }) {
   const center = useInteraction((s) => s.cameraCenter);
+  const self = usePresence((s) => s.selfPosition?.position ?? null);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
+  const angleUnit = useSettings((s) => s.angleUnit);
+  const northRef = useSettings((s) => s.northRef);
+  const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
+  const r = describeReadout(center, self, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
   return (
     <View
       testID="center-card"
       onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}
-      className="flex-row items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-3 py-2">
-      <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />
-      <Text testID="readout-coordinate" className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
-        {center ? formatCoordinate(center, coordinateFormat) : '—'}
+      className="rounded-2xl border border-border bg-surface-chrome px-3 py-2">
+      <View className="flex-row items-center gap-2">
+        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />
+        <Text testID="readout-coordinate" className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+          {r.coordinate}
+        </Text>
+      </View>
+      <Text
+        testID="center-vector"
+        accessibilityLabel={`Distance from you ${r.distance}, bearing ${r.bearing} ${r.ref}`}
+        className="mt-0.5 font-mono text-xs text-text-muted">
+        {`DIST ${r.distance} · BRG ${r.bearing}`}
       </Text>
     </View>
   );
