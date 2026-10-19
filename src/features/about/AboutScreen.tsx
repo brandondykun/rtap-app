@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
-import { ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
@@ -10,15 +11,39 @@ import { useTheme } from '@/theme/ThemeProvider';
 const MAX_CONTENT_WIDTH = 720;
 
 /**
- * Full-screen About page (a route, not a menu): app info and what each toolbar button does. The route
- * shows the native header, which provides Back and sits below the status bar.
+ * Full-screen About page (a route, not a menu): app info and what each toolbar button does. It draws
+ * its own iOS-style header: the native iOS 26 back button flashes light as the page opens. Swipe back
+ * (iOS) and the system back (Android) still work; they come from the navigator, not the header.
  */
 export function AboutScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? '—';
   return (
     <View className="flex-1 bg-surface">
+      <View
+        testID="about-header"
+        className="border-b border-border bg-surface"
+        style={{ paddingTop: insets.top, paddingLeft: insets.left + 8, paddingRight: insets.right + 8 }}>
+        <View className="h-11 flex-row items-center">
+          <Text
+            accessibilityRole="header"
+            className="absolute left-0 right-0 text-center text-lg font-semibold text-text"
+            pointerEvents="none">
+            About
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => router.back()}
+            hitSlop={8}
+            className="min-h-11 min-w-11 flex-row items-center pr-2 active:opacity-50">
+            <Icon name="chevron-left" size={32} color={colors.text} />
+            <Text className="-ml-1 text-lg text-text">Back</Text>
+          </Pressable>
+        </View>
+      </View>
       <ScrollView
         testID="about-scroll"
         contentContainerStyle={{
