@@ -42,6 +42,29 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('divider-end').props.className).not.toContain('ml-1.5');
   });
 
+  it('shades a divider while tools are scrolled out of sight behind it', async () => {
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
+    const tools = screen.getByTestId('toolbar-tools');
+    // Everything fits: no shade.
+    await fireEvent(tools, 'layout', { nativeEvent: { layout: { width: 300, height: 40 } } });
+    await fireEvent(tools, 'contentSizeChange', 300, 40);
+    expect(screen.queryByTestId('toolbar-shade-start')).toBeNull();
+    expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
+    // Overflowing at rest: tools hide behind the end divider only.
+    await fireEvent(tools, 'contentSizeChange', 500, 40);
+    expect(screen.queryByTestId('toolbar-shade-start')).toBeNull();
+    expect(screen.getByTestId('toolbar-shade-end')).toBeTruthy();
+    const scroll = (x: number) => ({ nativeEvent: { contentOffset: { x, y: 0 }, contentSize: { width: 500, height: 40 }, layoutMeasurement: { width: 300, height: 40 } } });
+    // Midway: both sides.
+    await fireEvent.scroll(tools, scroll(100));
+    expect(screen.getByTestId('toolbar-shade-start')).toBeTruthy();
+    expect(screen.getByTestId('toolbar-shade-end')).toBeTruthy();
+    // At the end: only the start divider.
+    await fireEvent.scroll(tools, scroll(200));
+    expect(screen.getByTestId('toolbar-shade-start')).toBeTruthy();
+    expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
+  });
+
   it('anchors top-right and sizes to content in landscape', async () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
     expect(style().left).toBeUndefined();

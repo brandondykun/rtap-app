@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -63,16 +63,63 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       {landscape ? (
         <View className="flex-row items-center gap-1">{tools}</View>
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ alignItems: 'center', gap: 4, paddingHorizontal: 6 }}>
-          {tools}
-        </ScrollView>
+<ToolScroller>{tools}</ToolScroller>
       )}
       <Divider side="end" flush={!landscape} />
       <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
+    </View>
+  );
+}
+
+/** Allowance for subpixel offsets, so a scroller resting at an end shows no shade there. */
+const SLACK = 1;
+const SHADE_WIDTH = 20;
+
+/**
+ * The portrait tools, scrolling sideways. While tools are scrolled out of sight behind a divider, a shade
+ * fades them out against that divider to show more are hidden there.
+ */
+function ToolScroller({ children }: { children: ReactNode }) {
+  const { colors } = useTheme();
+  const [width, setWidth] = useState(0);
+  const [contentWidth, setContentWidth] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const hiddenStart = offset > SLACK;
+  const hiddenEnd = width > 0 && offset + width < contentWidth - SLACK;
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    // Only re-render when a shade would appear or disappear.
+    if (x > SLACK !== hiddenStart || x + width < contentWidth - SLACK !== hiddenEnd) setOffset(x);
+  };
+  const shade = (side: 'start' | 'end') => (
+    <View
+      testID={`toolbar-shade-${side}`}
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: SHADE_WIDTH,
+        [side === 'start' ? 'left' : 'right']: 0,
+        experimental_backgroundImage: `linear-gradient(to ${side === 'start' ? 'right' : 'left'}, ${colors['surface-chrome']}, transparent)`,
+      }}
+    />
+  );
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        testID="toolbar-tools"
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        onContentSizeChange={(w) => setContentWidth(w)}
+        onScroll={onScroll}
+        contentContainerStyle={{ alignItems: 'center', gap: 4, paddingHorizontal: 6 }}>
+        {children}
+      </ScrollView>
+      {hiddenStart ? shade('start') : null}
+      {hiddenEnd ? shade('end') : null}
     </View>
   );
 }
