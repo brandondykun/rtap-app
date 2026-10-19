@@ -137,6 +137,8 @@ describe('Panel', () => {
       // Part of the drawer (inside it, not floating beside it), spanning its height.
       expect(screen.getByTestId('menu-panel')).toContainElement(rail);
       expect(rail.props.className).toContain('h-full');
+      // A slim rail: it should not take much from the menu.
+      expect(StyleSheet.flatten(rail.props.style).width).toBe(22);
       expect(screen.queryByText(/hide/i)).toBeNull();
       // No floating button while the drawer is open.
       expect(screen.queryByTestId('menu-panel-tab')).toBeNull();
