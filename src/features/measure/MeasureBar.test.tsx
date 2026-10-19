@@ -40,11 +40,11 @@ describe('MeasureBar', () => {
     expect(useMeasure.getState().active).toBe(false);
   });
 
-  it('looks like the other tap-mode bars, with compact icon buttons', async () => {
+  it('looks like the other tap-mode bars: compact buttons, the crosshair with CTR', async () => {
     await renderWithProviders(<MeasureBar />);
     expect(screen.getByTestId('measure-bar')).toBeTruthy();
     expect(screen.getByLabelText('Set at CTR').props.className).toContain('min-h-10');
-    expect(screen.queryByText('Set at CTR')).toBeNull();
+    expect(screen.getByLabelText('Set at CTR')).toHaveTextContent('CTR', { exact: true });
     expect(screen.getByLabelText('Stop measuring').props.className).toContain('min-h-10');
   });
 });
