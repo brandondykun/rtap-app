@@ -58,8 +58,9 @@ export function AboutScreen() {
         <View className="w-full self-center" style={{ maxWidth: MAX_CONTENT_WIDTH }}>
           <Text className="text-3xl font-bold tracking-widest text-accent">RTAP</Text>
           <Text className="mt-1 text-base text-text-muted">Realtime Team Awareness Platform</Text>
+          <Text className="mt-3 text-sm text-text">Built by military and geospatial professionals.</Text>
           <Text className="mt-4 font-mono text-sm text-text-muted">{`Version ${version}`}</Text>
-          <Text className="mt-6 text-sm text-text">For training and military simulation. Not for real-world military use.</Text>
+          <Text className="mt-6 text-sm text-text">For training and military simulation. Not for real-world military use or targeting.</Text>
 
           <Text accessibilityRole="header" className="mb-3 mt-10 text-sm font-bold uppercase tracking-widest text-text-muted">
             Toolbar

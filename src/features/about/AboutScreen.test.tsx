@@ -23,6 +23,8 @@ describe('AboutScreen', () => {
     expect(screen.getByText('Realtime Team Awareness Platform')).toBeTruthy();
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
+    expect(screen.getByText('Built by military and geospatial professionals.')).toBeTruthy();
+    expect(screen.getByText('For training and military simulation. Not for real-world military use or targeting.')).toBeTruthy();
   });
 
   it('draws its own header: a large Back button and the About title', async () => {
