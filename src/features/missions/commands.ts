@@ -8,7 +8,8 @@ import type { MissionViewState } from '@/lib/db/models/MissionViewState';
 import { Tables } from '@/lib/db/schema';
 import { err, ok, type Result } from '@/lib/result';
 
-import { findMission, findMissionViewState, isValidCamera, type MissionCamera } from './repository';
+import { findMission, findMissionViewState, isValidCamera, type MissionCamera, type MissionSnapshot } from './repository';
+import { deleteMissionSnapshot } from './snapshot-files';
 
 export async function createMission(
   ctx: CommandContext,
@@ -99,6 +100,17 @@ export async function saveMissionCamera(
   }
 }
 
+export async function recordMissionSnapshot(ctx: CommandContext, missionId: string, snapshot: MissionSnapshot): Promise<Result<void, 'write_failed'>> {
+  try {
+    await upsertViewState(ctx, missionId, (s) => {
+      s.snapshot = JSON.stringify(snapshot);
+    });
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
 /**
  * Deletes a mission and every item in it in one write. Synced records are tombstoned (like
  * deleteItem); local-only view state (last opened, camera, item visibility) is removed outright.
@@ -124,6 +136,7 @@ export async function deleteMission(ctx: CommandContext, missionId: string): Pro
         mission.prepareMarkAsDeleted(),
       ]);
     });
+    deleteMissionSnapshot(missionId);
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));

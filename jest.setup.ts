@@ -52,3 +52,5 @@ jest.mock('expo-screen-orientation', () => {
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 require('react-native-gesture-handler/jestSetup');
+jest.mock('expo-file-system', () => jest.requireActual('./__mocks__/expo-file-system'));
+jest.mock('expo-image-manipulator', () => jest.requireActual('./__mocks__/expo-image-manipulator'));

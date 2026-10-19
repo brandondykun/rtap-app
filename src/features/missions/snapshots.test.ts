@@ -1,0 +1,73 @@
+import { ImageManipulator } from 'expo-image-manipulator';
+
+import { makeTestContext } from '@/lib/db/test-database';
+
+import { createMission, deleteMission, markMissionOpened } from './commands';
+import { findMissionViewState, parseSnapshot } from './repository';
+import { deleteMissionSnapshot, snapshotFile } from './snapshot-files';
+import { saveMissionSnapshot } from './snapshots';
+
+const fs = jest.requireMock('expo-file-system') as { __files: Set<string> };
+const manip = jest.requireMock('expo-image-manipulator') as { __last: { resize?: unknown; save?: unknown } };
+
+beforeEach(() => fs.__files.clear());
+
+async function opened() {
+  const ctx = makeTestContext();
+  const m = await createMission(ctx, { name: 'Op Iron' });
+  if (!m.ok) throw new Error('setup');
+  await markMissionOpened(ctx, m.value.id);
+  return { ctx, id: m.value.id };
+}
+
+describe('saveMissionSnapshot', () => {
+  it('downscales to a 720 px JPEG, stores it per mission and records it on the view state', async () => {
+    const { ctx, id } = await opened();
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    expect(ImageManipulator.manipulate).toHaveBeenCalledWith('file:///cache/snap.png');
+    expect(manip.__last.resize).toEqual({ width: 720, height: null });
+    expect(manip.__last.save).toEqual({ format: 'jpeg', compress: 0.7 });
+    const uri = 'file:///docs/mission-snapshots/' + id + '.jpg';
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.value.uri).toBe(uri);
+    expect(Number.isFinite(result.value.takenAt)).toBe(true);
+    expect(fs.__files.has(uri)).toBe(true);
+    const state = await findMissionViewState(ctx.db, id);
+    expect(parseSnapshot(state?.snapshot ?? null)).toEqual(result.value);
+  });
+
+  it('overwrites the previous picture at the same path', async () => {
+    const { ctx, id } = await opened();
+    await saveMissionSnapshot(ctx, id, 'file:///cache/a.png');
+    await saveMissionSnapshot(ctx, id, 'file:///cache/b.png');
+    expect([...fs.__files].filter((f) => f.includes('mission-snapshots'))).toEqual([snapshotFile(id).uri]);
+  });
+
+  it('does not write for a deleted mission', async () => {
+    const { ctx, id } = await opened();
+    await deleteMission(ctx, id);
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    expect(result.ok).toBe(false);
+    expect(fs.__files.has(snapshotFile(id).uri)).toBe(false);
+    expect(await findMissionViewState(ctx.db, id)).toBeNull();
+  });
+
+  it('reports a failure without throwing', async () => {
+    const { ctx, id } = await opened();
+    (ImageManipulator.manipulate as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('decode failed');
+    });
+    const result = await saveMissionSnapshot(ctx, id, 'file:///cache/bad.png');
+    expect(result).toMatchObject({ ok: false, error: 'write_failed' });
+  });
+});
+
+describe('deleting', () => {
+  it('deleteMission removes the picture file; deleting a missing file is fine', async () => {
+    const { ctx, id } = await opened();
+    await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    await deleteMission(ctx, id);
+    expect(fs.__files.has(snapshotFile(id).uri)).toBe(false);
+    expect(() => deleteMissionSnapshot('nope')).not.toThrow();
+  });
+});
