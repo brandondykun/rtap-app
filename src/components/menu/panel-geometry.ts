@@ -15,9 +15,12 @@ export type PanelMetrics = {
 export const PEEK_HEIGHT = 96;
 export const MIN_HALF_HEIGHT = 300;
 export const HALF_FRACTION = 0.42;
-export const DRAWER_MIN_WIDTH = 280;
-export const DRAWER_MAX_WIDTH = 380;
-export const DRAWER_FRACTION = 0.36;
+/** Narrow enough to leave map beside it, wide enough for a full MGRS row (see the geometry test). */
+export const DRAWER_MIN_WIDTH = 326;
+export const DRAWER_MAX_WIDTH = 400;
+export const DRAWER_FRACTION = 0.38;
+/** The full-height rail on the open drawer's right edge, which hides it; the menu content gives up this width. */
+export const RAIL_WIDTH = 16;
 /** Release velocity (points/s) above which the sheet moves one detent in the fling direction. */
 export const FLING_VELOCITY = 800;
 

@@ -8,7 +8,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { EDGE } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { detentHeights, drawerWidth, snapIndex, type Detent, type PanelFrame } from './panel-geometry';
+import { detentHeights, drawerWidth, RAIL_WIDTH, snapIndex, type Detent, type PanelFrame } from './panel-geometry';
 
 type Props = {
   landscape: boolean;
@@ -29,8 +29,6 @@ type Props = {
   children: ReactNode;
 };
 
-/** The full-height rail on the open drawer's right edge (inside its width), which hides it. */
-const RAIL_WIDTH = 16;
 /** The floating button that shows the minimized drawer again: icon, a vertical label, then a chevron. */
 const TAB_WIDTH = 36;
 const TAB_HEIGHT = 180;

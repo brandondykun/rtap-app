@@ -1,8 +1,10 @@
+import { MGRS_ROW_MIN_WIDTH } from './MgrsInput';
 import {
   DRAWER_MAX_WIDTH,
   DRAWER_MIN_WIDTH,
   detentHeights,
   DRAWER_FRACTION,
+  RAIL_WIDTH,
   drawerWidth,
   FLING_VELOCITY,
   MIN_HALF_HEIGHT,
@@ -33,12 +35,13 @@ describe('panel geometry', () => {
     expect(drawerWidth(phoneLandscape)).toBe(47 + Math.min(DRAWER_MAX_WIDTH, Math.max(DRAWER_MIN_WIDTH, Math.round(844 * DRAWER_FRACTION))));
   });
 
-  it('keeps the drawer slim to leave more map beside it: 36% of the width, 280 to 380 pt', () => {
-    // iPhone landscape: 844 pt wide.
-    expect(drawerWidth(phoneLandscape)).toBe(47 + 304);
-    // Small phone (667 pt) is held at the minimum; iPad (1366 pt) at the maximum.
-    expect(drawerWidth({ ...phoneLandscape, width: 667, insets: { ...phoneLandscape.insets, left: 0 } })).toBe(280);
-    expect(drawerWidth({ ...phoneLandscape, width: 1366, insets: { ...phoneLandscape.insets, left: 0 } })).toBe(380);
+  it('keeps the drawer slim, but wide enough for a full MGRS grid row', () => {
+    // iPhone landscape (844 pt): 38% is 321, held at the 326 minimum.
+    expect(drawerWidth(phoneLandscape)).toBe(47 + 326);
+    expect(drawerWidth({ ...phoneLandscape, width: 1366, insets: { ...phoneLandscape.insets, left: 0 } })).toBe(400);
+    // The menu content (minus the hide rail and the section's side padding) fits zone, square and two 5-digit fields.
+    const SECTION_PADDING = 32;
+    expect(DRAWER_MIN_WIDTH - RAIL_WIDTH - SECTION_PADDING).toBeGreaterThanOrEqual(MGRS_ROW_MIN_WIDTH);
   });
 
   describe('snapIndex', () => {

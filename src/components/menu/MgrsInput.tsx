@@ -23,8 +23,13 @@ type Props = {
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
-const ZONE_WIDTH = 64;
-const SQUARE_WIDTH = 54;
+const ZONE_WIDTH = 56;
+const SQUARE_WIDTH = 46;
+/** Five 18 pt mono digits plus the dense field's padding and border, with a little slack for the cursor. */
+const DIGIT_FIELD_MIN_WIDTH = 76;
+const FIELD_GAP = 8;
+/** The narrowest the grid row can be without cutting off digits (the landscape drawer must allow it). */
+export const MGRS_ROW_MIN_WIDTH = ZONE_WIDTH + SQUARE_WIDTH + 2 * DIGIT_FIELD_MIN_WIDTH + 3 * FIELD_GAP;
 
 const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
