@@ -73,13 +73,14 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
   });
 
-  it('recenters when the ME row is tapped, outlines the dock in amber while following, and does nothing while disabled', async () => {
+  it('recenters when the ME row is tapped, keeps the plain border while following, and does nothing while disabled', async () => {
     const onRecenter = jest.fn();
     await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('dock-self')).toBeSelected();
-    expect(screen.getByTestId('readout-dock').props.className).toContain('border-accent');
+    expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
+    expect(screen.getByTestId('readout-dock').props.className).toContain('border-border');
     await screen.unmount();
     await renderWithProviders(<ReadoutDock following={false} disabled onRecenter={onRecenter} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));

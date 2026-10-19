@@ -64,6 +64,8 @@ describe('SelfCard', () => {
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Recenter on me')).toBeSelected();
+    // Following is for screen readers only: the border stays plain.
+    expect(screen.getByTestId('gps-readout').props.className).not.toContain('border-accent');
     await screen.unmount();
     await renderWithProviders(<SelfCard following={false} disabled onRecenter={onRecenter} />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));

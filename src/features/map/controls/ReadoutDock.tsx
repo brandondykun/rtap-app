@@ -14,11 +14,11 @@ import { CardLead } from './CardLead';
 
 /**
  * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME
- * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`. Outlined in amber while following.
+ * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`.
  */
 export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { showCenter: boolean } & SelfProps) {
   return (
-    <View testID="readout-dock" className={`mx-2 rounded-2xl border bg-surface-chrome px-3 ${following ? 'border-accent' : 'border-border'}`}>
+    <View testID="readout-dock" className="mx-2 rounded-2xl border border-border bg-surface-chrome px-3">
       {showCenter ? <CenterRow /> : null}
       {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
       <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} />
@@ -27,7 +27,7 @@ export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { s
 }
 
 type SelfProps = {
-  /** The camera is following the user. */
+  /** The camera is following the user (reported to screen readers; the border stays plain). */
   following: boolean;
   disabled: boolean;
   onRecenter: () => void;

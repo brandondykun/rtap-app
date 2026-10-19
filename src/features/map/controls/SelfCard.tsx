@@ -10,7 +10,7 @@ import { formatCoordinate } from '../interaction/readout';
 import { CardLead } from './CardLead';
 
 type Props = {
-  /** The camera is following the user: outlined in amber, like an active map button. */
+  /** The camera is following the user (reported to screen readers; the border stays plain). */
   following: boolean;
   disabled: boolean;
   onRecenter: () => void;
@@ -33,7 +33,7 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
       accessibilityState={{ selected: following, disabled }}
       disabled={disabled}
       onPress={onRecenter}
-      className={`rounded-2xl border bg-surface-chrome px-3 py-2 ${following ? 'border-accent' : 'border-border'}`}>
+      className="rounded-2xl border border-border bg-surface-chrome px-3 py-2">
       <View testID="gps-line" className="flex-row items-center gap-2">
         <CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} />
         {fix && !off ? (
