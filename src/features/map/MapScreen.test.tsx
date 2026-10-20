@@ -283,6 +283,21 @@ describe('MapScreen', () => {
     expect(screen.queryByTestId('menu-panel')).toBeNull();
   });
 
+  it('keeps LAYERS lit while an item opened from Layers is shown; pressing it closes both', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    const p = await placePoint(ctx, { missionId: r.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await fireEvent.press(await screen.findByLabelText('LAYERS'));
+    await fireEvent.press(await screen.findByLabelText('HOS-1'));
+    await screen.findByDisplayValue('HOS-1');
+    expect(screen.getByLabelText('LAYERS')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('LAYERS'));
+    expect(useMenu.getState().stack).toEqual([]);
+  });
+
   it('LABELS turns the map labels off and on, independent of the menus', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

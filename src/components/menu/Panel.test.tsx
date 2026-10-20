@@ -1,7 +1,7 @@
 import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { Dimensions, Keyboard, StyleSheet, Text } from 'react-native';
+import { Dimensions, Keyboard, ScrollView, StyleSheet, Text } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -217,6 +217,46 @@ describe('Panel', () => {
       await render(drawer({ minimized: false, landscape: false }));
       expect(screen.queryByLabelText('Hide menu')).toBeNull();
       expect(screen.queryByTestId('menu-panel-rail')).toBeNull();
+    });
+  });
+
+  describe('scroll position per content', () => {
+    const scrollTo = () => jest.mocked(ScrollView.prototype.scrollTo);
+    const panel = (contentKey: object, restoreScrollY?: number, onScrollY = jest.fn()) => (
+      <Panel landscape={false} detents={['half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={jest.fn()} contentKey={contentKey} restoreScrollY={restoreScrollY} onScrollY={onScrollY}>
+        <Text>content</Text>
+      </Panel>
+    );
+    const scrollView = () => screen.getByTestId('menu-panel-scroll');
+
+    beforeEach(() => scrollTo().mockClear());
+
+    it('reports where its content is scrolled to', async () => {
+      const onScrollY = jest.fn();
+      await render(panel({}, undefined, onScrollY));
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
+      expect(onScrollY).toHaveBeenLastCalledWith(300);
+    });
+
+    it('starts new content at the top', async () => {
+      const r = await render(panel({}));
+      await r.rerender(panel({}));
+      expect(scrollTo()).toHaveBeenLastCalledWith({ y: 0, animated: false });
+    });
+
+    it('returns to a remembered position once the content is long enough to reach it', async () => {
+      const r = await render(panel({}));
+      await r.rerender(panel({}, 300));
+      await fireEvent(scrollView(), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 400 } } });
+      // The list is still loading: as far as it goes.
+      await fireEvent(scrollView(), 'contentSizeChange', 390, 500);
+      expect(scrollTo()).toHaveBeenLastCalledWith({ y: 100, animated: false });
+      await fireEvent(scrollView(), 'contentSizeChange', 390, 900);
+      expect(scrollTo()).toHaveBeenLastCalledWith({ y: 300, animated: false });
+      // Reached: later growth leaves the user's scrolling alone.
+      scrollTo().mockClear();
+      await fireEvent(scrollView(), 'contentSizeChange', 390, 1200);
+      expect(scrollTo()).not.toHaveBeenCalled();
     });
   });
 });

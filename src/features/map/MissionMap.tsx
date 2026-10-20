@@ -111,6 +111,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useSelfLocation();
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
+  // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.
+  const rootId = useMenu((s) => s.stack[0]?.id ?? null);
   const editingId = useDraft((s) => (s.mode === 'edit' ? s.itemId : null));
   const drawingLine = useDraft((s) => s.mode !== null && s.category === 'line');
   const draftActive = useDraft((s) => s.mode !== null);
@@ -268,7 +270,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   );
 
   const toggleLayers = () => {
-    if (topId === 'layers') useMenu.getState().closeMenu();
+    if (rootId === 'layers') useMenu.getState().closeMenu();
     else useMenu.getState().openMenu('layers', {});
   };
   const toggleAdd = (id: 'line.add' | 'polygon.add') => {
@@ -413,7 +415,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : topId === 'layers' ? 'layers' : null)}
+        activeTool={quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)}
         onUnit={() => togglePlacing('unit')}
         onPoint={() => togglePlacing('point')}
         onLine={() => toggleAdd('line.add')}

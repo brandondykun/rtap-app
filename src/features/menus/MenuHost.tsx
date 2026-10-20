@@ -10,6 +10,7 @@ import { useDraft } from '@/stores/draft';
 import { topMenu, useMenu } from '@/stores/menu';
 
 import type { MenuComponentProps } from './define-menu';
+import { recallForEntry, rememberForEntry } from './menu-entry-memory';
 import { minimizedSummary } from './minimized-summary';
 import type { MenuId, MenuParams } from './params';
 import { MENU_REGISTRY } from './registry';
@@ -44,7 +45,10 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         minimized={minimized}
         minimizedTab={{ icon: definition.icon, ...minimizedSummary(top.id, definition.title, draft) }}
         onMinimizedChange={setMinimized}
-        onFrameChange={setPanelFrame}>
+        onFrameChange={setPanelFrame}
+        contentKey={top}
+        restoreScrollY={recallForEntry<number>(top, 'scrollY')}
+        onScrollY={(y) => rememberForEntry(top, 'scrollY', y)}>
         <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
       </Panel>
     </View>

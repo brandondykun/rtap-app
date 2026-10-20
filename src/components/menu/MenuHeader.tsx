@@ -5,7 +5,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 export type MenuHeaderAction = { label: string; onPress: () => void; disabled?: boolean; icon?: IconName };
 
-/** Leading outlined action (Cancel / Close), centered uppercase title, trailing amber primary button. */
+/** Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button. */
 export function MenuHeader({ title, leading, trailing }: { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction }) {
   const { colors } = useTheme();
   return (
@@ -16,7 +16,8 @@ export function MenuHeader({ title, leading, trailing }: { title: string; leadin
             accessibilityRole="button"
             onPress={leading.onPress}
             hitSlop={8}
-            className="rounded-xl border border-border bg-surface-raised px-4 py-2 active:opacity-60">
+            className={`flex-row items-center rounded-xl border border-border bg-surface-raised py-2 active:opacity-60 ${leading.icon ? 'pl-2 pr-4' : 'px-4'}`}>
+            {leading.icon ? <Icon name={leading.icon} size={18} color={colors.text} /> : null}
             <Text className="font-semibold text-text">{leading.label}</Text>
           </Pressable>
         ) : null}

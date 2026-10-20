@@ -9,11 +9,14 @@ export const ITEM_COPY: Record<ItemCategory, { noun: string; title: string }> = 
   polygon: { noun: 'polygon', title: 'Polygon' },
 };
 
-/** Open the right view for a map item (tap on the map or a Layers row). */
-export function openItemMenu(itemId: string, item: ItemRef): void {
+/**
+ * Open the right view for a map item (tap on the map or a Layers row). `drill` opens it over the
+ * current menu, whose Back returns there; otherwise it replaces the open menu.
+ */
+export function openItemMenu(itemId: string, item: ItemRef, { drill = false }: { drill?: boolean } = {}): void {
   const category = itemCategory(item);
-  if (category === 'point') useMenu.getState().openMenu('point.edit', { itemId });
-  else if (category === 'line') useMenu.getState().openMenu('line.edit', { itemId });
-  else if (category === 'polygon') useMenu.getState().openMenu('polygon.edit', { itemId });
-  else useMenu.getState().openMenu('unit.edit', { itemId });
+  const id = category === 'point' ? 'point.edit' : category === 'line' ? 'line.edit' : category === 'polygon' ? 'polygon.edit' : 'unit.edit';
+  const menu = useMenu.getState();
+  if (drill) menu.pushMenu(id, { itemId });
+  else menu.openMenu(id, { itemId });
 }

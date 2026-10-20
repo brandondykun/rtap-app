@@ -27,7 +27,11 @@ export function EditItemPanel({ category, itemId, form }: Props) {
   const adapter = ITEM_ADAPTERS[category];
   const GONE = `That ${noun} no longer exists.`;
   const ctx = useCommandContext();
-  const close = useMenu((s) => s.closeMenu);
+  const closeMenu = useMenu((s) => s.closeMenu);
+  const back = useMenu((s) => s.back);
+  // Drilled into from another menu (Layers): leaving goes back there instead of closing.
+  const drilled = useMenu((s) => s.stack.length > 1);
+  const close = drilled ? back : closeMenu;
   // undefined = still loading; null = missing or deleted.
   const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, itemId), undefined, [ctx, itemId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
@@ -51,7 +55,8 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     // Opened in the other category's menu (a stale link): hand over to the right one.
     if (itemCategory(item) !== category) {
       leaving.current = true;
-      openItemMenu(item.id, item);
+      if (drilled) back();
+      openItemMenu(item.id, item, { drill: drilled });
       return;
     }
     if (started.current) return;
@@ -62,7 +67,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
       notifyError(GONE);
       close();
     }
-  }, [item, close, category, GONE, adapter]);
+  }, [item, close, back, drilled, category, GONE, adapter]);
 
   useEffect(() => () => useDraft.getState().clear(), []);
 
@@ -126,7 +131,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
       {locked ? (
         <MenuHeader
           title={title}
-          leading={{ label: 'Close', onPress: close }}
+          leading={drilled ? { label: 'Back', icon: 'chevron-left', onPress: back } : { label: 'Close', onPress: closeMenu }}
           trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
         />
       ) : (

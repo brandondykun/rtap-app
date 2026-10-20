@@ -50,6 +50,9 @@ description: Use whenever you add or change a menu, panel content, or anything o
   Save unit / Save point hand over with `openMenu('unit.add' | 'point.add', { at })`.
 - Menu content must not depend on orientation for its own state: the Panel keeps it mounted
   across rotation.
+- **Drill-in** (`pushMenu`): the pushed menu shows **Back** (`back()`) instead of Close. The Panel
+  remembers each entry's scroll position; keep other view state that should survive the round trip
+  (search text) in `useMenuEntryState` (`src/features/menus/menu-entry-memory.ts`).
 
 ## Tests
 Render a menu directly with `renderWithProviders(<XMenu params={…} missionId="m1" />)`, or

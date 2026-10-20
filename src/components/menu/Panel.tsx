@@ -26,6 +26,11 @@ type Props = {
   onMinimizedChange?: (minimized: boolean) => void;
   /** Null while the drawer is minimized: the map, crosshair and controls then use the whole screen. */
   onFrameChange: (frame: PanelFrame | null) => void;
+  /** What is shown (one menu-stack entry): new content starts at the top, or at `restoreScrollY`. */
+  contentKey?: unknown;
+  /** Where to scroll new content to (a menu drilled back into), once it is long enough to get there. */
+  restoreScrollY?: number;
+  onScrollY?: (y: number) => void;
   children: ReactNode;
 };
 
@@ -51,6 +56,9 @@ export function Panel({
   minimizedTab,
   onMinimizedChange,
   onFrameChange,
+  contentKey,
+  restoreScrollY,
+  onScrollY,
   children,
 }: Props) {
   const { colors } = useTheme();
@@ -76,6 +84,30 @@ export function Panel({
   const dragStart = useSharedValue(0);
   /** Drawer slide: 0 open, -width minimized. */
   const offset = useSharedValue(0);
+
+  const scroller = useRef<ScrollView>(null);
+  const viewportHeight = useRef(0);
+  /** A remembered position not yet reached (the content is still loading). */
+  const pendingY = useRef<number | null>(null);
+  const shownKey = useRef(contentKey);
+
+  useEffect(() => {
+    if (shownKey.current === contentKey) return;
+    shownKey.current = contentKey;
+    if (restoreScrollY) pendingY.current = restoreScrollY;
+    else {
+      pendingY.current = null;
+      scroller.current?.scrollTo({ y: 0, animated: false });
+    }
+  }, [contentKey, restoreScrollY]);
+
+  const onContentSizeChange = (_w: number, contentHeight: number) => {
+    const target = pendingY.current;
+    if (target === null) return;
+    const reachable = Math.max(0, contentHeight - viewportHeight.current);
+    scroller.current?.scrollTo({ y: Math.min(target, reachable), animated: false });
+    if (reachable >= target) pendingY.current = null;
+  };
 
   useEffect(() => {
     detentRef.current = detent;
@@ -152,6 +184,14 @@ export function Panel({
           </GestureDetector>
         )}
         <ScrollView
+          testID="menu-panel-scroll"
+          ref={scroller}
+          onLayout={(e) => {
+            viewportHeight.current = e.nativeEvent.layout.height;
+          }}
+          onContentSizeChange={onContentSizeChange}
+          onScroll={(e) => onScrollY?.(e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={100}
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={{ paddingBottom: insets.bottom + 16, paddingTop: landscape ? 12 : 0 }}>

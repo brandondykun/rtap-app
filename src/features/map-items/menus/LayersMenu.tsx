@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
 import { MenuButton } from '@/components/menu/MenuButton';
@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
+import { useMenuEntryState } from '@/features/menus/menu-entry-memory';
 import type { ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo } from '@/features/symbology/line-types';
 import { polygonTypeInfo } from '@/features/symbology/polygon-types';
@@ -47,7 +48,8 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
-  const [query, setQuery] = useState('');
+  // Kept for an item drilled into and back out of.
+  const [query, setQuery] = useMenuEntryState('query', '');
   const chosenTab = useLayersView((s) => s.tab);
   const counts = useMemo(() => layerRows(items, hidden, '', 0), [items, hidden]);
   const byTab: Record<ItemCategory, number> = { unit: counts.units, point: counts.points, line: counts.lines, polygon: counts.polygons };
@@ -143,7 +145,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             }
             onPress={() => {
               Keyboard.dismiss();
-              openItemMenu(row.id, { kind: row.kind, sidc: row.sidc });
+              openItemMenu(row.id, { kind: row.kind, sidc: row.sidc }, { drill: true });
             }}
             trailing={{
               icon: row.hidden ? 'eye-off-outline' : 'eye-outline',

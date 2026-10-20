@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { MenuHost } from '@/features/menus/MenuHost';
@@ -9,8 +10,9 @@ import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { placeLine, placePoint, placePolygon, setItemHidden } from '../commands';
+import { deleteItem, placeLine, placePoint, placePolygon, setItemHidden } from '../commands';
 import { observeHiddenItemIds } from '../repository';
+import { openItemMenu } from './item-menus';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
@@ -157,5 +159,63 @@ describe('LayersMenu', () => {
     await act(async () => useMenu.getState().openMenu('layers', {}));
     expect(await screen.findByText('RED')).toBeTruthy();
     expect(screen.getByLabelText('Lines')).toBeSelected();
+  });
+
+  describe('drilling into an item', () => {
+    async function drillIn() {
+      const ctx = makeTestContext();
+      const a = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+      const b = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
+      if (!a.ok || !b.ok) throw new Error('setup');
+      await openLayers(ctx);
+      await fireEvent.changeText(await screen.findByLabelText('Search'), 'HOS');
+      await fireEvent.scroll(screen.getByTestId('menu-panel-scroll'), { nativeEvent: { contentOffset: { x: 0, y: 180 } } });
+      await fireEvent.press(await screen.findByLabelText('HOS-1'));
+      await screen.findByDisplayValue('HOS-1');
+      return { ctx, id: a.value.id };
+    }
+
+    it('opens the item over Layers, with Back instead of Close', async () => {
+      await drillIn();
+      expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['layers', 'unit.edit']);
+      expect(screen.getByText('Back')).toBeTruthy();
+      expect(screen.queryByText('Close')).toBeNull();
+    });
+
+    it('goes Back to Layers as it was left: same tab, search text and scroll position', async () => {
+      jest.mocked(ScrollView.prototype.scrollTo).mockClear();
+      await drillIn();
+      await fireEvent.press(screen.getByText('Back'));
+      expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['layers']);
+      expect(await screen.findByDisplayValue('HOS')).toBeTruthy();
+      expect(screen.getByLabelText('Units')).toBeSelected();
+      const scrollView = screen.getByTestId('menu-panel-scroll');
+      await fireEvent(scrollView, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 400 } } });
+      await fireEvent(scrollView, 'contentSizeChange', 390, 1000);
+      expect(ScrollView.prototype.scrollTo).toHaveBeenLastCalledWith({ y: 180, animated: false });
+    });
+
+    it('returns to Layers after deleting the item, or when it no longer exists', async () => {
+      const { ctx, id } = await drillIn();
+      await act(async () => {
+        await deleteItem(ctx, id);
+      });
+      await waitFor(() => expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['layers']));
+      expect(await screen.findByText('HOS-2')).toBeTruthy();
+      expect(screen.queryByText('HOS-1')).toBeNull();
+    });
+
+    it('still opens an item tapped on the map in its place, with Close', async () => {
+      const ctx = makeTestContext();
+      const a = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+      if (!a.ok) throw new Error('setup');
+      await openLayers(ctx);
+      // What a map tap does.
+      await act(async () => openItemMenu(a.value.id, { kind: 'point', sidc: HOS }));
+      await screen.findByDisplayValue('HOS-1');
+      expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['unit.edit']);
+      expect(screen.getByText('Close')).toBeTruthy();
+      expect(screen.queryByText('Back')).toBeNull();
+    });
   });
 });
