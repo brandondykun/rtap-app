@@ -49,6 +49,20 @@ describe('Toolbar', () => {
     }
   });
 
+  it('lets the portrait tools run under the rounded right end, keeping the same room after the last one', async () => {
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
+    const bar = screen.getByTestId('toolbar').props.className as string;
+    expect(bar).toContain('pl-2');
+    expect(bar).not.toMatch(/\b(px|pr)-/);
+    // The bar's own end padding (8) moves inside the scroll content, after its 6 pt inset.
+    expect(screen.getByTestId('toolbar-tools').props.contentContainerStyle).toMatchObject({ paddingLeft: 6, paddingRight: 14 });
+  });
+
+  it('keeps its padding on both ends in landscape (nothing scrolls)', async () => {
+    await renderWithProviders(<Toolbar landscape activeTool={null} />);
+    expect(screen.getByTestId('toolbar').props.className).toContain('px-2');
+  });
+
   it('has no divider at the end: nothing follows the tools', async () => {
     for (const landscape of [false, true]) {
       await renderWithProviders(<Toolbar landscape={landscape} activeTool={null} />);
