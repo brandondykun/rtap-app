@@ -28,7 +28,7 @@ const POINT_LABEL_GAP_PT = 15.6;
 const PIN_LABEL_GAP_PT = 5;
 const PIN_POINT_SIDCS = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
 /** The OP's triangle ends a little above the usual symbol bottom; the hostile diamond reaches a little below it. */
-const OP_LABEL_GAP_PT = 12.6;
+const OP_LABEL_GAP_PT = 9.6;
 const HOSTILE_UNIT_LABEL_GAP_PT = 18.6;
 const LINE_LABEL_GAP_PT = 10.8;
 const DRAFT_LABEL_GAP_PT = 39.6;

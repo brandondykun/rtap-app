@@ -213,7 +213,7 @@ describe('label text sizes', () => {
 
   it('puts the OP label a little higher and hostile unit labels a little lower than the rest', () => {
     const style = makePointLabelStyle(colors);
-    expect(pointGap(style, sidcForPointType('observation-post'))).toBeCloseTo(12.6);
+    expect(pointGap(style, sidcForPointType('observation-post'))).toBeCloseTo(9.6);
     for (const sidc of [HOSTILE_UNIT, 'SHGPUCA----E---']) expect(pointGap(style, sidc)).toBeCloseTo(18.6);
   });
 });
