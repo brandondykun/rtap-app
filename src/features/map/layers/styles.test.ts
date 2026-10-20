@@ -62,6 +62,19 @@ function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
       return v(args[0]) < v(args[1]);
     case 'case':
       return evaluate(evaluate(args[0], props) ? args[1] : args[2], props);
+    case 'match': {
+      // ['match', input, label(s), output, …, fallback]
+      const input = evaluate(args[0], props);
+      for (let i = 1; i + 1 < args.length; i += 2) {
+        const labels = Array.isArray(args[i]) ? (args[i] as unknown[]) : [args[i]];
+        if (labels.includes(input)) return evaluate(args[i + 1], props);
+      }
+      return evaluate(args[args.length - 1], props);
+    }
+    case '==':
+      return evaluate(args[0], props) === evaluate(args[1], props);
+    case 'slice':
+      return (evaluate(args[0], props) as string).slice(v(args[1]), v(args[2]));
     case 'interpolate': {
       // ['interpolate', ['linear'], input, stop, output, …] with number-array outputs.
       const x = v(args[1]);
@@ -162,11 +175,11 @@ describe('polygon styles', () => {
 describe('label text sizes', () => {
   const colors = themeColors('dark');
   const pt = (style: { textOffset?: unknown; textSize?: unknown }, axis: 0 | 1) => (style.textOffset as number[])[axis] * (style.textSize as number);
-  /** The point label's distance below the symbol in pt, for a feature with this SIDC (evaluates the `match`). */
-  const pointGap = (style: { textOffset?: unknown; textSize?: unknown }, sidc: string) => {
-    const [, , sidcs, pin, other] = style.textOffset as [string, unknown, string[], ['literal', number[]], ['literal', number[]]];
-    return (sidcs.includes(sidc) ? pin : other)[1][1] * (style.textSize as number);
-  };
+  /** The point label's distance below the symbol in pt, for a feature with this SIDC. */
+  const pointGap = (style: { textOffset?: unknown; textSize?: unknown }, sidc: string) =>
+    (evaluate(style.textOffset, { sidc }) as number[])[1] * (style.textSize as number);
+  const HOSTILE_UNIT = 'SHGPUCI----D---';
+  const FRIENDLY_UNIT = 'SFGPUCI----D---';
 
   it('is small, medium (the default, 12 pt) or large', () => {
     expect(LABEL_TEXT_SIZES.medium).toBe(12);
@@ -182,7 +195,9 @@ describe('label text sizes', () => {
       expect(makePolygonLabelStyle(colors, size).textSize).toBe(size);
       expect(makeDraftLabelStyle(colors, size).textSize).toBe(size);
       // Offsets are in ems, so they must shrink as the text grows to stay put in points.
-      for (const t of POINT_TYPES) expect(pointGap(makePointLabelStyle(colors, size), t.sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), t.sidc));
+      for (const sidc of [...POINT_TYPES.map((t) => t.sidc), HOSTILE_UNIT, FRIENDLY_UNIT]) {
+        expect(pointGap(makePointLabelStyle(colors, size), sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), sidc));
+      }
       expect(pt(makeDraftLabelStyle(colors, size), 1)).toBeCloseTo(pt(makeDraftLabelStyle(colors), 1));
     }
   });
@@ -190,9 +205,16 @@ describe('label text sizes', () => {
   it('puts labels of pin-shaped points (CKP, SP, RP, RLY, LU) closer: the pin draws above its tip, not around it', () => {
     const style = makePointLabelStyle(colors);
     const pins = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
-    const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s));
+    const op = sidcForPointType('observation-post');
+    const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s) && s !== op);
     for (const sidc of pins) expect(pointGap(style, sidc)).toBeLessThan(8);
-    for (const sidc of [...others, 'SFGPUCI----D---']) expect(pointGap(style, sidc)).toBeCloseTo(15.6);
+    for (const sidc of [...others, FRIENDLY_UNIT, 'SNGPUCI----D---', 'SUGPUCI----D---']) expect(pointGap(style, sidc)).toBeCloseTo(15.6);
+  });
+
+  it('puts the OP label a little higher and hostile unit labels a little lower than the rest', () => {
+    const style = makePointLabelStyle(colors);
+    expect(pointGap(style, sidcForPointType('observation-post'))).toBeCloseTo(12.6);
+    for (const sidc of [HOSTILE_UNIT, 'SHGPUCA----E---']) expect(pointGap(style, sidc)).toBeCloseTo(18.6);
   });
 });
 

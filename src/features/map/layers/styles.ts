@@ -27,6 +27,9 @@ const POINT_LABEL_GAP_PT = 15.6;
 /** Pin-shaped points mark the spot with their tip, so nothing draws below it: their label sits closer. */
 const PIN_LABEL_GAP_PT = 5;
 const PIN_POINT_SIDCS = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
+/** The OP's triangle ends a little above the usual symbol bottom; the hostile diamond reaches a little below it. */
+const OP_LABEL_GAP_PT = 12.6;
+const HOSTILE_UNIT_LABEL_GAP_PT = 18.6;
 const LINE_LABEL_GAP_PT = 10.8;
 const DRAFT_LABEL_GAP_PT = 39.6;
 
@@ -48,6 +51,7 @@ export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
 
 /** Label chips below each symbol; labels may hide each other when crowded (never the symbols). */
 export function makePointLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
+  const below = (gapPt: number) => ['literal', [0, gapPt / textSize]];
   return {
     textField: ['get', 'name'],
     textFont: MAP_LABEL_FONT,
@@ -55,7 +59,15 @@ export function makePointLabelStyle(colors: Record<SemanticToken, string>, textS
     textColor: colors['map-label-text'],
     textAnchor: 'top',
     // Just below the scaled symbol (half its height ≈ 13 pt), or just below a pin's tip.
-    textOffset: ['match', ['get', 'sidc'], PIN_POINT_SIDCS, ['literal', [0, PIN_LABEL_GAP_PT / textSize]], ['literal', [0, POINT_LABEL_GAP_PT / textSize]]],
+    textOffset: [
+      'match',
+      ['get', 'sidc'],
+      PIN_POINT_SIDCS,
+      below(PIN_LABEL_GAP_PT),
+      sidcForPointType('observation-post'),
+      below(OP_LABEL_GAP_PT),
+      ['case', ['==', ['slice', ['get', 'sidc'], 0, 2], 'SH'], below(HOSTILE_UNIT_LABEL_GAP_PT), below(POINT_LABEL_GAP_PT)],
+    ] as SymbolLayerStyle['textOffset'],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
     iconTextFitPadding: POINT_CHIP_PADDING,
