@@ -40,6 +40,9 @@ writeScaled('self-no-heading', svg(disc + dot));
 const { sizePx, radiusPx } = LABEL_CHIP_SPEC;
 const chip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" rx="${radiusPx}" fill="${colors['map-label-bg']}"/></svg>`;
 writeFileSync(join(OUT_DIR, 'label-chip.png'), new Resvg(chip).render().asPng());
+// Square chip for line labels: scaled as one piece (no stretch zones), so it stays whole when rotated.
+const squareChip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" fill="${colors['map-label-bg']}"/></svg>`;
+writeFileSync(join(OUT_DIR, 'label-chip-square.png'), new Resvg(squareChip).render().asPng());
 
 // Draft selection ring: dashed amber circle with four tick marks (mockup "HOS-4 · NEW").
 const D = DRAFT_RING_SIZE;

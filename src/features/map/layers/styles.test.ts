@@ -1,6 +1,8 @@
 import { POINT_TYPES, sidcForPointType } from '@/features/symbology/point-types';
 import { themeColors } from '@/theme/tokens';
 
+import { MAP_IMAGE_IDS } from '../images/map-images';
+
 import {
   DRAFT_SYMBOL_STYLE,
   LABEL_TEXT_SIZES,
@@ -113,6 +115,10 @@ describe('line end labels', () => {
     expect(l.style).toMatchObject({ textRotationAlignment: 'map', iconRotationAlignment: 'map' });
     expect(l.iconRotate).toBe(evaluate(l.style.textRotate, { bearing: 30 }));
     expect(l.reads).toBeCloseTo(30);
+  });
+
+  it('sits on the square chip, which stays in one piece when turned', () => {
+    expect(makeLineLabelStyle(colors).iconImage).toBe(MAP_IMAGE_IDS.labelChipSquare);
   });
 
   it('reads outward from the end when that points right on screen, starting just past the end', () => {

@@ -18,6 +18,7 @@ describe('map images', () => {
     expect(existsSync(join(ASSETS, 'label-chip.png'))).toBe(true);
     for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `draft-ring${suffix}.png`))).toBe(true);
     expect(existsSync(join(ASSETS, 'label-chip-accent.png'))).toBe(true);
+    expect(existsSync(join(ASSETS, 'label-chip-square.png'))).toBe(true);
     for (const name of ['line-arrow', 'line-flot-arc', 'line-vertex', 'temp-reticle']) {
       for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `${name}${suffix}.png`))).toBe(true);
     }
@@ -33,5 +34,13 @@ describe('map images', () => {
     expect(Math.min(c0, c1)).toBeGreaterThanOrEqual(0);
     expect(Math.max(c2, c3)).toBeLessThanOrEqual(LABEL_CHIP_SPEC.sizePx);
     expect(LABEL_CHIP_IMAGE_OPTIONS.stretchY).toEqual(LABEL_CHIP_IMAGE_OPTIONS.stretchX);
+  });
+
+  it('draws the square chip as one piece: no stretch zones, so a rotated chip cannot come apart', () => {
+    const entry = MAP_IMAGES[MAP_IMAGE_IDS.labelChipSquare] as { scale?: number; stretchX?: unknown; stretchY?: unknown; content?: unknown };
+    expect(entry.scale).toBe(LABEL_CHIP_SPEC.scale);
+    expect(entry.stretchX).toBeUndefined();
+    expect(entry.stretchY).toBeUndefined();
+    expect(entry.content).toBeUndefined();
   });
 });

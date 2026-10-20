@@ -189,6 +189,7 @@ export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSi
     textRotate: rotate as SymbolLayerStyle['textRotate'],
     textAnchor: ['case', pointsRight, 'left', 'right'] as SymbolLayerStyle['textAnchor'],
     textOffset: textOffset as SymbolLayerStyle['textOffset'],
+    iconImage: MAP_IMAGE_IDS.labelChipSquare,
     iconRotationAlignment: 'map',
     iconRotate: rotate as SymbolLayerStyle['iconRotate'],
     iconOffset: ['case', pointsRight, iconOffset(1), iconOffset(-1)] as SymbolLayerStyle['iconOffset'],
