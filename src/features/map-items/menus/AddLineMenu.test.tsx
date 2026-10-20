@@ -96,8 +96,16 @@ describe('AddLineMenu', () => {
     });
     await fireEvent.press(screen.getByLabelText('Point 1'));
     await fireEvent.press(screen.getByLabelText('Insert after point 1'));
+    expect(screen.getByText('Inserting points')).toBeTruthy();
     await act(async () => useDraft.getState().addVertex(p(9)));
     expect(useDraft.getState().vertices).toEqual([p(0), p(9), p(1), p(2)]);
+    // The indicator follows the new point, and Done goes back to adding at the end.
+    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Done inserting points'));
+    expect(useDraft.getState()).toMatchObject({ selectedVertex: null, insertAfter: null });
+    expect(screen.queryByText('Inserting points')).toBeNull();
+    await act(async () => useDraft.getState().addVertex(p(8)));
+    expect(useDraft.getState().vertices).toEqual([p(0), p(9), p(1), p(2), p(8)]);
   });
   it('lists line types alphabetically', async () => {
     await open();

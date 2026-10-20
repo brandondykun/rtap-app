@@ -50,6 +50,20 @@ describe('AddPolygonMenu', () => {
     expect(useMenu.getState().stack).toEqual([{ id: 'polygon.edit', params: { itemId: item.id } }]);
   });
 
+  it('shows Inserting points while inserting after a point, and Done ends it', async () => {
+    await open();
+    await act(async () => {
+      for (const n of [0, 1, 2]) useDraft.getState().addVertex(p(n));
+    });
+    await fireEvent.press(screen.getByLabelText('Point 2'));
+    expect(screen.queryByText('Inserting points')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Insert after point 2'));
+    expect(screen.getByText('Inserting points')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Done inserting points'));
+    expect(useDraft.getState()).toMatchObject({ selectedVertex: null, insertAfter: null });
+    expect(screen.queryByText('Inserting points')).toBeNull();
+  });
+
   it('saves a circle from the crosshair center and a typed radius in km; bad radii keep Save off', async () => {
     const ctx = await open();
     await fireEvent.changeText(screen.getByLabelText('Name'), '1');

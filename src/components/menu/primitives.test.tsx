@@ -147,6 +147,17 @@ describe('menu primitives', () => {
     expect(onRemove).not.toHaveBeenCalled();
   });
 
+  it('MenuVertexRow: while inserting, shows Inserting points and a Done that ends it instead of Insert after', async () => {
+    const onInsertDone = jest.fn();
+    await renderWithProviders(
+      <MenuVertexRow number={2} title="18S UJ 24250 07313" detail="+0.75 km" selected inserting onPress={jest.fn()} onRemove={jest.fn()} onInsertAfter={jest.fn()} onInsertDone={onInsertDone} />,
+    );
+    expect(screen.getByText('Inserting points')).toBeTruthy();
+    expect(screen.queryByLabelText('Insert after point 2')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Done inserting points'));
+    expect(onInsertDone).toHaveBeenCalled();
+  });
+
   it('MenuSection: shows a trailing note on the label row', async () => {
     await renderWithProviders(
       <MenuSection label="Points · 2" trailing="2.03 km total">

@@ -124,6 +124,8 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
                 onRemove={() => useDraft.getState().removeVertex(i)}
                 removeDisabled={!canRemove(edit, i, 3)}
                 onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
+                inserting={insertAfter === i}
+                onInsertDone={() => useDraft.getState().selectVertex(null)}
               />
             ))}
             {blocked ? <Text className="text-sm text-text-muted">A polygon needs at least 3 points</Text> : null}

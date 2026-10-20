@@ -83,6 +83,8 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
             onRemove={() => useDraft.getState().removeVertex(i)}
             removeDisabled={!canRemove(edit, i)}
             onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
+            inserting={insertAfter === i}
+            onInsertDone={() => useDraft.getState().selectVertex(null)}
           />
         ))}
         {blocked ? <Text className="text-sm text-text-muted">A line needs at least 2 points</Text> : null}

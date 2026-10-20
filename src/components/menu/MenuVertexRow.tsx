@@ -14,10 +14,13 @@ type Props = {
   removeDisabled?: boolean;
   /** Shown on the selected row: the next added point goes right after this one. */
   onInsertAfter?: () => void;
+  /** Points are being inserted after this one: the row says so, with a Done that ends it. */
+  inserting?: boolean;
+  onInsertDone?: () => void;
 };
 
 /** One point of a line: number badge, grid, distance from the previous point, remove (×). */
-export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter }: Props) {
+export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter, inserting = false, onInsertDone }: Props) {
   const { colors } = useTheme();
   return (
     <View className={`rounded-xl border px-3 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'}`}>
@@ -48,7 +51,16 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
           <Icon name="close" size={20} color={colors['text-muted']} />
         </Pressable>
       </View>
-      {selected && onInsertAfter && !disabled ? (
+      {selected && inserting && !disabled ? (
+        <View className="mt-2 flex-row items-center gap-2">
+          <Icon name="plus" size={16} color={colors.accent} />
+          <Text className="text-sm font-semibold text-accent">Inserting points</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Done inserting points" onPress={onInsertDone} hitSlop={8} className="ml-auto flex-row items-center gap-1">
+            <Icon name="check" size={16} color={colors.text} />
+            <Text className="text-sm font-semibold text-text">Done</Text>
+          </Pressable>
+        </View>
+      ) : selected && onInsertAfter && !disabled ? (
         <Pressable accessibilityRole="button" accessibilityLabel={`Insert after point ${number}`} onPress={onInsertAfter} className="mt-2 flex-row items-center gap-2 self-start">
           <Icon name="plus" size={16} color={colors.accent} />
           <Text className="text-sm font-semibold text-accent">Insert after</Text>
