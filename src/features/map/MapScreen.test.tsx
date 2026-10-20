@@ -865,7 +865,7 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('Recenter on me'));
       mapboxMock().__camera.setCamera.mockClear();
 
-      await fireEvent.press(screen.getByLabelText('Settings'));
+      await fireEvent.press(screen.getByLabelText('Menu'));
       await waitFor(() => expect(calls().some(fullyPadded)).toBe(true));
       expect(calls().at(-1)?.centerCoordinate).toEqual([-77, 38.9]);
       expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);

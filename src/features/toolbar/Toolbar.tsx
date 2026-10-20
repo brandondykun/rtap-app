@@ -23,7 +23,6 @@ type Props = {
   onMeasure?: () => void;
   onLayers?: () => void;
   onPlot?: () => void;
-  onSettings?: () => void;
   /** The LABELS toggle, the last tool: a label icon while map labels show, a crossed-out one while hidden. */
   labelsOn?: boolean;
   onLabels?: () => void;
@@ -33,7 +32,7 @@ type Props = {
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, onSettings, labelsOn = true, onLabels }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels }: Props) {
   const insets = useSafeAreaInsets();
   const height = useToolbarHeight();
   const overflow = useOverflow();
@@ -61,14 +60,12 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       style={[position, { height }]}
       className="absolute flex-row items-center rounded-3xl border border-border bg-surface-chrome px-2">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
-      <Divider side="start" flush={!landscape} lit={!landscape && overflow.hiddenStart} />
+      <Divider flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (
         <View className="flex-row items-center gap-1">{tools}</View>
       ) : (
         <ToolScroller overflow={overflow}>{tools}</ToolScroller>
       )}
-      <Divider side="end" flush={!landscape} lit={!landscape && overflow.hiddenEnd} />
-      <BarIcon icon="cog-outline" label="Settings" onPress={onSettings} />
     </View>
   );
 }
@@ -156,9 +153,9 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
  * the scroller's own padding keeps the first and last tool off the line at rest. `lit` fades the line to a soft
  * white while tools are scrolled out of sight behind it.
  */
-function Divider({ side, flush, lit }: { side: 'start' | 'end'; flush: boolean; lit: boolean }) {
-  const margin = !flush ? 'mx-1.5' : side === 'start' ? 'ml-1.5' : 'mr-1.5';
+function Divider({ flush, lit }: { flush: boolean; lit: boolean }) {
+  const margin = flush ? 'ml-1.5' : 'mx-1.5';
   const { colors } = useTheme();
   const color = useAnimatedStyle(() => ({ backgroundColor: withTiming(lit ? colors['text-muted'] : colors.border, { duration: 250 }) }), [lit, colors]);
-  return <Animated.View testID={`divider-${side}`} className={`${margin} h-7 w-px`} style={color} />;
+  return <Animated.View testID="divider-start" className={`${margin} h-7 w-px`} style={color} />;
 }

@@ -11,6 +11,7 @@ import { defineMenu, type MenuComponentProps } from '../define-menu';
 export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
   const router = useRouter();
   const close = useMenu((s) => s.closeMenu);
+  const openMenu = useMenu((s) => s.openMenu);
   const switchMission = () => {
     // The mission screen pictures the map as it is removed (useMissionSnapshot's beforeRemove) and
     // closes the menu as it unmounts. Closing here would run first (the router acts after the next
@@ -23,6 +24,7 @@ export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
       <MenuHeader title="Menu" leading={{ label: 'Close', onPress: close }} />
       <MenuSection>
         <MenuRow icon="swap-horizontal" label="Switch mission" onPress={switchMission} />
+        <MenuRow icon="cog-outline" label="Settings" onPress={() => openMenu('settings', {})} />
         <MenuRow
           icon="information-outline"
           label="About"

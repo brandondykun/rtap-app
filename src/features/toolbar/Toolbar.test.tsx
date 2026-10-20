@@ -35,22 +35,27 @@ describe('Toolbar', () => {
     expect(style().right).toBeDefined();
   });
 
-  it('clips the portrait tools right at the dividers: no margin on their inner sides', async () => {
+  it('clips the portrait tools right at the divider after Menu: no margin on its inner side', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
     expect(screen.getByTestId('divider-start').props.className).toContain('ml-1.5');
     expect(screen.getByTestId('divider-start').props.className).not.toContain('mr-1.5');
-    expect(screen.getByTestId('divider-end').props.className).toContain('mr-1.5');
-    expect(screen.getByTestId('divider-end').props.className).not.toContain('ml-1.5');
   });
 
-  /** A divider turns a softer white while tools hide behind it. */
-  const lit = (side: 'start' | 'end') => {
-    const color = StyleSheet.flatten(screen.getByTestId(`divider-${side}`).props.style).backgroundColor;
+  it('has no divider at the end: nothing follows the tools', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<Toolbar landscape={landscape} activeTool={null} />);
+      expect(screen.queryByTestId('divider-end')).toBeNull();
+    }
+  });
+
+  /** The divider turns a softer white while tools hide behind it. */
+  const lit = () => {
+    const color = StyleSheet.flatten(screen.getByTestId('divider-start').props.style).backgroundColor;
     expect([themeColors('dark')['text-muted'], themeColors('dark').border]).toContain(color);
     return color === themeColors('dark')['text-muted'];
   };
 
-  it('shades and brightens a divider while tools are scrolled out of sight behind it', async () => {
+  it('shades the hidden side and brightens the divider while tools are scrolled out of sight behind it', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
     const tools = screen.getByTestId('toolbar-tools');
     // Everything fits: no shade.
@@ -58,27 +63,23 @@ describe('Toolbar', () => {
     await fireEvent(tools, 'contentSizeChange', 300, 40);
     expect(screen.queryByTestId('toolbar-shade-start')).toBeNull();
     expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
-    expect(lit('start')).toBe(false);
-    expect(lit('end')).toBe(false);
-    // Overflowing at rest: tools hide behind the end divider only.
+    expect(lit()).toBe(false);
+    // Overflowing at rest: tools hide at the end only.
     await fireEvent(tools, 'contentSizeChange', 500, 40);
     expect(screen.queryByTestId('toolbar-shade-start')).toBeNull();
     expect(screen.getByTestId('toolbar-shade-end')).toBeTruthy();
-    expect(lit('start')).toBe(false);
-    expect(lit('end')).toBe(true);
+    expect(lit()).toBe(false);
     const scroll = (x: number) => ({ nativeEvent: { contentOffset: { x, y: 0 }, contentSize: { width: 500, height: 40 }, layoutMeasurement: { width: 300, height: 40 } } });
     // Midway: both sides.
     await fireEvent.scroll(tools, scroll(100));
     expect(screen.getByTestId('toolbar-shade-start')).toBeTruthy();
     expect(screen.getByTestId('toolbar-shade-end')).toBeTruthy();
-    expect(lit('start')).toBe(true);
-    expect(lit('end')).toBe(true);
-    // At the end: only the start divider.
+    expect(lit()).toBe(true);
+    // At the end: only the start.
     await fireEvent.scroll(tools, scroll(200));
     expect(screen.getByTestId('toolbar-shade-start')).toBeTruthy();
     expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
-    expect(lit('start')).toBe(true);
-    expect(lit('end')).toBe(false);
+    expect(lit()).toBe(true);
   });
 
   it('anchors top-right and sizes to content in landscape', async () => {
@@ -93,7 +94,6 @@ describe('Toolbar', () => {
     await fireEvent.press(screen.getByLabelText('Menu'));
     expect(onMenu).toHaveBeenCalled();
     expect(screen.getByLabelText('POINT')).toBeDisabled();
-    expect(screen.getByLabelText('Settings')).toBeDisabled();
   });
 
   it('marks the active tool', async () => {
@@ -166,7 +166,9 @@ describe('Toolbar', () => {
     const onLabels = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onPlot={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(order.slice(-3)).toEqual(['PLOT', 'LABELS', 'Settings']);
+    // The last button: Settings lives in the Menu.
+    expect(order.slice(-2)).toEqual(['PLOT', 'LABELS']);
+    expect(screen.queryByLabelText('Settings')).toBeNull();
     expect(screen.getByText('LABELS')).toBeTruthy();
     const on = screen.getByLabelText('LABELS');
     expect(on).toBeSelected();

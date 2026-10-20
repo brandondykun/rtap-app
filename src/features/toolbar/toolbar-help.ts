@@ -22,6 +22,5 @@ export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
   { group: 'read', label: 'MEASURE', icon: 'ruler', help: 'Distance and bearing between two places.' },
   { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons.' },
   { group: 'read', label: 'LABELS', icon: 'label-outline', help: 'Turn the names on map items on or off.' },
-  { group: 'app', label: 'Menu', icon: 'menu', help: 'Switch missions or open this page.' },
-  { group: 'app', label: 'Settings', icon: 'cog-outline', help: 'App preferences.' },
+  { group: 'app', label: 'Menu', icon: 'menu', help: 'Switch missions, change settings or open this page.' },
 ];

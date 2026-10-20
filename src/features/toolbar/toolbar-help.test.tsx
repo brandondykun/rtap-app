@@ -17,7 +17,7 @@ describe('TOOLBAR_HELP', () => {
     expect(HELP_GROUPS.map((g) => g.title)).toEqual(['Plot on the map', 'Read the map', 'App']);
     expect(byGroup('plot')).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'PLOT']);
     expect(byGroup('read')).toEqual(['MEASURE', 'LAYERS', 'LABELS']);
-    expect(byGroup('app')).toEqual(['Menu', 'Settings']);
+    expect(byGroup('app')).toEqual(['Menu']);
   });
 
   it('gives each button an icon and a short line of help', () => {
@@ -26,7 +26,7 @@ describe('TOOLBAR_HELP', () => {
       expect(h.help.length).toBeGreaterThan(10);
     }
     expect(TOOLBAR_HELP.find((h) => h.label === 'UNIT')?.help).toBe('Place a unit, then pick its affiliation and type.');
-    expect(TOOLBAR_HELP.find((h) => h.label === 'Settings')?.help).toBe('App preferences.');
+    expect(TOOLBAR_HELP.find((h) => h.label === 'Menu')?.help).toBe('Switch missions, change settings or open this page.');
     expect(TOOLBAR_HELP.some((h) => 'accent' in h)).toBe(false);
   });
 });

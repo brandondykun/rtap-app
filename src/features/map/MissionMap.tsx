@@ -422,7 +422,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onPlot={toggleQuickPlot}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
-        onSettings={() => useMenu.getState().openMenu('settings', {})}
         labelsOn={labelsOn}
         onLabels={() => useSettings.getState().toggleMapLabels()}
       />

@@ -44,4 +44,12 @@ describe('AppRootMenu', () => {
     expect(useMenu.getState().stack).toEqual([]);
     expect(mockRouter.push).toHaveBeenCalledWith('/about');
   });
+
+  it('opens Settings in place of the menu (its Close closes it)', async () => {
+    await renderWithProviders(<AppRootMenu params={{}} missionId="m1" />);
+    const rows = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(rows.filter((l) => ['Switch mission', 'Settings', 'About'].includes(l))).toEqual(['Switch mission', 'Settings', 'About']);
+    await fireEvent.press(screen.getByText('Settings'));
+    expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['settings']);
+  });
 });
