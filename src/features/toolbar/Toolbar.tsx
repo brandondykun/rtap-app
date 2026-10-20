@@ -58,7 +58,8 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
     <View
       testID="toolbar"
       style={[position, { height }]}
-      className="absolute flex-row items-center rounded-3xl border border-border bg-surface-chrome px-2">
+      // Clipped to its rounded ends: the portrait end shade runs to the edge and must follow the curve.
+      className="absolute flex-row items-center overflow-hidden rounded-3xl border border-border bg-surface-chrome px-2">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
       <Divider flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (

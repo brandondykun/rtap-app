@@ -41,6 +41,14 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('divider-start').props.className).not.toContain('mr-1.5');
   });
 
+  it('clips its contents to its rounded ends, so the end shade never pokes past the curve', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<Toolbar landscape={landscape} activeTool={null} />);
+      expect(screen.getByTestId('toolbar').props.className).toContain('rounded-3xl');
+      expect(screen.getByTestId('toolbar').props.className).toContain('overflow-hidden');
+    }
+  });
+
   it('has no divider at the end: nothing follows the tools', async () => {
     for (const landscape of [false, true]) {
       await renderWithProviders(<Toolbar landscape={landscape} activeTool={null} />);
