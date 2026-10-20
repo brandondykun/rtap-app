@@ -32,6 +32,11 @@ const DRAFT_LABEL_GAP_PT = 39.6;
 
 /** Chip padding around label text, [top, right, bottom, left] in pt. */
 const LABEL_CHIP_PADDING: [number, number, number, number] = [0, 2, 0, 2];
+/**
+ * Point and polygon chips: the rounded chip already keeps a 3 pt margin inside its image, so this
+ * pulls it in to 1.5 pt above and below and 3.5 pt at the sides (a little roomier than line chips).
+ */
+const POINT_CHIP_PADDING: [number, number, number, number] = [-1.5, 0.5, -1.5, 0.5];
 
 /** Symbol icons: every point always shows; collisions never hide a symbol. */
 export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
@@ -53,7 +58,7 @@ export function makePointLabelStyle(colors: Record<SemanticToken, string>, textS
     textOffset: ['match', ['get', 'sidc'], PIN_POINT_SIDCS, ['literal', [0, PIN_LABEL_GAP_PT / textSize]], ['literal', [0, POINT_LABEL_GAP_PT / textSize]]],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
-    iconTextFitPadding: LABEL_CHIP_PADDING,
+    iconTextFitPadding: POINT_CHIP_PADDING,
   };
 }
 
@@ -190,6 +195,7 @@ export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSi
     textAnchor: ['case', pointsRight, 'left', 'right'] as SymbolLayerStyle['textAnchor'],
     textOffset: textOffset as SymbolLayerStyle['textOffset'],
     iconImage: MAP_IMAGE_IDS.labelChipSquare,
+    iconTextFitPadding: LABEL_CHIP_PADDING,
     iconRotationAlignment: 'map',
     iconRotate: rotate as SymbolLayerStyle['iconRotate'],
     iconOffset: ['case', pointsRight, iconOffset(1), iconOffset(-1)] as SymbolLayerStyle['iconOffset'],

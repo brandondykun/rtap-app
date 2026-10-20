@@ -1,6 +1,7 @@
 import { POINT_TYPES, sidcForPointType } from '@/features/symbology/point-types';
 import { themeColors } from '@/theme/tokens';
 
+import { LABEL_CHIP_IMAGE_OPTIONS } from '../images/map-image-specs';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 
 import {
@@ -192,5 +193,31 @@ describe('label text sizes', () => {
     const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s));
     for (const sidc of pins) expect(pointGap(style, sidc)).toBeLessThan(8);
     for (const sidc of [...others, 'SFGPUCI----D---']) expect(pointGap(style, sidc)).toBeCloseTo(15.6);
+  });
+});
+
+describe('label chip padding', () => {
+  const colors = themeColors('dark');
+  /** Visible chip around the text in pt, [vertical, horizontal]: the image's own content inset plus the fit padding. */
+  const visible = (style: { iconTextFitPadding?: unknown }, contentInset: number) => {
+    const [top, right, bottom, left] = style.iconTextFitPadding as number[];
+    expect(top).toBe(bottom);
+    expect(left).toBe(right);
+    return [contentInset + top, contentInset + left];
+  };
+  const roundedInset = LABEL_CHIP_IMAGE_OPTIONS.content[0];
+
+  it('gives point labels a little more room than line labels, and less than before (3 pt high, 5 pt wide)', () => {
+    const [pointV, pointH] = visible(makePointLabelStyle(colors), roundedInset);
+    // The square line chip has no content inset: the text fits the whole image.
+    const [lineV, lineH] = visible(makeLineLabelStyle(colors), 0);
+    expect(pointV).toBeGreaterThan(lineV);
+    expect(pointH).toBeGreaterThan(lineH);
+    expect(pointV).toBeLessThan(3);
+    expect(pointH).toBeLessThan(5);
+  });
+
+  it('keeps polygon labels the same as point labels', () => {
+    expect(makePolygonLabelStyle(colors).iconTextFitPadding).toEqual(makePointLabelStyle(colors).iconTextFitPadding);
   });
 });
