@@ -62,18 +62,30 @@ describe('Toolbar', () => {
     }
   });
 
-  it('lets the portrait tools run under the rounded right end, keeping the same room after the last one', async () => {
+  it('pads its ends as much as its top and bottom (4 pt), the portrait tools running under the right end', async () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} />);
     const bar = screen.getByTestId('toolbar').props.className as string;
-    expect(bar).toContain('pl-2');
-    expect(bar).not.toMatch(/\b(px|pr)-/);
-    // The bar's own end padding (8) moves inside the scroll content, after its 6 pt inset.
-    expect(screen.getByTestId('toolbar-tools').props.contentContainerStyle).toMatchObject({ paddingLeft: 6, paddingRight: 14 });
+    expect(bar).not.toMatch(/\b(px|pl|pr)-/);
+    expect(style()).toMatchObject({ paddingLeft: 4 });
+    expect(style().paddingRight).toBeUndefined();
+    // The right end's padding is inside the scroll content, so the tools scroll right up to the curve.
+    expect(screen.getByTestId('toolbar-tools').props.contentContainerStyle).toMatchObject({ paddingLeft: 6, paddingRight: 4 });
   });
 
-  it('keeps its padding on both ends in landscape (nothing scrolls)', async () => {
+  it('pads both ends 4 pt in landscape (nothing scrolls)', async () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
-    expect(screen.getByTestId('toolbar').props.className).toContain('px-2');
+    expect(screen.getByTestId('toolbar').props.className).not.toMatch(/\b(px|pl|pr)-/);
+    expect(style()).toMatchObject({ paddingLeft: 4, paddingRight: 4 });
+  });
+
+  it('sizes Menu like the tools: 4 pt from the top and bottom', async () => {
+    for (const showText of [true, false]) {
+      useSettings.setState({ showToolbarText: showText });
+      await renderWithProviders(<Toolbar landscape={false} activeTool={null} onMenu={() => {}} />);
+      const menu = StyleSheet.flatten(screen.getByLabelText('Menu').props.style);
+      expect(menu).toMatchObject({ height: style().height - 8, width: style().height - 8 });
+      await screen.unmount();
+    }
   });
 
   it('has no divider at the end: nothing follows the tools', async () => {

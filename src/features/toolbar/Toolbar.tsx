@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { EDGE } from '@/features/map/layout';
+import { EDGE, TOOL_INSET } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { useToolbarHeight } from './use-toolbar-height';
@@ -65,10 +65,11 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
   return (
     <View
       testID="toolbar"
-      style={[position, { height }]}
+      // Its ends are padded like its top and bottom; in portrait the scroller takes over the right end's padding.
+      style={[position, { height, paddingLeft: TOOL_INSET }, landscape ? { paddingRight: TOOL_INSET } : null]}
       // Clipped to its rounded ends. In portrait the tools scroll right up to the right end and vanish
       // under its curve (the scroller carries that end's padding), so the shade must follow the curve too.
-      className={`absolute flex-row items-center overflow-hidden rounded-2xl bg-surface-glass ${landscape ? 'px-2' : 'pl-2'}`}>
+      className="absolute flex-row items-center overflow-hidden rounded-2xl bg-surface-glass">
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
       <Divider flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (
@@ -83,9 +84,8 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
 /** Allowance for subpixel offsets, so a scroller resting at an end shows no shade there. */
 const SLACK = 1;
 const SHADE_WIDTH = 20;
-/** The tools' inset at each end of the scroller, and the bar's own end padding the scroller takes over on the right. */
+/** The tools' inset from the divider at the scroller's start. */
 const SCROLL_INSET = 6;
-const BAR_END_PADDING = 8;
 
 type Overflow = ReturnType<typeof useOverflow>;
 
@@ -135,7 +135,7 @@ function ToolScroller({ overflow, children }: { overflow: Overflow; children: Re
         onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         onContentSizeChange={(w) => setContentWidth(w)}
         onScroll={onScroll}
-        contentContainerStyle={{ alignItems: 'center', gap: 4, paddingLeft: SCROLL_INSET, paddingRight: SCROLL_INSET + BAR_END_PADDING }}>
+        contentContainerStyle={{ alignItems: 'center', gap: 4, paddingLeft: SCROLL_INSET, paddingRight: TOOL_INSET }}>
         {children}
       </ScrollView>
       {hiddenStart ? shade('start') : null}
@@ -146,6 +146,8 @@ function ToolScroller({ overflow, children }: { overflow: Overflow; children: Re
 
 function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPress?: () => void }): ReactNode {
   const { colors } = useTheme();
+  // Square, TOOL_INSET from the bar's top and bottom like the tools.
+  const size = useToolbarHeight() - 2 * TOOL_INSET;
   const disabled = !onPress;
   return (
     <Pressable
@@ -155,7 +157,8 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
       disabled={disabled}
       onPress={onPress}
       hitSlop={6}
-      className={`h-10 w-10 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
+      style={{ width: size, height: size }}
+      className={`items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={22} color={colors.text} style={glassHalo(colors)} />
     </Pressable>
   );
