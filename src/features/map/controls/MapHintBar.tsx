@@ -13,8 +13,9 @@ export function MapHintBar({ testID, hint, mono = false, children }: { testID: s
   const { colors } = useTheme();
   const halo = glassHalo(colors);
   return (
-    // 8pt around the buttons makes the bar's corners concentric with theirs (8 + 8 = 16); the hint gets a bit more room.
-    <View testID={testID} className="flex-row items-center gap-2 rounded-2xl border border-accent bg-surface-glass p-2 pl-3">
+    // Concentric with the buttons: the bar's 16 pt corners less its 1 pt border and 7 pt padding are their 8 pt (rounded-lg).
+    // The hint gets a bit more room.
+    <View testID={testID} className="flex-row items-center gap-2 rounded-2xl border border-accent bg-surface-glass p-[7px] pl-3">
       <Icon name="gesture-tap" size={18} color={colors.accent} style={halo} />
       <Text numberOfLines={2} style={halo} className={`shrink text-sm text-text ${mono ? 'font-mono font-semibold' : ''}`}>
         {hint}

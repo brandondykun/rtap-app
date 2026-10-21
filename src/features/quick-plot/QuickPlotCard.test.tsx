@@ -88,4 +88,12 @@ describe('QuickPlotCard', () => {
     expect(card).toContain('border-accent');
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toHaveStyle({ textShadowRadius: 3 });
   });
+
+  it('nests its buttons concentrically: 16 pt corners less 1 pt border and 7 pt padding is their 8 pt', async () => {
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    const card = screen.getByTestId('quick-plot-card').props.className as string;
+    expect(card).toMatch(/\brounded-2xl\b/);
+    expect(card).toMatch(/\bp-\[7px\]/);
+    for (const label of ['Save unit', 'Save point', 'Discard']) expect(screen.getByLabelText(label).props.className).toMatch(/\brounded-lg\b/);
+  });
 });

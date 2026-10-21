@@ -20,6 +20,8 @@ type Props = {
   onSubmit?: () => void;
   /** Focus this field once on mount (quick plot). */
   autoFocus?: 'zone' | 'easting';
+  /** Smaller field corners, to nest inside a card with 8 pt padding (quick plot). */
+  nested?: boolean;
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
@@ -35,7 +37,7 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false }: Props) {
   const { colors } = useTheme();
   const zone = useRef<TextInput>(null);
   const square = useRef<TextInput>(null);
@@ -98,16 +100,16 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
       <View className="flex-row gap-2">
         {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
         <View style={{ width: ZONE_WIDTH }}>
-          <TextField editable={!disabled} ref={zone} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
+          <TextField nested={nested} editable={!disabled} ref={zone} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
-          <TextField editable={!disabled} ref={square} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
+          <TextField nested={nested} editable={!disabled} ref={square} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={easting} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
+          <TextField nested={nested} editable={!disabled} ref={easting} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextField editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
+          <TextField nested={nested} editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
         </View>
       </View>
       {status.status === 'valid' || status.status === 'invalid' ? (

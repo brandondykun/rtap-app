@@ -64,8 +64,8 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
 
   return (
     <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
-      {/* 8pt around the buttons keeps the corners concentric with theirs, as in the other map bars. */}
-      <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-accent bg-surface-glass p-2">
+      {/* 16 pt corners less the 1 pt border and 7 pt padding are the buttons' 8 pt (rounded-lg): concentric, as in the other map bars. */}
+      <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-accent bg-surface-glass p-[7px]">
         {grid}
         <View testID="quick-plot-card-buttons" className="flex-row gap-1.5">
           <View className="flex-1">{saveUnit}</View>

@@ -90,4 +90,19 @@ describe('QuickPlotEntry', () => {
     expect(card).toContain('bg-surface-glass');
     expect(card).not.toContain('border');
   });
+
+  it('nests its fields and Plot concentrically: 16 pt corners less 8 pt padding is their 8 pt', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
+      const card = screen.getByTestId('quick-plot-entry').props.className as string;
+      expect(card).toMatch(/\brounded-2xl\b/);
+      expect(card).toMatch(/\bp-2\b/);
+      expect(screen.getByLabelText('Plot').props.className).toMatch(/\brounded-lg\b/);
+      for (const field of ['MGRS zone', '100 km square', 'Easting', 'Northing']) {
+        expect(screen.getByLabelText(field).props.className).toMatch(/\brounded-lg\b/);
+        expect(screen.getByLabelText(field).props.className).not.toMatch(/\brounded-xl\b/);
+      }
+      await screen.unmount();
+    }
+  });
 });

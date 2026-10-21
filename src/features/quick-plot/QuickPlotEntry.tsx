@@ -60,7 +60,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       accessibilityState={{ disabled: !valid }}
       disabled={!valid}
       onPress={plot}
-      className={`h-12 flex-row items-center justify-center gap-2 rounded-xl bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
+      className={`h-12 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
       {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
       <CrosshairGlyph size={20} color={colors['on-accent']} dotColor={colors['on-accent']} />
       <Text className="text-lg font-bold text-on-accent">Plot</Text>
@@ -69,7 +69,8 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
 
   return (
     <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + toolbar + GAP }}>
-      <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-3">
+      {/* 16 pt corners less 8 pt padding are the fields' and Plot's 8 pt (rounded-lg): concentric. */}
+      <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         <View testID="quick-plot-row" className="flex-row items-start gap-1">
           <View className="flex-1">
             <MgrsInput
@@ -79,6 +80,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
               status={status}
               validDetail={validDetail}
               autoFocus={generation === 0 && parts.square ? 'easting' : 'zone'}
+              nested
             />
           </View>
           {/* Landscape: Plot (then Clear) beside the fields, above the tall keyboard. */}
