@@ -28,13 +28,13 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
     <View
       testID="center-card"
       onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}
-      // In OP mode the card is see-through, so it hides less of the view.
-      className={`rounded-2xl px-3 py-2 ${isOp ? 'bg-surface-glass' : 'border border-border bg-surface-chrome'}`}>
+      // See-through, so it hides less of the map.
+      className="rounded-2xl bg-surface-glass px-3 py-2">
       <View className="flex-row items-center gap-2">
-        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={isOp ? colors.text : undefined} tagStyle={glassHalo(isOp, colors)} />
+        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={colors.text} tagStyle={glassHalo(colors)} />
         <Text
           testID="readout-coordinate"
-          style={glassHalo(isOp, colors)}
+          style={glassHalo(colors)}
           className="shrink font-mono-bold text-sm text-text"
           adjustsFontSizeToFit
           numberOfLines={1}>
@@ -44,9 +44,9 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       <Text
         testID="center-vector"
         accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
-        style={glassHalo(isOp, colors)}
-        // On the see-through OP card it is full white with an outline, so it reads over bright ground.
-        className={`mt-0.5 font-mono text-xs ${isOp ? 'text-text' : 'text-text-muted'}`}>
+        style={glassHalo(colors)}
+        // Full white with an outline, so it reads over bright ground.
+        className="mt-0.5 font-mono text-xs text-text">
         {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
       </Text>
     </View>

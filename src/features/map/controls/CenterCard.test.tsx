@@ -67,9 +67,12 @@ describe('CenterCard', () => {
     expect(screen.getByTestId('center-vector').props.accessibilityLabel).toContain('from the OP');
   });
 
-  it('goes see-through in OP mode only (solid otherwise)', async () => {
+  it('is see-through, with no border, in and out of OP mode', async () => {
     await renderWithProviders(<CenterCard />);
-    expect(screen.getByTestId('center-card').props.className).toContain('bg-surface-chrome');
+    expect(screen.getByTestId('center-card').props.className).toContain('bg-surface-glass');
+    expect(screen.getByTestId('center-card').props.className).not.toContain('border');
+    expect(screen.getByTestId('center-vector').props.className).not.toContain('text-text-muted');
+    expect(screen.getByTestId('center-vector')).toHaveStyle({ textShadowRadius: 3 });
     await screen.unmount();
     useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } });
     await renderWithProviders(<CenterCard />);

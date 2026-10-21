@@ -75,6 +75,17 @@ describe('SelfCard', () => {
     expect(screen.getByLabelText('Recenter on me')).not.toBeSelected();
   });
 
+  it('is see-through with bright, outlined text', async () => {
+    fix(142.4);
+    await renderWithProviders(<SelfCard {...PROPS} />);
+    expect(screen.getByTestId('gps-readout').props.className).toContain('bg-surface-glass');
+    expect(screen.getByTestId('gps-readout').props.className).not.toContain('border');
+    for (const id of ['gps-position', 'gps-altitude']) {
+      expect(screen.getByTestId(id).props.className).not.toContain('text-text-muted');
+      expect(screen.getByTestId(id)).toHaveStyle({ textShadowRadius: 3 });
+    }
+  });
+
   it('in OP mode shows the OP: its grid and ground elevation, not tappable', async () => {
     fix(142.4);
     const onRecenter = jest.fn();

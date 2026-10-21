@@ -77,14 +77,13 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
   });
 
-  it('recenters when the ME row is tapped, keeps the plain border while following, and does nothing while disabled', async () => {
+  it('recenters when the ME row is tapped, adds no accent border while following, and does nothing while disabled', async () => {
     const onRecenter = jest.fn();
     await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('dock-self')).toBeSelected();
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
-    expect(screen.getByTestId('readout-dock').props.className).toContain('border-border');
     await screen.unmount();
     await renderWithProviders(<ReadoutDock following={false} disabled onRecenter={onRecenter} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
@@ -110,19 +109,24 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/ME/);
   });
 
-  it('goes see-through in OP mode only (solid otherwise)', async () => {
+  it('is see-through, with no border, in and out of OP mode', async () => {
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
-    expect(screen.getByTestId('readout-dock').props.className).toContain('bg-surface-chrome');
-    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER, groundM: 300 }));
     expect(screen.getByTestId('readout-dock').props.className).toContain('bg-surface-glass');
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('bg-surface-chrome');
+    expect(screen.getByTestId('readout-dock').props.className).not.toContain('border');
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER, groundM: 300 }));
+    expect(screen.getByTestId('readout-dock').props.className).toContain('bg-surface-glass');
   });
 
-  it('in OP mode brightens the small text and outlines it (solid dock keeps it muted)', async () => {
+  it('keeps the small text bright and outlined, in and out of OP mode', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
-    expect(screen.getByTestId('readout-bearing').props.className).toContain('text-text-muted');
+    for (const id of ['readout-bearing', 'readout-range', 'readout-coordinate', 'gps-position', 'gps-altitude', 'gps-accuracy']) {
+      const el = screen.getByTestId(id);
+      expect(el.props.className).not.toContain('text-text-muted');
+      expect(el).toHaveStyle({ textShadowRadius: 3 });
+    }
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC, groundM: 300 }));
     for (const id of ['readout-bearing', 'readout-from-op', 'readout-range', 'op-elevation']) {
       const el = screen.getByTestId(id);

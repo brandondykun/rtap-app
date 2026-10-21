@@ -31,9 +31,10 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
   const off = status === 'denied' || status === 'unavailable';
   const op = useOpPosition();
 
+  // See-through like the CTR card, so it hides less of the map; the text is outlined to read over bright ground.
+  const halo = glassHalo(colors);
+
   if (op) {
-    // See-through like the CTR card in OP mode, so it hides less of the view; the text is outlined to read over bright ground.
-    const halo = glassHalo(true, colors);
     return (
       <View testID="gps-readout" accessibilityLabel="OP position" className="rounded-2xl bg-surface-glass px-3 py-2">
         <View testID="gps-line" className="flex-row items-center gap-2">
@@ -57,19 +58,19 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
       accessibilityState={{ selected: following, disabled }}
       disabled={disabled}
       onPress={onRecenter}
-      className="rounded-2xl border border-border bg-surface-chrome px-3 py-2">
+      className="rounded-2xl bg-surface-glass px-3 py-2">
       <View testID="gps-line" className="flex-row items-center gap-2">
-        <CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} />
+        <CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />
         {fix && !off ? (
-          <Text testID="gps-position" style={{ color: colors.friendly }} className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+          <Text testID="gps-position" style={[halo, { color: colors.friendly }]} className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
             {formatCoordinate(fix.position, coordinateFormat)}
           </Text>
         ) : (
-          <Text className="text-xs text-text-muted">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
+          <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
         )}
       </View>
       {fix && !off ? (
-        <Text testID="gps-altitude" className="mt-0.5 font-mono text-xs text-text-muted">
+        <Text testID="gps-altitude" style={halo} className="mt-0.5 font-mono text-xs text-text">
           {`ALT ${formatLength(fix.altitudeM, unit)} · ACC ±${formatLength(fix.accuracyM, unit)}`}
         </Text>
       ) : null}

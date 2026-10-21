@@ -6,7 +6,6 @@ import { Icon } from '@/components/ui/Icon';
 import { formatLength } from '@/features/location/gps-format';
 import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
-import { useOp } from '@/stores/op';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -23,10 +22,9 @@ import { glassHalo } from './glass';
  * ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
  */
 export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { showCenter: boolean } & SelfProps) {
-  // In OP mode the dock is see-through, so it hides less of the view.
-  const glass = useOp((s) => s.phase === 'on');
+  // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
-    <View testID="readout-dock" className={`mx-2 rounded-2xl px-3 ${glass ? 'bg-surface-glass' : 'border border-border bg-surface-chrome'}`}>
+    <View testID="readout-dock" className="mx-2 rounded-2xl bg-surface-glass px-3">
       {showCenter ? <CenterRow /> : null}
       {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
       <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} />
@@ -61,7 +59,7 @@ function Row({ testID, lead, children, top, bottom }: RowProps) {
 
 function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
   const { colors } = useTheme();
-  const halo = glassHalo(useOp((s) => s.phase === 'on'), colors);
+  const halo = glassHalo(colors);
   return (
     <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
@@ -82,9 +80,9 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
     <View testID="dock-self" accessibilityLabel="OP position">
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(true, colors)} />}
+        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} />}
         top={
-          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} style={glassHalo(true, colors)} className="font-mono text-xs text-text">
+          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} style={glassHalo(colors)} className="font-mono text-xs text-text">
             {`ELV ${formatLength(elevationM, unit)}`}
           </Text>
         }>
@@ -96,6 +94,7 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
 
 function MeRow({ following, disabled, onRecenter }: SelfProps) {
   const { colors } = useTheme();
+  const halo = glassHalo(colors);
   const fix = usePresence((s) => s.selfPosition);
   const status = usePresence((s) => s.locationStatus);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -112,17 +111,17 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
       onPress={onRecenter}>
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} />}
+        lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />}
         top={
           shown ? (
-            <Text testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} className="font-mono text-xs text-text">
+            <Text testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} style={halo} className="font-mono text-xs text-text">
               {formatLength(shown.altitudeM, unit)}
             </Text>
           ) : null
         }
         bottom={
           shown ? (
-            <Text testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} className="font-mono text-xs text-text-muted">
+            <Text testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} style={halo} className="font-mono text-xs text-text">
               {`±${formatLength(shown.accuracyM, unit)}`}
             </Text>
           ) : null
@@ -130,7 +129,7 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
         {shown ? (
           <Grid testID="gps-position" color={colors.friendly}>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
-          <Text className="text-xs text-text-muted">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
+          <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
         )}
       </Row>
     </Pressable>
@@ -147,17 +146,16 @@ function CenterRow() {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const r = describeReadout(center, from, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
   const { colors } = useTheme();
-  // On the see-through OP dock the small text is full white with an outline, so it reads over bright ground.
-  const halo = glassHalo(isOp, colors);
-  const quiet = isOp ? 'text-text' : 'text-text-muted';
+  // The small text is full white with an outline, so it reads over bright ground.
+  const halo = glassHalo(colors);
   return (
     <Row
       testID="dock-center"
-      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={isOp ? colors.text : undefined} tagStyle={halo} />}
+      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={colors.text} tagStyle={halo} />}
       top={
         <>
           {isOp ? (
-            <Text testID="readout-from-op" style={halo} className={`font-mono text-xs ${quiet}`}>
+            <Text testID="readout-from-op" style={halo} className="font-mono text-xs text-text">
               FROM OP
             </Text>
           ) : null}
@@ -167,7 +165,7 @@ function CenterRow() {
         </>
       }
       bottom={
-        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} style={halo} className={`font-mono text-xs ${quiet}`}>
+        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} style={halo} className="font-mono text-xs text-text">
           {r.bearing}
         </Text>
       }>
