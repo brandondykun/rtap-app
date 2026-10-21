@@ -15,6 +15,7 @@ import { describeReadout, formatCoordinate } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
+import { glassHalo } from './glass';
 
 /**
  * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME
@@ -60,8 +61,7 @@ function Row({ testID, lead, children, top, bottom }: RowProps) {
 
 function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
   const { colors } = useTheme();
-  // A dark halo keeps the grid readable over imagery when the dock is see-through.
-  const halo = { textShadowColor: colors['surface-chrome'], textShadowRadius: 3 };
+  const halo = glassHalo(useOp((s) => s.phase === 'on'), colors);
   return (
     <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
@@ -82,9 +82,9 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
     <View testID="dock-self" accessibilityLabel="OP position">
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} />}
+        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(true, colors)} />}
         top={
-          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} className="font-mono text-xs text-text">
+          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} style={glassHalo(true, colors)} className="font-mono text-xs text-text">
             {`ELV ${formatLength(elevationM, unit)}`}
           </Text>
         }>
@@ -146,24 +146,28 @@ function CenterRow() {
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const r = describeReadout(center, from, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
+  const { colors } = useTheme();
+  // On the see-through OP dock the small text is full white with an outline, so it reads over bright ground.
+  const halo = glassHalo(isOp, colors);
+  const quiet = isOp ? 'text-text' : 'text-text-muted';
   return (
     <Row
       testID="dock-center"
-      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />}
+      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={isOp ? colors.text : undefined} tagStyle={halo} />}
       top={
         <>
           {isOp ? (
-            <Text testID="readout-from-op" className="font-mono text-xs text-text-muted">
+            <Text testID="readout-from-op" style={halo} className={`font-mono text-xs ${quiet}`}>
               FROM OP
             </Text>
           ) : null}
-          <Text testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} className="font-mono text-xs text-accent">
+          <Text testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} style={halo} className="font-mono text-xs text-accent">
             {r.distance}
           </Text>
         </>
       }
       bottom={
-        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} className="font-mono text-xs text-text-muted">
+        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} style={halo} className={`font-mono text-xs ${quiet}`}>
           {r.bearing}
         </Text>
       }>

@@ -118,6 +118,19 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('bg-surface-chrome');
   });
 
+  it('in OP mode brightens the small text and outlines it (solid dock keeps it muted)', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('readout-bearing').props.className).toContain('text-text-muted');
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC, groundM: 300 }));
+    for (const id of ['readout-bearing', 'readout-from-op', 'readout-range', 'op-elevation']) {
+      const el = screen.getByTestId(id);
+      expect(el.props.className).not.toContain('text-text-muted');
+      expect(el).toHaveStyle({ textShadowRadius: 3 });
+    }
+  });
+
   it('in OP mode measures from the OP and says so', async () => {
     const OP = { lat: 38.9, lon: -77.03 };
     const FAR = { lat: 40, lon: -75 };

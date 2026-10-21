@@ -75,4 +75,12 @@ describe('CenterCard', () => {
     await renderWithProviders(<CenterCard />);
     expect(screen.getByTestId('center-card').props.className).toContain('bg-surface-glass');
   });
+
+  it('in OP mode brightens the distance line and outlines it', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } });
+    await renderWithProviders(<CenterCard />);
+    const vector = screen.getByTestId('center-vector');
+    expect(vector.props.className).not.toContain('text-text-muted');
+    expect(vector).toHaveStyle({ textShadowRadius: 3 });
+  });
 });

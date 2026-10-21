@@ -8,6 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { describeReadout } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { CardLead } from './CardLead';
+import { glassHalo } from './glass';
 
 /**
  * Landscape: CTR and the crosshair's grid, then its distance and bearing from you, bottom left
@@ -30,10 +31,10 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       // In OP mode the card is see-through, so it hides less of the view.
       className={`rounded-2xl px-3 py-2 ${isOp ? 'bg-surface-glass' : 'border border-border bg-surface-chrome'}`}>
       <View className="flex-row items-center gap-2">
-        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />
+        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={isOp ? colors.text : undefined} tagStyle={glassHalo(isOp, colors)} />
         <Text
           testID="readout-coordinate"
-          style={{ textShadowColor: colors['surface-chrome'], textShadowRadius: 3 }}
+          style={glassHalo(isOp, colors)}
           className="shrink font-mono-bold text-sm text-text"
           adjustsFontSizeToFit
           numberOfLines={1}>
@@ -43,7 +44,9 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       <Text
         testID="center-vector"
         accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
-        className="mt-0.5 font-mono text-xs text-text-muted">
+        style={glassHalo(isOp, colors)}
+        // On the see-through OP card it is full white with an outline, so it reads over bright ground.
+        className={`mt-0.5 font-mono text-xs ${isOp ? 'text-text' : 'text-text-muted'}`}>
         {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
       </Text>
     </View>
