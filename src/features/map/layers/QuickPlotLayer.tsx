@@ -3,12 +3,12 @@ import { useMemo, type ComponentProps } from 'react';
 
 import { quickPlotFeatures } from '@/features/quick-plot/quick-plot-features';
 import { describeVector } from '@/lib/geo/vector';
-import { usePresence } from '@/stores/presence';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
+import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { makeDraftLabelStyle, makeRangeLabelStyle, makeRangeLineStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
@@ -16,11 +16,12 @@ type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const role = (r: string) => ['==', ['get', 'role'], r] as unknown as Filter;
 const RETICLE_STYLE = { iconImage: MAP_IMAGE_IDS.tempReticle, iconAllowOverlap: true, iconIgnorePlacement: true } as const;
 
-/** The quick plot temporary point: amber reticle, TEMP chip, and the range line from me. Not tappable. */
+/** The quick plot temporary point: amber reticle, TEMP chip, and the range line from me (from the OP in OP mode). Not tappable. */
 export function QuickPlotLayer() {
   const { colors } = useTheme();
   const temp = useQuickPlot((s) => s.temp);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
+  // Measured from the same place as the CTR readout: the OP while standing at one.
+  const self = useReadoutOrigin().from;
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);

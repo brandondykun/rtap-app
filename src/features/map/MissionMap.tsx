@@ -260,7 +260,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useQuickPlot.getState().close();
       usePlacing.getState().stop();
-      leaveOp();
+      // Measuring works inside OP mode; it only ends picking an OP.
+      useOp.getState().cancel();
       useMeasure.getState().startMeasure();
     }
   };
@@ -272,7 +273,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useMeasure.getState().stopMeasure();
       usePlacing.getState().stop();
-      leaveOp();
+      // Plotting works inside OP mode; it only ends picking an OP.
+      useOp.getState().cancel();
       q.open();
     }
   };
@@ -305,7 +307,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useOp.getState().exit();
     if (at) moveCamera({ centerCoordinate: [at.lon, at.lat], zoomLevel: 15, pitch, heading: bearing, ...EASE, animationDuration: 800 });
   };
-  /** Starting a tool leaves OP mode first (easing back over the OP); picking is simply cancelled. */
+  /** LINE and POLYGON leave OP mode first (easing back over the OP); picking is simply cancelled. */
   const leaveOp = () => {
     if (useOp.getState().phase === 'on') exitOp();
     else useOp.getState().cancel();
@@ -351,7 +353,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useMenu.getState().closeMenu();
     useMeasure.getState().stopMeasure();
     useQuickPlot.getState().close();
-    leaveOp();
+    // Placing a unit or point works inside OP mode (tap or CTR); it only ends picking an OP.
+    useOp.getState().cancel();
     p.start(category);
   };
   /** Opens the Add menu being placed, at `at` or (no `at`) at the crosshair; opening it ends placing. */
@@ -500,7 +503,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={opPhase === 'on' ? null : panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={opPhase !== 'off' ? 'op' : quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)}
+        activeTool={
+          // A tool running inside OP mode is the one lit; OP is lit otherwise while picking or at an OP.
+          (quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)) ??
+          (opPhase !== 'off' ? 'op' : null)
+        }
         onUnit={() => togglePlacing('unit')}
         onPoint={() => togglePlacing('point')}
         onLine={() => toggleAdd('line.add')}

@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AppState, type AppStateStatus, StyleSheet } from 'react-native';
 
@@ -1124,22 +1124,59 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
-    it('starting MEASURE in OP mode exits OP mode and shows the measure bar', async () => {
+    it('MEASURE works inside OP mode: it stays in OP mode and shows the measure bar', async () => {
       await openMap();
       await stakeOnMap();
+      mapboxMock().__camera.setCamera.mockClear();
       await fireEvent.press(screen.getByLabelText('MEASURE'));
-      expect(useOp.getState().phase).toBe('off');
+      expect(useOp.getState().phase).toBe('on');
       expect(useMeasure.getState().active).toBe(true);
       expect(screen.getByTestId('measure-bar')).toBeTruthy();
-      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ zoomLevel: 15, pitch: 60 }));
+      expect(screen.getByLabelText('MEASURE')).toBeSelected();
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
-    it('starting UNIT in OP mode exits OP mode', async () => {
+    it('UNIT works inside OP mode: a map tap opens the Add menu there without leaving OP mode or moving the camera', async () => {
       await openMap();
       await stakeOnMap();
+      mapboxMock().__camera.setCamera.mockClear();
       await fireEvent.press(screen.getByLabelText('UNIT'));
-      expect(useOp.getState().phase).toBe('off');
+      expect(useOp.getState().phase).toBe('on');
       expect(screen.getByLabelText('UNIT')).toBeSelected();
+      expect(screen.getByTestId('place-bar')).toBeTruthy();
+      await act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ geometry: { type: 'Point', coordinates: [-77.02, 38.91] } }));
+      expect(topMenu(useMenu.getState())?.id).toBe('unit.add');
+      expect(useOp.getState().phase).toBe('on');
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('POINT works inside OP mode at the crosshair (CTR)', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('POINT'));
+      expect(useOp.getState().phase).toBe('on');
+      await fireEvent.press(within(screen.getByTestId('place-bar')).getByLabelText(/CTR|center/i));
+      expect(topMenu(useMenu.getState())?.id).toBe('point.add');
+      expect(useOp.getState().phase).toBe('on');
+    });
+
+    it('PLOT works inside OP mode', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      expect(useOp.getState().phase).toBe('on');
+      expect(screen.getByTestId('quick-plot-entry')).toBeTruthy();
+    });
+
+    it('LINE and POLYGON exit OP mode', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('LINE'));
+      expect(useOp.getState().phase).toBe('off');
+      await act(async () => useMenu.getState().closeMenu());
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('POLYGON'));
+      expect(useOp.getState().phase).toBe('off');
     });
 
     it('follow mode does not survive staking: after Exit a new fix does not recenter', async () => {
