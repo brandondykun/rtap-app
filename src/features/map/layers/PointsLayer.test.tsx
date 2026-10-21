@@ -4,10 +4,13 @@ import { placePoint, toggleItemVisibility } from '@/features/map-items/commands'
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
+import { opIconSize } from './op-icon-size';
 import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
+import { POINT_SYMBOL_STYLE } from './styles';
 
 jest.mock('@rnmapbox/maps');
 
@@ -108,5 +111,14 @@ describe('PointsLayer', () => {
     await act(async () => useSettings.getState().setLabelSize('large'));
     expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textSize: 15 });
     useSettings.setState(DEFAULT_SETTINGS);
+  });
+
+  it('in OP mode sizes the symbols by zoom to hold their size as the view tilts, and back to normal after', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at });
+    await renderWithProviders(<PointsLayer missionId="m1" />);
+    const style = () => mapboxMock().__props.SymbolLayer['points-symbols'].style as { iconSize: unknown };
+    expect(style().iconSize).toEqual(opIconSize(POINT_SYMBOL_STYLE.iconSize));
+    await act(async () => useOp.getState().exit());
+    expect(style().iconSize).toEqual(POINT_SYMBOL_STYLE.iconSize);
   });
 });

@@ -2,11 +2,13 @@ import { act } from '@testing-library/react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MeasureLayer } from './MeasureLayer';
+import { opIconSize } from './op-icon-size';
 
 jest.mock('@rnmapbox/maps');
 
@@ -15,6 +17,7 @@ const shape = () => mapboxMock().__props.ShapeSource.measure.shape as Shape;
 
 beforeEach(() => {
   useMeasure.setState(INITIAL_MEASURE);
+  useOp.setState(INITIAL_OP);
   useInteraction.setState(INITIAL_INTERACTION);
   useSettings.setState({ ...DEFAULT_SETTINGS, northRef: 'true' });
 });
@@ -34,5 +37,16 @@ describe('MeasureLayer', () => {
     const props = mapboxMock().__props;
     for (const id of ['measure-halo', 'measure-line']) expect(props.LineLayer[id]).toBeDefined();
     for (const id of ['measure-dots', 'measure-chip']) expect(props.SymbolLayer[id]).toBeDefined();
+  });
+
+  it('in OP mode sizes the dots by zoom, and back to normal after', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } });
+    useMeasure.getState().startMeasure();
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
+    await renderWithProviders(<MeasureLayer />);
+    const size = () => (mapboxMock().__props.SymbolLayer['measure-dots'].style as { iconSize?: unknown }).iconSize;
+    expect(size()).toEqual(opIconSize(0.7));
+    await act(async () => useOp.getState().exit());
+    expect(size()).toBe(0.7);
   });
 });

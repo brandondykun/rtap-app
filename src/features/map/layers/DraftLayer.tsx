@@ -17,6 +17,7 @@ import {
   makeRangeLabelStyle,
   makeRangeLineStyle,
 } from './styles';
+import { useOpIconStyle } from './op-icon-size';
 import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
@@ -41,6 +42,8 @@ export function DraftLayer() {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
 
   const labelSize = useLabelTextSize();
+  const ringStyle = useOpIconStyle(DRAFT_RING_STYLE);
+  const symbolStyle = useOpIconStyle(DRAFT_SYMBOL_STYLE);
   const labelStyle = useMemo(() => makeDraftLabelStyle(colors, labelSize), [colors, labelSize]);
   const lineStyle = useMemo(() => makeRangeLineStyle(colors), [colors]);
   const rangeLabelStyle = useMemo(() => makeRangeLabelStyle(colors), [colors]);
@@ -62,8 +65,8 @@ export function DraftLayer() {
     <ShapeSource id="draft" shape={shape}>
       <LineLayer id="draft-range-line" style={lineStyle} filter={filter(DRAFT_FILTERS.range)} />
       <SymbolLayer id="draft-range-label" style={rangeLabelStyle} filter={filter(DRAFT_FILTERS.rangeLabel)} />
-      <SymbolLayer id="draft-ring" style={DRAFT_RING_STYLE} filter={filter(DRAFT_FILTERS.draft)} />
-      <SymbolLayer id="draft-symbol" style={DRAFT_SYMBOL_STYLE} filter={filter(DRAFT_FILTERS.draft)} />
+      <SymbolLayer id="draft-ring" style={ringStyle} filter={filter(DRAFT_FILTERS.draft)} />
+      <SymbolLayer id="draft-symbol" style={symbolStyle} filter={filter(DRAFT_FILTERS.draft)} />
       <SymbolLayer id="draft-label" style={labelStyle} filter={filter(DRAFT_FILTERS.draft)} />
     </ShapeSource>
   );

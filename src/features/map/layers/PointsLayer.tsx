@@ -11,6 +11,7 @@ import type { LatLon } from '@/lib/geo/types';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { useOpIconStyle } from './op-icon-size';
 import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
@@ -43,6 +44,7 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
   const filter = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds) as unknown as LayerFilter, [hiddenIds, excludeId]);
   const showLabels = useSettings((s) => s.showMapLabels);
   const labelSize = useLabelTextSize();
+  const symbolStyle = useOpIconStyle(POINT_SYMBOL_STYLE);
   const labelStyle = useMemo(
     () => ({ ...makePointLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' }) as const,
     [colors, showLabels, labelSize],
@@ -62,7 +64,7 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
         const itemAt = (stored ? pointCoord(stored.geometry) : null) ?? (g?.type === 'Point' ? { lat: g.coordinates[1], lon: g.coordinates[0] } : null);
         if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude }, { kind: 'point', sidc }, itemAt);
       }}>
-      <SymbolLayer id="points-symbols" style={POINT_SYMBOL_STYLE} filter={filter} />
+      <SymbolLayer id="points-symbols" style={symbolStyle} filter={filter} />
       <SymbolLayer id="points-labels" style={labelStyle} filter={filter} minZoomLevel={POINT_LABEL_MIN_ZOOM} />
     </ShapeSource>
   );

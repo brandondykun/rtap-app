@@ -8,6 +8,8 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DraftLayer } from './DraftLayer';
+import { opIconSize } from './op-icon-size';
+import { DRAFT_SYMBOL_STYLE } from './styles';
 
 jest.mock('@rnmapbox/maps');
 
@@ -93,5 +95,17 @@ describe('DraftLayer', () => {
     useDraft.getState().setCoord({ lat: 38.9, lon: -77 }, 'press');
     await renderWithProviders(<DraftLayer />);
     expect((mapboxMock().__props.ShapeSource.draft.shape as Shape).features).toEqual([]);
+  });
+
+  it('in OP mode sizes the draft symbol and its ring by zoom, and back to normal after', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: DRAFT });
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
+    await renderWithProviders(<DraftLayer />);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { iconSize?: unknown }).iconSize;
+    expect(size('draft-symbol')).toEqual(opIconSize(DRAFT_SYMBOL_STYLE.iconSize));
+    expect(size('draft-ring')).toEqual(opIconSize(undefined));
+    await act(async () => useOp.getState().exit());
+    expect(size('draft-symbol')).toEqual(DRAFT_SYMBOL_STYLE.iconSize);
+    expect(size('draft-ring')).toBeUndefined();
   });
 });
