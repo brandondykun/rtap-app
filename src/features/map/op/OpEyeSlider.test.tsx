@@ -65,7 +65,8 @@ describe('OpEyeSlider', () => {
       widths.push(StyleSheet.flatten(screen.getByTestId('op-eye-slider').props.style).width);
       await screen.unmount();
     }
-    expect(widths[0]).toBeGreaterThan(0);
+    // Just wider than `820 ft`, the longest height label.
+    expect(widths[0]).toBe(48);
     expect(new Set(widths).size).toBe(1);
   });
 

@@ -9,7 +9,7 @@ import { useSettings } from '@/stores/settings';
 export const EYE_TRACK_HEIGHT = 160;
 const THUMB = 22;
 /** Fixed so the panel does not grow as the height goes from one to three digits (fits `250 m` and `820 ft`). */
-const PANEL_WIDTH = 64;
+const PANEL_WIDTH = 48;
 const [MIN, MAX] = OP_EYE_RANGE;
 
 /** Eye height (whole metres) for a touch `y` points down the track, clamped to the range. */
