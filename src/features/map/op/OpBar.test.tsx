@@ -29,14 +29,10 @@ describe('OpBar', () => {
     expect(screen.getByText('Eye 33 ft')).toBeTruthy();
   });
 
-  it("shows where the view faces in the user's unit and north", async () => {
-    useSettings.setState({ northRef: 'true', angleUnit: 'deg' });
+  it('does not show where the view faces', async () => {
+    useSettings.setState({ northRef: 'grid', angleUnit: 'mil' });
     await renderWithProviders(<OpBar onExit={jest.fn()} />);
-    expect(screen.getByText('045° TRUE')).toBeTruthy();
-    await screen.unmount();
-    useSettings.setState({ angleUnit: 'mil' });
-    await renderWithProviders(<OpBar onExit={jest.fn()} />);
-    expect(screen.getByText(/^0800 mils TRUE$/)).toBeTruthy();
+    expect(screen.queryByText(/GRID|mils/)).toBeNull();
   });
 
   it('shows magnification only above 1×', async () => {
