@@ -17,13 +17,11 @@ function eyeAt(y: number): number {
 }
 
 /**
- * OP mode's eye height control, in the zoom buttons' spot bottom right: a vertical track with the height (and the
- * pinch magnification, above 1×) over it.
+ * OP mode's eye height control, in the zoom buttons' spot bottom right: a vertical track with the height over it.
  * Touching anywhere on the track jumps there; dragging follows the finger.
  */
 export function OpEyeSlider() {
   const eyeM = useOp((s) => s.eyeM);
-  const zoom = useOp((s) => s.zoom);
   const altitudeUnit = useSettings((s) => s.altitudeUnit);
   const set = (y: number) => useOp.getState().setEye(eyeAt(y));
   const drag = Gesture.Pan()
@@ -38,7 +36,6 @@ export function OpEyeSlider() {
   return (
     <View testID="op-eye-slider" className="items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-2 py-2.5">
       <Text className="font-mono text-xs font-semibold text-text">Eye {formatLength(eyeM, altitudeUnit)}</Text>
-      {zoom > 1 ? <Text className="font-mono text-xs text-text-muted">{zoom.toFixed(1)}×</Text> : null}
       <GestureDetector gesture={drag}>
         {/* The touch area is wider than the drawn track so it is easy to grab. */}
         <View accessibilityRole="adjustable" accessibilityLabel="Eye height" className="w-11 items-center" style={{ height: EYE_TRACK_HEIGHT }}>
