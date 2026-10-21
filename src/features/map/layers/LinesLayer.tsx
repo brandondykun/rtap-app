@@ -12,6 +12,7 @@ import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { useOpSymbolStyle } from './op-symbol-scale';
 import { LINE_ARROW_STYLE, LINE_FLOT_STYLE, makeLineDashedStyle, makeLineHaloStyle, makeLineLabelStyle, makeLineStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
@@ -47,6 +48,7 @@ export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) 
     }),
     [colors, showLabels, labelSize, mapBearing],
   );
+  const labelStyle = useOpSymbolStyle(styles.label);
 
   return (
     <>
@@ -64,7 +66,7 @@ export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) 
       </ShapeSource>
       <ShapeSource id="line-ends" shape={ends}>
         <SymbolLayer id="lines-arrow" style={LINE_ARROW_STYLE} filter={all(visible, ['==', ['get', 'end'], 'end'], ['==', ['get', 'endArrow'], true])} />
-        <SymbolLayer id="lines-label" style={styles.label} filter={visible as unknown as Filter} />
+        <SymbolLayer id="lines-label" style={labelStyle} filter={visible as unknown as Filter} />
       </ShapeSource>
     </>
   );

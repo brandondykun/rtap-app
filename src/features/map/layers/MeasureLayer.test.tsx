@@ -8,7 +8,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MeasureLayer } from './MeasureLayer';
-import { opIconSize } from './op-icon-size';
+import { opSize } from './op-symbol-scale';
 
 jest.mock('@rnmapbox/maps');
 
@@ -45,8 +45,20 @@ describe('MeasureLayer', () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureLayer />);
     const size = () => (mapboxMock().__props.SymbolLayer['measure-dots'].style as { iconSize?: unknown }).iconSize;
-    expect(size()).toEqual(opIconSize(0.7));
+    expect(size()).toEqual(opSize(0.7));
     await act(async () => useOp.getState().exit());
     expect(size()).toBe(0.7);
+  });
+
+  it('in OP mode sizes the chip by zoom, and back to normal after', async () => {
+    useMeasure.getState().startMeasure();
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
+    await renderWithProviders(<MeasureLayer />);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    const before = ['measure-chip'].map((id) => size(id));
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
+    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    await act(async () => useOp.getState().exit());
+    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
 });

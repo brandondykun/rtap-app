@@ -17,7 +17,7 @@ import {
   makeRangeLabelStyle,
   makeRangeLineStyle,
 } from './styles';
-import { useOpIconStyle } from './op-icon-size';
+import { useOpSymbolStyle } from './op-symbol-scale';
 import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
@@ -42,11 +42,13 @@ export function DraftLayer() {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
 
   const labelSize = useLabelTextSize();
-  const ringStyle = useOpIconStyle(DRAFT_RING_STYLE);
-  const symbolStyle = useOpIconStyle(DRAFT_SYMBOL_STYLE);
+  const ringStyle = useOpSymbolStyle(DRAFT_RING_STYLE);
+  const symbolStyle = useOpSymbolStyle(DRAFT_SYMBOL_STYLE);
   const labelStyle = useMemo(() => makeDraftLabelStyle(colors, labelSize), [colors, labelSize]);
   const lineStyle = useMemo(() => makeRangeLineStyle(colors), [colors]);
   const rangeLabelStyle = useMemo(() => makeRangeLabelStyle(colors), [colors]);
+  const opLabelStyle = useOpSymbolStyle(labelStyle);
+  const opRangeLabelStyle = useOpSymbolStyle(rangeLabelStyle);
 
   const shape = useMemo(() => {
     if (!mode || !coord || category === 'line' || category === 'polygon') return draftFeatureCollection(null);
@@ -64,10 +66,10 @@ export function DraftLayer() {
   return (
     <ShapeSource id="draft" shape={shape}>
       <LineLayer id="draft-range-line" style={lineStyle} filter={filter(DRAFT_FILTERS.range)} />
-      <SymbolLayer id="draft-range-label" style={rangeLabelStyle} filter={filter(DRAFT_FILTERS.rangeLabel)} />
+      <SymbolLayer id="draft-range-label" style={opRangeLabelStyle} filter={filter(DRAFT_FILTERS.rangeLabel)} />
       <SymbolLayer id="draft-ring" style={ringStyle} filter={filter(DRAFT_FILTERS.draft)} />
       <SymbolLayer id="draft-symbol" style={symbolStyle} filter={filter(DRAFT_FILTERS.draft)} />
-      <SymbolLayer id="draft-label" style={labelStyle} filter={filter(DRAFT_FILTERS.draft)} />
+      <SymbolLayer id="draft-label" style={opLabelStyle} filter={filter(DRAFT_FILTERS.draft)} />
     </ShapeSource>
   );
 }

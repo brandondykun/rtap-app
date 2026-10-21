@@ -11,6 +11,7 @@ import type { LatLon } from '@/lib/geo/types';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { useOpSymbolStyle } from './op-symbol-scale';
 import { makeLineDashedStyle, makeLineHaloStyle, makeLineStyle, makePolygonFillStyle, makePolygonLabelStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
@@ -43,6 +44,7 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
     }),
     [colors, showLabels, labelSize],
   );
+  const labelStyle = useOpSymbolStyle(styles.label);
 
   return (
     <>
@@ -59,7 +61,7 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
         <LineLayer id="polygons-halo" style={styles.halo} filter={all(visible, OUTLINE)} />
         <LineLayer id="polygons-solid" style={styles.solid} filter={all(visible, OUTLINE, ['==', ['get', 'dash'], 'solid'])} />
         <LineLayer id="polygons-dashed" style={styles.dashed} filter={all(visible, OUTLINE, ['==', ['get', 'dash'], 'dashed'])} />
-        <SymbolLayer id="polygons-label" style={styles.label} filter={all(visible, ['==', ['get', 'role'], 'label'])} />
+        <SymbolLayer id="polygons-label" style={labelStyle} filter={all(visible, ['==', ['get', 'role'], 'label'])} />
       </ShapeSource>
     </>
   );

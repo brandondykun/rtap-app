@@ -8,7 +8,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
-import { useOpIconStyle } from './op-icon-size';
+import { useOpSymbolStyle } from './op-symbol-scale';
 import { makeLineHaloStyle, makeMeasureChipStyle } from './styles';
 
 type Filter = ComponentProps<typeof LineLayer>['filter'];
@@ -20,7 +20,7 @@ const DOT_STYLE = { iconImage: MAP_IMAGE_IDS.lineVertex, iconSize: 0.7, iconAllo
 /** The measure line from start to end; only the start dot until the end is set. */
 export function MeasureLayer() {
   const { colors } = useTheme();
-  const iconStyle = useOpIconStyle(DOT_STYLE);
+  const iconStyle = useOpSymbolStyle(DOT_STYLE);
   const start = useMeasure((s) => s.start);
   const end = useMeasure((s) => s.end);
   const angleUnit = useSettings((s) => s.angleUnit);
@@ -35,13 +35,14 @@ export function MeasureLayer() {
     const line = { lineColor: colors.accent, lineWidth: 3, lineCap: 'round' as const, lineJoin: 'round' as const };
     return { halo: makeLineHaloStyle(colors), line, chip: makeMeasureChipStyle(colors) };
   }, [colors]);
+  const chipStyle = useOpSymbolStyle(styles.chip);
 
   return (
     <ShapeSource id="measure" shape={shape}>
       <LineLayer id="measure-halo" style={styles.halo} filter={LINE} />
       <LineLayer id="measure-line" style={styles.line} filter={LINE} />
       <SymbolLayer id="measure-dots" style={iconStyle} filter={DOTS} />
-      <SymbolLayer id="measure-chip" style={styles.chip} filter={CHIP} />
+      <SymbolLayer id="measure-chip" style={chipStyle} filter={CHIP} />
     </ShapeSource>
   );
 }

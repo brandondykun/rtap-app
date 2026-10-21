@@ -8,7 +8,7 @@ import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { opIconSize } from './op-icon-size';
+import { opSize } from './op-symbol-scale';
 import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
 import { POINT_SYMBOL_STYLE } from './styles';
 
@@ -117,8 +117,20 @@ describe('PointsLayer', () => {
     useOp.setState({ ...INITIAL_OP, phase: 'on', at });
     await renderWithProviders(<PointsLayer missionId="m1" />);
     const style = () => mapboxMock().__props.SymbolLayer['points-symbols'].style as { iconSize: unknown };
-    expect(style().iconSize).toEqual(opIconSize(POINT_SYMBOL_STYLE.iconSize));
+    expect(style().iconSize).toEqual(opSize(POINT_SYMBOL_STYLE.iconSize));
     await act(async () => useOp.getState().exit());
     expect(style().iconSize).toEqual(POINT_SYMBOL_STYLE.iconSize);
+  });
+
+  it('in OP mode sizes the name labels by zoom, and back to normal after', async () => {
+    const ctx = makeTestContext();
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    await renderWithProviders(<PointsLayer missionId="m1" />, ctx);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    const before = ['points-labels'].map((id) => size(id));
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
+    ['points-labels'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    await act(async () => useOp.getState().exit());
+    ['points-labels'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
 });

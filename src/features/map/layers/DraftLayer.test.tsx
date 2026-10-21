@@ -8,7 +8,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DraftLayer } from './DraftLayer';
-import { opIconSize } from './op-icon-size';
+import { opSize } from './op-symbol-scale';
 import { DRAFT_SYMBOL_STYLE } from './styles';
 
 jest.mock('@rnmapbox/maps');
@@ -102,10 +102,21 @@ describe('DraftLayer', () => {
     useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
     await renderWithProviders(<DraftLayer />);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { iconSize?: unknown }).iconSize;
-    expect(size('draft-symbol')).toEqual(opIconSize(DRAFT_SYMBOL_STYLE.iconSize));
-    expect(size('draft-ring')).toEqual(opIconSize(undefined));
+    expect(size('draft-symbol')).toEqual(opSize(DRAFT_SYMBOL_STYLE.iconSize));
+    expect(size('draft-ring')).toEqual(opSize(undefined));
     await act(async () => useOp.getState().exit());
     expect(size('draft-symbol')).toEqual(DRAFT_SYMBOL_STYLE.iconSize);
     expect(size('draft-ring')).toBeUndefined();
+  });
+
+  it('in OP mode sizes the label and range chip by zoom, and back to normal after', async () => {
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
+    await renderWithProviders(<DraftLayer />);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    const before = ['draft-label', 'draft-range-label'].map((id) => size(id));
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
+    ['draft-label', 'draft-range-label'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    await act(async () => useOp.getState().exit());
+    ['draft-label', 'draft-range-label'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
 });

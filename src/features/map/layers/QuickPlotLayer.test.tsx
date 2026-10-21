@@ -7,7 +7,7 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { opIconSize } from './op-icon-size';
+import { opSize } from './op-symbol-scale';
 import { QuickPlotLayer } from './QuickPlotLayer';
 
 jest.mock('@rnmapbox/maps');
@@ -46,8 +46,19 @@ describe('QuickPlotLayer', () => {
     useQuickPlot.getState().plot({ lat: 38.91, lon: -77 });
     await renderWithProviders(<QuickPlotLayer />);
     const size = () => (mapboxMock().__props.SymbolLayer['quick-plot-reticle'].style as { iconSize?: unknown }).iconSize;
-    expect(size()).toEqual(opIconSize(undefined));
+    expect(size()).toEqual(opSize(undefined));
     await act(async () => useOp.getState().exit());
     expect(size()).toBeUndefined();
+  });
+
+  it('in OP mode sizes the TEMP and range chips by zoom, and back to normal after', async () => {
+    useQuickPlot.getState().plot({ lat: 38.91, lon: -77 });
+    await renderWithProviders(<QuickPlotLayer />);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    const before = ['quick-plot-label', 'quick-plot-range-label'].map((id) => size(id));
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
+    ['quick-plot-label', 'quick-plot-range-label'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    await act(async () => useOp.getState().exit());
+    ['quick-plot-label', 'quick-plot-range-label'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
 });

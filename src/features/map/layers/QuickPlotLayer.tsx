@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
-import { useOpIconStyle } from './op-icon-size';
+import { useOpSymbolStyle } from './op-symbol-scale';
 import { makeDraftLabelStyle, makeRangeLabelStyle, makeRangeLineStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
@@ -20,7 +20,7 @@ const RETICLE_STYLE = { iconImage: MAP_IMAGE_IDS.tempReticle, iconAllowOverlap: 
 /** The quick plot temporary point: amber reticle, TEMP chip, and the range line from me (from the OP in OP mode). Not tappable. */
 export function QuickPlotLayer() {
   const { colors } = useTheme();
-  const iconStyle = useOpIconStyle(RETICLE_STYLE);
+  const iconStyle = useOpSymbolStyle(RETICLE_STYLE);
   const temp = useQuickPlot((s) => s.temp);
   // Measured from the same place as the CTR readout: the OP while standing at one.
   const self = useReadoutOrigin().from;
@@ -37,13 +37,15 @@ export function QuickPlotLayer() {
     () => ({ line: makeRangeLineStyle(colors), range: makeRangeLabelStyle(colors), label: makeDraftLabelStyle(colors, labelSize) }),
     [colors, labelSize],
   );
+  const rangeStyle = useOpSymbolStyle(styles.range);
+  const labelStyle = useOpSymbolStyle(styles.label);
 
   return (
     <ShapeSource id="quick-plot" shape={shape}>
       <LineLayer id="quick-plot-range" style={styles.line} filter={role('range') as never} />
-      <SymbolLayer id="quick-plot-range-label" style={styles.range} filter={role('range-label')} />
+      <SymbolLayer id="quick-plot-range-label" style={rangeStyle} filter={role('range-label')} />
       <SymbolLayer id="quick-plot-reticle" style={iconStyle} filter={role('temp')} />
-      <SymbolLayer id="quick-plot-label" style={styles.label} filter={role('temp')} />
+      <SymbolLayer id="quick-plot-label" style={labelStyle} filter={role('temp')} />
     </ShapeSource>
   );
 }
