@@ -8,6 +8,8 @@ import { useSettings } from '@/stores/settings';
 /** Length of the slider's track in points: top is the highest eye, bottom the lowest. */
 export const EYE_TRACK_HEIGHT = 160;
 const THUMB = 22;
+/** Fixed so the panel does not grow as the height goes from one to three digits (fits `250 m` and `820 ft`). */
+const PANEL_WIDTH = 64;
 const [MIN, MAX] = OP_EYE_RANGE;
 
 /** Eye height (whole metres) for a touch `y` points down the track, clamped to the range. */
@@ -17,7 +19,7 @@ function eyeAt(y: number): number {
 }
 
 /**
- * OP mode's eye height control, in the zoom buttons' spot bottom right: a vertical track with the height over it.
+ * OP mode's eye height control, in the zoom buttons' spot bottom right: a vertical track with the eye height over it.
  * Touching anywhere on the track jumps there; dragging follows the finger.
  */
 export function OpEyeSlider() {
@@ -35,9 +37,9 @@ export function OpEyeSlider() {
 
   return (
     // Only the track takes touches: swipes that start on the panel around it still turn the view.
-    <View testID="op-eye-slider" pointerEvents="box-none" className="items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-2 py-2.5">
+    <View testID="op-eye-slider" pointerEvents="box-none" className="items-center gap-2 rounded-2xl border border-border bg-surface-chrome py-2.5" style={{ width: PANEL_WIDTH }}>
       <Text testID="op-eye-label" pointerEvents="none" className="font-mono text-xs font-semibold text-text">
-        Eye {formatLength(eyeM, altitudeUnit)}
+        {formatLength(eyeM, altitudeUnit)}
       </Text>
       <GestureDetector gesture={drag}>
         {/* The touch area is wider than the drawn track so it is easy to grab. */}

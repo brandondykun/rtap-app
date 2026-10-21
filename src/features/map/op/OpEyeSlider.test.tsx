@@ -1,4 +1,5 @@
 import { act, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
@@ -21,11 +22,11 @@ beforeEach(() => {
 describe('OpEyeSlider', () => {
   it('labels the eye height in metres or feet', async () => {
     await renderWithProviders(<OpEyeSlider />);
-    expect(screen.getByText('Eye 10 m')).toBeTruthy();
+    expect(screen.getByTestId('op-eye-label')).toHaveTextContent(/^10 m$/);
     await screen.unmount();
     useSettings.setState({ altitudeUnit: 'ft' });
     await renderWithProviders(<OpEyeSlider />);
-    expect(screen.getByText('Eye 33 ft')).toBeTruthy();
+    expect(screen.getByTestId('op-eye-label')).toHaveTextContent(/^33 ft$/);
   });
 
   it('is vertical: the top of the track is the highest eye, the bottom the lowest', async () => {
@@ -54,6 +55,18 @@ describe('OpEyeSlider', () => {
     await renderWithProviders(<OpEyeSlider />);
     expect(screen.getByTestId('op-eye-slider')).toHaveProp('pointerEvents', 'box-none');
     expect(screen.getByTestId('op-eye-label')).toHaveProp('pointerEvents', 'none');
+  });
+
+  it('keeps one width whether the height has one, two or three digits', async () => {
+    const widths = [];
+    for (const eyeM of [5, 25, 250]) {
+      useOp.setState({ eyeM });
+      await renderWithProviders(<OpEyeSlider />);
+      widths.push(StyleSheet.flatten(screen.getByTestId('op-eye-slider').props.style).width);
+      await screen.unmount();
+    }
+    expect(widths[0]).toBeGreaterThan(0);
+    expect(new Set(widths).size).toBe(1);
   });
 
   it('places the thumb by the eye height', async () => {
