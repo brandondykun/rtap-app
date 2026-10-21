@@ -6,6 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { formatLength } from '@/features/location/gps-format';
 import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
+import { useOp } from '@/stores/op';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,8 +22,10 @@ import { CardLead } from './CardLead';
  * ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
  */
 export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { showCenter: boolean } & SelfProps) {
+  // In OP mode the dock is see-through, so it hides less of the view.
+  const glass = useOp((s) => s.phase === 'on');
   return (
-    <View testID="readout-dock" className="mx-2 rounded-2xl border border-border bg-surface-chrome px-3">
+    <View testID="readout-dock" className={`mx-2 rounded-2xl px-3 ${glass ? 'bg-surface-glass' : 'border border-border bg-surface-chrome'}`}>
       {showCenter ? <CenterRow /> : null}
       {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
       <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} />
@@ -56,8 +59,11 @@ function Row({ testID, lead, children, top, bottom }: RowProps) {
 }
 
 function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
+  const { colors } = useTheme();
+  // A dark halo keeps the grid readable over imagery when the dock is see-through.
+  const halo = { textShadowColor: colors['surface-chrome'], textShadowRadius: 3 };
   return (
-    <Text testID={testID} style={color ? { color } : undefined} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+    <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </Text>
   );

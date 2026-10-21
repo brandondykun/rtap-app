@@ -110,6 +110,14 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/ME/);
   });
 
+  it('goes see-through in OP mode only (solid otherwise)', async () => {
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('readout-dock').props.className).toContain('bg-surface-chrome');
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER, groundM: 300 }));
+    expect(screen.getByTestId('readout-dock').props.className).toContain('bg-surface-glass');
+    expect(screen.getByTestId('readout-dock').props.className).not.toContain('bg-surface-chrome');
+  });
+
   it('in OP mode measures from the OP and says so', async () => {
     const OP = { lat: 38.9, lon: -77.03 };
     const FAR = { lat: 40, lon: -75 };

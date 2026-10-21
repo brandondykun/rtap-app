@@ -66,4 +66,13 @@ describe('CenterCard', () => {
     expect(screen.getByTestId('center-vector')).toHaveTextContent(`DIST ${r.distance} · DIR ${r.bearing} FROM OP`);
     expect(screen.getByTestId('center-vector').props.accessibilityLabel).toContain('from the OP');
   });
+
+  it('goes see-through in OP mode only (solid otherwise)', async () => {
+    await renderWithProviders(<CenterCard />);
+    expect(screen.getByTestId('center-card').props.className).toContain('bg-surface-chrome');
+    await screen.unmount();
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } });
+    await renderWithProviders(<CenterCard />);
+    expect(screen.getByTestId('center-card').props.className).toContain('bg-surface-glass');
+  });
 });

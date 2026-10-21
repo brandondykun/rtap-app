@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { describeReadout } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
@@ -14,6 +15,7 @@ import { CardLead } from './CardLead';
  * Portrait shows the same in the dock's CTR row instead.
  */
 export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }) {
+  const { colors } = useTheme();
   const center = useInteraction((s) => s.cameraCenter);
   const { from, isOp } = useReadoutOrigin();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
@@ -25,10 +27,16 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
     <View
       testID="center-card"
       onLayout={onHeight ? (e) => onHeight(e.nativeEvent.layout.height) : undefined}
-      className="rounded-2xl border border-border bg-surface-chrome px-3 py-2">
+      // In OP mode the card is see-through, so it hides less of the view.
+      className={`rounded-2xl px-3 py-2 ${isOp ? 'bg-surface-glass' : 'border border-border bg-surface-chrome'}`}>
       <View className="flex-row items-center gap-2">
         <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />
-        <Text testID="readout-coordinate" className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+        <Text
+          testID="readout-coordinate"
+          style={{ textShadowColor: colors['surface-chrome'], textShadowRadius: 3 }}
+          className="shrink font-mono-bold text-sm text-text"
+          adjustsFontSizeToFit
+          numberOfLines={1}>
           {r.coordinate}
         </Text>
       </View>
