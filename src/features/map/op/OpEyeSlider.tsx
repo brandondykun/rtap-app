@@ -34,8 +34,11 @@ export function OpEyeSlider() {
   const thumbTop = ((MAX - eyeM) / (MAX - MIN)) * (EYE_TRACK_HEIGHT - THUMB);
 
   return (
-    <View testID="op-eye-slider" className="items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-2 py-2.5">
-      <Text className="font-mono text-xs font-semibold text-text">Eye {formatLength(eyeM, altitudeUnit)}</Text>
+    // Only the track takes touches: swipes that start on the panel around it still turn the view.
+    <View testID="op-eye-slider" pointerEvents="box-none" className="items-center gap-2 rounded-2xl border border-border bg-surface-chrome px-2 py-2.5">
+      <Text testID="op-eye-label" pointerEvents="none" className="font-mono text-xs font-semibold text-text">
+        Eye {formatLength(eyeM, altitudeUnit)}
+      </Text>
       <GestureDetector gesture={drag}>
         {/* The touch area is wider than the drawn track so it is easy to grab. */}
         <View accessibilityRole="adjustable" accessibilityLabel="Eye height" className="w-11 items-center" style={{ height: EYE_TRACK_HEIGHT }}>

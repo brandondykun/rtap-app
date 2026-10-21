@@ -124,6 +124,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       {showNorthUp ? <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} /> : null}
       <View
         testID="map-controls-bottom"
+        pointerEvents="box-none"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
         {side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom)}

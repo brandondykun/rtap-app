@@ -50,6 +50,12 @@ describe('OpEyeSlider', () => {
     expect(screen.queryByText(/×/)).toBeNull();
   });
 
+  it('lets touches on the panel around the track through to the map', async () => {
+    await renderWithProviders(<OpEyeSlider />);
+    expect(screen.getByTestId('op-eye-slider')).toHaveProp('pointerEvents', 'box-none');
+    expect(screen.getByTestId('op-eye-label')).toHaveProp('pointerEvents', 'none');
+  });
+
   it('places the thumb by the eye height', async () => {
     useOp.setState({ eyeM: 250 });
     await renderWithProviders(<OpEyeSlider />);

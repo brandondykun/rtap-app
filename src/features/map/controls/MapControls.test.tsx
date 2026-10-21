@@ -34,6 +34,14 @@ describe('MapControls', () => {
     expect(h.onRecenter).toHaveBeenCalledTimes(1);
   });
 
+  it('lets touches through the bottom controls box to the map in both orientations (only the controls catch them)', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} />);
+      expect(screen.getByTestId('map-controls-bottom')).toHaveProp('pointerEvents', 'box-none');
+      await screen.unmount();
+    }
+  });
+
   it('shows a side control in place of the zoom buttons (OP mode), in both orientations', async () => {
     for (const landscape of [false, true]) {
       await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} side={<Text testID="side">eye</Text>} />);
