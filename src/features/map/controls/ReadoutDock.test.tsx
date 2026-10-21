@@ -1,7 +1,8 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
-import { formatCoordinate } from '@/features/map/interaction/readout';
+import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
@@ -19,6 +20,7 @@ beforeEach(() => {
   useInteraction.setState(INITIAL_INTERACTION);
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
+  useOp.setState(INITIAL_OP);
 });
 
 describe('ReadoutDock', () => {
@@ -88,5 +90,19 @@ describe('ReadoutDock', () => {
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
+  });
+
+  it('in OP mode measures from the OP and says so', async () => {
+    const OP = { lat: 38.9, lon: -77.03 };
+    const FAR = { lat: 40, lon: -75 };
+    usePresence.getState().setSelfPosition({ position: FAR, accuracyM: 4, timestamp: 1, altitudeM: 1 });
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: OP });
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    const r = describeReadout(CENTER, OP, { coordinateFormat: 'mgrs', angleUnit: 'deg', northRef: 'grid', declinationOverrideDeg: null }, new Date());
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('readout-range')).toHaveTextContent(r.distance);
+    expect(screen.getByTestId('readout-bearing')).toHaveTextContent(r.bearing);
+    expect(screen.getByTestId('readout-from-op')).toHaveTextContent('FROM OP');
+    expect(screen.getByTestId('readout-range').props.accessibilityLabel).toContain('from the OP');
   });
 });

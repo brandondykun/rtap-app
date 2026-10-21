@@ -2,10 +2,10 @@ import { Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { useInteraction } from '@/stores/interaction';
-import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
 import { describeReadout } from '../interaction/readout';
+import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { CardLead } from './CardLead';
 
 /**
@@ -15,12 +15,12 @@ import { CardLead } from './CardLead';
  */
 export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }) {
   const center = useInteraction((s) => s.cameraCenter);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
+  const { from, isOp } = useReadoutOrigin();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
-  const r = describeReadout(center, self, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
+  const r = describeReadout(center, from, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
   return (
     <View
       testID="center-card"
@@ -34,9 +34,9 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       </View>
       <Text
         testID="center-vector"
-        accessibilityLabel={`Distance from you ${r.distance}, direction ${r.bearing} ${r.ref}`}
+        accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
         className="mt-0.5 font-mono text-xs text-text-muted">
-        {`DIST ${r.distance} · DIR ${r.bearing}`}
+        {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
       </Text>
     </View>
   );

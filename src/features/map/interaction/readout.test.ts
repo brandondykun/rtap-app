@@ -45,6 +45,11 @@ describe('describeReadout', () => {
     expect(describeReadout(NEAR, DC, SETTINGS, DATE)).toMatchObject({ distance: v.distanceLabel, bearing: v.bearingLabel });
   });
 
+  it('measures from the given point', () => {
+    const v = describeVector(NEAR, DC, { date: DATE, declinationOverrideDeg: null, unit: 'deg', ref: 'grid' });
+    expect(describeReadout(DC, NEAR, SETTINGS, DATE)).toMatchObject({ distance: v.distanceLabel, bearing: v.bearingLabel });
+  });
+
   it('honours unit and north reference', () => {
     const r = describeReadout(NEAR, DC, { ...SETTINGS, angleUnit: 'mil', northRef: 'magnetic' }, DATE);
     expect(r.bearing).toMatch(/^\d{4} mils$/);

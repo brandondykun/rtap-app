@@ -25,17 +25,17 @@ export function formatCoordinate(p: LatLon, format: CoordinateFormat): string {
   return formatLatLon(p);
 }
 
-/** Crosshair readout: coordinate of the map center, and range/bearing from the user to it. */
+/** Crosshair readout: coordinate of the map center, and range/bearing from `from` to it. */
 export function describeReadout(
   center: LatLon | null,
-  self: LatLon | null,
+  from: LatLon | null,
   settings: ReadoutSettings,
   date: Date,
 ): ReadoutModel {
   const ref = refLabel(settings.northRef);
   const coordinate = center ? formatCoordinate(center, settings.coordinateFormat) : NO_VALUE;
-  if (!center || !self) return { coordinate, distance: NO_VALUE, bearing: NO_VALUE, ref };
-  const v = describeVector(self, center, {
+  if (!center || !from) return { coordinate, distance: NO_VALUE, bearing: NO_VALUE, ref };
+  const v = describeVector(from, center, {
     date,
     declinationOverrideDeg: settings.declinationOverrideDeg,
     unit: settings.angleUnit,

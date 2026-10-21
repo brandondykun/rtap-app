@@ -10,6 +10,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { describeReadout, formatCoordinate } from '../interaction/readout';
+import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { CardLead } from './CardLead';
 
 /**
@@ -104,23 +105,31 @@ function SelfRow({ following, disabled, onRecenter }: SelfProps) {
 
 function CenterRow() {
   const center = useInteraction((s) => s.cameraCenter);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
+  const { from, isOp } = useReadoutOrigin();
+  const who = isOp ? 'the OP' : 'you';
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
-  const r = describeReadout(center, self, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
+  const r = describeReadout(center, from, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
   return (
     <Row
       testID="dock-center"
       lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" />}
       top={
-        <Text testID="readout-range" accessibilityLabel={`Distance from you ${r.distance}`} className="font-mono text-xs text-accent">
-          {r.distance}
-        </Text>
+        <>
+          {isOp ? (
+            <Text testID="readout-from-op" className="font-mono text-xs text-text-muted">
+              FROM OP
+            </Text>
+          ) : null}
+          <Text testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} className="font-mono text-xs text-accent">
+            {r.distance}
+          </Text>
+        </>
       }
       bottom={
-        <Text testID="readout-bearing" accessibilityLabel={`Bearing from you ${r.bearing} ${r.ref}`} className="font-mono text-xs text-text-muted">
+        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} className="font-mono text-xs text-text-muted">
           {r.bearing}
         </Text>
       }>
