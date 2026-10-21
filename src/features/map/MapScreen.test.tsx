@@ -1008,6 +1008,16 @@ describe('MapScreen', () => {
       expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 } });
     });
 
+    it('starting UNIT while picking cancels OP picking', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await fireEvent.press(screen.getByLabelText('UNIT'));
+      expect(useOp.getState().phase).toBe('off');
+      await mapPress(-77.1, 38.95);
+      expect(useOp.getState().phase).toBe('off');
+      expect(topMenu(useMenu.getState())?.id).toBe('unit.add');
+    });
+
     it('pressing OP again cancels picking', async () => {
       await openMap();
       await fireEvent.press(screen.getByLabelText('OP'));

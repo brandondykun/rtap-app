@@ -235,6 +235,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     () =>
       useMenu.subscribe((state, prev) => {
         if (state.stack.length === 0 || state.stack === prev.stack) return;
+        useOp.getState().cancel();
         if (useMeasure.getState().active) useMeasure.getState().stopMeasure();
         if (usePlacing.getState().category) usePlacing.getState().stop();
         const q = useQuickPlot.getState();
@@ -257,6 +258,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useQuickPlot.getState().close();
       usePlacing.getState().stop();
+      useOp.getState().cancel();
       useMeasure.getState().startMeasure();
     }
   };
@@ -268,6 +270,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useMeasure.getState().stopMeasure();
       usePlacing.getState().stop();
+      useOp.getState().cancel();
       q.open();
     }
   };
@@ -322,6 +325,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useMenu.getState().closeMenu();
     useMeasure.getState().stopMeasure();
     useQuickPlot.getState().close();
+    useOp.getState().cancel();
     p.start(category);
   };
   /** Opens the Add menu being placed, at `at` or (no `at`) at the crosshair; opening it ends placing. */
