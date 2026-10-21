@@ -44,8 +44,21 @@ describe('Toolbar', () => {
   it('clips its contents to its rounded ends, so the end shade never pokes past the curve', async () => {
     for (const landscape of [false, true]) {
       await renderWithProviders(<Toolbar landscape={landscape} activeTool={null} />);
-      expect(screen.getByTestId('toolbar').props.className).toContain('rounded-3xl');
+      expect(screen.getByTestId('toolbar').props.className).toContain('rounded-2xl');
       expect(screen.getByTestId('toolbar').props.className).toContain('overflow-hidden');
+    }
+  });
+
+  it('rounds like the other map panels, with each tool highlight concentric inside its curve', async () => {
+    for (const showText of [true, false]) {
+      useSettings.setState({ showToolbarText: showText });
+      await renderWithProviders(<Toolbar landscape={false} activeTool="unit" />);
+      expect(screen.getByTestId('toolbar').props.className).toContain('rounded-2xl');
+      const tool = screen.getByLabelText('UNIT');
+      // 4 pt from the bar's top and bottom: the 16 pt bar corner less 4 is the tool's 12 pt (rounded-xl).
+      expect(StyleSheet.flatten(tool.props.style).height).toBe(style().height - 8);
+      expect(tool.props.className).toContain('rounded-xl');
+      await screen.unmount();
     }
   });
 

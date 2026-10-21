@@ -68,7 +68,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       style={[position, { height }]}
       // Clipped to its rounded ends. In portrait the tools scroll right up to the right end and vanish
       // under its curve (the scroller carries that end's padding), so the shade must follow the curve too.
-      className={`absolute flex-row items-center overflow-hidden rounded-3xl bg-surface-glass ${landscape ? 'px-2' : 'pl-2'}`}>
+      className={`absolute flex-row items-center overflow-hidden rounded-2xl bg-surface-glass ${landscape ? 'px-2' : 'pl-2'}`}>
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
       <Divider flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (

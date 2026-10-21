@@ -2,8 +2,11 @@ import { Pressable, Text } from 'react-native';
 
 import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { TOOL_INSET } from '@/features/map/layout';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
+
+import { useToolbarHeight } from './use-toolbar-height';
 
 type Props = {
   icon: IconName;
@@ -21,6 +24,7 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
   const disabled = !onPress;
   const color = active ? colors.accent : colors.text;
   const halo = glassHalo(colors);
+  const height = useToolbarHeight() - 2 * TOOL_INSET;
   return (
     <Pressable
       accessibilityRole="button"
@@ -28,8 +32,9 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
       accessibilityState={{ selected: toggled ?? active, disabled }}
       disabled={disabled}
       onPress={onPress}
-      // Icon only: a bigger icon in a taller pill, so the button and its active highlight keep their size.
-      className={`min-w-12 items-center rounded-xl px-2 ${showText ? 'py-1' : 'py-1.5'} ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
+      // A fixed TOOL_INSET from the bar's top and bottom, so the highlight's corners are concentric with the bar's.
+      style={{ height }}
+      className={`min-w-12 items-center justify-center rounded-xl px-2 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={showText ? 18 : 22} color={color} style={halo} />
       {showText ? (
         <Text style={[halo, { color }]} className="text-[9px] font-semibold tracking-wide">

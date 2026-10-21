@@ -6,6 +6,8 @@ export const GAP = 8;
 export const TOOLBAR_HEIGHT = 46;
 /** The toolbar with its text hidden (icons only). */
 export const TOOLBAR_HEIGHT_ICONS = 42;
+/** Space above and below each tool in the toolbar: its highlight's corner (12, rounded-xl) is the bar's (16, rounded-2xl) less this. */
+export const TOOL_INSET = 4;
 export const CONTROL_SIZE = 40;
 /** Height of the Mapbox logo/attribution row. */
 export const LOGO_ROW_HEIGHT = 28;
