@@ -166,6 +166,19 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Small')).toBeSelected();
   });
 
+  it('sets how see-through the map panels are (Light by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('Panel background')).toBeTruthy();
+    expect(screen.getByLabelText('Light')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Heavy'));
+    expect(useSettings.getState().panelBackground).toBe('heavy');
+    expect(screen.getByLabelText('Heavy')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Clear'));
+    expect(useSettings.getState().panelBackground).toBe('clear');
+    await fireEvent.press(screen.getByLabelText('Solid'));
+    expect(useSettings.getState().panelBackground).toBe('solid');
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

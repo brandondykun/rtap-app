@@ -25,4 +25,13 @@ describe('LocationBanner', () => {
     await fireEvent.press(screen.getByLabelText('Dismiss'));
     expect(screen.queryByText(/Location is off/)).toBeNull();
   });
+
+  it('is see-through with no border and outlined text', async () => {
+    await renderWithProviders(<LocationBanner />);
+    await act(async () => usePresence.getState().setLocationStatus('denied'));
+    const banner = screen.getByTestId('location-banner').props.className as string;
+    expect(banner).toContain('bg-surface-glass');
+    expect(banner).not.toContain('border');
+    expect(screen.getByText(/Location is off/)).toHaveStyle({ textShadowRadius: 3 });
+  });
 });

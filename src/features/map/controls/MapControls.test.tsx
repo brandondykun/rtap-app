@@ -224,4 +224,16 @@ describe('MapControls', () => {
     await screen.unmount();
     expect(useMapChrome.getState().selfCard).toEqual({ width: 0, height: 0 });
   });
+
+  it('draws the zoom group and the single buttons see-through, with no border', async () => {
+    // North up only shows once the map is turned.
+    useInteraction.getState().setCamera({ center: { lat: 0, lon: 0 }, zoom: 3, bearing: 30 });
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} />);
+    const group = screen.getByTestId('zoom-group').props.className as string;
+    expect(group).toContain('bg-surface-glass');
+    expect(group).not.toContain('border');
+    const north = screen.getByLabelText('North up').props.className as string;
+    expect(north).toContain('bg-surface-glass');
+    expect(north).not.toContain('border');
+  });
 });

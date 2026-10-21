@@ -231,4 +231,12 @@ describe('Toolbar', () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onOp={onOp} />);
     expect(screen.getByLabelText('OP')).not.toBeSelected();
   });
+
+  it('is see-through with no border, and outlines its labels and icons', async () => {
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onUnit={() => {}} />);
+    const bar = screen.getByTestId('toolbar').props.className as string;
+    expect(bar).toContain('bg-surface-glass');
+    expect(bar).not.toContain('border');
+    expect(screen.getByText('UNIT')).toHaveStyle({ textShadowRadius: 3 });
+  });
 });

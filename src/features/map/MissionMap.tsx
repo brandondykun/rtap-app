@@ -537,7 +537,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             // Bottom right, in the zoom buttons' place: eye height, then Exit on its own.
             <View testID="op-side" pointerEvents="box-none" className="items-end gap-3">
               <OpEyeSlider />
-              <MenuButton compact label="Exit" icon="close" onPress={() => exitOp()} />
+              <MenuButton glass compact label="Exit" icon="close" onPress={() => exitOp()} />
             </View>
           ) : undefined
         }

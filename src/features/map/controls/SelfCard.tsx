@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { formatCoordinate } from '../interaction/readout';
 import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
-import { glassHalo } from './glass';
+import { glassHalo } from '@/components/ui/glass';
 
 type Props = {
   /** The camera is following the user (reported to screen readers; the border stays plain). */

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable } from 'react-native';
 
+import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -19,7 +20,7 @@ type Props = {
 
 export function MapButton({ label, onPress, icon, active = false, disabled = false, grouped = false, children }: Props) {
   const { colors } = useTheme();
-  const chrome = grouped ? '' : 'rounded-2xl border border-border bg-surface-chrome';
+  const chrome = grouped ? '' : 'rounded-2xl bg-surface-glass';
   return (
     <Pressable
       accessibilityRole="button"
@@ -29,7 +30,7 @@ export function MapButton({ label, onPress, icon, active = false, disabled = fal
       onPress={onPress}
       style={{ width: CONTROL_SIZE, height: CONTROL_SIZE }}
       className={`items-center justify-center ${chrome} ${disabled ? 'opacity-40' : ''}`}>
-      {icon ? <Icon name={icon} size={20} color={active ? colors.accent : colors.text} /> : children}
+      {icon ? <Icon name={icon} size={20} color={active ? colors.accent : colors.text} style={glassHalo(colors)} /> : children}
     </Pressable>
   );
 }

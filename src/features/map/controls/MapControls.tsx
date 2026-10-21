@@ -69,7 +69,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
   // A tall bottom sheet can leave too little room below north-up: the buttons give way first, then the cards.
   const room = roomAboveSheet(height, panel, insets.top, toolbar);
   const zoom = (
-    <View className="overflow-hidden rounded-2xl border border-border bg-surface-chrome">
+    <View testID="zoom-group" className="overflow-hidden rounded-2xl bg-surface-glass">
       <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
       <View className="h-px bg-border" style={{ width: CONTROL_SIZE }} />
       <MapButton grouped label="Zoom out" icon="minus" onPress={onZoomOut} />

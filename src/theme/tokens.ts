@@ -26,7 +26,7 @@ type TokenValue = PaletteName | { color: PaletteName; alpha: number };
 const dark = {
   surface: 'stone-900',
   'surface-chrome': { color: 'neutral-950', alpha: 0.9 },
-  /** Barely-there backing for controls laid over the 3D view, so the map shows through (the OP eye slider). */
+  /** See-through backing for everything floating over the map, so it shows through. Its alpha follows the Panel background setting (themeColors). */
   'surface-glass': { color: 'neutral-950', alpha: 0.35 },
   'surface-input': 'neutral-950',
   'surface-raised': 'stone-800',
@@ -62,15 +62,18 @@ function resolve(value: TokenValue): string {
   return `rgba(${r}, ${g}, ${b}, ${value.alpha})`;
 }
 
-export function themeColors(name: ThemeName): Record<SemanticToken, string> {
-  const theme: Record<SemanticToken, TokenValue> = themes[name];
+/** `glassAlpha` replaces the theme's alpha for `surface-glass` (the Panel background setting). */
+export function themeColors(name: ThemeName, glassAlpha?: number): Record<SemanticToken, string> {
+  const theme: Record<SemanticToken, TokenValue> = { ...themes[name] };
+  const glass = themes[name]['surface-glass'];
+  if (glassAlpha !== undefined) theme['surface-glass'] = { color: glass.color, alpha: glassAlpha };
   return Object.fromEntries(
     Object.entries(theme).map(([token, value]) => [token, resolve(value)]),
   ) as Record<SemanticToken, string>;
 }
 
-export function cssVars(name: ThemeName): Record<string, string> {
-  return Object.fromEntries(Object.entries(themeColors(name)).map(([token, color]) => [`--${token}`, color]));
+export function cssVars(name: ThemeName, glassAlpha?: number): Record<string, string> {
+  return Object.fromEntries(Object.entries(themeColors(name, glassAlpha)).map(([token, color]) => [`--${token}`, color]));
 }
 
 /** Raw colors for Mapbox layer styles and build scripts; identical to the UI colors. */

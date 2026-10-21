@@ -88,6 +88,13 @@ describe('settings store', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
+  it('sets and persists the panel background (light by default)', () => {
+    expect(useSettings.getState().panelBackground).toBe('light');
+    useSettings.getState().setPanelBackground('heavy');
+    expect(useSettings.getState().panelBackground).toBe('heavy');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ panelBackground: 'heavy' });
+  });
+
   it('sets and persists the label text size (medium by default)', () => {
     expect(useSettings.getState().labelSize).toBe('medium');
     useSettings.getState().setLabelSize('large');
@@ -157,6 +164,15 @@ describe('settings store', () => {
         declinationOverrideDeg: null,
         basemap: 'satellite',
       });
+    });
+
+    it('loads a valid panel background and ignores an invalid one', async () => {
+      seed({ panelBackground: 'solid' });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().panelBackground).toBe('solid');
+      seed({ panelBackground: 'opaque' });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().panelBackground).toBe('solid');
     });
 
     it('ignores an invalid persisted terrain height', async () => {

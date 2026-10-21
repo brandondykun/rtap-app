@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
+
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 
 import { ThemeProvider, useTheme } from './ThemeProvider';
 
@@ -16,5 +18,22 @@ describe('ThemeProvider', () => {
       </ThemeProvider>,
     );
     expect(screen.getByText('dark:#f59e0b')).toBeTruthy();
+  });
+
+  it('makes the see-through panels as dark as the Panel background setting', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    function Glass() {
+      return <Text>{useTheme().colors['surface-glass']}</Text>;
+    }
+    await render(
+      <ThemeProvider theme="dark">
+        <Glass />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText('rgba(10, 10, 10, 0.35)')).toBeTruthy();
+    for (const [level, alpha] of [['clear', 0.15], ['heavy', 0.6], ['solid', 0.9]] as const) {
+      await act(async () => useSettings.getState().setPanelBackground(level));
+      expect(screen.getByText(`rgba(10, 10, 10, ${alpha})`)).toBeTruthy();
+    }
   });
 });

@@ -69,7 +69,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
 
   return (
     <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + toolbar + GAP }}>
-      <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-border bg-surface-chrome p-3">
+      <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-3">
         <View testID="quick-plot-row" className="flex-row items-start gap-1">
           <View className="flex-1">
             <MgrsInput

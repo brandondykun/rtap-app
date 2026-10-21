@@ -11,7 +11,7 @@ import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize, type PanelBackground } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatEastWest, formatEastWestBoth } from './settings-format';
@@ -21,6 +21,13 @@ const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'hybrid', label: 'Hybrid' },
   { value: 'topo', label: 'Topo' },
   { value: 'dark', label: 'Dark' },
+];
+
+const PANEL_BACKGROUND_OPTIONS: { value: PanelBackground; label: string }[] = [
+  { value: 'clear', label: 'Clear' },
+  { value: 'light', label: 'Light' },
+  { value: 'heavy', label: 'Heavy' },
+  { value: 'solid', label: 'Solid' },
 ];
 
 const DECLINATION_ERROR = 'Enter a number from −180 to 180 (east positive)';
@@ -79,6 +86,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const showToolbarText = useSettings((s) => s.showToolbarText);
   const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
+  const panelBackground = useSettings((s) => s.panelBackground);
+  const setPanelBackground = useSettings((s) => s.setPanelBackground);
   const [text, setText] = useState(override === null ? '' : String(override));
   const [error, setError] = useState<string | null>(null);
   // Text typed since the last commit; closing the menu with the keyboard up still saves it.
@@ -208,6 +217,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
         <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
         <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
+      </MenuSection>
+      <MenuSection label="Panel background">
+        <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />
+        <Text className="text-xs text-text-muted">How much the toolbar, readouts and map buttons hide the map. Heavier reads better over snow.</Text>
       </MenuSection>
     </View>
   );

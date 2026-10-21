@@ -80,4 +80,12 @@ describe('QuickPlotCard', () => {
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
     expect(order.filter((l) => ['Discard', 'Save unit', 'Save point'].includes(l))).toEqual(['Save unit', 'Save point', 'Discard']);
   });
+
+  it('is see-through, keeps its amber border and outlines the grid', async () => {
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    const card = screen.getByTestId('quick-plot-card').props.className as string;
+    expect(card).toContain('bg-surface-glass');
+    expect(card).toContain('border-accent');
+    expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toHaveStyle({ textShadowRadius: 3 });
+  });
 });

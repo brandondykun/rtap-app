@@ -14,7 +14,7 @@ import { describeReadout, formatCoordinate } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
-import { glassHalo } from './glass';
+import { glassHalo } from '@/components/ui/glass';
 
 /**
  * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME

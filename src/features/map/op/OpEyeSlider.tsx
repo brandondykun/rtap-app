@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
+import { glassHalo } from '@/components/ui/glass';
 import { formatLength } from '@/features/location/gps-format';
 import { OP_EYE_RANGE, useOp } from '@/stores/op';
 import { useSettings } from '@/stores/settings';
@@ -40,7 +41,7 @@ export function OpEyeSlider() {
   return (
     // Only the track takes touches: swipes that start on the panel around it still turn the view.
     <View testID="op-eye-slider" pointerEvents="box-none" className="items-center gap-2 rounded-2xl bg-surface-glass py-2.5" style={{ width: PANEL_WIDTH }}>
-      <Text testID="op-eye-label" pointerEvents="none" className="font-mono text-xs font-semibold text-text" style={{ textShadowColor: colors['surface-chrome'], textShadowRadius: 3 }}>
+      <Text testID="op-eye-label" pointerEvents="none" className="font-mono text-xs font-semibold text-text" style={glassHalo(colors)}>
         {formatLength(eyeM, altitudeUnit)}
       </Text>
       <GestureDetector gesture={drag}>

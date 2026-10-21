@@ -8,7 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { describeReadout } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { CardLead } from './CardLead';
-import { glassHalo } from './glass';
+import { glassHalo } from '@/components/ui/glass';
 
 /**
  * Landscape: CTR and the crosshair's grid, then its distance and bearing from you, bottom left

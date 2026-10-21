@@ -1,5 +1,6 @@
 import { Pressable, Text } from 'react-native';
 
+import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -19,6 +20,7 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
   const showText = useSettings((s) => s.showToolbarText);
   const disabled = !onPress;
   const color = active ? colors.accent : colors.text;
+  const halo = glassHalo(colors);
   return (
     <Pressable
       accessibilityRole="button"
@@ -28,9 +30,9 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
       onPress={onPress}
       // Icon only: a bigger icon in a taller pill, so the button and its active highlight keep their size.
       className={`min-w-12 items-center rounded-xl px-2 ${showText ? 'py-1' : 'py-1.5'} ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
-      <Icon name={icon} size={showText ? 18 : 22} color={color} />
+      <Icon name={icon} size={showText ? 18 : 22} color={color} style={halo} />
       {showText ? (
-        <Text style={{ color }} className="text-[9px] font-semibold tracking-wide">
+        <Text style={[halo, { color }]} className="text-[9px] font-semibold tracking-wide">
           {label}
         </Text>
       ) : null}

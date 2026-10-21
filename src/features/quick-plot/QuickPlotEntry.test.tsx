@@ -83,4 +83,11 @@ describe('QuickPlotEntry', () => {
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
     expect(order.filter((l) => ['Plot', 'Clear grid'].includes(l))).toEqual(['Plot', 'Clear grid']);
   });
+
+  it('is see-through with no border', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    const card = screen.getByTestId('quick-plot-entry').props.className as string;
+    expect(card).toContain('bg-surface-glass');
+    expect(card).not.toContain('border');
+  });
 });

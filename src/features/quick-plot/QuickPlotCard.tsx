@@ -2,6 +2,7 @@ import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MenuButton } from '@/components/menu/MenuButton';
+import { glassHalo } from '@/components/ui/glass';
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { EDGE, selfCardClearance } from '@/features/map/layout';
@@ -35,9 +36,11 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   const grid = (
     <View className="flex-row items-center gap-3 px-1 pt-0.5">
       <View className="rounded-md border border-accent px-2 py-0.5">
-        <Text className="text-xs font-bold tracking-widest text-accent">TEMP</Text>
+        <Text style={glassHalo(colors)} className="text-xs font-bold tracking-widest text-accent">
+          TEMP
+        </Text>
       </View>
-      <Text numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono text-xl font-semibold text-text">
+      <Text numberOfLines={1} adjustsFontSizeToFit style={glassHalo(colors)} className="shrink font-mono text-xl font-semibold text-text">
         {formatCoordinate(temp, 'mgrs')}
       </Text>
     </View>
@@ -62,7 +65,7 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   return (
     <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
       {/* 8pt around the buttons keeps the corners concentric with theirs, as in the other map bars. */}
-      <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-accent bg-surface-chrome p-2">
+      <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-accent bg-surface-glass p-2">
         {grid}
         <View testID="quick-plot-card-buttons" className="flex-row gap-1.5">
           <View className="flex-1">{saveUnit}</View>

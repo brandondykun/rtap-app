@@ -3,6 +3,7 @@ import { type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollVie
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { EDGE } from '@/features/map/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -67,7 +68,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       style={[position, { height }]}
       // Clipped to its rounded ends. In portrait the tools scroll right up to the right end and vanish
       // under its curve (the scroller carries that end's padding), so the shade must follow the curve too.
-      className={`absolute flex-row items-center overflow-hidden rounded-3xl border border-border bg-surface-chrome ${landscape ? 'px-2' : 'pl-2'}`}>
+      className={`absolute flex-row items-center overflow-hidden rounded-3xl bg-surface-glass ${landscape ? 'px-2' : 'pl-2'}`}>
       <BarIcon icon="menu" label="Menu" onPress={onMenu} />
       <Divider flush={!landscape} lit={!landscape && overflow.hiddenStart} />
       {landscape ? (
@@ -120,7 +121,7 @@ function ToolScroller({ overflow, children }: { overflow: Overflow; children: Re
         bottom: 0,
         width: SHADE_WIDTH,
         [side === 'start' ? 'left' : 'right']: 0,
-        experimental_backgroundImage: `linear-gradient(to ${side === 'start' ? 'right' : 'left'}, ${colors['surface-chrome']}, transparent)`,
+        experimental_backgroundImage: `linear-gradient(to ${side === 'start' ? 'right' : 'left'}, ${colors['surface-glass']}, transparent)`,
       }}
     />
   );
@@ -155,7 +156,7 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
       onPress={onPress}
       hitSlop={6}
       className={`h-10 w-10 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
-      <Icon name={icon} size={22} color={colors.text} />
+      <Icon name={icon} size={22} color={colors.text} style={glassHalo(colors)} />
     </Pressable>
   );
 }

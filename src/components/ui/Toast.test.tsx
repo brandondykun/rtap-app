@@ -29,4 +29,17 @@ describe('Toast', () => {
     await fireEvent.press(screen.getByText('Tap me'));
     expect(useToast.getState().toast).toBeNull();
   });
+
+  it('is see-through, keeping the red border only for errors, with outlined text', async () => {
+    await renderWithProviders(<Toast top={100} />);
+    await act(async () => useToast.getState().show('Saved.', 'info'));
+    let card = screen.getByRole('alert').props.className as string;
+    expect(card).toContain('bg-surface-glass');
+    expect(card).not.toContain('border');
+    expect(screen.getByText('Saved.')).toHaveStyle({ textShadowRadius: 3 });
+    await act(async () => useToast.getState().show('Could not save.', 'error'));
+    card = screen.getByRole('alert').props.className as string;
+    expect(card).toContain('bg-surface-glass');
+    expect(card).toContain('border-danger');
+  });
 });

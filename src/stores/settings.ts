@@ -12,6 +12,9 @@ export type AltitudeUnit = 'm' | 'ft';
 /** Text size of the name labels on map items. */
 export type LabelSize = 'small' | 'medium' | 'large';
 export type MissionSort = 'recent' | 'name' | 'most';
+/** How dark the see-through panels over the map are (toolbar, readouts, map buttons, bars, toasts). */
+export type PanelBackground = 'clear' | 'light' | 'heavy' | 'solid';
+export const PANEL_BACKGROUNDS: readonly PanelBackground[] = ['clear', 'light', 'heavy', 'solid'];
 export const MISSION_SORTS: readonly MissionSort[] = ['recent', 'name', 'most'];
 
 type SettingsValues = {
@@ -38,6 +41,7 @@ type SettingsValues = {
   terrainExaggeration: number;
   labelSize: LabelSize;
   missionSort: MissionSort;
+  panelBackground: PanelBackground;
 };
 
 type SettingsActions = {
@@ -56,6 +60,7 @@ type SettingsActions = {
   setTerrainExaggeration: (x: number) => boolean;
   setLabelSize: (size: LabelSize) => void;
   setMissionSort: (sort: MissionSort) => void;
+  setPanelBackground: (level: PanelBackground) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
   toggleGridMagnetic: () => void;
   /** Returns false (and changes nothing) for non-finite values or |deg| > 180. */
@@ -80,6 +85,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   terrainExaggeration: 1.5,
   labelSize: 'medium',
   missionSort: 'recent',
+  panelBackground: 'light',
 };
 
 const syncStorage: StateStorage = {
@@ -120,6 +126,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
     missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
+    panelBackground: pick(p.panelBackground, PANEL_BACKGROUNDS, current.panelBackground),
   };
 }
 
@@ -145,6 +152,7 @@ export const useSettings = create<SettingsState>()(
       },
       setLabelSize: (labelSize) => set({ labelSize }),
       setMissionSort: (missionSort) => set({ missionSort }),
+      setPanelBackground: (panelBackground) => set({ panelBackground }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
       setDeclinationOverride: (deg) => {
         if (deg !== null && (!Number.isFinite(deg) || Math.abs(deg) > 180)) return false;
@@ -157,7 +165,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -173,6 +181,7 @@ export const useSettings = create<SettingsState>()(
         terrainExaggeration,
         labelSize,
         missionSort,
+        panelBackground,
       }),
     },
   ),

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
+import { glassHalo } from '@/components/ui/glass';
 import { Icon } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -10,11 +11,12 @@ import { useTheme } from '@/theme/ThemeProvider';
  */
 export function MapHintBar({ testID, hint, mono = false, children }: { testID: string; hint: string; mono?: boolean; children: ReactNode }) {
   const { colors } = useTheme();
+  const halo = glassHalo(colors);
   return (
     // 8pt around the buttons makes the bar's corners concentric with theirs (8 + 8 = 16); the hint gets a bit more room.
-    <View testID={testID} className="flex-row items-center gap-2 rounded-2xl border border-accent bg-surface-chrome p-2 pl-3">
-      <Icon name="gesture-tap" size={18} color={colors.accent} />
-      <Text numberOfLines={2} className={`shrink text-sm text-text ${mono ? 'font-mono font-semibold' : ''}`}>
+    <View testID={testID} className="flex-row items-center gap-2 rounded-2xl border border-accent bg-surface-glass p-2 pl-3">
+      <Icon name="gesture-tap" size={18} color={colors.accent} style={halo} />
+      <Text numberOfLines={2} style={halo} className={`shrink text-sm text-text ${mono ? 'font-mono font-semibold' : ''}`}>
         {hint}
       </Text>
       <View className="ml-1 flex-row gap-1.5">{children}</View>

@@ -27,6 +27,13 @@ describe('theme tokens', () => {
     expect(colors['surface-chrome']).toBe('rgba(10, 10, 10, 0.9)');
   });
 
+  it('sets the see-through panel color to the given alpha (0.35 by default)', () => {
+    expect(themeColors('dark')['surface-glass']).toBe('rgba(10, 10, 10, 0.35)');
+    expect(themeColors('dark', 0.6)['surface-glass']).toBe('rgba(10, 10, 10, 0.6)');
+    expect(cssVars('dark', 0.6)['--surface-glass']).toBe('rgba(10, 10, 10, 0.6)');
+    expect(themeColors('dark', 0.6)['surface-chrome']).toBe('rgba(10, 10, 10, 0.9)');
+  });
+
   it('exposes css variables per token', () => {
     expect(cssVars('dark')['--hostile']).toBe('#f87171');
   });

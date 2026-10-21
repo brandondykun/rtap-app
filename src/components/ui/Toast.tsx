@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useToast } from '@/stores/toast';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { glassHalo } from './glass';
 import { Icon } from './Icon';
 
 export const TOAST_DURATION_MS = 3000;
@@ -22,14 +23,15 @@ export function Toast({ top }: { top: number }) {
 
   if (!toast) return null;
   const error = toast.kind === 'error';
+  const halo = glassHalo(colors);
   return (
     <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top }}>
       <Pressable
         accessibilityRole="alert"
         onPress={() => hide(toast.id)}
-        className={`mx-4 flex-row items-center gap-2 rounded-2xl border bg-surface-chrome px-4 py-3 ${error ? 'border-danger' : 'border-border'}`}>
-        <Icon name={error ? 'alert-circle-outline' : 'information-outline'} size={18} color={error ? colors.danger : colors.text} />
-        <Text className="shrink text-sm text-text">{toast.message}</Text>
+        className={`mx-4 flex-row items-center gap-2 rounded-2xl bg-surface-glass px-4 py-3 ${error ? 'border border-danger' : ''}`}>
+        <Icon name={error ? 'alert-circle-outline' : 'information-outline'} size={18} color={error ? colors.danger : colors.text} style={halo} />
+        <Text style={halo} className="shrink text-sm text-text">{toast.message}</Text>
       </Pressable>
     </View>
   );
