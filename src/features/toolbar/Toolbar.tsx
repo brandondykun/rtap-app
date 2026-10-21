@@ -10,7 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { useToolbarHeight } from './use-toolbar-height';
 import { ToolButton } from './ToolButton';
 
-export type ToolId = 'unit' | 'point' | 'line' | 'polygon' | 'measure' | 'layers' | 'plot';
+export type ToolId = 'unit' | 'point' | 'line' | 'polygon' | 'measure' | 'layers' | 'plot' | 'op';
 
 type Props = {
   landscape: boolean;
@@ -29,13 +29,15 @@ type Props = {
   /** The 3D toggle, after LABELS: its icon shows whether the map is in 3D. */
   threeDOn?: boolean;
   onThreeD?: () => void;
+  /** The OP tool, after 3D: pick a spot to look out over the 3D map from. */
+  onOp?: () => void;
 };
 
 /**
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels, threeDOn = false, onThreeD }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels, threeDOn = false, onThreeD, onOp }: Props) {
   const insets = useSafeAreaInsets();
   const height = useToolbarHeight();
   const overflow = useOverflow();
@@ -55,6 +57,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       {/* Toggles, not tools: their icons show the state, with no highlight. */}
       <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" toggled={labelsOn} onPress={onLabels} />
       <ToolButton icon={threeDOn ? 'video-3d' : 'video-3d-off'} label="3D" toggled={threeDOn} onPress={onThreeD} />
+      <ToolButton icon="binoculars" label="OP" active={activeTool === 'op'} onPress={onOp} />
     </>
   );
 

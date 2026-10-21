@@ -10,6 +10,7 @@ import { getMissionCamera } from '@/features/missions/repository';
 import { elevationAt } from '@/features/map/terrain/elevation';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
@@ -44,6 +45,7 @@ beforeEach(() => {
   usePlacing.setState(INITIAL_PLACING);
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
+  useOp.setState(INITIAL_OP);
 });
 
 describe('MapScreen', () => {
@@ -939,6 +941,132 @@ describe('MapScreen', () => {
       mapboxMock().__camera.setCamera.mockClear();
       await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 420 }));
       expect(calls().at(-1)?.centerCoordinate).toBeUndefined();
+    });
+  });
+
+  describe('OP mode', () => {
+    const mapPress = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    const openMap = async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      return { ctx, id: r.value.id };
+    };
+    const stakeOnMap = async () => {
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await mapPress(-77.1, 38.95);
+      mapboxMock().__camera.setCamera.mockClear();
+    };
+
+    it('OP waits for a spot, and CTR stakes it at the crosshair, turning 3D on', async () => {
+      await openMap();
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
+      await fireEvent.press(screen.getByLabelText('OP'));
+      expect(useOp.getState().phase).toBe('picking');
+      expect(screen.getByTestId('place-bar')).toBeTruthy();
+      expect(useSettings.getState().terrain3d).toBe(false);
+      await fireEvent.press(screen.getByLabelText('Add at center'));
+      expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 }, bearing: 30 });
+      expect(useSettings.getState().terrain3d).toBe(true);
+      await waitFor(() => expect(mapboxMock().__map._runNative).toHaveBeenCalledWith('setFreeCamera', expect.anything()));
+    });
+
+    it('a map tap stakes the OP there', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await mapPress(-77.1, 38.95);
+      expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.95, lon: -77.1 } });
+    });
+
+    it('a unit tap stakes at the unit, a line tap at the tapped spot', async () => {
+      const { ctx, id } = await openMap();
+      const p = await placePoint(ctx, { missionId: id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      const l = await placeLine(ctx, { missionId: id, points: [{ lat: 38.9, lon: -77 }, { lat: 38.95, lon: -76.95 }], lineType: 'phase-line', name: 'RED' });
+      if (!p.ok || !l.ok) throw new Error('setup');
+      await waitFor(() => expect(mapboxMock().__props.ShapeSource.lines).toBeDefined());
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }),
+      );
+      expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 } });
+      useOp.setState(INITIAL_OP);
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: l.value.id } }], coordinates: { latitude: 38.92, longitude: -76.98 }, point: {} }),
+      );
+      expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.92, lon: -76.98 } });
+    });
+
+    it('tapping my location stakes at me', async () => {
+      await openMap();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await act(async () => (mapboxMock().__props.ShapeSource.self.onPress as (e: unknown) => void)({ features: [{ properties: {} }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }));
+      expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 } });
+    });
+
+    it('pressing OP again cancels picking', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('OP'));
+      expect(screen.getByLabelText('OP')).toBeSelected();
+      await fireEvent.press(screen.getByLabelText('OP'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(screen.queryByTestId('place-bar')).toBeNull();
+    });
+
+    it('in OP mode an item tap opens its menu without moving the camera', async () => {
+      const { ctx, id } = await openMap();
+      const p = await placePoint(ctx, { missionId: id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+      if (!p.ok) throw new Error('setup');
+      await stakeOnMap();
+      await act(async () =>
+        (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
+      );
+      expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+      expect(useOp.getState().phase).toBe('on');
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('in OP mode zoom, North and Recenter do not move the camera', async () => {
+      await openMap();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('Zoom in'));
+      await fireEvent.press(screen.getByLabelText('Zoom out'));
+      await fireEvent.press(screen.getByLabelText('North up'));
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('closing a menu in OP mode does not move the camera', async () => {
+      await openMap();
+      await stakeOnMap();
+      await act(async () => useMenu.getState().setPanelFrame({ side: 'bottom', size: 380 }));
+      await act(async () => useMenu.getState().setPanelFrame(null));
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('leaving the map exits OP mode', async () => {
+      await openMap();
+      await stakeOnMap();
+      expect(useOp.getState().phase).toBe('on');
+      await screen.unmount();
+      expect(useOp.getState().phase).toBe('off');
+    });
+
+    it('does not save the mission camera while in OP mode', async () => {
+      const { ctx, id } = await openMap();
+      const props = mapboxMock().__props.MapView.main as { onCameraChanged: (s: unknown) => void; onMapIdle: (s: unknown) => void };
+      const state = (gesture: boolean) => ({ properties: { center: [-77, 38.9], zoom: 11, heading: 10 }, gestures: { isGestureActive: gesture } });
+      await act(async () => props.onCameraChanged(state(true)));
+      await stakeOnMap();
+      await act(async () => props.onMapIdle(state(false)));
+      await screen.unmount();
+      expect(await getMissionCamera(ctx.db, id)).toBeNull();
     });
   });
 });

@@ -189,7 +189,7 @@ describe('Toolbar', () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onPlot={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
     // Settings lives in the Menu.
-    expect(order.slice(-3)).toEqual(['PLOT', 'LABELS', '3D']);
+    expect(order.slice(-4)).toEqual(['PLOT', 'LABELS', '3D', 'OP']);
     expect(screen.queryByLabelText('Settings')).toBeNull();
     expect(screen.getByText('LABELS')).toBeTruthy();
     const on = screen.getByLabelText('LABELS');
@@ -216,5 +216,19 @@ describe('Toolbar', () => {
     await screen.unmount();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} threeDOn={false} onThreeD={on3d} />);
     expect(screen.getByLabelText('3D')).not.toBeSelected();
+  });
+
+  it('OP comes after 3D and highlights while active', async () => {
+    const onOp = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool="op" onOp={onOp} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.at(-1)).toBe('OP');
+    expect(order.at(-2)).toBe('3D');
+    expect(screen.getByLabelText('OP')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('OP'));
+    expect(onOp).toHaveBeenCalled();
+    await screen.unmount();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onOp={onOp} />);
+    expect(screen.getByLabelText('OP')).not.toBeSelected();
   });
 });

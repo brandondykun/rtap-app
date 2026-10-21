@@ -25,6 +25,7 @@ import type { LatLon } from '@/lib/geo/types';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
+import { useOp } from '@/stores/op';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePlacing, type PlacingCategory } from '@/stores/placing';
@@ -35,6 +36,8 @@ import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { useMissionSnapshot } from './canvas/mission-snapshot';
+import { OpGestures } from './op/OpGestures';
+import { useOpCamera } from './op/use-op-camera';
 import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
@@ -96,7 +99,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const cameraMoved = useRef(false);
   // Backgrounded between a gesture and map idle: fall back to the latest live camera.
   const liveCamera = useCallback(() => {
-    if (!cameraMoved.current) return null;
+    // Standing at an OP the live camera is the OP's eye, not the mission's view.
+    if (!cameraMoved.current || useOp.getState().phase === 'on') return null;
     const { cameraCenter, cameraZoom, cameraBearing } = useInteraction.getState();
     return cameraCenter ? { center: cameraCenter, zoom: cameraZoom, bearing: cameraBearing } : null;
   }, []);
@@ -107,6 +111,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const saver = useCameraPersistence(ctx, missionId, liveCamera);
   const mapRef = useRef<MapView>(null);
   useMissionSnapshot(ctx, missionId, mapRef);
+  useOpCamera(mapRef);
   useElevationSource(mapRef);
   const markMoved = useCallback(() => {
     cameraMoved.current = true;
@@ -125,6 +130,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const plotTemp = useQuickPlot((s) => s.temp);
   const quickPlotting = plotEntryOpen || plotTemp !== null;
   const placing = usePlacing((s) => s.category);
+  const opPhase = useOp((s) => s.phase);
+  const opPicking = opPhase === 'picking';
   const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const lineDrawing = useDraft((s) => (s.category === 'line' || s.category === 'polygon') && s.mode !== null && !s.locked);
   const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
@@ -135,11 +142,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   // Every camera move carries the panel's full padding: a move without it targets the padding of the
   // moment (possibly mid-animation) and replaces the running padding ease (rnmapbox 10 iOS).
   const moveCamera = useCallback((stop: Omit<CameraStop, 'padding'>) => {
+    // Standing at an OP the camera is the OP's own: no ease may move it.
+    if (useOp.getState().phase === 'on') return;
     cameraRef.current?.setCamera({ ...stop, padding: cameraPaddingFor(useMenu.getState().panelFrame) });
   }, []);
   // Fit a line into the map area the panel leaves visible, as a padded center + zoom move.
   const fitCamera = useCallback(
     (bounds: { sw: LatLon; ne: LatLon }, animationDuration: number) => {
+      if (useOp.getState().phase === 'on') return;
       const window = Dimensions.get('window');
       const pad = cameraPaddingFor(useMenu.getState().panelFrame);
       const visible = { width: window.width - pad.paddingLeft - pad.paddingRight, height: window.height - pad.paddingTop - pad.paddingBottom };
@@ -240,6 +250,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     },
     [],
   );
+  useEffect(() => () => useOp.getState().exit(), []);
   const toggleMeasure = () => {
     if (useMeasure.getState().active) useMeasure.getState().stopMeasure();
     else {
@@ -272,6 +283,24 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       }),
     [markMoved, setFollowMode, moveCamera],
   );
+
+  /** Stakes the OP at `at`: 3D on (the setting only, no tilt), padding cleared, then the store takes over the camera. */
+  const stakeAt = (at: LatLon) => {
+    if (!useSettings.getState().terrain3d) useSettings.getState().toggleTerrain3d();
+    cameraRef.current?.setCamera({ padding: cameraPaddingFor(null), animationDuration: 0 });
+    useOp.getState().stake(at, useInteraction.getState().cameraBearing);
+  };
+  const toggleOp = () => {
+    if (useOp.getState().phase !== 'off') {
+      useOp.getState().exit();
+      return;
+    }
+    useMenu.getState().closeMenu();
+    useMeasure.getState().stopMeasure();
+    useQuickPlot.getState().close();
+    usePlacing.getState().stop();
+    useOp.getState().startPicking();
+  };
 
   const toggleLayers = () => {
     if (rootId === 'layers') useMenu.getState().closeMenu();
@@ -319,6 +348,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const lastItemPressAt = useRef(0);
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
+    if (useOp.getState().phase === 'picking') {
+      stakeAt(coord);
+      return;
+    }
     if (useQuickPlot.getState().entryOpen) {
       Keyboard.dismiss();
       useQuickPlot.getState().close();
@@ -335,6 +368,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     }
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
+    if (useOp.getState().phase === 'picking') {
+      stakeAt(itemAt ?? at);
+      return;
+    }
     // Measuring snaps to the symbol itself (lines pass no itemAt: the tap point is used).
     const placingCategory = usePlacing.getState().category;
     if (useMeasure.getState().active) useMeasure.getState().place(itemAt ?? at);
@@ -394,6 +431,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
 
   return (
     <View className="flex-1 bg-surface">
+      <OpGestures>
       <MapCanvas
         cameraRef={cameraRef}
         mapRef={mapRef}
@@ -406,7 +444,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           // Only arriving ends a draft-follow move: an idle from an earlier move must not drop it.
           if (followTarget.current && isNear(camera.center, followTarget.current)) followTarget.current = null;
           if (fitTarget.current && isInside(camera.center, fitTarget.current)) fitTarget.current = null;
-          if (cameraMoved.current) saver.schedule(camera);
+          if (cameraMoved.current && useOp.getState().phase !== 'on') saver.schedule(camera);
         }}
         onLongPress={onLongPress}
         onPress={onMapPress}
@@ -419,12 +457,13 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         {drawingPolygon ? <DraftPolygonLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         {measuring ? <MeasureLayer /> : null}
         {plotTemp ? <QuickPlotLayer /> : null}
-        <SelfLayer onPress={measuring ? (at) => useMeasure.getState().place(at) : undefined} />
+        <SelfLayer onPress={opPicking ? stakeAt : measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
-      <Crosshair panel={panel} />
+      </OpGestures>
+      <Crosshair panel={opPhase === 'on' ? null : panel} />
       <Toolbar
         landscape={landscape}
-        activeTool={quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)}
+        activeTool={opPhase !== 'off' ? 'op' : quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)}
         onUnit={() => togglePlacing('unit')}
         onPoint={() => togglePlacing('point')}
         onLine={() => toggleAdd('line.add')}
@@ -437,6 +476,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onLabels={() => useSettings.getState().toggleMapLabels()}
         threeDOn={threeDOn}
         onThreeD={toggleThreeD}
+        onOp={toggleOp}
       />
       <MapControls
         following={followMode}
@@ -447,13 +487,15 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onRecenter={recenter}
         panel={panel}
         landscape={landscape}
-        showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || measuring))}
-        barOverDock={!lineDrawing && !!placing}
+        showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
+        barOverDock={!lineDrawing && (!!placing || opPicking)}
         bar={
           lineDrawing ? (
             <LineDrawBar />
           ) : placing ? (
             <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
+          ) : opPicking ? (
+            <PlaceBar onAtCenter={() => stakeAt(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)} onCancel={() => useOp.getState().cancel()} />
           ) : measuring ? (
             <MeasureBar />
           ) : null

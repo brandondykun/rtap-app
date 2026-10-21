@@ -23,5 +23,6 @@ export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
   { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons.' },
   { group: 'read', label: 'LABELS', icon: 'label-outline', help: 'Turn the names on map items on or off.' },
   { group: 'read', label: '3D', icon: 'video-3d', help: 'Tilt the map to see hills and valleys in 3D.' },
+  { group: 'read', label: 'OP', icon: 'binoculars', help: 'Look out over the 3D map from a spot you pick.' },
   { group: 'app', label: 'Menu', icon: 'menu', help: 'Switch missions, change settings or open this page.' },
 ];
