@@ -31,6 +31,20 @@ describe('settings store', () => {
     expect(useSettings.getState().terrain3d).toBe(false);
   });
 
+  it('defaults terrain height to 1.5 and persists a change', () => {
+    expect(useSettings.getState().terrainExaggeration).toBe(1.5);
+    expect(useSettings.getState().setTerrainExaggeration(2)).toBe(true);
+    expect(useSettings.getState().terrainExaggeration).toBe(2);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ terrainExaggeration: 2 });
+  });
+
+  it('rejects terrain heights outside 1–3', () => {
+    for (const bad of [0.9, 3.1, NaN, Infinity]) {
+      expect(useSettings.getState().setTerrainExaggeration(bad)).toBe(false);
+    }
+    expect(useSettings.getState().terrainExaggeration).toBe(1.5);
+  });
+
   it('sets and persists the basemap', () => {
     useSettings.getState().setBasemap('topo');
     expect(useSettings.getState().basemap).toBe('topo');
@@ -143,6 +157,12 @@ describe('settings store', () => {
         declinationOverrideDeg: null,
         basemap: 'satellite',
       });
+    });
+
+    it('ignores an invalid persisted terrain height', async () => {
+      seed({ terrainExaggeration: 7 });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().terrainExaggeration).toBe(1.5);
     });
 
     it('survives unparseable JSON', async () => {

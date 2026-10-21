@@ -60,4 +60,11 @@ describe('useElevationSource', () => {
     await renderHook(() => useElevationSource({ current: { queryTerrainElevation } as never }));
     expect(await elevationAt(AT)).toBe(100);
   });
+
+  it('divides out a custom terrain height in 3D', async () => {
+    useSettings.setState({ terrain3d: true, terrainExaggeration: 2 });
+    const queryTerrainElevation = jest.fn(async () => 300);
+    await renderHook(() => useElevationSource({ current: { queryTerrainElevation } as never }));
+    expect(await elevationAt(AT)).toBe(150);
+  });
 });

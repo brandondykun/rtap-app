@@ -80,6 +80,12 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Atmosphere.main).toBeUndefined();
   });
 
+  it('uses the terrain height setting in 3D', async () => {
+    useSettings.setState({ terrain3d: true, terrainExaggeration: 2 });
+    await renderCanvas();
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 2 } });
+  });
+
   it('registers symbol images and asks for missing ones', async () => {
     const onSymbolMissing = jest.fn();
     await renderCanvas({ symbolImages: { SFGPU: { url: 'file:///s/SFGPU.png', scale: 3 } }, onSymbolMissing });

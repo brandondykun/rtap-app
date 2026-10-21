@@ -34,6 +34,8 @@ type SettingsValues = {
   showMapLabels: boolean;
   /** Tilted map with raised terrain and a sky (the 3D toolbar toggle). */
   terrain3d: boolean;
+  /** Terrain height multiplier in 3D, 1–3. */
+  terrainExaggeration: number;
   labelSize: LabelSize;
   missionSort: MissionSort;
 };
@@ -50,6 +52,8 @@ type SettingsActions = {
   setShowToolbarText: (show: boolean) => void;
   toggleMapLabels: () => void;
   toggleTerrain3d: () => void;
+  /** Returns false (and changes nothing) unless finite and within 1–3. */
+  setTerrainExaggeration: (x: number) => boolean;
   setLabelSize: (size: LabelSize) => void;
   setMissionSort: (sort: MissionSort) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
@@ -73,6 +77,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showToolbarText: true,
   showMapLabels: true,
   terrain3d: false,
+  terrainExaggeration: 1.5,
   labelSize: 'medium',
   missionSort: 'recent',
 };
@@ -85,6 +90,10 @@ const syncStorage: StateStorage = {
 
 function pick<T>(value: unknown, allowed: readonly T[], fallback: T): T {
   return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+function validExaggeration(x: unknown): x is number {
+  return typeof x === 'number' && Number.isFinite(x) && x >= 1 && x <= 3;
 }
 
 /** Validates persisted values field by field; anything invalid keeps the current value. */
@@ -108,6 +117,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
+    terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
     missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
   };
@@ -128,6 +138,11 @@ export const useSettings = create<SettingsState>()(
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       toggleTerrain3d: () => set({ terrain3d: !get().terrain3d }),
+      setTerrainExaggeration: (x) => {
+        if (!validExaggeration(x)) return false;
+        set({ terrainExaggeration: x });
+        return true;
+      },
       setLabelSize: (labelSize) => set({ labelSize }),
       setMissionSort: (missionSort) => set({ missionSort }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
@@ -142,7 +157,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, labelSize, missionSort }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -155,6 +170,7 @@ export const useSettings = create<SettingsState>()(
         showToolbarText,
         showMapLabels,
         terrain3d,
+        terrainExaggeration,
         labelSize,
         missionSort,
       }),
