@@ -295,10 +295,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useOp.getState().stake(at, useInteraction.getState().cameraBearing);
   };
   /** Leaves OP mode: back to normal 3D over the OP, facing the same way. Reads the OP first, since exit() clears it. */
-  const exitOp = () => {
+  const exitOp = (pitch = THREE_D_PITCH) => {
     const { at, bearing } = useOp.getState();
     useOp.getState().exit();
-    if (at) moveCamera({ centerCoordinate: [at.lon, at.lat], zoomLevel: 15, pitch: THREE_D_PITCH, heading: bearing, ...EASE, animationDuration: 800 });
+    if (at) moveCamera({ centerCoordinate: [at.lon, at.lat], zoomLevel: 15, pitch, heading: bearing, ...EASE, animationDuration: 800 });
   };
   const toggleOp = () => {
     const { phase } = useOp.getState();
@@ -431,8 +431,13 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   // Tilts into 3D, or back to flat (where tilting is locked).
   const toggleThreeD = () => {
-    if (useOp.getState().phase === 'on') exitOp();
+    const inOp = useOp.getState().phase === 'on';
     useSettings.getState().toggleTerrain3d();
+    // From OP mode, one move: back over the OP and flat (a second move would cancel the exit ease).
+    if (inOp) {
+      exitOp(useSettings.getState().terrain3d ? THREE_D_PITCH : 0);
+      return;
+    }
     moveCamera({ pitch: useSettings.getState().terrain3d ? THREE_D_PITCH : 0, ...EASE, animationDuration: THREE_D_TILT_MS });
   };
   const recenter = () => {
@@ -506,7 +511,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         panel={panel}
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
-        barOverDock={!lineDrawing && (!!placing || opPicking)}
+        barOverDock={!lineDrawing && (!!placing || opPicking || opPhase === 'on')}
         bar={
           lineDrawing ? (
             <LineDrawBar />
@@ -515,7 +520,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           ) : opPicking ? (
             <PlaceBar onAtCenter={() => stakeAt(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)} onCancel={() => useOp.getState().cancel()} />
           ) : opPhase === 'on' ? (
-            <OpBar onExit={exitOp} />
+            <OpBar onExit={() => exitOp()} />
           ) : measuring ? (
             <MeasureBar />
           ) : null

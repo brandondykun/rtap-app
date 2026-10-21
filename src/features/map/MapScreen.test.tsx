@@ -1040,7 +1040,7 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
-    it('in OP mode zoom and North do not move the camera, and Recenter is replaced by the OP bar', async () => {
+    it('in OP mode zoom, North and Recenter do not move the camera', async () => {
       await openMap();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
       await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
@@ -1048,9 +1048,16 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('Zoom in'));
       await fireEvent.press(screen.getByLabelText('Zoom out'));
       await fireEvent.press(screen.getByLabelText('North up'));
-      // Recenter is not on screen: the OP bar takes the self card's place (recenter() is guarded anyway).
-      expect(screen.queryByLabelText('Recenter on me')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('in OP mode the bar floats over the dock, which keeps the CTR readout FROM OP', async () => {
+      await openMap();
+      await stakeOnMap();
+      expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('op-bar'));
+      expect(screen.getByTestId('dock-center')).toBeTruthy();
+      expect(screen.getByTestId('readout-from-op')).toHaveTextContent('FROM OP');
     });
 
     it('Exit eases back to normal 3D over the OP, facing the same way', async () => {
@@ -1079,7 +1086,8 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('3D'));
       expect(useOp.getState().phase).toBe('off');
       expect(useSettings.getState().terrain3d).toBe(false);
-      expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 0 }));
+      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledTimes(1);
+      expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(expect.objectContaining({ centerCoordinate: [-77.1, 38.95], zoomLevel: 15, pitch: 0 }));
     });
 
     it('the OP button exits OP mode', async () => {
@@ -1088,6 +1096,17 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('OP'));
       expect(useOp.getState().phase).toBe('off');
       expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ zoomLevel: 15, pitch: 60 }));
+    });
+
+    it('in OP mode Recenter does not start following', async () => {
+      await openMap();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      await fireEvent.press(screen.getByLabelText('Exit'));
+      mapboxMock().__camera.setCamera.mockClear();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.95, lon: -77.05 }, accuracyM: 5, timestamp: 2 }));
+      expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
     it('closing a menu in OP mode does not move the camera', async () => {

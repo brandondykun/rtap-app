@@ -20,7 +20,7 @@ export function OpBar({ onExit }: { onExit: () => void }) {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const facing = at ? formatAngle(fromTrue(bearing, northRef, at, { date: new Date(), declinationOverrideDeg }), angleUnit) : '—';
   return (
-    <View testID="op-bar" className="flex-row items-center gap-3 rounded-2xl border border-accent bg-surface-chrome p-2 pl-3">
+    <View testID="op-bar" className="flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-2xl border border-accent bg-surface-chrome p-2 pl-3">
       <View className="shrink">
         <Text className="font-mono text-sm font-semibold text-text">Eye {formatLength(eyeM, altitudeUnit)}</Text>
         <Host matchContents={{ vertical: true }} style={{ width: 140 }}>
