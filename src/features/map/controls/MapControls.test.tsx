@@ -34,6 +34,12 @@ describe('MapControls', () => {
     expect(h.onRecenter).toHaveBeenCalledTimes(1);
   });
 
+  it('can hide north-up even while rotated (OP mode)', async () => {
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 0, lon: 0 }, zoom: 3, bearing: 40 }));
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} showNorthUp={false} />);
+    expect(screen.queryByLabelText('North up')).toBeNull();
+  });
+
   it('hides north-up while the map points north and brings it back once rotated', async () => {
     const h = handlers();
     await renderWithProviders(<MapControls following={false} canRecenter {...h} panel={null} landscape={false} />);

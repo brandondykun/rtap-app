@@ -43,6 +43,7 @@ import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
 import { OpBar } from './op/OpBar';
+import { OpCompass } from './op/OpCompass';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
@@ -523,6 +524,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onRecenter={recenter}
         // In OP mode a menu covers the readout and bar rather than pushing them up into the view.
         panel={opPhase === 'on' ? null : panel}
+        showNorthUp={opPhase !== 'on'}
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
         barOverDock={!lineDrawing && (!!placing || opPicking || opPhase === 'on')}
@@ -544,6 +546,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
+      <OpCompass top={insets.top + EDGE + toolbar + GAP} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />
     </View>
   );
