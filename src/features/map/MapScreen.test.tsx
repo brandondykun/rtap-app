@@ -1045,8 +1045,9 @@ describe('MapScreen', () => {
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
       await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
       await stakeOnMap();
-      await fireEvent.press(screen.getByLabelText('Zoom in'));
-      await fireEvent.press(screen.getByLabelText('Zoom out'));
+      // The zoom buttons give way to the eye height slider in OP mode.
+      expect(screen.queryByLabelText('Zoom in')).toBeNull();
+      expect(screen.getByTestId('op-eye-slider')).toBeTruthy();
       // North-up is hidden in OP mode, where it cannot move the camera.
       expect(screen.queryByLabelText('North up')).toBeNull();
       await fireEvent.press(screen.getByLabelText('Recenter on me'));

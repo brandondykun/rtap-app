@@ -6,27 +6,16 @@ import { renderWithProviders } from '@/test-utils/render';
 
 import { OpBar } from './OpBar';
 
-jest.mock('@expo/ui', () => {
-  const { Pressable: P, View } = jest.requireActual('react-native');
-  return {
-    Host: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
-    Slider: ({ onValueChange, testID }: { onValueChange: (v: number) => void; testID?: string }) => <P testID={testID} onPress={() => onValueChange(25)} />,
-  };
-});
-
 beforeEach(() => {
   useSettings.setState(DEFAULT_SETTINGS);
   useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 }, eyeM: 10, bearing: 45, zoom: 1 });
 });
 
 describe('OpBar', () => {
-  it('shows eye height in metres or feet', async () => {
+  it('leaves the eye height to the vertical slider', async () => {
     await renderWithProviders(<OpBar onExit={jest.fn()} />);
-    expect(screen.getByText('Eye 10 m')).toBeTruthy();
-    await screen.unmount();
-    useSettings.setState({ altitudeUnit: 'ft' });
-    await renderWithProviders(<OpBar onExit={jest.fn()} />);
-    expect(screen.getByText('Eye 33 ft')).toBeTruthy();
+    expect(screen.queryByText(/^Eye /)).toBeNull();
+    expect(screen.queryByTestId('op-eye')).toBeNull();
   });
 
   it('does not show where the view faces', async () => {
@@ -42,12 +31,6 @@ describe('OpBar', () => {
     useOp.setState({ zoom: 2 });
     await renderWithProviders(<OpBar onExit={jest.fn()} />);
     expect(screen.getByText('2.0×')).toBeTruthy();
-  });
-
-  it('the slider sets the eye height', async () => {
-    await renderWithProviders(<OpBar onExit={jest.fn()} />);
-    await fireEvent.press(screen.getByTestId('op-eye'));
-    expect(useOp.getState().eyeM).toBe(25);
   });
 
   it('Exit calls onExit', async () => {

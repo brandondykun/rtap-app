@@ -33,6 +33,8 @@ type Props = {
   showCenter?: boolean;
   /** False hides north-up even while the map is rotated (OP mode, where it cannot move the camera). */
   showNorthUp?: boolean;
+  /** Shown in place of the zoom buttons, always (OP mode's eye height slider). */
+  side?: ReactNode;
 };
 
 /** Height of your card before it is first laid out (two lines). */
@@ -53,7 +55,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
  * An action bar takes the dock's or your card's place while it is up (centered in portrait); in portrait it can float centered over the dock instead.
  */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true }: Props) {
+export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
@@ -95,7 +97,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         {showNorthUp ? <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} /> : null}
         <View testID="map-controls-bottom" pointerEvents="box-none" className="absolute gap-3" style={{ bottom, left: insets.left + EDGE, right }}>
           <View pointerEvents="box-none" className="items-end gap-3">
-            {showZoom && room >= ZOOM_HEIGHT + below ? zoom : null}
+            {side ?? (showZoom && room >= ZOOM_HEIGHT + below ? zoom : null)}
           </View>
           {over ? (
             <View testID="bar-over-dock" pointerEvents="box-none" className="items-center" onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
@@ -124,7 +126,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
         testID="map-controls-bottom"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {!showZoom || room < ZOOM_HEIGHT + below ? null : zoom}
+        {side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom)}
         {card}
       </View>
       {showCenter ? <MapBottomLeft panel={panel} /> : null}

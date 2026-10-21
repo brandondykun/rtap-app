@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
@@ -32,6 +32,15 @@ describe('MapControls', () => {
     expect(h.onZoomIn).toHaveBeenCalledTimes(1);
     expect(h.onZoomOut).toHaveBeenCalledTimes(1);
     expect(h.onRecenter).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a side control in place of the zoom buttons (OP mode), in both orientations', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} side={<Text testID="side">eye</Text>} />);
+      expect(screen.getByTestId('side')).toBeTruthy();
+      expect(screen.queryByLabelText('Zoom in')).toBeNull();
+      await screen.unmount();
+    }
   });
 
   it('can hide north-up even while rotated (OP mode)', async () => {

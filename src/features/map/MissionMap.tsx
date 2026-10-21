@@ -43,6 +43,7 @@ import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
 import { OpBar } from './op/OpBar';
+import { OpEyeSlider } from './op/OpEyeSlider';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
@@ -524,6 +525,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         // In OP mode a menu covers the readout and bar rather than pushing them up into the view.
         panel={opPhase === 'on' ? null : panel}
         showNorthUp={opPhase !== 'on'}
+        side={opPhase === 'on' ? <OpEyeSlider /> : undefined}
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
         barOverDock={!lineDrawing && (!!placing || opPicking || opPhase === 'on')}
