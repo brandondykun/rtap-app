@@ -42,6 +42,7 @@ import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
+import { OpBar } from './op/OpBar';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
@@ -293,8 +294,19 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     cameraRef.current?.setCamera({ padding: cameraPaddingFor(null), animationDuration: 0 });
     useOp.getState().stake(at, useInteraction.getState().cameraBearing);
   };
+  /** Leaves OP mode: back to normal 3D over the OP, facing the same way. Reads the OP first, since exit() clears it. */
+  const exitOp = () => {
+    const { at, bearing } = useOp.getState();
+    useOp.getState().exit();
+    if (at) moveCamera({ centerCoordinate: [at.lon, at.lat], zoomLevel: 15, pitch: THREE_D_PITCH, heading: bearing, ...EASE, animationDuration: 800 });
+  };
   const toggleOp = () => {
-    if (useOp.getState().phase !== 'off') {
+    const { phase } = useOp.getState();
+    if (phase === 'on') {
+      exitOp();
+      return;
+    }
+    if (phase === 'picking') {
       useOp.getState().exit();
       return;
     }
@@ -419,10 +431,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   // Tilts into 3D, or back to flat (where tilting is locked).
   const toggleThreeD = () => {
+    if (useOp.getState().phase === 'on') exitOp();
     useSettings.getState().toggleTerrain3d();
     moveCamera({ pitch: useSettings.getState().terrain3d ? THREE_D_PITCH : 0, ...EASE, animationDuration: THREE_D_TILT_MS });
   };
   const recenter = () => {
+    if (useOp.getState().phase === 'on') return;
     const self = usePresence.getState().selfPosition?.position;
     if (!self) return;
     markMoved();
@@ -500,6 +514,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
           ) : opPicking ? (
             <PlaceBar onAtCenter={() => stakeAt(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)} onCancel={() => useOp.getState().cancel()} />
+          ) : opPhase === 'on' ? (
+            <OpBar onExit={exitOp} />
           ) : measuring ? (
             <MeasureBar />
           ) : null

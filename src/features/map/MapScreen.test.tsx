@@ -1040,7 +1040,7 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
-    it('in OP mode zoom, North and Recenter do not move the camera', async () => {
+    it('in OP mode zoom and North do not move the camera, and Recenter is replaced by the OP bar', async () => {
       await openMap();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
       await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
@@ -1048,8 +1048,46 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('Zoom in'));
       await fireEvent.press(screen.getByLabelText('Zoom out'));
       await fireEvent.press(screen.getByLabelText('North up'));
-      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      // Recenter is not on screen: the OP bar takes the self card's place (recenter() is guarded anyway).
+      expect(screen.queryByLabelText('Recenter on me')).toBeNull();
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('Exit eases back to normal 3D over the OP, facing the same way', async () => {
+      await openMap();
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));
+      await fireEvent.press(screen.getByLabelText('OP'));
+      await fireEvent.press(screen.getByLabelText('Add at center'));
+      mapboxMock().__camera.setCamera.mockClear();
+      await fireEvent.press(screen.getByLabelText('Exit'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ centerCoordinate: [-77, 38.9], zoomLevel: 15, pitch: 60, heading: 30 }));
+    });
+
+    it('exiting while magnified returns at 1×', async () => {
+      await openMap();
+      await stakeOnMap();
+      await act(async () => useOp.getState().setZoom(2.5));
+      await fireEvent.press(screen.getByLabelText('Exit'));
+      expect(useOp.getState().zoom).toBe(1);
+      expect(useOp.getState().phase).toBe('off');
+    });
+
+    it('turning 3D off in OP mode exits and flattens', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('3D'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(useSettings.getState().terrain3d).toBe(false);
+      expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 0 }));
+    });
+
+    it('the OP button exits OP mode', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('OP'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ zoomLevel: 15, pitch: 60 }));
     });
 
     it('closing a menu in OP mode does not move the camera', async () => {
