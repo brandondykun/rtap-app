@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, type AppStateStatus, StyleSheet } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { placeLine, placePoint, placePolygon } from '@/features/map-items/commands';
@@ -1050,6 +1050,14 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('North up'));
       await fireEvent.press(screen.getByLabelText('Recenter on me'));
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
+    });
+
+    it('in OP mode an open menu covers the readout dock instead of pushing it up', async () => {
+      await openMap();
+      await stakeOnMap();
+      const before = StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom;
+      await act(async () => useMenu.setState({ panelFrame: { side: 'bottom', size: 320 } }));
+      expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(before);
     });
 
     it('in OP mode the bar floats over the dock, which keeps the CTR readout FROM OP', async () => {

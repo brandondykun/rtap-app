@@ -521,7 +521,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
-        panel={panel}
+        // In OP mode a menu covers the readout and bar rather than pushing them up into the view.
+        panel={opPhase === 'on' ? null : panel}
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
         barOverDock={!lineDrawing && (!!placing || opPicking || opPhase === 'on')}
