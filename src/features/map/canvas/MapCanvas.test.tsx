@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 
 import { MAP_IMAGES } from '@/features/map/images/map-images';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { useToast } from '@/stores/toast';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
@@ -19,6 +20,7 @@ const rafQueue: (() => void)[] = [];
 beforeEach(() => {
   useSettings.setState(DEFAULT_SETTINGS);
   useInteraction.setState(INITIAL_INTERACTION);
+  useOp.setState(INITIAL_OP);
   rafQueue.length = 0;
   jest.spyOn(global, 'requestAnimationFrame').mockImplementation((cb) => {
     rafQueue.push(() => cb(0));
@@ -78,6 +80,21 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1 } });
     expect(mapboxMock().__props.MapView.main.pitchEnabled).toBe(false);
     expect(mapboxMock().__props.Atmosphere.main).toBeUndefined();
+  });
+
+  it('in OP mode turns off map pan, zoom, rotate and tilt, and pushes the haze out', async () => {
+    useSettings.setState({ terrain3d: true });
+    await renderCanvas();
+    expect(mapboxMock().__props.MapView.main).toMatchObject({ scrollEnabled: true, zoomEnabled: true, rotateEnabled: true });
+    expect(mapboxMock().__props.Atmosphere.main).toMatchObject({ style: { range: [0.8, 8] } });
+    await act(() => useOp.setState({ phase: 'on' }));
+    expect(mapboxMock().__props.MapView.main).toMatchObject({
+      scrollEnabled: false,
+      zoomEnabled: false,
+      rotateEnabled: false,
+      pitchEnabled: false,
+    });
+    expect(mapboxMock().__props.Atmosphere.main).toMatchObject({ style: { range: [2, 20] } });
   });
 
   it('uses the terrain height setting in 3D', async () => {
