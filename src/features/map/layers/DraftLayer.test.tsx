@@ -2,6 +2,7 @@ import { act } from '@testing-library/react-native';
 
 import { composeSidc } from '@/features/symbology/presets';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
@@ -16,6 +17,7 @@ const DRAFT = { lat: 38.905, lon: -77.03 };
 beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
   usePresence.setState(INITIAL_PRESENCE);
+  useOp.setState(INITIAL_OP);
 });
 
 describe('DraftLayer', () => {
@@ -51,6 +53,16 @@ describe('DraftLayer', () => {
     const shape = mapboxMock().__props.ShapeSource.draft.shape as Shape;
     expect(shape.features.map((f) => f.properties.role)).toEqual(['draft', 'range', 'range-label']);
     expect(mapboxMock().__props.SymbolLayer['draft-label'].style).toBe(labelStyle);
+  });
+
+  it('in OP mode draws the range line from the OP, not from me', async () => {
+    const op = { lat: 38.95, lon: -77.1 };
+    usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 5, timestamp: 1 });
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: op });
+    useDraft.getState().startEdit({ itemId: 'i1', coord: DRAFT, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-2', notes: '' });
+    await renderWithProviders(<DraftLayer />);
+    const range = (mapboxMock().__props.ShapeSource.draft.shape as { features: { properties: { role: string }; geometry: { coordinates: number[][] } }[] }).features.find((f) => f.properties.role === 'range');
+    expect(range?.geometry.coordinates[0]).toEqual([op.lon, op.lat]);
   });
 
   it('labels a selected point with its name only', async () => {

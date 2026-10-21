@@ -4,10 +4,10 @@ import { useMemo, type ComponentProps } from 'react';
 import { draftSidc } from '@/features/map-items/draft-sidc';
 import { describeVector } from '@/lib/geo/vector';
 import { useDraft } from '@/stores/draft';
-import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { draftFeatureCollection } from './draft-features';
 import {
   DRAFT_FILTERS,
@@ -22,7 +22,7 @@ import { useLabelTextSize } from './use-label-text-size';
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const filter = (f: unknown) => f as Filter;
 
-/** The in-progress point: symbol, dashed ring, NEW/EDIT chip, and range line from the user. */
+/** The in-progress point: symbol, dashed ring, NEW/EDIT chip, and range line from the user (from the OP in OP mode). */
 export function DraftLayer() {
   const { colors } = useTheme();
   const mode = useDraft((s) => s.mode);
@@ -34,7 +34,8 @@ export function DraftLayer() {
   const pointType = useDraft((s) => s.pointType);
   const name = useDraft((s) => s.name);
   const locked = useDraft((s) => s.locked);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
+  // Measured from the same place as the CTR readout: the OP while standing at one.
+  const self = useReadoutOrigin().from;
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
