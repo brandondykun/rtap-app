@@ -3,6 +3,7 @@ import { type RefObject, useEffect } from 'react';
 
 import type { LatLon } from '@/lib/geo/types';
 import { useOp } from '@/stores/op';
+import { useSettings } from '@/stores/settings';
 
 import { setFreeCamera } from './free-camera';
 
@@ -88,8 +89,17 @@ export function useOpCamera(mapRef: RefObject<MapView | null>): void {
       }
     });
 
+    // A new terrain height redraws the ground under the OP at once: scale the drawn ground to match so the eye stays
+    // the same height above it and the true elevation holds; the next read refines it.
+    const unsubscribeHeight = useSettings.subscribe((s, prev) => {
+      const { phase, groundM, setGround } = useOp.getState();
+      if (s.terrainExaggeration === prev.terrainExaggeration || phase !== 'on' || groundM === null) return;
+      setGround((groundM * s.terrainExaggeration) / prev.terrainExaggeration);
+    });
+
     return () => {
       unsubscribe();
+      unsubscribeHeight();
       stop();
     };
   }, [mapRef]);

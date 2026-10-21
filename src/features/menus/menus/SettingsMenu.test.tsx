@@ -179,6 +179,17 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().panelBackground).toBe('solid');
   });
 
+  it('sets the 3D terrain height (1.5x by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('3D terrain height')).toBeTruthy();
+    expect(screen.getByLabelText('1.5×')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('3×'));
+    expect(useSettings.getState().terrainExaggeration).toBe(3);
+    expect(screen.getByLabelText('3×')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('1×'));
+    expect(useSettings.getState().terrainExaggeration).toBe(1);
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

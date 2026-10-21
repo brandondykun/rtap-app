@@ -30,6 +30,14 @@ const PANEL_BACKGROUND_OPTIONS: { value: PanelBackground; label: string }[] = [
   { value: 'solid', label: 'Solid' },
 ];
 
+/** The store takes any height from 1 to 3; these are the steps offered. */
+const TERRAIN_HEIGHT_OPTIONS: { value: string; label: string }[] = [
+  { value: '1', label: '1×' },
+  { value: '1.5', label: '1.5×' },
+  { value: '2', label: '2×' },
+  { value: '3', label: '3×' },
+];
+
 const DECLINATION_ERROR = 'Enter a number from −180 to 180 (east positive)';
 
 /** Parsed declination text, or null when it is not a number yet ('', '-', '1e'). */
@@ -86,6 +94,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const showToolbarText = useSettings((s) => s.showToolbarText);
   const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
+  const terrainHeight = useSettings((s) => s.terrainExaggeration);
+  const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
   const panelBackground = useSettings((s) => s.panelBackground);
   const setPanelBackground = useSettings((s) => s.setPanelBackground);
   const [text, setText] = useState(override === null ? '' : String(override));
@@ -217,6 +227,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
         <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
         <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
+      </MenuSection>
+      <MenuSection label="3D terrain height">
+        <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />
+        <Text className="text-xs text-text-muted">How much hills are raised in 3D. 1× is true scale.</Text>
       </MenuSection>
       <MenuSection label="Panel background">
         <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />

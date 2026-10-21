@@ -5,7 +5,7 @@ export const THREE_D_PITCH = 60;
 /** How long the tilt into and out of 3D takes. */
 export const THREE_D_TILT_MS = 600;
 
-/** Terrain height multiplier: the Settings value in 3D so hills read, true scale when flat. */
-export function terrainExaggeration(threeD: boolean): number {
-  return threeD ? useSettings.getState().terrainExaggeration : 1;
+/** Terrain height multiplier: the Settings value (`height`, the current one if left out) in 3D so hills read, true scale when flat. */
+export function terrainExaggeration(threeD: boolean, height = useSettings.getState().terrainExaggeration): number {
+  return threeD ? height : 1;
 }

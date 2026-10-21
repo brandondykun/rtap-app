@@ -103,6 +103,17 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 2 } });
   });
 
+  it('applies a new terrain height at once in 3D, and stays at true scale when flat', async () => {
+    useSettings.setState({ terrain3d: true });
+    await renderCanvas();
+    await act(async () => useSettings.getState().setTerrainExaggeration(3));
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 3 } });
+    await act(async () => useSettings.getState().toggleTerrain3d());
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1 } });
+    await act(async () => useSettings.getState().setTerrainExaggeration(2));
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1 } });
+  });
+
   it('registers symbol images and asks for missing ones', async () => {
     const onSymbolMissing = jest.fn();
     await renderCanvas({ symbolImages: { SFGPU: { url: 'file:///s/SFGPU.png', scale: 3 } }, onSymbolMissing });

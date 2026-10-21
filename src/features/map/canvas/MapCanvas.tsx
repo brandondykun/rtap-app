@@ -54,6 +54,8 @@ type Props = {
 export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, symbolImages, onSymbolMissing, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
   const threeD = useSettings((s) => s.terrain3d);
+  // Subscribed, so a new height from Settings reshapes the terrain at once.
+  const terrainHeight = useSettings((s) => s.terrainExaggeration);
   // In OP mode the map is fixed (the camera is placed by the OP) and looking is done with OpGestures.
   const inOp = useOp((s) => s.phase === 'on');
   // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
@@ -131,7 +133,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
       {/* Ground elevation for units (queryTerrainElevation, which undoes the exaggeration) and the 3D view.
           Flat, it stays at true scale and the map looks flat; in 3D it is raised so hills read. */}
       <RasterDemSource id={TERRAIN_SOURCE_ID} url="mapbox://mapbox.mapbox-terrain-dem-v1" tileSize={514} maxZoomLevel={14} />
-      <Terrain sourceID={TERRAIN_SOURCE_ID} style={{ exaggeration: terrainExaggeration(threeD) }} />
+      <Terrain sourceID={TERRAIN_SOURCE_ID} style={{ exaggeration: terrainExaggeration(threeD, terrainHeight) }} />
       {threeD ? <Atmosphere style={{ range: inOp ? [2, 20] : [0.8, 8], horizonBlend: 0.1 }} /> : null}
       {children}
     </MapView>

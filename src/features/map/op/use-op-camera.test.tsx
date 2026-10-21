@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 
 import { INITIAL_OP, useOp } from '@/stores/op';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 
 import { OP_FIRST_REFRESH_MS, OP_GROUND_REFRESH_MS, useOpCamera } from './use-op-camera';
@@ -31,6 +32,7 @@ beforeEach(() => {
   });
   jest.spyOn(global, 'cancelAnimationFrame').mockImplementation(() => {});
   useOp.setState(INITIAL_OP);
+  useSettings.setState(DEFAULT_SETTINGS);
   map()._runNative.mockClear();
   map().queryTerrainElevation.mockReset();
   map().queryTerrainElevation.mockResolvedValue(null);
@@ -42,6 +44,20 @@ afterEach(() => {
 });
 
 describe('useOpCamera', () => {
+  it('rescales the ground at once when the terrain height changes, so the eye and true elevation hold', async () => {
+    // Drawn ground 450 m at the default 1.5x is 300 m true.
+    map().queryTerrainElevation.mockResolvedValue(450);
+    setup();
+    await act(async () => useOp.getState().stake(AT, 45));
+    await flushFrames();
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 460, 80, 315]]);
+    await act(async () => useSettings.getState().setTerrainExaggeration(3));
+    await flushFrames();
+    expect(useOp.getState().groundM).toBe(900);
+    expect(useOp.getState().groundM! / useSettings.getState().terrainExaggeration).toBe(300);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 910, 80, 315]]);
+  });
+
   it('on staking reads the ground and places the eye 10 m above it', async () => {
     map().queryTerrainElevation.mockResolvedValue(300);
     setup();
