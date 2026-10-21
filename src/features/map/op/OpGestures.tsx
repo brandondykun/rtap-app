@@ -26,7 +26,7 @@ export function OpGestures({ children }: { children: ReactNode }) {
       .enabled(on)
       .maxPointers(1)
       .runOnJS(true)
-      .onChange((e) => look(e.changeX * OP_TURN_PER_PT, e.changeY * OP_TILT_PER_PT));
+      .onChange((e) => look(-e.changeX * OP_TURN_PER_PT, e.changeY * OP_TILT_PER_PT));
     const pinch = Gesture.Pinch()
       .withTestId('op-pinch')
       .enabled(on)

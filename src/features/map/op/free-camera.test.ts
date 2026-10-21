@@ -9,10 +9,10 @@ function fakeMap(runNative: jest.Mock): MapView {
 }
 
 describe('setFreeCamera', () => {
-  it('calls the native free camera with [lon, lat, altitude, pitch, bearing]', () => {
+  it('calls the native free camera with [lon, lat, altitude, pitch, mirrored bearing]', () => {
     const runNative = jest.fn().mockResolvedValue(undefined);
     setFreeCamera(fakeMap(runNative), cam);
-    expect(runNative).toHaveBeenCalledWith('setFreeCamera', [[-77, 38.9, 312, 80, 45]]);
+    expect(runNative).toHaveBeenCalledWith('setFreeCamera', [[-77, 38.9, 312, 80, 315]]);
   });
 
   it('does nothing without a map', () => {

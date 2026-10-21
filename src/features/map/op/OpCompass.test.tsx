@@ -44,6 +44,13 @@ describe('OpCompass', () => {
     expect(screen.queryByText(/\d/)).toBeNull();
   });
 
+  it('is wide: 300 points showing 120° of horizon', async () => {
+    expect(COMPASS_WIDTH).toBe(300);
+    useOp.setState({ bearing: 0 });
+    await renderWithProviders(<OpCompass top={0} />);
+    expect(leftOf('compass-label-NE')).toBe(CENTER + 45 * (300 / 120));
+  });
+
   it('shows nothing outside OP mode', async () => {
     useOp.setState(INITIAL_OP);
     await renderWithProviders(<OpCompass top={0} />);

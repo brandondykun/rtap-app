@@ -48,19 +48,19 @@ describe('useOpCamera', () => {
     await act(async () => useOp.getState().stake(AT, 45));
     await flushFrames();
     expect(map().queryTerrainElevation).toHaveBeenCalledWith([AT.lon, AT.lat]);
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 45]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 315]]);
   });
 
   it('places at 0 m plus the eye when there is no terrain yet, then corrects when the refresh finds ground', async () => {
     setup();
     await act(async () => useOp.getState().stake(AT, 45));
     await flushFrames();
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 10, 80, 45]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 10, 80, 315]]);
 
     map().queryTerrainElevation.mockResolvedValue(300);
     await act(async () => jest.advanceTimersByTime(OP_GROUND_REFRESH_MS));
     await flushFrames();
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 45]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 315]]);
   });
 
   it('re-reads the ground shortly after staking, before the regular refresh', async () => {
@@ -68,10 +68,10 @@ describe('useOpCamera', () => {
     setup();
     await act(async () => useOp.getState().stake(AT, 45));
     await flushFrames();
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 210, 80, 45]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 210, 80, 315]]);
     await act(async () => jest.advanceTimersByTime(OP_FIRST_REFRESH_MS));
     await flushFrames();
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 45]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 315]]);
   });
 
   it('keeps the last good ground when a refresh finds none', async () => {
@@ -100,7 +100,7 @@ describe('useOpCamera', () => {
     });
     await flushFrames();
     expect(placements()).toHaveLength(1);
-    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 75, 60]]);
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 75, 300]]);
 
     await act(async () => useOp.getState().setEye(50));
     await flushFrames();

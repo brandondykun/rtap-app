@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe('OpGestures', () => {
-  it('dragging right turns right and dragging down looks up', async () => {
+  it('dragging right swings the view left (the scene follows the finger) and dragging down looks up', async () => {
     useOp.setState({ phase: 'on', bearing: 0, pitch: 40 });
     await renderGestures();
     await act(() => {
@@ -32,7 +32,7 @@ describe('OpGestures', () => {
         { state: State.END },
       ]);
     });
-    expect(useOp.getState().bearing).toBeCloseTo(10);
+    expect(useOp.getState().bearing).toBeCloseTo(350);
     expect(useOp.getState().pitch).toBeCloseTo(50);
   });
 

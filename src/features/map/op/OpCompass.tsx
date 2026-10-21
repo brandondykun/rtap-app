@@ -4,8 +4,8 @@ import { useOp } from '@/stores/op';
 import { useTheme } from '@/theme/ThemeProvider';
 
 /** Width of the tape in points; it shows `VIEW_DEG` degrees of the horizon. */
-export const COMPASS_WIDTH = 180;
-const VIEW_DEG = 90;
+export const COMPASS_WIDTH = 300;
+const VIEW_DEG = 120;
 const PX_PER_DEG = COMPASS_WIDTH / VIEW_DEG;
 const TICK_STEP = 5;
 const LABELS: Record<number, string> = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
