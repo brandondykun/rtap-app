@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { firstValueFrom } from 'rxjs';
 
@@ -141,6 +141,18 @@ describe('AddUnitMenu', () => {
     await fireEvent.press(screen.getByText('Company'));
     expect(useDraft.getState().echelon).toBe('company');
     expect(screen.getByLabelText('Echelon: Company')).toBeTruthy();
+  });
+
+  it('puts Notes in its own section after Echelon, not beside the unit type', async () => {
+    await open();
+    // The section label's row, then the section itself.
+    const typeSection = screen.getByText('Unit type').parent!.parent!;
+    expect(within(typeSection).queryByLabelText('Notes')).toBeNull();
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('"accessibilityLabel":"Notes"')).toBeGreaterThan(tree.indexOf('"Echelon"'));
+    await fireEvent.press(screen.getByLabelText('Notes'));
+    await fireEvent.changeText(screen.getAllByLabelText('Notes').at(-1)!, 'dug in');
+    expect(useDraft.getState().notes).toBe('dug in');
   });
 
   it('lists unit types alphabetically', async () => {

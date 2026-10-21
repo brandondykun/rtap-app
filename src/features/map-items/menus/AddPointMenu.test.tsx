@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { composeSidc } from '@/features/symbology/presets';
@@ -40,6 +40,14 @@ describe('AddPointMenu', () => {
     expect(screen.queryByLabelText('Hostile')).toBeNull();
     expect(screen.queryByLabelText(/^Unit type/)).toBeNull();
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point', coord: CENTER });
+  });
+
+  it('puts Notes in its own section after the point type, not beside it', async () => {
+    await open();
+    // The section label's row, then the section itself.
+    const typeSection = screen.getByText('Point type').parent!.parent!;
+    expect(within(typeSection).queryByLabelText('Notes')).toBeNull();
+    expect(within(typeSection).getByLabelText('Point type: Checkpoint')).toBeTruthy();
   });
 
   it('renames with the type and adds the point, then shows it selected', async () => {
