@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
+import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -62,6 +63,24 @@ describe('AddPolygonMenu', () => {
     await fireEvent.press(screen.getByLabelText('Done inserting points'));
     expect(useDraft.getState()).toMatchObject({ selectedVertex: null, insertAfter: null });
     expect(screen.queryByText('Inserting points')).toBeNull();
+  });
+
+  it('prefills zone and square from the map center, then from each typed point, and from the center again on deselect', async () => {
+    await open();
+    const fields = () => ['MGRS zone', '100 km square', 'Easting', 'Northing'].map((l) => screen.getByLabelText(l).props.value);
+    const square = (at: { lat: number; lon: number }) => {
+      const g = mgrsFieldsFor(at);
+      return [g.zoneBand, g.square, '', ''];
+    };
+    expect(fields()).toEqual(square(C));
+    const far = { lat: 40.5, lon: -75 };
+    const g = mgrsFieldsFor(far);
+    await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${g.zoneBand} ${g.square} ${g.easting} ${g.northing}`);
+    await fireEvent.press(screen.getByLabelText('Add new point'));
+    expect(fields()).toEqual(square(far));
+    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText('Point 1'));
+    expect(fields()).toEqual(square(C));
   });
 
   it('saves a circle from the crosshair center and a typed radius in km; bad radii keep Save off', async () => {

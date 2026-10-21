@@ -44,6 +44,13 @@ export function mgrsFieldsFor(coord: LatLon): MgrsParts {
   return parts.ok ? parts.value : EMPTY_MGRS;
 }
 
+/** Only the zone and 100 km square of a coordinate, to prefill entry near it (empty without one or outside MGRS coverage). */
+export function squareFieldsFor(coord: LatLon | null): MgrsParts {
+  if (!coord) return EMPTY_MGRS;
+  const { zoneBand, square } = mgrsFieldsFor(coord);
+  return { ...EMPTY_MGRS, zoneBand, square };
+}
+
 export type MgrsField = 'zone' | 'square' | 'easting' | 'northing';
 const ORDER: MgrsField[] = ['zone', 'square', 'easting', 'northing'];
 

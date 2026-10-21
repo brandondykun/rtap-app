@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
@@ -14,9 +15,14 @@ import { observeMissionItems } from '../repository';
 import { AddLineMenu } from './AddLineMenu';
 
 const p = (n: number) => ({ lat: 38.9 + n / 100, lon: -77 });
+/** The map center, and a point in another grid zone (18T, not 18S). */
+const CENTER = { lat: 38.9, lon: -77 };
+const FAR = { lat: 40.5, lon: -75 };
 
 beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
+  useInteraction.setState(INITIAL_INTERACTION);
+  useInteraction.getState().setCamera({ center: CENTER, zoom: 14, bearing: 0 });
   useMenu.setState(INITIAL_MENU);
   useMenu.getState().openMenu('line.add', {});
 });
@@ -77,6 +83,21 @@ describe('AddLineMenu', () => {
     expect(screen.getByLabelText('Move point 1 to typed grid')).toBeTruthy();
     await typeGridAs(p(5), 'Move point 1 to typed grid');
     expect(useDraft.getState().vertices[0].lat).toBeCloseTo(p(5).lat, 3);
+  });
+
+  it('prefills zone and square from the map center, then from each typed point, and from the center again on deselect', async () => {
+    await open();
+    const fields = () => ['MGRS zone', '100 km square', 'Easting', 'Northing'].map((l) => screen.getByLabelText(l).props.value);
+    const square = (at: { lat: number; lon: number }) => {
+      const g = mgrsFieldsFor(at);
+      return [g.zoneBand, g.square, '', ''];
+    };
+    expect(fields()).toEqual(square(CENTER));
+    await typeGrid(FAR);
+    expect(fields()).toEqual(square(FAR));
+    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText('Point 1'));
+    expect(fields()).toEqual(square(CENTER));
   });
 
   it('blocks removing below 2 points and shows the hint', async () => {

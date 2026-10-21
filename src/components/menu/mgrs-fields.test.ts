@@ -1,6 +1,6 @@
 import { splitMgrs, toMgrs } from '@/lib/geo/coords/mgrs';
 
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from './mgrs-fields';
+import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from './mgrs-fields';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
@@ -73,5 +73,17 @@ describe('mgrsFieldsFor', () => {
 
   it('is empty outside MGRS coverage', () => {
     expect(mgrsFieldsFor({ lat: 85, lon: 0 })).toEqual(EMPTY_MGRS);
+  });
+});
+
+describe('squareFieldsFor', () => {
+  it('keeps only the zone and 100 km square', () => {
+    const { zoneBand, square } = dcParts();
+    expect(squareFieldsFor(DC)).toEqual({ ...EMPTY_MGRS, zoneBand, square });
+  });
+
+  it('is empty without a coordinate or outside MGRS coverage', () => {
+    expect(squareFieldsFor(null)).toEqual(EMPTY_MGRS);
+    expect(squareFieldsFor({ lat: 85, lon: 0 })).toEqual(EMPTY_MGRS);
   });
 });

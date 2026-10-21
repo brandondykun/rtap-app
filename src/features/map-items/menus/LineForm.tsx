@@ -7,13 +7,14 @@ import { MenuSelect } from '@/components/menu/MenuSelect';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { LINE_TYPES, lineNamePrefix, type LineType } from '@/features/symbology/line-types';
 import { formatDistance } from '@/lib/geo/format/measure';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { useDraft, type DraftMode } from '@/stores/draft';
+import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
 
 import { canRemove } from '../line-draft';
@@ -23,6 +24,9 @@ import { LineSample } from './LineSample';
 
 // Listed alphabetically in the dropdown.
 const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <LineSample lineType={t.id} /> })).sort((a, b) => a.label.localeCompare(b.label));
+
+/** Zone and 100 km square at the map center: typed points are most likely nearby. */
+const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCenter);
 
 /** Add/Edit line: name, type, the point list, a typed point, notes. Edits only the draft store. */
 export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
@@ -35,7 +39,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
   const locked = useDraft((s) => s.locked);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const showDistances = useSettings((s) => s.showLineDistances);
-  const [parts, setParts] = useState<MgrsParts>(EMPTY_MGRS);
+  const [parts, setParts] = useState<MgrsParts>(centerSquare);
   const [showNotes, setShowNotes] = useState(notes !== '');
   const status = evaluateMgrsFields(parts);
   const segs = segmentLengths(vertices);
@@ -50,13 +54,14 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
     else d.addVertex(status.coord);
     // The map eases to a typed point (MissionMap follows `coord` changes from typing).
     d.setCoord(status.coord, 'typed');
-    setParts(EMPTY_MGRS);
+    // The next point is most likely in the same square.
+    setParts(squareFieldsFor(status.coord));
   };
 
   const select = (i: number) => {
     useDraft.getState().selectVertex(i);
     // Selecting fills the typed-point row with that point's grid for correction.
-    setParts(selected === i ? EMPTY_MGRS : mgrsFieldsFor(vertices[i]));
+    setParts(selected === i ? centerSquare() : mgrsFieldsFor(vertices[i]));
   };
 
   // Only while editing: a saved 2-point line being viewed is fine as it is.

@@ -3,7 +3,7 @@ import { Keyboard, Pressable, Text, useWindowDimensions, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MgrsInput } from '@/components/menu/MgrsInput';
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { EMPTY_MGRS, evaluateMgrsFields, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { MapButton } from '@/features/map/controls/MapButton';
 import { EDGE, GAP } from '@/features/map/layout';
@@ -19,21 +19,14 @@ import { useTheme } from '@/theme/ThemeProvider';
 const LANDSCAPE_WIDTH = 520;
 const PORTRAIT_MARGIN = 6;
 
-/** Zone and 100 km square of the crosshair (most quick plots are nearby); empty before the map has a center. */
-function prefill(): MgrsParts {
-  const center = useInteraction.getState().cameraCenter;
-  if (!center) return EMPTY_MGRS;
-  const f = mgrsFieldsFor(center);
-  return { ...EMPTY_MGRS, zoneBand: f.zoneBand, square: f.square };
-}
-
 /** Quick plot grid entry: centered under the toolbar (above the keyboard), four MGRS fields and Plot. */
 export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   const toolbar = useToolbarHeight();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
-  const [parts, setParts] = useState<MgrsParts>(prefill);
+  // Zone and 100 km square of the crosshair: most quick plots are nearby.
+  const [parts, setParts] = useState<MgrsParts>(() => squareFieldsFor(useInteraction.getState().cameraCenter));
   // Bumped by Clear: remounts the fields so Zone takes focus.
   const [generation, setGeneration] = useState(0);
   const self = usePresence((s) => s.selfPosition?.position ?? null);

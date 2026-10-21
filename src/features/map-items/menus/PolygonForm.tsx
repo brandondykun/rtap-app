@@ -8,13 +8,14 @@ import { MenuSelect } from '@/components/menu/MenuSelect';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { POLYGON_TYPES, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { formatDistance } from '@/lib/geo/format/measure';
 import { useDraft, type DraftMode } from '@/stores/draft';
+import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
 
 import { canRemove } from '../line-draft';
@@ -41,6 +42,9 @@ const UNITS = [
 const parseRadius = (text: string) => (text.trim() === '' ? NaN : Number(text.replace(',', '.')));
 const radiusText = (m: number | null, unit: 'm' | 'km') => (m === null ? '' : unit === 'km' ? String(Number((m / 1000).toFixed(3))) : String(Math.round(m)));
 
+/** Zone and 100 km square at the map center: typed points are most likely nearby. */
+const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCenter);
+
 /** Add/Edit polygon: name, type, shape (points list or circle center + radius), notes. Edits only the draft store. */
 export function PolygonForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
@@ -56,7 +60,7 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   const locked = useDraft((s) => s.locked);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const showDistances = useSettings((s) => s.showLineDistances);
-  const [parts, setParts] = useState<MgrsParts>(EMPTY_MGRS);
+  const [parts, setParts] = useState<MgrsParts>(centerSquare);
   const [showNotes, setShowNotes] = useState(notes !== '');
   const [unit, setUnit] = useState<'m' | 'km'>(radiusM !== null && radiusM >= 1000 ? 'km' : 'm');
   const [radius, setRadius] = useState(() => radiusText(radiusM, unit));
@@ -87,11 +91,12 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
     const d = useDraft.getState();
     if (moving) d.moveVertex(selected, status.coord);
     else d.addVertex(status.coord);
-    setParts(EMPTY_MGRS);
+    // The next point is most likely in the same square.
+    setParts(squareFieldsFor(status.coord));
   };
   const select = (i: number) => {
     useDraft.getState().selectVertex(i);
-    setParts(selected === i ? EMPTY_MGRS : mgrsFieldsFor(vertices[i]));
+    setParts(selected === i ? centerSquare() : mgrsFieldsFor(vertices[i]));
   };
 
   const blocked = !locked && vertices.length === 3;
