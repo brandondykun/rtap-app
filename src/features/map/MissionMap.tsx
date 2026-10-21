@@ -17,6 +17,7 @@ import { QuickPlotCard } from '@/features/quick-plot/QuickPlotCard';
 import { QuickPlotEntry } from '@/features/quick-plot/QuickPlotEntry';
 import type { ItemRef } from '@/features/symbology/categories';
 import { useSymbolImages } from '@/features/symbology/render/use-symbol-images';
+import { MenuButton } from '@/components/menu/MenuButton';
 import { Toolbar } from '@/features/toolbar/Toolbar';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { useObservable } from '@/hooks/use-observable';
@@ -42,7 +43,6 @@ import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
-import { OpBar } from './op/OpBar';
 import { OpEyeSlider } from './op/OpEyeSlider';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
@@ -525,10 +525,18 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         // In OP mode a menu covers the readout and bar rather than pushing them up into the view.
         panel={opPhase === 'on' ? null : panel}
         showNorthUp={opPhase !== 'on'}
-        side={opPhase === 'on' ? <OpEyeSlider /> : undefined}
+        side={
+          opPhase === 'on' ? (
+            // Bottom right, in the zoom buttons' place: eye height, then Exit on its own.
+            <View testID="op-side" pointerEvents="box-none" className="items-end gap-3">
+              <OpEyeSlider />
+              <MenuButton compact label="Exit" icon="close" onPress={() => exitOp()} />
+            </View>
+          ) : undefined
+        }
         landscape={landscape}
         showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
-        barOverDock={!lineDrawing && (!!placing || opPicking || opPhase === 'on')}
+        barOverDock={!lineDrawing && (!!placing || opPicking)}
         bar={
           lineDrawing ? (
             <LineDrawBar />
@@ -536,8 +544,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
           ) : opPicking ? (
             <PlaceBar onAtCenter={() => stakeAt(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)} onCancel={() => useOp.getState().cancel()} />
-          ) : opPhase === 'on' ? (
-            <OpBar onExit={() => exitOp()} />
           ) : measuring ? (
             <MeasureBar />
           ) : null

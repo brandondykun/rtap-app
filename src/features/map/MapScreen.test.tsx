@@ -1062,10 +1062,13 @@ describe('MapScreen', () => {
       expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(before);
     });
 
-    it('in OP mode the bar floats over the dock, which keeps the CTR readout FROM OP', async () => {
+    it('in OP mode Exit floats alone bottom right under the eye slider, and the dock keeps the CTR readout FROM OP', async () => {
       await openMap();
       await stakeOnMap();
-      expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('op-bar'));
+      expect(screen.queryByTestId('bar-over-dock')).toBeNull();
+      expect(screen.queryByTestId('op-bar')).toBeNull();
+      expect(screen.getByTestId('op-side')).toContainElement(screen.getByLabelText('Exit'));
+      expect(screen.getByTestId('op-side')).toContainElement(screen.getByTestId('op-eye-slider'));
       expect(screen.getByTestId('dock-center')).toBeTruthy();
       expect(screen.getByTestId('readout-from-op')).toHaveTextContent('FROM OP');
     });

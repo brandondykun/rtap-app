@@ -44,6 +44,13 @@ describe('OpEyeSlider', () => {
     expect(useOp.getState().eyeM).toBe(250);
   });
 
+  it('shows the magnification only above 1×', async () => {
+    await renderWithProviders(<OpEyeSlider />);
+    expect(screen.queryByText('1.0×')).toBeNull();
+    await act(async () => useOp.setState({ zoom: 2 }));
+    expect(screen.getByText('2.0×')).toBeTruthy();
+  });
+
   it('places the thumb by the eye height', async () => {
     useOp.setState({ eyeM: 250 });
     await renderWithProviders(<OpEyeSlider />);
