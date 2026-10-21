@@ -1047,17 +1047,10 @@ describe('MapScreen', () => {
       await stakeOnMap();
       await fireEvent.press(screen.getByLabelText('Zoom in'));
       await fireEvent.press(screen.getByLabelText('Zoom out'));
-      // North-up is hidden in OP mode (the compass shows the heading instead).
+      // North-up is hidden in OP mode, where it cannot move the camera.
       expect(screen.queryByLabelText('North up')).toBeNull();
       await fireEvent.press(screen.getByLabelText('Recenter on me'));
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
-    });
-
-    it('shows the compass only while standing at an OP', async () => {
-      await openMap();
-      expect(screen.queryByTestId('op-compass')).toBeNull();
-      await stakeOnMap();
-      expect(screen.getByTestId('op-compass')).toBeTruthy();
     });
 
     it('in OP mode an open menu covers the readout dock instead of pushing it up', async () => {

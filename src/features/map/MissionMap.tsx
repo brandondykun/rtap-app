@@ -43,7 +43,6 @@ import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
 import { OpBar } from './op/OpBar';
-import { OpCompass } from './op/OpCompass';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
@@ -546,7 +545,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
-      <OpCompass top={insets.top + EDGE + toolbar + GAP} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />
     </View>
   );
