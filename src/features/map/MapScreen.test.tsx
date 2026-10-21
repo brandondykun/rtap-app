@@ -7,6 +7,7 @@ import { placeLine, placePoint, placePolygon } from '@/features/map-items/comman
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
+import { elevationAt } from '@/features/map/terrain/elevation';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
@@ -46,6 +47,17 @@ beforeEach(() => {
 });
 
 describe('MapScreen', () => {
+  it('answers ground elevation lookups from the map view', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    mapboxMock().__map.queryTerrainElevation.mockResolvedValueOnce(205);
+    expect(await elevationAt({ lat: 38.9, lon: -77 })).toBe(205);
+    expect(mapboxMock().__map.queryTerrainElevation).toHaveBeenCalledWith([-77, 38.9]);
+  });
+
   it('opens a mission on its map with the shell around it', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

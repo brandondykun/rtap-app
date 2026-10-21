@@ -50,6 +50,11 @@ describe('AddPointMenu', () => {
     expect(within(typeSection).getByLabelText('Point type: Checkpoint')).toBeTruthy();
   });
 
+  it('has no elevation (units only)', async () => {
+    await open();
+    expect(screen.queryByText(/^Elev /)).toBeNull();
+  });
+
   it('renames with the type and adds the point, then shows it selected', async () => {
     const ctx = await open();
     await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));

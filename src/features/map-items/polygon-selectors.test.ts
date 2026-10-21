@@ -12,6 +12,7 @@ function poly(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     style: '{"polygonType":"no-fire-area","shape":"points"}',
     name: '1',
     notes: null,
+    elevationM: null,
     updatedAt,
     ...overrides,
   };

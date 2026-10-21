@@ -50,6 +50,7 @@ import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { barTakesReadoutSpot, cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
+import { useElevationSource } from './terrain/elevation';
 
 const EASE = { animationMode: 'easeTo' as const };
 /** ~5 m: the idle camera center counts as the move's target. */
@@ -104,6 +105,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const saver = useCameraPersistence(ctx, missionId, liveCamera);
   const mapRef = useRef<MapView>(null);
   useMissionSnapshot(ctx, missionId, mapRef);
+  useElevationSource(mapRef);
   const markMoved = useCallback(() => {
     cameraMoved.current = true;
     saver.touch();

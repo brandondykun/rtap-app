@@ -87,6 +87,22 @@ describe('map items', () => {
     expect(pointCoord(item!.geometry)).toEqual(moved);
   });
 
+  it('saves a ground elevation with a point and keeps it unless an update sets one', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A', elevationM: 312.4 });
+    if (!r.ok) throw new Error('setup failed');
+    expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(312.4);
+    await updateItem(ctx, r.value.id, { name: 'B' });
+    expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(312.4);
+    await updateItem(ctx, r.value.id, { coord: { lat: 39, lon: -77 }, elevationM: null });
+    expect((await findItem(ctx.db, r.value.id))?.elevationM).toBeNull();
+    const unknown = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'C' });
+    if (!unknown.ok) throw new Error('setup failed');
+    expect((await findItem(ctx.db, unknown.value.id))?.elevationM).toBeNull();
+    const [snap] = (await firstValueFrom(observeMissionItems(ctx.db, 'm1'))).filter((i) => i.id === r.value.id);
+    expect(snap.elevationM).toBeNull();
+  });
+
   it('stamps the editor separately from the creator', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A' });

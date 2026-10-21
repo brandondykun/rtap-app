@@ -92,6 +92,24 @@ describe('draft store', () => {
   });
 });
 
+describe('draft elevation', () => {
+  it('keeps the elevation only for the coordinate it was looked up at', () => {
+    useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
+    expect(useDraft.getState().elevation).toBeNull();
+    useDraft.getState().setElevation(B, 50);
+    expect(useDraft.getState().elevation).toBeNull();
+    useDraft.getState().setElevation(A, 120);
+    expect(useDraft.getState().elevation).toEqual({ at: A, m: 120 });
+  });
+
+  it('starts an edit with the stored elevation and never changes it while locked', () => {
+    useDraft.getState().startEdit({ itemId: 'u1', coord: A, category: 'unit', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', pointType: 'checkpoint', name: 'X', notes: '', elevationM: 88 });
+    expect(useDraft.getState().elevation).toEqual({ at: A, m: 88 });
+    useDraft.getState().setElevation(A, 1);
+    expect(useDraft.getState().elevation).toEqual({ at: A, m: 88 });
+  });
+});
+
 describe('categories', () => {
   beforeEach(() => useDraft.setState(INITIAL_DRAFT));
 

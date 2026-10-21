@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { setElevationSource } from '@/features/map/terrain/elevation';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { composeSidc } from '@/features/symbology/presets';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -26,6 +27,8 @@ beforeEach(() => {
   useMenu.setState(INITIAL_MENU);
   useToast.setState({ toast: null });
 });
+
+afterEach(() => setElevationSource(null));
 
 async function openEditor() {
   const ctx = makeTestContext();
@@ -92,6 +95,30 @@ describe('EditUnitMenu', () => {
     const item = await findItem(ctx.db, id);
     expect(item?.name).toBe('OBJ IRON');
     expect(pointCoord(item!.geometry)?.lat).toBeCloseTo(OTHER.lat, 3);
+  });
+
+  it('keeps the stored elevation on a save without a move, and looks it up again after a move', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2', elevationM: 88 });
+    if (!r.ok) throw new Error('setup');
+    const query = jest.fn(async () => 40);
+    setElevationSource(query);
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('FRD-2');
+    expect(screen.getByText('Elev 88 m')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(88);
+    expect(query).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    const p = mgrsFieldsFor(OTHER);
+    await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(async () => expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(40));
+    expect(screen.getByText('Elev 40 m')).toBeTruthy();
   });
 
   it('Save stores the new echelon in the symbol', async () => {

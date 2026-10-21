@@ -8,7 +8,7 @@ export const Tables = {
 } as const;
 
 export const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: Tables.missions,
@@ -29,6 +29,7 @@ export const schema = appSchema({
         { name: 'name', type: 'string' },
         { name: 'notes', type: 'string', isOptional: true },
         { name: 'style', type: 'string', isOptional: true },
+        { name: 'elevation_m', type: 'number', isOptional: true },
         { name: 'created_by', type: 'string' },
         { name: 'updated_by', type: 'string' },
         { name: 'created_at', type: 'number' },

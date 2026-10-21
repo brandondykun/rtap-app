@@ -10,6 +10,7 @@ function line(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     style: '{"lineType":"route"}',
     name: 'RED',
     notes: null,
+    elevationM: null,
     updatedAt,
     ...overrides,
   };

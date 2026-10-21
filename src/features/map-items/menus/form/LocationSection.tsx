@@ -13,7 +13,9 @@ import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
-/** The draft's location: MGRS fields, Center (crosshair) and Map (tap to place). Shared by units and points. */
+import { ElevationRow } from './ElevationRow';
+
+/** The draft's location: MGRS fields, Center (crosshair) and Map (tap to place), and a unit's elevation. Shared by units and points. */
 export function LocationSection() {
   const coord = useDraft((s) => s.coord);
   const coordRev = useDraft((s) => s.coordRev);
@@ -59,6 +61,7 @@ export function LocationSection() {
   return (
     <MenuSection label="MGRS · Zone / 100K / Easting / Northing">
       <MgrsInput value={parts} onChange={onPartsChange} status={status} validDetail={validDetail} disabled={locked} />
+      {noun === 'unit' ? <ElevationRow /> : null}
       <View className="flex-row gap-2">
         <View className="flex-1">
           <CenterButton label="Center" onPress={toCrosshair} disabled={locked} />

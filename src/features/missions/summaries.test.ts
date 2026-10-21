@@ -13,10 +13,8 @@ const at = { lat: 38.8977, lon: -77.0365 };
 
 describe('schema v2', () => {
   it('adds the nullable snapshot column to mission_view_state with a migration', () => {
-    expect(schema.version).toBe(2);
     expect(schema.tables[Tables.missionViewState].columns.snapshot).toEqual({ name: 'snapshot', type: 'string', isOptional: true });
-    expect(migrations.maxVersion).toBe(2);
-    expect(migrations.sortedMigrations[0].steps).toEqual([
+    expect(migrations.sortedMigrations.find((m) => m.toVersion === 2)?.steps).toEqual([
       { type: 'add_columns', table: Tables.missionViewState, columns: [{ name: 'snapshot', type: 'string', isOptional: true }] },
     ]);
   });

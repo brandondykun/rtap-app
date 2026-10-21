@@ -7,7 +7,7 @@ import type { MapItemSnapshot } from './repository';
 const at = { lat: 38.9, lon: -77 };
 
 function item(id: string, name: string, sidc: string | null = 'SHGPUCI--------'): MapItemSnapshot {
-  return { id, kind: 'point', geometry: pointGeometry(at), sidc, style: null, name, notes: null, updatedAt: 1 };
+  return { id, kind: 'point', geometry: pointGeometry(at), sidc, style: null, name, notes: null, elevationM: null, updatedAt: 1 };
 }
 
 describe('layerRows', () => {

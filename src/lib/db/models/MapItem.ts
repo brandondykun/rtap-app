@@ -17,6 +17,8 @@ export class MapItem extends Model {
   @field('notes') notes!: string | null;
   /** JSON style for lines/polygons (later). */
   @field('style') style!: string | null;
+  /** Ground elevation in meters above sea level where a unit was placed; null when unknown or not a unit. */
+  @field('elevation_m') elevationM!: number | null;
   @field('created_by') createdBy!: string;
   @field('updated_by') updatedBy!: string;
   @readonly @date('created_at') createdAt!: Date;

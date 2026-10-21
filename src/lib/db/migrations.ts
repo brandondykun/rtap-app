@@ -10,5 +10,10 @@ export const migrations = schemaMigrations({
       toVersion: 2,
       steps: [addColumns({ table: Tables.missionViewState, columns: [{ name: 'snapshot', type: 'string', isOptional: true }] })],
     },
+    {
+      // Ground elevation (meters above sea level) of units, looked up from map terrain when placed.
+      toVersion: 3,
+      steps: [addColumns({ table: Tables.mapItems, columns: [{ name: 'elevation_m', type: 'number', isOptional: true }] })],
+    },
   ],
 });

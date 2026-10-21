@@ -37,6 +37,8 @@ export type DraftValues = {
   /** True once the user edits the name (even clearing it); auto-names never overwrite it. */
   nameEdited: boolean;
   notes: string;
+  /** A unit's ground elevation (m; null unknown) and the coordinate it belongs to; null before any lookup. */
+  elevation: { at: LatLon; m: number | null } | null;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
   /** Waiting for the user to tap the map where the point should go (the Map button). */
@@ -72,6 +74,8 @@ type DraftActions = {
     pointType: PointType;
     name: string;
     notes: string;
+    /** A unit's stored elevation; left out for points. */
+    elevationM?: number | null;
   }) => void;
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;
   setCoordInputValid: (valid: boolean) => void;
@@ -82,6 +86,8 @@ type DraftActions = {
   setName: (name: string) => void;
   setAutoName: (name: string) => void;
   setNotes: (notes: string) => void;
+  /** Kept only while `at` is still the draft's coordinate (a late answer for an old spot is dropped). */
+  setElevation: (at: LatLon, m: number | null) => void;
   setLocked: (locked: boolean) => void;
   setPicking: (picking: boolean) => void;
   startAddLine: () => void;
@@ -124,6 +130,7 @@ export const INITIAL_DRAFT: DraftValues = {
   name: '',
   nameEdited: false,
   notes: '',
+  elevation: null,
   locked: false,
   picking: false,
   vertices: [],
@@ -167,6 +174,9 @@ const record = (s: DraftValues, next: LineEdit) =>
     : { ...apply(next), history: [...s.history, edit(s)].slice(-HISTORY_LIMIT) };
 
 /** The in-progress point (add or edit). Lives only in memory; commands write it on Add/Save. */
+/** Exactly the same coordinate (elevation belongs to one spot). */
+export const sameCoord = (a: LatLon | null, b: LatLon | null) => a !== null && b !== null && a.lat === b.lat && a.lon === b.lon;
+
 export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   ...INITIAL_DRAFT,
   startAdd: ({ coord, source, category, unitPreset }) =>
@@ -185,7 +195,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev + 1,
       focusRev: s.focusRev,
     })),
-  startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes }) =>
+  startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes, elevationM }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
@@ -203,6 +213,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       name,
       nameEdited: true,
       notes,
+      elevation: isValid(coord) ? { at: coord, m: elevationM ?? null } : null,
       // Selecting a point shows it read-only; the menu unlocks it on Edit.
       locked: true,
     })),
@@ -228,6 +239,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setName: (name) => set({ name, nameEdited: true }),
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
+  setElevation: (at, m) => set((s) => (!s.locked && sameCoord(s.coord, at) ? { elevation: { at, m } } : {})),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
   startAddLine: () =>

@@ -58,6 +58,14 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.MapView.main.scaleBarEnabled).toBe(false);
   });
 
+  it('loads Mapbox terrain at true scale for ground elevation, with the map kept flat', async () => {
+    await renderCanvas();
+    const dem = mapboxMock().__props.RasterDemSource['terrain-dem'];
+    expect(dem).toMatchObject({ id: 'terrain-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1' });
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ sourceID: 'terrain-dem', style: { exaggeration: 1 } });
+    expect(mapboxMock().__props.MapView.main.pitchEnabled).toBe(false);
+  });
+
   it('registers symbol images and asks for missing ones', async () => {
     const onSymbolMissing = jest.fn();
     await renderCanvas({ symbolImages: { SFGPU: { url: 'file:///s/SFGPU.png', scale: 3 } }, onSymbolMissing });

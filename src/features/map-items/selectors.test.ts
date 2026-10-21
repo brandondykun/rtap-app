@@ -12,6 +12,7 @@ function item(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     style: null,
     name: id.toUpperCase(),
     notes: null,
+    elevationM: null,
     updatedAt,
     ...overrides,
   };

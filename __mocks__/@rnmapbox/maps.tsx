@@ -13,10 +13,15 @@ export const __props: Record<string, Record<string, Props>> = {
   SymbolLayer: {},
   LineLayer: {},
   FillLayer: {},
+  RasterDemSource: {},
+  Terrain: {},
 };
 export const __camera = { setCamera: jest.fn() };
 
-export const __map = { takeSnap: jest.fn(async (_writeToDisk?: boolean) => 'file:///cache/snap.png') };
+export const __map = {
+  takeSnap: jest.fn(async (_writeToDisk?: boolean) => 'file:///cache/snap.png'),
+  queryTerrainElevation: jest.fn(async (_coordinate: number[]): Promise<number | null> => null),
+};
 
 export const MapView = forwardRef(function MapView(props: Props, ref) {
   __props.MapView.main = props;
@@ -53,6 +58,16 @@ export function LineLayer(props: Props) {
 
 export function FillLayer(props: Props) {
   __props.FillLayer[props.id ?? 'main'] = props;
+  return null;
+}
+
+export function RasterDemSource(props: Props) {
+  __props.RasterDemSource[props.id ?? 'main'] = props;
+  return null;
+}
+
+export function Terrain(props: Props) {
+  __props.Terrain.main = props;
   return null;
 }
 

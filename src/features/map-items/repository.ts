@@ -17,6 +17,7 @@ export type MapItemSnapshot = {
   style: string | null;
   name: string;
   notes: string | null;
+  elevationM: number | null;
   updatedAt: number;
 };
 
@@ -29,6 +30,7 @@ function snapshot(item: MapItem): MapItemSnapshot {
     style: item.style ?? null,
     name: item.name,
     notes: item.notes ?? null,
+    elevationM: item.elevationM ?? null,
     updatedAt: item.updatedAt.getTime(),
   };
 }
@@ -39,7 +41,7 @@ function missionQuery(db: Database, missionId: string) {
 
 export function observeMissionItems(db: Database, missionId: string): Observable<MapItemSnapshot[]> {
   return missionQuery(db, missionId)
-    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
+    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'elevation_m', 'updated_at'])
     .pipe(map((items) => items.map(snapshot)));
 }
 

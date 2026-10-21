@@ -20,6 +20,8 @@ export type PlacePointInput = {
   sidc: string;
   name: string;
   notes?: string | null;
+  /** Ground elevation in meters; omitted or null when unknown. */
+  elevationM?: number | null;
 };
 
 export async function placePoint(
@@ -40,6 +42,7 @@ export async function placePoint(
         i.name = name;
         i.notes = input.notes ?? null;
         i.style = null;
+        i.elevationM = input.elevationM ?? null;
         i.createdBy = ctx.actorId();
         i.updatedBy = ctx.actorId();
       }),
@@ -50,7 +53,8 @@ export async function placePoint(
   }
 }
 
-export type UpdateItemPatch = { name?: string; notes?: string | null; sidc?: string; coord?: LatLon };
+/** `elevationM` replaces the stored elevation (null: unknown); left out, the stored one stays. */
+export type UpdateItemPatch = { name?: string; notes?: string | null; sidc?: string; coord?: LatLon; elevationM?: number | null };
 
 export async function updateItem(
   ctx: CommandContext,
@@ -69,6 +73,7 @@ export async function updateItem(
         if (patch.notes !== undefined) i.notes = patch.notes;
         if (patch.sidc !== undefined) i.sidc = patch.sidc;
         if (patch.coord) i.geometry = pointGeometry(patch.coord);
+        if (patch.elevationM !== undefined) i.elevationM = patch.elevationM;
         i.updatedBy = ctx.actorId();
       }),
     );

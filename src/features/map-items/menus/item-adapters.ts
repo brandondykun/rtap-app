@@ -4,8 +4,9 @@ import { lineTypeOf } from '@/features/symbology/line-types';
 import { pointTypeForSidc } from '@/features/symbology/point-types';
 import { MAX_RADIUS_M, polygonStyleOf } from '@/features/symbology/polygon-types';
 import { decomposeSidc } from '@/features/symbology/presets';
+import { elevationAt } from '@/features/map/terrain/elevation';
 import type { Result } from '@/lib/result';
-import { useDraft } from '@/stores/draft';
+import { sameCoord, useDraft } from '@/stores/draft';
 
 import { placeLine, placePoint, placePolygon, updateItem, updateLine, updatePolygon, type PolygonShapeInput } from '../commands';
 import { draftSidc } from '../draft-sidc';
@@ -26,10 +27,25 @@ export type ItemAdapter = {
 
 const notes = (d: DraftState) => d.notes.trim() || null;
 
+/**
+ * A unit's ground elevation where it is saved: the one already looked up for that exact spot (or stored, when it
+ * has not moved), otherwise a fresh lookup. The draft keeps it, so the read-only view shows what was saved.
+ * Undefined for points, which have none.
+ */
+async function savedElevation(d: DraftState): Promise<number | null | undefined> {
+  if (d.category !== 'unit' || !d.coord) return undefined;
+  if (d.elevation && sameCoord(d.elevation.at, d.coord)) return d.elevation.m;
+  const m = await elevationAt(d.coord);
+  useDraft.getState().setElevation(d.coord, m);
+  return m;
+}
+
 const symbolAdapter: ItemAdapter = {
   canSave: (d) => d.coord !== null && d.coordInputValid && d.name.trim() !== '',
-  place: (ctx, missionId, d) => placePoint(ctx, { missionId, coord: d.coord!, sidc: draftSidc(d), name: d.name, notes: notes(d) }),
-  update: (ctx, id, d) => updateItem(ctx, id, { coord: d.coord!, name: d.name, notes: notes(d), sidc: draftSidc(d) }),
+  place: async (ctx, missionId, d) =>
+    placePoint(ctx, { missionId, coord: d.coord!, sidc: draftSidc(d), name: d.name, notes: notes(d), elevationM: await savedElevation(d) }),
+  update: async (ctx, id, d) =>
+    updateItem(ctx, id, { coord: d.coord!, name: d.name, notes: notes(d), sidc: draftSidc(d), elevationM: await savedElevation(d) }),
   select: (item) => {
     const at = pointCoord(item.geometry);
     if (!at) return false;
@@ -44,6 +60,7 @@ const symbolAdapter: ItemAdapter = {
       pointType: pointTypeForSidc(item.sidc) ?? 'checkpoint',
       name: item.name,
       notes: item.notes ?? '',
+      elevationM: item.elevationM,
     });
     return true;
   },

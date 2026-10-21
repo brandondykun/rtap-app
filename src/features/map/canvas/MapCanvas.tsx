@@ -1,4 +1,4 @@
-import { Camera, Images, MapView, type MapState } from '@rnmapbox/maps';
+import { Camera, Images, MapView, RasterDemSource, Terrain, type MapState } from '@rnmapbox/maps';
 import { useEffect, useMemo, useState, type ReactNode, type Ref } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ function pressCoord(geometry: unknown): LatLon | null {
 }
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+const TERRAIN_SOURCE_ID = 'terrain-dem';
 
 type Props = {
   cameraRef: Ref<Camera>;
@@ -119,6 +120,10 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
       <Camera ref={cameraRef} defaultSettings={toCameraStop(initialCamera)} />
       <Images images={MAP_IMAGES} />
       <Images images={symbolImages} onImageMissing={onSymbolMissing} />
+      {/* Ground elevation for units (queryTerrainElevation). Its answers scale with the exaggeration, so it
+          stays at true scale; with pitch off the map still looks flat. */}
+      <RasterDemSource id={TERRAIN_SOURCE_ID} url="mapbox://mapbox.mapbox-terrain-dem-v1" tileSize={514} maxZoomLevel={14} />
+      <Terrain sourceID={TERRAIN_SOURCE_ID} style={{ exaggeration: 1 }} />
       {children}
     </MapView>
   );
