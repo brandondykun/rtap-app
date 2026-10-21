@@ -24,6 +24,7 @@ export function OpGestures({ children }: { children: ReactNode }) {
     const pan = Gesture.Pan()
       .withTestId('op-pan')
       .enabled(on)
+      .maxPointers(1)
       .runOnJS(true)
       .onChange((e) => look(e.changeX * OP_TURN_PER_PT, e.changeY * OP_TILT_PER_PT));
     const pinch = Gesture.Pinch()

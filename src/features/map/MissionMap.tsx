@@ -259,7 +259,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useQuickPlot.getState().close();
       usePlacing.getState().stop();
-      useOp.getState().cancel();
+      leaveOp();
       useMeasure.getState().startMeasure();
     }
   };
@@ -271,7 +271,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useMeasure.getState().stopMeasure();
       usePlacing.getState().stop();
-      useOp.getState().cancel();
+      leaveOp();
       q.open();
     }
   };
@@ -292,6 +292,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const stakeAt = (at: LatLon) => {
     if (!useSettings.getState().terrain3d) useSettings.getState().toggleTerrain3d();
     cameraRef.current?.setCamera({ padding: cameraPaddingFor(null), animationDuration: 0 });
+    // Follow and fit targets must not outlive staking: map gestures are off, so nothing else would clear them.
+    if (useInteraction.getState().followMode) setFollowMode(false);
+    followTarget.current = null;
+    fitTarget.current = null;
     useOp.getState().stake(at, useInteraction.getState().cameraBearing);
   };
   /** Leaves OP mode: back to normal 3D over the OP, facing the same way. Reads the OP first, since exit() clears it. */
@@ -299,6 +303,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     const { at, bearing } = useOp.getState();
     useOp.getState().exit();
     if (at) moveCamera({ centerCoordinate: [at.lon, at.lat], zoomLevel: 15, pitch, heading: bearing, ...EASE, animationDuration: 800 });
+  };
+  /** Starting a tool leaves OP mode first (easing back over the OP); picking is simply cancelled. */
+  const leaveOp = () => {
+    if (useOp.getState().phase === 'on') exitOp();
+    else useOp.getState().cancel();
   };
   const toggleOp = () => {
     const { phase } = useOp.getState();
@@ -322,8 +331,12 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else useMenu.getState().openMenu('layers', {});
   };
   const toggleAdd = (id: 'line.add' | 'polygon.add') => {
-    if (topId === id) useMenu.getState().closeMenu();
-    else if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
+    if (topId === id) {
+      useMenu.getState().closeMenu();
+      return;
+    }
+    leaveOp();
+    if (id === 'line.add') useMenu.getState().openMenu('line.add', {});
     else useMenu.getState().openMenu('polygon.add', {});
   };
   // UNIT / POINT wait for a map tap (or CTR) before their Add menu opens.
@@ -337,7 +350,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useMenu.getState().closeMenu();
     useMeasure.getState().stopMeasure();
     useQuickPlot.getState().close();
-    useOp.getState().cancel();
+    leaveOp();
     p.start(category);
   };
   /** Opens the Add menu being placed, at `at` or (no `at`) at the crosshair; opening it ends placing. */

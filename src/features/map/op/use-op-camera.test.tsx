@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 
-import { OP_GROUND_REFRESH_MS, useOpCamera } from './use-op-camera';
+import { OP_FIRST_REFRESH_MS, OP_GROUND_REFRESH_MS, useOpCamera } from './use-op-camera';
 
 jest.mock('@rnmapbox/maps');
 
@@ -61,6 +61,30 @@ describe('useOpCamera', () => {
     await act(async () => jest.advanceTimersByTime(OP_GROUND_REFRESH_MS));
     await flushFrames();
     expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 45]]);
+  });
+
+  it('re-reads the ground shortly after staking, before the regular refresh', async () => {
+    map().queryTerrainElevation.mockResolvedValueOnce(200).mockResolvedValue(300);
+    setup();
+    await act(async () => useOp.getState().stake(AT, 45));
+    await flushFrames();
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 210, 80, 45]]);
+    await act(async () => jest.advanceTimersByTime(OP_FIRST_REFRESH_MS));
+    await flushFrames();
+    expect(lastValues()).toEqual([[AT.lon, AT.lat, 310, 80, 45]]);
+  });
+
+  it('keeps the last good ground when a refresh finds none', async () => {
+    map().queryTerrainElevation.mockResolvedValue(300);
+    setup();
+    await act(async () => useOp.getState().stake(AT, 45));
+    await flushFrames();
+    map()._runNative.mockClear();
+    map().queryTerrainElevation.mockResolvedValue(null);
+    await act(async () => jest.advanceTimersByTime(OP_GROUND_REFRESH_MS));
+    await flushFrames();
+    expect(placements()).toHaveLength(0);
+    expect(useOp.getState().groundM).toBe(300);
   });
 
   it('re-places on look and eye changes, once per frame', async () => {

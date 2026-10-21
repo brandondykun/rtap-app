@@ -1109,6 +1109,36 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
+    it('starting MEASURE in OP mode exits OP mode and shows the measure bar', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(useMeasure.getState().active).toBe(true);
+      expect(screen.getByTestId('measure-bar')).toBeTruthy();
+      expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ zoomLevel: 15, pitch: 60 }));
+    });
+
+    it('starting UNIT in OP mode exits OP mode', async () => {
+      await openMap();
+      await stakeOnMap();
+      await fireEvent.press(screen.getByLabelText('UNIT'));
+      expect(useOp.getState().phase).toBe('off');
+      expect(screen.getByLabelText('UNIT')).toBeSelected();
+    });
+
+    it('follow mode does not survive staking: after Exit a new fix does not recenter', async () => {
+      await openMap();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      await stakeOnMap();
+      expect(useInteraction.getState().followMode).toBe(false);
+      await fireEvent.press(screen.getByLabelText('Exit'));
+      mapboxMock().__camera.setCamera.mockClear();
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.95, lon: -77.05 }, accuracyM: 5, timestamp: 2 }));
+      expect(mapboxMock().__camera.setCamera.mock.calls.some((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate)).toBe(false);
+    });
+
     it('closing a menu in OP mode does not move the camera', async () => {
       await openMap();
       await stakeOnMap();

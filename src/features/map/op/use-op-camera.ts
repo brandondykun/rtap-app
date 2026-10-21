@@ -9,6 +9,9 @@ import { setFreeCamera } from './free-camera';
 /** How often the ground under the OP is re-read, as terrain tiles load in. */
 export const OP_GROUND_REFRESH_MS = 1000;
 
+/** After staking, the ground is read again this soon: the 3D exaggeration only reaches the terrain after a render. */
+export const OP_FIRST_REFRESH_MS = 150;
+
 /**
  * While standing at an OP, places the camera at the eye (ground plus eye height) looking along
  * the OP's bearing and pitch. Subscribes to the store directly so swipes never re-render the map.
@@ -17,6 +20,7 @@ export function useOpCamera(mapRef: RefObject<MapView | null>): void {
   useEffect(() => {
     let frame: number | null = null;
     let timer: ReturnType<typeof setInterval> | null = null;
+    let first: ReturnType<typeof setTimeout> | null = null;
 
     const place = () => {
       const { at, groundM, eyeM, pitch, bearing } = useOp.getState();
@@ -42,8 +46,12 @@ export function useOpCamera(mapRef: RefObject<MapView | null>): void {
       }
       const s = useOp.getState();
       if (s.phase !== 'on' || s.at !== at) return; // exited or re-staked while reading
-      const ground = m !== null && Number.isFinite(m) ? m : 0;
-      if (ground !== s.groundM) s.setGround(ground);
+      if (m === null || !Number.isFinite(m)) {
+        // No tile under the OP (yet): assume 0 only until a first ground is found, then keep the last good one.
+        if (s.groundM === null) s.setGround(0);
+        return;
+      }
+      if (m !== s.groundM) s.setGround(m);
     };
 
     const stop = () => {
@@ -51,11 +59,14 @@ export function useOpCamera(mapRef: RefObject<MapView | null>): void {
       frame = null;
       if (timer !== null) clearInterval(timer);
       timer = null;
+      if (first !== null) clearTimeout(first);
+      first = null;
     };
 
     const begin = (at: LatLon) => {
       stop();
       void readGround(at);
+      first = setTimeout(() => void readGround(at), OP_FIRST_REFRESH_MS);
       timer = setInterval(() => void readGround(at), OP_GROUND_REFRESH_MS);
     };
 
