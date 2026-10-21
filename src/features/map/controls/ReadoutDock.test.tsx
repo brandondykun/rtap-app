@@ -92,6 +92,24 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
   });
 
+  it('in OP mode the ME row becomes the OP: its grid and true ground elevation, not tappable', async () => {
+    fix(142.4);
+    const onRecenter = jest.fn();
+    // Drawn ground 450 m at the 1.5× terrain height is 300 m true.
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER, groundM: 450 });
+    await renderWithProviders(<ReadoutDock {...PROPS} onRecenter={onRecenter} showCenter={false} />);
+    expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/OP/);
+    expect(screen.getByTestId('op-position')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 300 m');
+    expect(screen.queryByTestId('gps-position')).toBeNull();
+    await fireEvent.press(screen.getByTestId('dock-self'));
+    expect(onRecenter).not.toHaveBeenCalled();
+    await act(async () => useSettings.setState({ altitudeUnit: 'ft' }));
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 984 ft');
+    await act(async () => useOp.setState(INITIAL_OP));
+    expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/ME/);
+  });
+
   it('in OP mode measures from the OP and says so', async () => {
     const OP = { lat: 38.9, lon: -77.03 };
     const FAR = { lat: 40, lon: -75 };

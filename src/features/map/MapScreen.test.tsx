@@ -1050,7 +1050,9 @@ describe('MapScreen', () => {
       expect(screen.getByTestId('op-eye-slider')).toBeTruthy();
       // North-up is hidden in OP mode, where it cannot move the camera.
       expect(screen.queryByLabelText('North up')).toBeNull();
-      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      // The ME row shows the OP in OP mode, so there is no Recenter to press.
+      expect(screen.queryByLabelText('Recenter on me')).toBeNull();
+      await fireEvent.press(screen.getByTestId('dock-self'));
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });
 
@@ -1111,11 +1113,11 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ zoomLevel: 15, pitch: 60 }));
     });
 
-    it('in OP mode Recenter does not start following', async () => {
+    it('in OP mode tapping the OP row does not start following', async () => {
       await openMap();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
       await stakeOnMap();
-      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      await fireEvent.press(screen.getByTestId('dock-self'));
       await fireEvent.press(screen.getByLabelText('Exit'));
       mapboxMock().__camera.setCamera.mockClear();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.95, lon: -77.05 }, accuracyM: 5, timestamp: 2 }));

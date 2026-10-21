@@ -7,6 +7,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { formatCoordinate } from '../interaction/readout';
+import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
 
 type Props = {
@@ -16,7 +17,10 @@ type Props = {
   onRecenter: () => void;
 };
 
-/** Bottom right, under zoom: ME and your grid, then ALT · ACC. Tapping it recenters the map on you. */
+/**
+ * Bottom right, under zoom: ME and your grid, then ALT · ACC. Tapping it recenters the map on you. In OP mode it shows
+ * the OP instead (its grid, then its ground elevation) and does nothing when tapped.
+ */
 export function SelfCard({ following, disabled, onRecenter }: Props) {
   const { colors } = useTheme();
   const fix = usePresence((s) => s.selfPosition);
@@ -24,6 +28,23 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
   const off = status === 'denied' || status === 'unavailable';
+  const op = useOpPosition();
+
+  if (op) {
+    return (
+      <View testID="gps-readout" accessibilityLabel="OP position" className="rounded-2xl border border-border bg-surface-chrome px-3 py-2">
+        <View testID="gps-line" className="flex-row items-center gap-2">
+          <CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} />
+          <Text testID="op-position" className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+            {formatCoordinate(op.at, coordinateFormat)}
+          </Text>
+        </View>
+        <Text testID="op-elevation" className="mt-0.5 font-mono text-xs text-text-muted">
+          {`ELV ${formatLength(op.elevationM, unit)}`}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <Pressable

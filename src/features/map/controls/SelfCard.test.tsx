@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
+import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
@@ -15,6 +16,7 @@ const fix = (altitudeM: number | null) =>
 beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
+  useOp.setState(INITIAL_OP);
 });
 
 describe('SelfCard', () => {
@@ -71,5 +73,22 @@ describe('SelfCard', () => {
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Recenter on me')).not.toBeSelected();
+  });
+
+  it('in OP mode shows the OP: its grid and ground elevation, not tappable', async () => {
+    fix(142.4);
+    const onRecenter = jest.fn();
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: 450 });
+    await renderWithProviders(<SelfCard {...PROPS} onRecenter={onRecenter} />);
+    expect(screen.getByTestId('gps-line')).toHaveTextContent(/OP18S UJ \d{5} \d{5}$/);
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 300 m');
+    await fireEvent.press(screen.getByTestId('gps-readout'));
+    expect(onRecenter).not.toHaveBeenCalled();
+  });
+
+  it('in OP mode shows a dash for the elevation until the ground is read', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: null });
+    await renderWithProviders(<SelfCard {...PROPS} />);
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV —');
   });
 });

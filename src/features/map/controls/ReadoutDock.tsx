@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { Icon } from '@/components/ui/Icon';
 import { formatLength } from '@/features/location/gps-format';
+import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
@@ -11,11 +12,13 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { describeReadout, formatCoordinate } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
+import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
 
 /**
  * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME
- * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`.
+ * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`. In OP mode the
+ * ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
  */
 export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { showCenter: boolean } & SelfProps) {
   return (
@@ -60,7 +63,32 @@ function Grid({ testID, color, children }: { testID: string; color?: string; chi
   );
 }
 
-function SelfRow({ following, disabled, onRecenter }: SelfProps) {
+function SelfRow(props: SelfProps) {
+  const op = useOpPosition();
+  return op ? <OpRow at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
+}
+
+function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
+  const { colors } = useTheme();
+  const coordinateFormat = useSettings((s) => s.coordinateFormat);
+  const unit = useSettings((s) => s.altitudeUnit);
+  return (
+    <View testID="dock-self" accessibilityLabel="OP position">
+      <Row
+        testID="dock-self-row"
+        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} />}
+        top={
+          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} className="font-mono text-xs text-text">
+            {`ELV ${formatLength(elevationM, unit)}`}
+          </Text>
+        }>
+        <Grid testID="op-position">{formatCoordinate(at, coordinateFormat)}</Grid>
+      </Row>
+    </View>
+  );
+}
+
+function MeRow({ following, disabled, onRecenter }: SelfProps) {
   const { colors } = useTheme();
   const fix = usePresence((s) => s.selfPosition);
   const status = usePresence((s) => s.locationStatus);
