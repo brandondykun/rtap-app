@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 
-import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
@@ -12,6 +10,7 @@ import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { NAME_PREFIX } from '../naming';
 import { LocationSection } from './form/LocationSection';
+import { NotesSection } from './form/NotesSection';
 import { useAutoName } from './form/use-auto-name';
 
 const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
@@ -26,14 +25,11 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
   const unitType = useDraft((s) => s.unitType);
   const echelon = useDraft((s) => s.echelon);
   const name = useDraft((s) => s.name);
-  const notes = useDraft((s) => s.notes);
   const locked = useDraft((s) => s.locked);
   const setAffiliation = useDraft((s) => s.setAffiliation);
   const setUnitType = useDraft((s) => s.setUnitType);
   const setEchelon = useDraft((s) => s.setEchelon);
   const setName = useDraft((s) => s.setName);
-  const setNotes = useDraft((s) => s.setNotes);
-  const [showNotes, setShowNotes] = useState(notes !== '');
   useAutoName(missionId, mode, NAME_PREFIX[affiliation]);
 
   return (
@@ -60,10 +56,7 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
       <MenuSection label="Echelon">
         <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
       </MenuSection>
-      <MenuSection>
-        <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
-        {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
-      </MenuSection>
+      <NotesSection />
     </View>
   );
 }

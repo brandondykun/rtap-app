@@ -19,6 +19,7 @@ import { useSettings } from '@/stores/settings';
 
 import { canRemove } from '../line-draft';
 import { segmentLengths, totalLength } from '../line-measure';
+import { NotesSection } from './form/NotesSection';
 import { useAutoName } from './form/use-auto-name';
 import { LineSample } from './LineSample';
 
@@ -31,7 +32,6 @@ const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCente
 /** Add/Edit line: name, type, the point list, a typed point, notes. Edits only the draft store. */
 export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
-  const notes = useDraft((s) => s.notes);
   const lineType = useDraft((s) => s.lineType);
   const vertices = useDraft((s) => s.vertices);
   const selected = useDraft((s) => s.selectedVertex);
@@ -40,7 +40,6 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const showDistances = useSettings((s) => s.showLineDistances);
   const [parts, setParts] = useState<MgrsParts>(centerSquare);
-  const [showNotes, setShowNotes] = useState(notes !== '');
   const status = evaluateMgrsFields(parts);
   const segs = segmentLengths(vertices);
   const edit = { vertices, selected, insertAfter };
@@ -105,10 +104,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
           />
         </MenuSection>
       )}
-      <MenuSection>
-        <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
-        {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={(t) => useDraft.getState().setNotes(t)} multiline placeholder="Notes" /> : null}
-      </MenuSection>
+      <NotesSection />
       {/* A display preference, not part of the line: it works while viewing too. */}
       <MenuSection>
         <MenuToggle label="Show point distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />

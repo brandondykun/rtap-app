@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 
-import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
@@ -10,6 +8,7 @@ import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { LocationSection } from './form/LocationSection';
+import { NotesSection } from './form/NotesSection';
 import { useAutoName } from './form/use-auto-name';
 
 // Listed alphabetically in the dropdown.
@@ -23,12 +22,9 @@ const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
 export function PointForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const pointType = useDraft((s) => s.pointType);
   const name = useDraft((s) => s.name);
-  const notes = useDraft((s) => s.notes);
   const locked = useDraft((s) => s.locked);
   const setPointType = useDraft((s) => s.setPointType);
   const setName = useDraft((s) => s.setName);
-  const setNotes = useDraft((s) => s.setNotes);
-  const [showNotes, setShowNotes] = useState(notes !== '');
   useAutoName(missionId, mode, pointTypePrefix(pointType));
 
   return (
@@ -40,10 +36,7 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
       <MenuSection label="Point type">
         <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
       </MenuSection>
-      <MenuSection>
-        <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
-        {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Notes" /> : null}
-      </MenuSection>
+      <NotesSection />
     </View>
   );
 }

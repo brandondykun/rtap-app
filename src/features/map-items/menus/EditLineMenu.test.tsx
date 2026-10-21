@@ -51,6 +51,15 @@ describe('EditLineMenu', () => {
     expect(useDraft.getState().vertices).toHaveLength(2);
   });
 
+  it('shows the notes field locked while viewing and editable once editing, saving what is typed', async () => {
+    const { ctx, id } = await openEditor();
+    expect(screen.getByLabelText('Notes')).toHaveProp('editable', false);
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Notes'), 'hold here');
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(async () => expect((await findItem(ctx.db, id))?.notes).toBe('hold here'));
+  });
+
   it('deletes after a second tap', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));

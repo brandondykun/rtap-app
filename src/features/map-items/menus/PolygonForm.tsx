@@ -22,6 +22,7 @@ import { canRemove } from '../line-draft';
 import { segmentLengths } from '../line-measure';
 import { areaM2, circleRing, formatArea, perimeterM } from '../polygon-measure';
 import { LocationSection } from './form/LocationSection';
+import { NotesSection } from './form/NotesSection';
 import { useAutoName } from './form/use-auto-name';
 import { PolygonSample } from './PolygonSample';
 
@@ -48,7 +49,6 @@ const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCente
 /** Add/Edit polygon: name, type, shape (points list or circle center + radius), notes. Edits only the draft store. */
 export function PolygonForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
-  const notes = useDraft((s) => s.notes);
   const polygonType = useDraft((s) => s.polygonType);
   useAutoName(missionId, mode, polygonTypeInfo(polygonType).prefix);
   const shape = useDraft((s) => s.polygonShape);
@@ -61,7 +61,6 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const showDistances = useSettings((s) => s.showLineDistances);
   const [parts, setParts] = useState<MgrsParts>(centerSquare);
-  const [showNotes, setShowNotes] = useState(notes !== '');
   const [unit, setUnit] = useState<'m' | 'km'>(radiusM !== null && radiusM >= 1000 ? 'km' : 'm');
   const [radius, setRadius] = useState(() => radiusText(radiusM, unit));
   const status = evaluateMgrsFields(parts);
@@ -162,10 +161,7 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
           </MenuSection>
         </>
       )}
-      <MenuSection>
-        <MenuButton label="Notes" icon="message-text-outline" onPress={() => setShowNotes((s) => !s)} disabled={locked} />
-        {showNotes ? <TextField editable={!locked} accessibilityLabel="Notes" value={notes} onChangeText={(t) => useDraft.getState().setNotes(t)} multiline placeholder="Notes" /> : null}
-      </MenuSection>
+      <NotesSection />
       {shape === 'points' ? (
         <MenuSection>
           <MenuToggle label="Show point distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />

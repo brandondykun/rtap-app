@@ -143,15 +143,14 @@ describe('AddUnitMenu', () => {
     expect(screen.getByLabelText('Echelon: Company')).toBeTruthy();
   });
 
-  it('puts Notes in its own section after Echelon, not beside the unit type', async () => {
+  it('shows the notes field in its own section after Echelon, not beside the unit type', async () => {
     await open();
     // The section label's row, then the section itself.
     const typeSection = screen.getByText('Unit type').parent!.parent!;
     expect(within(typeSection).queryByLabelText('Notes')).toBeNull();
     const tree = JSON.stringify(screen.toJSON());
     expect(tree.indexOf('"accessibilityLabel":"Notes"')).toBeGreaterThan(tree.indexOf('"Echelon"'));
-    await fireEvent.press(screen.getByLabelText('Notes'));
-    await fireEvent.changeText(screen.getAllByLabelText('Notes').at(-1)!, 'dug in');
+    await fireEvent.changeText(screen.getByLabelText('Notes'), 'dug in');
     expect(useDraft.getState().notes).toBe('dug in');
   });
 

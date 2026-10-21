@@ -55,8 +55,7 @@ describe('AddPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));
     await fireEvent.press(screen.getByText('Landing zone'));
     expect(await screen.findByDisplayValue('LZ-1')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Notes'));
-    await fireEvent.changeText(screen.getAllByLabelText('Notes').at(-1)!, 'cold LZ');
+    await fireEvent.changeText(screen.getByLabelText('Notes'), 'cold LZ');
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     const [item] = await items(ctx);
