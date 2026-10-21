@@ -58,6 +58,21 @@ describe('MapScreen', () => {
     expect(mapboxMock().__map.queryTerrainElevation).toHaveBeenCalledWith([-77, 38.9]);
   });
 
+  it('tilts the map into 3D from the toolbar and back to flat', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    mapboxMock().__camera.setCamera.mockClear();
+    await fireEvent.press(screen.getByLabelText('3D'));
+    expect(useSettings.getState().terrain3d).toBe(true);
+    expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 60, animationDuration: 600 }));
+    await fireEvent.press(screen.getByLabelText('3D'));
+    expect(useSettings.getState().terrain3d).toBe(false);
+    expect(mapboxMock().__camera.setCamera).toHaveBeenLastCalledWith(expect.objectContaining({ pitch: 0 }));
+  });
+
   it('opens a mission on its map with the shell around it', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Iron' });

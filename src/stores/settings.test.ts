@@ -22,6 +22,15 @@ describe('settings store', () => {
     expect(useSettings.getState().missionSort).toBe('most');
   });
 
+  it('starts flat and toggles and persists 3D', () => {
+    expect(useSettings.getState().terrain3d).toBe(false);
+    useSettings.getState().toggleTerrain3d();
+    expect(useSettings.getState().terrain3d).toBe(true);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ terrain3d: true });
+    useSettings.getState().toggleTerrain3d();
+    expect(useSettings.getState().terrain3d).toBe(false);
+  });
+
   it('sets and persists the basemap', () => {
     useSettings.getState().setBasemap('topo');
     expect(useSettings.getState().basemap).toBe('topo');

@@ -2,6 +2,9 @@ import type { MapView } from '@rnmapbox/maps';
 import { useEffect, type RefObject } from 'react';
 
 import type { LatLon } from '@/lib/geo/types';
+import { useSettings } from '@/stores/settings';
+
+import { terrainExaggeration } from './three-d';
 
 /** How long a lookup may take before the elevation counts as unknown (a save never waits longer). */
 export const ELEVATION_TIMEOUT_MS = 1000;
@@ -39,7 +42,11 @@ export async function elevationAt(at: LatLon): Promise<number | null> {
 /** Answers elevation lookups from this map view while it is mounted. */
 export function useElevationSource(mapRef: RefObject<Pick<MapView, 'queryTerrainElevation'> | null>): void {
   useEffect(() => {
-    const query: ElevationSource = async (at) => mapRef.current?.queryTerrainElevation([at.lon, at.lat]);
+    // Answers scale with the terrain exaggeration (raised in 3D); undo it so saved elevations stay true.
+    const query: ElevationSource = async (at) => {
+      const m = await mapRef.current?.queryTerrainElevation([at.lon, at.lat]);
+      return typeof m === 'number' ? m / terrainExaggeration(useSettings.getState().terrain3d) : m;
+    };
     setElevationSource(query);
     return () => {
       // Only clear our own registration (a newer map may already have replaced it).

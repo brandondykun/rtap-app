@@ -1,4 +1,4 @@
-import { Camera, Images, MapView, RasterDemSource, Terrain, type MapState } from '@rnmapbox/maps';
+import { Atmosphere, Camera, Images, MapView, RasterDemSource, Terrain, type MapState } from '@rnmapbox/maps';
 import { useEffect, useMemo, useState, type ReactNode, type Ref } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { useSettings, type Basemap } from '@/stores/settings';
 
 import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
+import { terrainExaggeration, THREE_D_PITCH } from '../terrain/three-d';
 import { cameraFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
@@ -51,6 +52,7 @@ type Props = {
 
 export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, symbolImages, onSymbolMissing, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
+  const threeD = useSettings((s) => s.terrain3d);
   // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
   // this session so points and the self icon still render. Choosing a basemap again retries it.
   const [failedBasemap, setFailedBasemap] = useState<Basemap | null>(null);
@@ -103,7 +105,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
       styleURL={BASEMAP_STYLE_URLS[effectiveBasemap]}
       onMapLoadingError={onMapLoadingError}
       compassEnabled={false}
-      pitchEnabled={false}
+      pitchEnabled={threeD}
       scaleBarEnabled={false}
       logoPosition={ornaments.logo}
       attributionPosition={ornaments.attribution}
@@ -117,13 +119,14 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
         const coord = pressCoord(feature.geometry);
         if (coord) onLongPress?.(coord);
       }}>
-      <Camera ref={cameraRef} defaultSettings={toCameraStop(initialCamera)} />
+      <Camera ref={cameraRef} defaultSettings={{ ...toCameraStop(initialCamera), pitch: threeD ? THREE_D_PITCH : 0 }} />
       <Images images={MAP_IMAGES} />
       <Images images={symbolImages} onImageMissing={onSymbolMissing} />
-      {/* Ground elevation for units (queryTerrainElevation). Its answers scale with the exaggeration, so it
-          stays at true scale; with pitch off the map still looks flat. */}
+      {/* Ground elevation for units (queryTerrainElevation, which undoes the exaggeration) and the 3D view.
+          Flat, it stays at true scale and the map looks flat; in 3D it is raised so hills read. */}
       <RasterDemSource id={TERRAIN_SOURCE_ID} url="mapbox://mapbox.mapbox-terrain-dem-v1" tileSize={514} maxZoomLevel={14} />
-      <Terrain sourceID={TERRAIN_SOURCE_ID} style={{ exaggeration: 1 }} />
+      <Terrain sourceID={TERRAIN_SOURCE_ID} style={{ exaggeration: terrainExaggeration(threeD) }} />
+      {threeD ? <Atmosphere style={{ range: [0.8, 8], horizonBlend: 0.1 }} /> : null}
       {children}
     </MapView>
   );

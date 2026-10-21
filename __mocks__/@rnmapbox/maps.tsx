@@ -1,5 +1,5 @@
 /* Manual Jest mock for @rnmapbox/maps. Activate per test file with jest.mock('@rnmapbox/maps'). */
-import { forwardRef, useImperativeHandle, type ReactNode } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 type Props = Record<string, unknown> & { id?: string; children?: ReactNode };
@@ -15,6 +15,7 @@ export const __props: Record<string, Record<string, Props>> = {
   FillLayer: {},
   RasterDemSource: {},
   Terrain: {},
+  Atmosphere: {},
 };
 export const __camera = { setCamera: jest.fn() };
 
@@ -68,6 +69,13 @@ export function RasterDemSource(props: Props) {
 
 export function Terrain(props: Props) {
   __props.Terrain.main = props;
+  return null;
+}
+
+export function Atmosphere(props: Props) {
+  __props.Atmosphere.main = props;
+  // Cleared on unmount, so a test can see the sky go away.
+  useEffect(() => () => void delete __props.Atmosphere.main, []);
   return null;
 }
 

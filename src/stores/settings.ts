@@ -32,6 +32,8 @@ type SettingsValues = {
   showToolbarText: boolean;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
+  /** Tilted map with raised terrain and a sky (the 3D toolbar toggle). */
+  terrain3d: boolean;
   labelSize: LabelSize;
   missionSort: MissionSort;
 };
@@ -47,6 +49,7 @@ type SettingsActions = {
   setShowCenterGrid: (show: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
   toggleMapLabels: () => void;
+  toggleTerrain3d: () => void;
   setLabelSize: (size: LabelSize) => void;
   setMissionSort: (sort: MissionSort) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
@@ -69,6 +72,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showCenterGrid: true,
   showToolbarText: true,
   showMapLabels: true,
+  terrain3d: false,
   labelSize: 'medium',
   missionSort: 'recent',
 };
@@ -103,6 +107,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
+    terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
     missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
   };
@@ -122,6 +127,7 @@ export const useSettings = create<SettingsState>()(
       setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
+      toggleTerrain3d: () => set({ terrain3d: !get().terrain3d }),
       setLabelSize: (labelSize) => set({ labelSize }),
       setMissionSort: (missionSort) => set({ missionSort }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
@@ -136,7 +142,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, labelSize, missionSort }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, labelSize, missionSort }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -148,6 +154,7 @@ export const useSettings = create<SettingsState>()(
         showCenterGrid,
         showToolbarText,
         showMapLabels,
+        terrain3d,
         labelSize,
         missionSort,
       }),

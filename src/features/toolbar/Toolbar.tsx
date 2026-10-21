@@ -26,13 +26,16 @@ type Props = {
   /** The LABELS toggle, the last tool: a label icon while map labels show, a crossed-out one while hidden. */
   labelsOn?: boolean;
   onLabels?: () => void;
+  /** The 3D toggle, after LABELS: its icon shows whether the map is in 3D. */
+  threeDOn?: boolean;
+  onThreeD?: () => void;
 };
 
 /**
  * Top bar in both orientations: full width in portrait, top-right (content width) in landscape
  * so a left panel never covers it. Tools scroll horizontally in portrait if they overflow.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels, threeDOn = false, onThreeD }: Props) {
   const insets = useSafeAreaInsets();
   const height = useToolbarHeight();
   const overflow = useOverflow();
@@ -49,8 +52,9 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />
       <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
       <ToolButton icon="target" label="PLOT" active={activeTool === 'plot'} onPress={onPlot} />
-      {/* A toggle, not a tool: its icon shows the state, with no highlight. */}
+      {/* Toggles, not tools: their icons show the state, with no highlight. */}
       <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" toggled={labelsOn} onPress={onLabels} />
+      <ToolButton icon={threeDOn ? 'video-3d' : 'video-3d-off'} label="3D" toggled={threeDOn} onPress={onThreeD} />
     </>
   );
 

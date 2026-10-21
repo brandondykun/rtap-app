@@ -184,12 +184,12 @@ describe('Toolbar', () => {
     expect(onPlot).toHaveBeenCalled();
   });
 
-  it('ends the tools with a LABELS toggle that swaps its icon, with no highlight', async () => {
+  it('has a LABELS toggle that swaps its icon, with no highlight', async () => {
     const onLabels = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onPlot={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    // The last button: Settings lives in the Menu.
-    expect(order.slice(-2)).toEqual(['PLOT', 'LABELS']);
+    // Settings lives in the Menu.
+    expect(order.slice(-3)).toEqual(['PLOT', 'LABELS', '3D']);
     expect(screen.queryByLabelText('Settings')).toBeNull();
     expect(screen.getByText('LABELS')).toBeTruthy();
     const on = screen.getByLabelText('LABELS');
@@ -202,5 +202,19 @@ describe('Toolbar', () => {
     await screen.unmount();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} labelsOn={false} onLabels={onLabels} />);
     expect(screen.getByLabelText('LABELS')).not.toBeSelected();
+  });
+
+  it('ends the tools with a 3D toggle that swaps its icon, with no highlight', async () => {
+    const on3d = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} threeDOn onThreeD={on3d} />);
+    const button = screen.getByLabelText('3D');
+    expect(screen.getByText('3D')).toBeTruthy();
+    expect(button).toBeSelected();
+    expect(button.props.className).not.toContain('bg-accent-subtle');
+    await fireEvent.press(button);
+    expect(on3d).toHaveBeenCalled();
+    await screen.unmount();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} threeDOn={false} onThreeD={on3d} />);
+    expect(screen.getByLabelText('3D')).not.toBeSelected();
   });
 });

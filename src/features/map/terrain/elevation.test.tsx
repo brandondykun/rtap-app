@@ -1,11 +1,14 @@
 import { renderHook } from '@testing-library/react-native';
 
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
+
 import { ELEVATION_TIMEOUT_MS, elevationAt, setElevationSource, useElevationSource } from './elevation';
 
 const AT = { lat: 38.8977, lon: -77.0365 };
 
 afterEach(() => {
   setElevationSource(null);
+  useSettings.setState(DEFAULT_SETTINGS);
   jest.useRealTimers();
 });
 
@@ -49,5 +52,12 @@ describe('useElevationSource', () => {
     expect(queryTerrainElevation).toHaveBeenCalledWith([AT.lon, AT.lat]);
     await unmount();
     expect(await elevationAt(AT)).toBeNull();
+  });
+
+  it('undoes the 3D height exaggeration, so the elevation stays true', async () => {
+    useSettings.setState({ terrain3d: true });
+    const queryTerrainElevation = jest.fn(async () => 150);
+    await renderHook(() => useElevationSource({ current: { queryTerrainElevation } as never }));
+    expect(await elevationAt(AT)).toBe(100);
   });
 });

@@ -51,7 +51,7 @@ describe('MapCanvas', () => {
     await renderCanvas();
     expect(screen.getByText('layer')).toBeTruthy();
     const camera = mapboxMock().__props.Camera.main;
-    expect(camera.defaultSettings).toEqual({ centerCoordinate: [-77.0365, 38.8977], zoomLevel: 13, heading: 0 });
+    expect(camera.defaultSettings).toEqual({ centerCoordinate: [-77.0365, 38.8977], zoomLevel: 13, heading: 0, pitch: 0 });
     expect(camera.centerCoordinate).toBeUndefined();
     expect(mapboxMock().__props.Images.main.images).toBe(MAP_IMAGES);
     expect(mapboxMock().__props.MapView.main.compassEnabled).toBe(false);
@@ -64,6 +64,20 @@ describe('MapCanvas', () => {
     expect(dem).toMatchObject({ id: 'terrain-dem', url: 'mapbox://mapbox.mapbox-terrain-dem-v1' });
     expect(mapboxMock().__props.Terrain.main).toMatchObject({ sourceID: 'terrain-dem', style: { exaggeration: 1 } });
     expect(mapboxMock().__props.MapView.main.pitchEnabled).toBe(false);
+    expect(mapboxMock().__props.Atmosphere.main).toBeUndefined();
+  });
+
+  it('in 3D, raises the terrain 1.5x, allows tilting, adds a sky and opens tilted', async () => {
+    useSettings.setState({ terrain3d: true });
+    await renderCanvas();
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1.5 } });
+    expect(mapboxMock().__props.MapView.main.pitchEnabled).toBe(true);
+    expect(mapboxMock().__props.Atmosphere.main).toBeDefined();
+    expect(mapboxMock().__props.Camera.main.defaultSettings).toMatchObject({ pitch: 60 });
+    await act(() => useSettings.setState({ terrain3d: false }));
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1 } });
+    expect(mapboxMock().__props.MapView.main.pitchEnabled).toBe(false);
+    expect(mapboxMock().__props.Atmosphere.main).toBeUndefined();
   });
 
   it('registers symbol images and asks for missing ones', async () => {

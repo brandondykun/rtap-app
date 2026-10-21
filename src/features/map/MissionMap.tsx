@@ -51,6 +51,7 @@ import { PolygonsLayer } from './layers/PolygonsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { barTakesReadoutSpot, cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
 import { useElevationSource } from './terrain/elevation';
+import { THREE_D_PITCH, THREE_D_TILT_MS } from './terrain/three-d';
 
 const EASE = { animationMode: 'easeTo' as const };
 /** ~5 m: the idle camera center counts as the move's target. */
@@ -81,6 +82,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const landscape = isLandscape(width, height);
   const toolbar = useToolbarHeight();
   const labelsOn = useSettings((s) => s.showMapLabels);
+  const threeDOn = useSettings((s) => s.terrain3d);
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [initialCamera] = useState(() => savedCamera ?? WORLD_CAMERA);
@@ -374,6 +376,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     markMoved();
     moveCamera({ heading: 0, ...EASE, animationDuration: 300 });
   };
+  // Tilts into 3D, or back to flat (where tilting is locked).
+  const toggleThreeD = () => {
+    useSettings.getState().toggleTerrain3d();
+    moveCamera({ pitch: useSettings.getState().terrain3d ? THREE_D_PITCH : 0, ...EASE, animationDuration: THREE_D_TILT_MS });
+  };
   const recenter = () => {
     const self = usePresence.getState().selfPosition?.position;
     if (!self) return;
@@ -428,6 +435,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         labelsOn={labelsOn}
         onLabels={() => useSettings.getState().toggleMapLabels()}
+        threeDOn={threeDOn}
+        onThreeD={toggleThreeD}
       />
       <MapControls
         following={followMode}
