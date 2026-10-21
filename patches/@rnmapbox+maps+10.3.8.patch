@@ -1,5 +1,40 @@
+diff --git a/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/NativeMapViewModule.kt b/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/NativeMapViewModule.kt
+index 38de6c8..e342ef7 100644
+--- a/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/NativeMapViewModule.kt
++++ b/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/NativeMapViewModule.kt
+@@ -6,6 +6,7 @@ import com.facebook.react.bridge.ReadableArray
+ import com.facebook.react.bridge.ReadableMap
+ import com.facebook.react.bridge.WritableMap
+ import com.facebook.react.bridge.WritableNativeMap
++import com.mapbox.geojson.Point
+ import com.rnmapbox.rnmbx.NativeMapViewModuleSpec
+ import com.rnmapbox.rnmbx.utils.ConvertUtils
+ import com.rnmapbox.rnmbx.utils.ExpressionParser
+@@ -58,6 +59,22 @@ class NativeMapViewModule(context: ReactApplicationContext, val viewTagResolver:
+         }
+     }
+ 
++    // OP mode: the camera at an exact spot and altitude, looking along pitch and bearing.
++    override fun setFreeCamera(viewRef: ViewRefTag?, values: ReadableArray, promise: Promise) {
++        withMapViewOnUIThread(viewRef, promise) {
++            if (values.size() != 5) {
++                promise.reject("setFreeCamera", "expected [lon, lat, altitude, pitch, bearing]")
++                return@withMapViewOnUIThread
++            }
++            val mapboxMap = it.getMapboxMap()
++            val options = mapboxMap.getFreeCameraOptions()
++            options.setLocation(Point.fromLngLat(values.getDouble(0), values.getDouble(1)), values.getDouble(2))
++            options.setPitchBearing(values.getDouble(3), values.getDouble(4))
++            mapboxMap.setCamera(options)
++            promise.resolve(null)
++        }
++    }
++
+     override fun setSourceVisibility(
+         viewRef: ViewRefTag?,
+         visible: Boolean,
 diff --git a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
-index 3b25490..63ae750 100644
+index 3b25490..7d0f53c 100644
 --- a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
 +++ b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
 @@ -733,6 +733,8 @@ open class RNMBXMapView: UIView, RCTInvalidating {
@@ -11,3 +46,61 @@ index 3b25490..63ae750 100644
      if let visibility = attributionEnabled {
        mapView.ornaments.options.attributionButton.visibility = visibility
      }
+@@ -1722,6 +1724,24 @@ extension RNMBXMapView {
+     }
+   }
+ 
++  // SPIKE (OP mode): the camera at an exact spot and altitude, looking along pitch and bearing.
++  @objc public func setFreeCameraWithValues(
++    _ values: [NSNumber],
++    resolver: @escaping RCTPromiseResolveBlock,
++    rejecter: @escaping RCTPromiseRejectBlock
++  ) {
++    guard values.count == 5 else {
++      rejecter("setFreeCamera", "expected [lon, lat, altitude, pitch, bearing]", nil)
++      return
++    }
++    let options = self.mapboxMap.freeCameraOptions
++    options.location = CLLocationCoordinate2D(latitude: values[1].doubleValue, longitude: values[0].doubleValue)
++    options.altitude = values[2].doubleValue
++    options.setPitchBearingForPitch(values[3].doubleValue, bearing: values[4].doubleValue)
++    self.mapboxMap.freeCameraOptions = options
++    resolver(nil)
++  }
++
+   @objc public func setSourceVisibilityWithVisible(
+     _ visible: Bool,
+     sourceId: String,
+diff --git a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapViewModule.mm b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapViewModule.mm
+index 8aaf1a0..2e622ab 100644
+--- a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapViewModule.mm
++++ b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapViewModule.mm
+@@ -107,6 +107,12 @@ - (void)withMapView:(nonnull NSNumber*)viewRef block:(void (^)(RNMBXMapView *))b
+ }
+ 
+ 
++RCT_EXPORT_METHOD(setFreeCamera:(nonnull NSNumber*)viewRef values:(NSArray *)values resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
++    [self withMapView:viewRef block:^(RNMBXMapView *view) {
++        [view setFreeCameraWithValues:values resolver:resolve rejecter:reject];
++    } reject:reject methodName:@"setFreeCamera"];
++}
++
+ RCT_EXPORT_METHOD(setHandledMapChangedEvents:(nonnull NSNumber*)viewRef events:(NSArray *)events resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
+     [self withMapView:viewRef block:^(RNMBXMapView *view) {
+         [view setHandledMapChangedEventsWithEvents:events resolver:resolve rejecter:reject];
+diff --git a/node_modules/@rnmapbox/maps/src/specs/NativeMapViewModule.ts b/node_modules/@rnmapbox/maps/src/specs/NativeMapViewModule.ts
+index c008876..59b8be1 100644
+--- a/node_modules/@rnmapbox/maps/src/specs/NativeMapViewModule.ts
++++ b/node_modules/@rnmapbox/maps/src/specs/NativeMapViewModule.ts
+@@ -9,6 +9,11 @@ export interface Spec extends TurboModule {
+     viewRef: Int32 | null,
+     coordinates: ReadonlyArray<number>,
+   ) => Promise<Object>;
++  // SPIKE (OP mode): [lon, lat, altitude m above sea level, pitch, bearing].
++  setFreeCamera: (
++    viewRef: Int32 | null,
++    values: ReadonlyArray<number>,
++  ) => Promise<Object>;
+   setSourceVisibility: (
+     viewRef: Int32 | null,
+     visible: boolean,

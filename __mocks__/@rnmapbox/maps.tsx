@@ -22,6 +22,8 @@ export const __camera = { setCamera: jest.fn() };
 export const __map = {
   takeSnap: jest.fn(async (_writeToDisk?: boolean) => 'file:///cache/snap.png'),
   queryTerrainElevation: jest.fn(async (_coordinate: number[]): Promise<number | null> => null),
+  _runNative: jest.fn(async (_name: string, _args: unknown[]): Promise<unknown> => undefined),
+  queryRenderedFeaturesAtPoint: jest.fn(async (..._args: unknown[]) => ({ features: [] as unknown[] })),
 };
 
 export const MapView = forwardRef(function MapView(props: Props, ref) {
