@@ -26,6 +26,8 @@ type TokenValue = PaletteName | { color: PaletteName; alpha: number };
 const dark = {
   surface: 'stone-900',
   'surface-chrome': { color: 'neutral-950', alpha: 0.9 },
+  /** Barely-there backing for controls laid over the 3D view, so the map shows through (the OP eye slider). */
+  'surface-glass': { color: 'neutral-950', alpha: 0.35 },
   'surface-input': 'neutral-950',
   'surface-raised': 'stone-800',
   border: 'stone-700',

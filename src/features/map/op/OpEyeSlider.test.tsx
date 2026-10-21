@@ -6,6 +6,7 @@ import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-han
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { EYE_TRACK_HEIGHT, OpEyeSlider } from './OpEyeSlider';
 
@@ -68,6 +69,14 @@ describe('OpEyeSlider', () => {
     // Just wider than `820 ft`, the longest height label.
     expect(widths[0]).toBe(48);
     expect(new Set(widths).size).toBe(1);
+  });
+
+  it('sits on a see-through background so the map shows behind it', async () => {
+    await renderWithProviders(<OpEyeSlider />);
+    const panel = screen.getByTestId('op-eye-slider');
+    expect(panel.props.className).toContain('bg-surface-glass');
+    expect(panel.props.className).not.toContain('bg-surface-chrome');
+    expect(themeColors('dark')['surface-glass']).toBe('rgba(10, 10, 10, 0.35)');
   });
 
   it('places the thumb by the eye height', async () => {
