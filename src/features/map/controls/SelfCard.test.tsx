@@ -86,6 +86,17 @@ describe('SelfCard', () => {
     expect(onRecenter).not.toHaveBeenCalled();
   });
 
+  it('in OP mode goes see-through, with the elevation brightened and outlined', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: 450 });
+    await renderWithProviders(<SelfCard {...PROPS} />);
+    expect(screen.getByTestId('gps-readout').props.className).toContain('bg-surface-glass');
+    expect(screen.getByTestId('gps-readout').props.className).not.toContain('bg-surface-chrome');
+    const elevation = screen.getByTestId('op-elevation');
+    expect(elevation.props.className).not.toContain('text-text-muted');
+    expect(elevation).toHaveStyle({ textShadowRadius: 3 });
+    expect(screen.getByTestId('op-position')).toHaveStyle({ textShadowRadius: 3 });
+  });
+
   it('in OP mode shows a dash for the elevation until the ground is read', async () => {
     useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: null });
     await renderWithProviders(<SelfCard {...PROPS} />);
