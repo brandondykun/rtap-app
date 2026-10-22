@@ -40,6 +40,7 @@ description: Use whenever you add or change a menu, panel content, or anything o
   an amber center dot by default, everywhere (the map center, CTR buttons and readouts, guides). Never draw
   a crosshair by hand or pass colors, except where amber would vanish (on an amber button: one dark color).
 - **Pressed feedback.** Every `Pressable` dims with `active:opacity-60` while pressed (see the styling skill); the shared primitives already do.
+- **Settings are explained on the About page.** A new setting (a toggle, or a section with a choice) gets an entry in `src/features/menus/menus/settings-help.ts`, in menu order: `name` is the toggle's label or the section's label, `choices` the options as shown, `help` one or two plain sentences. `settings-help.test.tsx` fails until it does; removing or renaming a setting updates it too.
 - **No system dialogs.** Destructive actions use `MenuActions` (second tap confirms).
 - **Writes** go through commands; report failures with `notifyError`, successes with
   `notifySuccess` (`src/features/feedback/feedback.ts`). Lock double taps with a ref.

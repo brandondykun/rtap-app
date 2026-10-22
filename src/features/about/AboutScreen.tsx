@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
+import { SETTINGS_HELP, type SettingHelp } from '@/features/menus/menus/settings-help';
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -16,7 +17,7 @@ const APP_ICON = require('../../../assets/images/icon.png');
 const MAX_CONTENT_WIDTH = 720;
 
 /**
- * Full-screen About page (a route, not a menu): app info and what each toolbar button does. It draws
+ * Full-screen About page (a route, not a menu): app info, what each toolbar button does and what each setting does. It draws
  * its own iOS-style header: the native iOS 26 back button flashes light as the page opens. Swipe back
  * (iOS) and the system back (Android) still work; they come from the navigator, not the header.
  */
@@ -93,6 +94,15 @@ export function AboutScreen() {
             </View>
           ))}
 
+          <View className="gap-2">
+            <SectionTitle>Settings guide</SectionTitle>
+            <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+              {SETTINGS_HELP.map((h, i) => (
+                <SettingRow key={h.name} help={h} first={i === 0} />
+              ))}
+            </View>
+          </View>
+
           <Text className="text-center text-xs text-text-muted">
             Map data © Mapbox © OpenStreetMap. Symbols: milsymbol (MIL-STD-2525C). Magnetic model: WMM2025.
           </Text>
@@ -147,6 +157,17 @@ function HelpRow({ help, first }: { help: ToolbarHelp; first: boolean }) {
         <Text className="text-base font-bold uppercase tracking-widest text-text">{help.label}</Text>
         <Text className="text-base text-text">{help.help}</Text>
       </View>
+    </View>
+  );
+}
+
+/** One setting: its name as in the Settings menu, its choices and what it does. */
+function SettingRow({ help, first }: { help: SettingHelp; first: boolean }) {
+  return (
+    <View testID={`setting-help-${help.name}`} accessible className={`gap-0.5 px-4 py-3 ${first ? '' : 'border-t border-border'}`}>
+      <Text className="text-base font-bold uppercase tracking-widest text-text">{help.name}</Text>
+      {help.choices ? <Text className="font-mono text-sm text-text-muted">{help.choices}</Text> : null}
+      <Text className="text-base text-text">{help.help}</Text>
     </View>
   );
 }

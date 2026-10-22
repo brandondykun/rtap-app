@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
+import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
 import { TOOLBAR_HELP } from '@/features/toolbar/toolbar-help';
 
 import { renderWithProviders } from '@/test-utils/render';
@@ -97,5 +98,18 @@ describe('AboutScreen', () => {
     expect(content.paddingBottom).toBe(21 + 24);
     // The header above already sits below the status bar, so the content does not add the top inset.
     expect(content.paddingTop).toBe(16);
+  });
+
+  it('explains every setting after the toolbar guide: its name, choices and what it does', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByText('Settings guide')).toBeTruthy();
+    for (const h of SETTINGS_HELP) {
+      const row = screen.getByTestId(`setting-help-${h.name}`);
+      expect(row).toHaveTextContent(h.name, { exact: false });
+      expect(row).toHaveTextContent(h.help, { exact: false });
+      if (h.choices) expect(row).toHaveTextContent(h.choices, { exact: false });
+    }
+    const headers = screen.getAllByRole('header').map((el) => el.props.children as string);
+    expect(headers.indexOf('Settings guide')).toBeGreaterThan(headers.indexOf('App'));
   });
 });
