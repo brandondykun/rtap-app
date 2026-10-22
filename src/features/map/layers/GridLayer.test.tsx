@@ -6,7 +6,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { GridLayer } from './GridLayer';
-import { mgrsGrid } from './mgrs-grid';
+import { eastingsReadingUp, mgrsGrid } from './mgrs-grid';
 
 jest.mock('@rnmapbox/maps');
 
@@ -28,9 +28,25 @@ describe('GridLayer', () => {
   it('sits under the mission items (it may mount after them, when switched on)', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;
-    for (const layer of [props.LineLayer['mgrs-grid-lines'], props.SymbolLayer['mgrs-grid-line-labels'], props.SymbolLayer['mgrs-grid-area-labels']]) {
+    for (const layer of [props.LineLayer['mgrs-grid-lines'], props.SymbolLayer['mgrs-grid-easting-labels'], props.SymbolLayer['mgrs-grid-northing-labels'], props.SymbolLayer['mgrs-grid-area-labels']]) {
       expect(layer.belowLayerID).toBe('polygons-fill');
     }
+  });
+
+  it('reads easting numbers upward along their lines (no flipping), and northing numbers left to right', async () => {
+    await renderWithProviders(<GridLayer />);
+    const props = mapboxMock().__props;
+    expect(props.SymbolLayer['mgrs-grid-easting-labels'].style).toMatchObject({ textKeepUpright: false });
+    expect(props.SymbolLayer['mgrs-grid-easting-labels'].filter).toEqual(['==', ['get', 'axis'], 'e']);
+    expect(props.SymbolLayer['mgrs-grid-northing-labels'].style).not.toHaveProperty('textKeepUpright');
+    expect(props.SymbolLayer['mgrs-grid-northing-labels'].filter).toEqual(['==', ['get', 'axis'], 'n']);
+  });
+
+  it('turns the easting lines around when the map turns north down the screen', async () => {
+    await renderWithProviders(<GridLayer />);
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(eastingsReadingUp(mgrsGrid(VIEW).lines, 0));
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 180 }));
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(eastingsReadingUp(mgrsGrid(VIEW).lines, 180));
   });
 
   it('redraws only when the map comes to rest, not as the camera moves', async () => {
@@ -46,9 +62,10 @@ describe('GridLayer', () => {
   it('hides the labels with the grid labels setting', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;
-    expect(props.SymbolLayer['mgrs-grid-line-labels'].style).toMatchObject({ visibility: 'visible' });
+    expect(props.SymbolLayer['mgrs-grid-easting-labels'].style).toMatchObject({ visibility: 'visible' });
     await act(async () => useSettings.getState().setShowGridLabels(false));
-    expect(props.SymbolLayer['mgrs-grid-line-labels'].style).toMatchObject({ visibility: 'none' });
+    expect(props.SymbolLayer['mgrs-grid-easting-labels'].style).toMatchObject({ visibility: 'none' });
+    expect(props.SymbolLayer['mgrs-grid-northing-labels'].style).toMatchObject({ visibility: 'none' });
     expect(props.SymbolLayer['mgrs-grid-area-labels'].style).toMatchObject({ visibility: 'none' });
     expect(props.LineLayer['mgrs-grid-lines']).toBeDefined();
   });

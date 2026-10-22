@@ -78,6 +78,24 @@ export function mgrsGrid(view: GridView): MgrsGrid {
   return collections(lines, labels);
 }
 
+/** Whether north points up the screen (rather than down) at a map bearing. */
+export function northUpScreen(bearing: number): boolean {
+  return Math.cos((bearing * Math.PI) / 180) >= 0;
+}
+
+/**
+ * The lines with each easting line running up the screen: south to north while north is up the screen, north to
+ * south while it is down. Their numbers follow the line (they are not flipped upright), so they read upward and
+ * increase to the right, as the northing numbers read rightward and increase up the screen.
+ */
+export function eastingsReadingUp(lines: MgrsGrid['lines'], bearing: number): MgrsGrid['lines'] {
+  if (northUpScreen(bearing)) return lines;
+  return {
+    ...lines,
+    features: lines.features.map((f) => (f.properties.axis === 'e' ? { ...f, geometry: { ...f.geometry, coordinates: [...f.geometry.coordinates].reverse() } } : f)),
+  };
+}
+
 function coarser(step: GridStep): GridStep | null {
   return STEPS[STEPS.indexOf(step) + 1] ?? null;
 }

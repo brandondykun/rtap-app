@@ -1,6 +1,6 @@
 import { toUtm } from '@/lib/geo/coords/utm';
 
-import { GRID_MAX_LINES, gridStep, mgrsGrid, type GridView } from './mgrs-grid';
+import { eastingsReadingUp, GRID_MAX_LINES, gridStep, mgrsGrid, type GridView } from './mgrs-grid';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
@@ -139,5 +139,27 @@ describe('mgrsGrid', () => {
 
   it('draws nothing beyond MGRS coverage (north of 84°N)', () => {
     expect(linesOf({ sw: { lat: 85, lon: 0 }, ne: { lat: 85.05, lon: 1 }, zoom: 12 })).toEqual([]);
+  });
+});
+
+describe('eastingsReadingUp', () => {
+  const { lines } = mgrsGrid(around(DC, 20, 11));
+  const eastings = (fc: typeof lines) => fc.features.filter((f) => f.properties.axis === 'e');
+  const northward = (f: (typeof lines)['features'][number]) => f.geometry.coordinates[f.geometry.coordinates.length - 1][1] > f.geometry.coordinates[0][1];
+
+  it('runs easting lines south to north while north is up the screen, so their numbers read upward', () => {
+    expect(eastings(lines).length).toBeGreaterThan(0);
+    for (const bearing of [0, 45, 300]) expect(eastings(eastingsReadingUp(lines, bearing)).every(northward)).toBe(true);
+  });
+
+  it('runs them north to south while north is down the screen, so the numbers still read upward', () => {
+    for (const bearing of [135, 180, 250]) expect(eastings(eastingsReadingUp(lines, bearing)).some(northward)).toBe(false);
+  });
+
+  it('leaves the northing lines and zone edges as they are', () => {
+    const turned = eastingsReadingUp(lines, 180);
+    lines.features.forEach((f, i) => {
+      if (f.properties.axis !== 'e') expect(turned.features[i]).toBe(f);
+    });
   });
 });

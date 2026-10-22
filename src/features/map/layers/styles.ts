@@ -250,9 +250,10 @@ export function makeGridLineStyle(colors: Record<SemanticToken, string>): LineLa
   };
 }
 
-/** MGRS grid numbers along the lines: small outlined text, no chip, giving way to anything else. */
-export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
-  return { ...makeGridAreaLabelStyle(colors), symbolPlacement: 'line', symbolSpacing: 250, textSize: 11 };
+/** MGRS grid numbers along the lines: small outlined text, no chip. `upright` false lets them follow the line's direction. */
+export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>, upright = true): SymbolLayerStyle {
+  const style: SymbolLayerStyle = { ...makeGridAreaLabelStyle(colors), symbolPlacement: 'line', symbolSpacing: 250, textSize: 11 };
+  return upright ? style : { ...style, textKeepUpright: false };
 }
 
 /** Grid zone and 100 km square names, inside their areas. */
