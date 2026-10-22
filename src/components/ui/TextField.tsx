@@ -69,7 +69,7 @@ export function TextField({ invalid = false, mono = false, dense = false, nested
           accessibilityLabel={`Clear ${rest.accessibilityLabel ?? 'text'}`}
           onPress={clear}
           hitSlop={4}
-          className="absolute right-1 h-12 w-10 items-center justify-center">
+          className="active:opacity-60 absolute right-1 h-12 w-10 items-center justify-center">
           <Icon name="close-circle" size={20} color={colors['text-muted']} />
         </Pressable>
       ) : null}

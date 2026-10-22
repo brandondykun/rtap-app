@@ -19,12 +19,12 @@ export function LocationBanner({ marginTop = 0 }: { marginTop?: number }) {
       style={{ marginTop }}
       className="flex-row items-center gap-3 rounded-2xl bg-surface-glass px-4 py-3">
       <Text style={halo} className="flex-1 text-sm text-text">Location is off. Your position and range are hidden.</Text>
-      <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} hitSlop={8}>
+      <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} hitSlop={8} className="active:opacity-60">
         <Text style={halo} className="font-semibold text-accent">
           Settings
         </Text>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => setDismissed(true)} hitSlop={8}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => setDismissed(true)} hitSlop={8} className="active:opacity-60">
         <Icon name="close" size={18} color={colors.text} style={halo} />
       </Pressable>
     </View>

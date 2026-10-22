@@ -43,7 +43,7 @@ export function AboutScreen() {
             accessibilityLabel="Back"
             onPress={() => router.back()}
             hitSlop={8}
-            className="min-h-11 min-w-11 flex-row items-center pr-2 active:opacity-50">
+            className="min-h-11 min-w-11 flex-row items-center pr-2 active:opacity-60">
             {/* Ionicons' chevron is the thin iOS one (the Material chevron is too heavy). */}
             <Ionicons testID="about-back-chevron" name="chevron-back" size={26} color={colors.text} />
             <Text className="text-2xl text-text">Back</Text>

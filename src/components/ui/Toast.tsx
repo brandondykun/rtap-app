@@ -29,7 +29,7 @@ export function Toast({ top }: { top: number }) {
       <Pressable
         accessibilityRole="alert"
         onPress={() => hide(toast.id)}
-        className={`mx-4 flex-row items-center gap-2 rounded-2xl bg-surface-glass px-4 py-3 ${error ? 'border border-danger' : ''}`}>
+        className={`active:opacity-60 mx-4 flex-row items-center gap-2 rounded-2xl bg-surface-glass px-4 py-3 ${error ? 'border border-danger' : ''}`}>
         <Icon name={error ? 'alert-circle-outline' : 'information-outline'} size={18} color={error ? colors.danger : colors.text} style={halo} />
         <Text style={halo} className="shrink text-sm text-text">{toast.message}</Text>
       </Pressable>

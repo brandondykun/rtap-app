@@ -40,10 +40,10 @@ export function MissionNameForm({ title, name, onChangeName, submitLabel, onSubm
         <Pressable
           accessibilityRole="button"
           onPress={onCancel}
-          className="flex-1 items-center rounded-xl border border-border bg-surface-raised py-3">
+          className="active:opacity-60 flex-1 items-center rounded-xl border border-border bg-surface-raised py-3">
           <Text className="font-semibold text-text">Cancel</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={onSubmit} className="flex-1 items-center rounded-xl bg-accent py-3">
+        <Pressable accessibilityRole="button" onPress={onSubmit} className="active:opacity-60 flex-1 items-center rounded-xl bg-accent py-3">
           <Text className="font-bold text-on-accent">{submitLabel}</Text>
         </Pressable>
       </View>

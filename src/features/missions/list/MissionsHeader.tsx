@@ -44,7 +44,7 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
           accessibilityRole="button"
           accessibilityLabel="Search missions"
           onPress={() => onQuery('')}
-          className="h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface-raised active:opacity-80">
+          className="h-12 w-12 items-center justify-center rounded-xl border border-border bg-surface-raised active:opacity-60">
           <Icon name="magnify" size={24} color={colors.text} />
         </Pressable>
       )}
@@ -52,7 +52,7 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
         accessibilityRole="button"
         accessibilityLabel="New mission"
         onPress={onNew}
-        className="h-12 flex-row items-center gap-1 rounded-xl bg-accent px-4 active:opacity-80">
+        className="h-12 flex-row items-center gap-1 rounded-xl bg-accent px-4 active:opacity-60">
         <Icon name="plus" size={22} color={colors['on-accent']} />
         <Text className="text-base font-bold text-on-accent">New</Text>
       </Pressable>
@@ -70,7 +70,7 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
           returnKeyType="search"
         />
       </View>
-      <Pressable accessibilityRole="button" onPress={() => onQuery(null)} hitSlop={8} className="px-2">
+      <Pressable accessibilityRole="button" onPress={() => onQuery(null)} hitSlop={8} className="active:opacity-60 px-2">
         <Text className="text-base font-semibold text-text">Cancel</Text>
       </Pressable>
     </View>
@@ -85,7 +85,7 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
             accessibilityLabel={chip.label}
             accessibilityState={{ selected }}
             onPress={() => onSort(chip.sort)}
-            className={`rounded-full border px-4 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-border'}`}>
+            className={`active:opacity-60 rounded-full border px-4 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-border'}`}>
             <Text className={`text-base font-semibold ${selected ? 'text-accent' : 'text-text'}`}>{chip.label}</Text>
           </Pressable>
         );

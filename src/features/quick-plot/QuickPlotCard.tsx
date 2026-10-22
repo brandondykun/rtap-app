@@ -54,7 +54,7 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
       onPress={() => save('point.add')}
       // Sized like a compact MenuButton.
       hitSlop={{ top: 4, bottom: 4, left: 3, right: 3 }}
-      className="min-h-10 flex-row items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2">
+      className="active:opacity-60 min-h-10 flex-row items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2">
       <Icon name="map-marker-outline" size={16} color={colors['on-accent']} />
       <Text style={{ color: colors['on-accent'] }} className="text-sm font-semibold">
         Save point

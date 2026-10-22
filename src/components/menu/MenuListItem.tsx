@@ -11,7 +11,7 @@ export function MenuListItem({ title, subtitle, leading, onPress, trailing, dimm
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center gap-2 rounded-xl border border-border bg-surface-raised pr-1">
-      <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityHint={subtitle} onPress={onPress} className={`flex-1 flex-row items-center gap-3 py-2 pl-3 ${dimmed ? 'opacity-50' : ''}`}>
+      <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityHint={subtitle} onPress={onPress} className={`active:opacity-60 flex-1 flex-row items-center gap-3 py-2 pl-3 ${dimmed ? 'opacity-50' : ''}`}>
         {leading}
         <View className="flex-1">
           <Text numberOfLines={1} className="font-mono text-base text-text">
@@ -25,7 +25,7 @@ export function MenuListItem({ title, subtitle, leading, onPress, trailing, dimm
         </View>
       </Pressable>
       {trailing ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={trailing.label} onPress={trailing.onPress} hitSlop={6} className="h-11 w-11 items-center justify-center">
+        <Pressable accessibilityRole="button" accessibilityLabel={trailing.label} onPress={trailing.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
           <Icon name={trailing.icon} size={22} color={colors.text} />
         </Pressable>
       ) : null}

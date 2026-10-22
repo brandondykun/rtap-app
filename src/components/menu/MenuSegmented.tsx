@@ -17,7 +17,7 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
             accessibilityState={{ selected, disabled }}
             disabled={disabled}
             onPress={() => onChange(option.value)}
-            className={`flex-1 items-center justify-center rounded-lg border-2 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-surface-input'}`}>
+            className={`active:opacity-60 flex-1 items-center justify-center rounded-lg border-2 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-surface-input'}`}>
             {option.icon ?? <Text className={`text-sm font-semibold ${selected ? 'text-accent' : 'text-text'}`}>{option.label}</Text>}
           </Pressable>
         );

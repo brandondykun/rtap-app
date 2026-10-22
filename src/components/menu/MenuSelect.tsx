@@ -21,7 +21,7 @@ export function MenuSelect<T extends string>({ label, options, value, onChange, 
         accessibilityState={{ expanded: open, disabled }}
         disabled={disabled}
         onPress={() => setOpen((o) => !o)}
-        className="h-12 flex-row items-center justify-between rounded-xl border-2 border-border bg-surface-input px-3">
+        className="active:opacity-60 h-12 flex-row items-center justify-between rounded-xl border-2 border-border bg-surface-input px-3">
         <View className="shrink flex-row items-center gap-2">
           {currentOption?.icon ?? null}
           <Text numberOfLines={1} className="shrink text-lg text-text">
@@ -41,7 +41,7 @@ export function MenuSelect<T extends string>({ label, options, value, onChange, 
                 onChange(option.value);
                 setOpen(false);
               }}
-              className="flex-row items-center justify-between px-3 py-3">
+              className="active:opacity-60 flex-row items-center justify-between px-3 py-3">
               <View className="flex-row items-center gap-2">
                 {option.icon ?? null}
                 <Text className="text-base text-text">{option.label}</Text>

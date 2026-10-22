@@ -206,7 +206,7 @@ export function Panel({
           accessibilityLabel="Hide menu"
           onPress={() => onMinimizedChange?.(true)}
           style={{ width: RAIL_WIDTH }}
-          className="h-full items-center justify-center border-l border-border bg-surface-raised active:opacity-70">
+          className="h-full items-center justify-center border-l border-border bg-surface-raised active:opacity-60">
           <Icon name="chevron-left" size={16} color={colors.text} />
         </Pressable>
       ) : null}
@@ -226,7 +226,7 @@ export function Panel({
           accessibilityLabel={[`Show ${title ?? 'menu'}`, minimizedTab && minimizedTab.spoken !== title ? minimizedTab.spoken : null].filter(Boolean).join(', ')}
           onPress={() => onMinimizedChange?.(false)}
           hitSlop={{ top: 8, bottom: 8, right: 12 }}
-          className="h-full w-full items-center justify-between rounded-xl border border-accent bg-surface py-3 active:opacity-70">
+          className="h-full w-full items-center justify-between rounded-xl border border-accent bg-surface py-3 active:opacity-60">
           <Icon name={minimizedTab?.icon ?? 'menu'} size={20} color={colors.accent} />
           {minimizedTab ? (
             // A spine label: laid out at its length, then turned to read bottom to top.

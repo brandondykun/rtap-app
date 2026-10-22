@@ -16,6 +16,7 @@ export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} supportedOrientations={['portrait', 'landscape']}>
       <View className="flex-1 items-center justify-center px-6">
+        {/* pressed-feedback-exempt: the backdrop behind the dialog, not a visible control */}
         <Pressable accessibilityLabel="Cancel" onPress={onCancel} className="absolute inset-0 bg-surface-chrome" />
         <View accessibilityViewIsModal className="w-full max-w-sm gap-3 rounded-2xl border border-border bg-surface-raised p-5">
           <Text accessibilityRole="header" className="text-lg font-bold text-text">

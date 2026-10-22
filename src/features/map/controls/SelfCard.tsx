@@ -58,7 +58,7 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
       accessibilityState={{ selected: following, disabled }}
       disabled={disabled}
       onPress={onRecenter}
-      className="rounded-2xl bg-surface-glass px-3 py-2">
+      className="active:opacity-60 rounded-2xl bg-surface-glass px-3 py-2">
       <View testID="gps-line" className="flex-row items-center gap-2">
         <CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />
         {fix && !off ? (

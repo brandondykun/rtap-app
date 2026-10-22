@@ -31,7 +31,7 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
           accessibilityState={{ selected, disabled }}
           disabled={disabled}
           onPress={onPress}
-          className="flex-1 flex-row items-center gap-3">
+          className="active:opacity-60 flex-1 flex-row items-center gap-3">
           <View className={`h-7 w-7 items-center justify-center rounded-full ${selected ? 'bg-accent' : 'bg-text'}`}>
             <Text className="font-bold text-surface-input">{number}</Text>
           </View>
@@ -47,7 +47,7 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
           disabled={disabled || removeDisabled}
           onPress={onRemove}
           hitSlop={8}
-          className={disabled || removeDisabled ? 'opacity-30' : ''}>
+          className={`active:opacity-60 ${disabled || removeDisabled ? 'opacity-30' : ''}`}>
           <Icon name="close" size={20} color={colors['text-muted']} />
         </Pressable>
       </View>
@@ -55,13 +55,13 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
         <View className="mt-2 flex-row items-center gap-2">
           <Icon name="plus" size={16} color={colors.accent} />
           <Text className="text-sm font-semibold text-accent">Inserting points</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Done inserting points" onPress={onInsertDone} hitSlop={8} className="ml-auto flex-row items-center gap-1">
+          <Pressable accessibilityRole="button" accessibilityLabel="Done inserting points" onPress={onInsertDone} hitSlop={8} className="active:opacity-60 ml-auto flex-row items-center gap-1">
             <Icon name="check" size={16} color={colors.text} />
             <Text className="text-sm font-semibold text-text">Done</Text>
           </Pressable>
         </View>
       ) : selected && onInsertAfter && !disabled ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Insert after point ${number}`} onPress={onInsertAfter} className="mt-2 flex-row items-center gap-2 self-start">
+        <Pressable accessibilityRole="button" accessibilityLabel={`Insert after point ${number}`} onPress={onInsertAfter} className="active:opacity-60 mt-2 flex-row items-center gap-2 self-start">
           <Icon name="plus" size={16} color={colors.accent} />
           <Text className="text-sm font-semibold text-accent">Insert after</Text>
         </Pressable>

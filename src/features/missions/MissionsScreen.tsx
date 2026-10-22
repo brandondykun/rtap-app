@@ -145,7 +145,7 @@ export function MissionsScreen() {
         onNew={openCreate}
         extra={
           __DEV__ ? (
-            <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8}>
+            <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8} className="active:opacity-60">
               <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
             </Pressable>
           ) : null
@@ -197,7 +197,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <Text className="text-center text-sm text-text-muted">
         A mission is a map for one operation or training day. Create one to start placing points.
       </Text>
-      <Pressable accessibilityRole="button" onPress={onCreate} className="mt-2 rounded-xl bg-accent px-6 py-3">
+      <Pressable accessibilityRole="button" onPress={onCreate} className="active:opacity-60 mt-2 rounded-xl bg-accent px-6 py-3">
         <Text className="font-bold text-on-accent">Create mission</Text>
       </Pressable>
     </View>

@@ -68,7 +68,7 @@ export function MissionSwipeRow({ name, onPress, onRename, onDelete, onOpenActio
         }}
         onPress={onPress}
         style={grow}
-        className={className}>
+        className={`active:opacity-60 ${className}`}>
         {children}
       </Pressable>
     </ReanimatedSwipeable>

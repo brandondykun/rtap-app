@@ -8,7 +8,7 @@ export function MissingTokenScreen({ onBack }: { onBack: () => void }) {
       <Text className="text-center text-sm text-text-muted">
         Add EXPO_PUBLIC_MAPBOX_TOKEN to .env and restart Metro with --clear.
       </Text>
-      <Pressable accessibilityRole="button" onPress={onBack} className="mt-2 rounded-xl bg-surface-raised px-6 py-3">
+      <Pressable accessibilityRole="button" onPress={onBack} className="active:opacity-60 mt-2 rounded-xl bg-surface-raised px-6 py-3">
         <Text className="font-semibold text-text">Back to missions</Text>
       </Pressable>
     </View>

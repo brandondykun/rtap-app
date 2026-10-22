@@ -40,8 +40,7 @@ export function MenuButton({
       // Compact buttons stay small on screen but at least 40pt, with a touch target grown to about 48pt
       // (only 3pt sideways so neighbors in a row never overlap).
       hitSlop={compact ? { top: 4, bottom: 4, left: 3, right: 3 } : undefined}
-      style={({ pressed }) => (pressed ? { opacity: 0.6 } : null)}
-      className={`flex-row items-center justify-center ${compact ? 'min-h-10 min-w-10 gap-1.5 rounded-lg px-3 py-2' : 'gap-2 rounded-xl px-4 py-3'} ${surface} ${disabled ? 'opacity-40' : ''}`}>
+      className={`active:opacity-60 flex-row items-center justify-center ${compact ? 'min-h-10 min-w-10 gap-1.5 rounded-lg px-3 py-2' : 'gap-2 rounded-xl px-4 py-3'} ${surface} ${disabled ? 'opacity-40' : ''}`}>
       {typeof icon === 'string' ? <Icon name={icon} size={compact ? 16 : 18} color={active ? colors.accent : colors.text} style={halo} /> : icon}
       {iconOnly ? null : <Text style={halo} className={`${compact ? 'text-sm' : ''} font-semibold ${active ? 'text-accent' : 'text-text'}`}>{text}</Text>}
     </Pressable>

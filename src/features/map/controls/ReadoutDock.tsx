@@ -108,7 +108,8 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
       accessibilityLabel="Recenter on me"
       accessibilityState={{ selected: following, disabled }}
       disabled={disabled}
-      onPress={onRecenter}>
+      onPress={onRecenter}
+      className="active:opacity-60">
       <Row
         testID="dock-self-row"
         lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />}

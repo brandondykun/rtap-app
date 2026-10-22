@@ -22,7 +22,7 @@ export function PinnedMissionCard({ mission, counts, now, onOpen, onRename, onDe
       onDelete={onDelete}
       onOpenActions={onOpenActions}
       fill={fill}
-      className="overflow-hidden rounded-2xl border border-accent bg-surface-raised active:opacity-90">
+      className="overflow-hidden rounded-2xl border border-accent bg-surface-raised">
       <MissionThumb
         missionId={mission.id}
         snapshot={mission.snapshot}
@@ -51,7 +51,7 @@ export function PinnedMissionCard({ mission, counts, now, onOpen, onRename, onDe
             accessibilityRole="button"
             accessibilityLabel={`Resume ${mission.name}`}
             onPress={onOpen}
-            className="flex-row items-center gap-1 rounded-xl bg-accent px-4 py-2.5 active:opacity-80">
+            className="flex-row items-center gap-1 rounded-xl bg-accent px-4 py-2.5 active:opacity-60">
             <Text className="text-base font-bold text-on-accent">Resume</Text>
             <Icon name="chevron-right" size={20} color={colors['on-accent']} />
           </Pressable>

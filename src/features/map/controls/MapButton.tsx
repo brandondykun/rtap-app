@@ -29,7 +29,7 @@ export function MapButton({ label, onPress, icon, active = false, disabled = fal
       disabled={disabled}
       onPress={onPress}
       style={{ width: CONTROL_SIZE, height: CONTROL_SIZE }}
-      className={`items-center justify-center ${chrome} ${disabled ? 'opacity-40' : ''}`}>
+      className={`active:opacity-60 items-center justify-center ${chrome} ${disabled ? 'opacity-40' : ''}`}>
       {icon ? <Icon name={icon} size={20} color={active ? colors.accent : colors.text} style={glassHalo(colors)} /> : children}
     </Pressable>
   );

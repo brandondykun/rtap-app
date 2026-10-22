@@ -34,7 +34,7 @@ export function ToolButton({ icon, label, active = false, toggled, onPress }: Pr
       onPress={onPress}
       // A fixed TOOL_INSET from the bar's top and bottom, so the highlight's corners are concentric with the bar's.
       style={{ height }}
-      className={`min-w-12 items-center justify-center rounded-xl px-2 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
+      className={`active:opacity-60 min-w-12 items-center justify-center rounded-xl px-2 ${active ? 'bg-accent-subtle' : ''} ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={showText ? 18 : 22} color={color} style={halo} />
       {showText ? (
         <Text style={[halo, { color }]} className="text-[9px] font-semibold tracking-wide">

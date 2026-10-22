@@ -158,7 +158,7 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
       onPress={onPress}
       hitSlop={6}
       style={{ width: size, height: size }}
-      className={`items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
+      className={`active:opacity-60 items-center justify-center ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={22} color={colors.text} style={glassHalo(colors)} />
     </Pressable>
   );

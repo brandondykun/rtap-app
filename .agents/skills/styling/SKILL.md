@@ -19,6 +19,7 @@ description: Use whenever you add or change colors, classNames, styles, themes, 
 6. **Match the mockups** in `docs/design/mockups/`: dark chrome, amber accent, uppercase
    tracked labels, monospace readouts and map labels.
 7. **No opacity modifiers on tokens.** Token colors are CSS variables, so Tailwind opacity modifiers (`bg-accent/50`) don't work — add a translucent token instead. The `neutral` token (affiliation green) replaces Tailwind's `neutral-*` scale in classNames.
+8. **Pressed feedback on every control.** Every `Pressable` gets `active:opacity-60` in its `className`, the one pressed opacity app-wide (no other `active:opacity-*` value, no `style={({ pressed }) => …}`). Disabled controls keep `opacity-40` and don't react. A pressable that is not a visible control (a dialog backdrop) is exempt only with a `{/* pressed-feedback-exempt: <reason> */}` comment on the line above. `src/components/ui/pressable-feedback.test.ts` enforces this.
 
 ## Token reference (dark)
 | Token | Use |

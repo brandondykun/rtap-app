@@ -33,7 +33,7 @@ export function MissionCard({ mission, counts, now, onOpen, onRename, onDelete, 
       onRename={onRename}
       onDelete={onDelete}
       onOpenActions={onOpenActions}
-      className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface-raised p-3 active:opacity-80">
+      className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface-raised p-3">
       <MissionThumb missionId={mission.id} snapshot={mission.snapshot} className="h-20 w-20 rounded-xl" iconSize={24} />
       <View className="flex-1 gap-1">
         <Text numberOfLines={1} className="text-lg font-bold text-text">
