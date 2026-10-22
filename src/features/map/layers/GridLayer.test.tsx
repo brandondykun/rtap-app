@@ -6,7 +6,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { GridLayer } from './GridLayer';
-import { eastingsReadingUp, mgrsGrid } from './mgrs-grid';
+import { mgrsGrid, orientEastings } from './mgrs-grid';
 
 jest.mock('@rnmapbox/maps');
 
@@ -21,7 +21,7 @@ describe('GridLayer', () => {
   it('draws the grid for the resting view', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;
-    expect(props.ShapeSource['mgrs-grid'].shape).toEqual(mgrsGrid(VIEW).lines);
+    expect(props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, true));
     expect(props.ShapeSource['mgrs-grid-areas'].shape).toEqual(mgrsGrid(VIEW).labels);
   });
 
@@ -33,7 +33,7 @@ describe('GridLayer', () => {
     }
   });
 
-  it('reads easting numbers upward along their lines (no flipping), and northing numbers left to right', async () => {
+  it('reads easting numbers along their lines (no flipping upright), and northing numbers left to right', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;
     expect(props.SymbolLayer['mgrs-grid-easting-labels'].style).toMatchObject({ textKeepUpright: false });
@@ -42,11 +42,13 @@ describe('GridLayer', () => {
     expect(props.SymbolLayer['mgrs-grid-northing-labels'].filter).toEqual(['==', ['get', 'axis'], 'n']);
   });
 
-  it('turns the easting lines around when the map turns north down the screen', async () => {
+  it('runs easting lines north to south, and turns them around when the map turns far enough', async () => {
     await renderWithProviders(<GridLayer />);
-    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(eastingsReadingUp(mgrsGrid(VIEW).lines, 0));
-    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 180 }));
-    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(eastingsReadingUp(mgrsGrid(VIEW).lines, 180));
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, true));
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 270 }));
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, false));
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 0 }));
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, true));
   });
 
   it('redraws only when the map comes to rest, not as the camera moves', async () => {
@@ -56,7 +58,7 @@ describe('GridLayer', () => {
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toBe(shape);
     const next = { ...VIEW, zoom: 15 };
     await act(async () => useInteraction.setState({ restingView: next }));
-    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(mgrsGrid(next).lines);
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(next).lines, true));
   });
 
   it('hides the labels with the grid labels setting', async () => {

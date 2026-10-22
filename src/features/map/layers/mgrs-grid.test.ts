@@ -1,6 +1,6 @@
 import { toUtm } from '@/lib/geo/coords/utm';
 
-import { eastingsReadingUp, GRID_MAX_LINES, gridStep, mgrsGrid, type GridView } from './mgrs-grid';
+import { eastingsRunSouth, GRID_MAX_LINES, gridStep, mgrsGrid, orientEastings, type GridView } from './mgrs-grid';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
@@ -142,24 +142,34 @@ describe('mgrsGrid', () => {
   });
 });
 
-describe('eastingsReadingUp', () => {
+describe('orientEastings', () => {
   const { lines } = mgrsGrid(around(DC, 20, 11));
   const eastings = (fc: typeof lines) => fc.features.filter((f) => f.properties.axis === 'e');
-  const northward = (f: (typeof lines)['features'][number]) => f.geometry.coordinates[f.geometry.coordinates.length - 1][1] > f.geometry.coordinates[0][1];
+  const southward = (f: (typeof lines)['features'][number]) => f.geometry.coordinates[f.geometry.coordinates.length - 1][1] < f.geometry.coordinates[0][1];
 
-  it('runs easting lines south to north while north is up the screen, so their numbers read upward', () => {
+  it('runs easting lines north to south, so their numbers read down the screen with their tops toward higher eastings', () => {
     expect(eastings(lines).length).toBeGreaterThan(0);
-    for (const bearing of [0, 45, 300]) expect(eastings(eastingsReadingUp(lines, bearing)).every(northward)).toBe(true);
+    expect(eastings(orientEastings(lines, true)).every(southward)).toBe(true);
   });
 
-  it('runs them north to south while north is down the screen, so the numbers still read upward', () => {
-    for (const bearing of [135, 180, 250]) expect(eastings(eastingsReadingUp(lines, bearing)).some(northward)).toBe(false);
+  it('runs them south to north when turned around', () => {
+    expect(eastings(orientEastings(lines, false)).some(southward)).toBe(false);
   });
 
   it('leaves the northing lines and zone edges as they are', () => {
-    const turned = eastingsReadingUp(lines, 180);
+    const turned = orientEastings(lines, false);
     lines.features.forEach((f, i) => {
       if (f.properties.axis !== 'e') expect(turned.features[i]).toBe(f);
     });
+  });
+});
+
+describe('eastingsRunSouth', () => {
+  it.each([0, 45, 90, 150, 180, 340, 330])('runs them south at map bearing %p', (bearing) => {
+    expect(eastingsRunSouth(bearing)).toBe(true);
+  });
+
+  it.each([181, 270, 329, -90])('turns them around at map bearing %p, where they would read upside down', (bearing) => {
+    expect(eastingsRunSouth(bearing)).toBe(false);
   });
 });

@@ -78,18 +78,21 @@ export function mgrsGrid(view: GridView): MgrsGrid {
   return collections(lines, labels);
 }
 
-/** Whether north points up the screen (rather than down) at a map bearing. */
-export function northUpScreen(bearing: number): boolean {
-  return Math.cos((bearing * Math.PI) / 180) >= 0;
+/**
+ * Whether easting lines run north to south at a map bearing, so their numbers read down the screen with their tops
+ * toward higher eastings (as northing numbers' tops face higher northings). Past sideways they would read upside
+ * down and the lines turn around: at 180°, and at 330° rather than 360°, so a map turned a little left of north-up
+ * does not flip them.
+ */
+export function eastingsRunSouth(bearing: number): boolean {
+  const h = ((bearing % 360) + 360) % 360;
+  return h <= 180 || h >= 330;
 }
 
-/**
- * The lines with each easting line running up the screen: south to north while north is up the screen, north to
- * south while it is down. Their numbers follow the line (they are not flipped upright), so they read upward and
- * increase to the right, as the northing numbers read rightward and increase up the screen.
- */
-export function eastingsReadingUp(lines: MgrsGrid['lines'], bearing: number): MgrsGrid['lines'] {
-  if (northUpScreen(bearing)) return lines;
+/** The lines with each easting line running north to south (`south`) or south to north. */
+export function orientEastings(lines: MgrsGrid['lines'], south: boolean): MgrsGrid['lines'] {
+  // Generated south to north.
+  if (!south) return lines;
   return {
     ...lines,
     features: lines.features.map((f) => (f.properties.axis === 'e' ? { ...f, geometry: { ...f.geometry, coordinates: [...f.geometry.coordinates].reverse() } } : f)),

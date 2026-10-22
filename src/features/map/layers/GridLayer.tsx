@@ -5,7 +5,7 @@ import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { eastingsReadingUp, mgrsGrid, northUpScreen } from './mgrs-grid';
+import { eastingsRunSouth, mgrsGrid, orientEastings } from './mgrs-grid';
 import { makeGridAreaLabelStyle, makeGridLineLabelStyle, makeGridLineStyle } from './styles';
 
 /** The lowest mission item layer: the grid stays under it even when switched on after the items are drawn. */
@@ -22,11 +22,11 @@ export function GridLayer() {
   const show = useSettings((s) => s.showMgrsGrid);
   const showLabels = useSettings((s) => s.showGridLabels);
   const view = useInteraction((s) => s.restingView);
-  // Easting numbers read up the screen; the lines turn around only when the map turns north past sideways.
-  const northUp = useInteraction((s) => northUpScreen(s.cameraBearing));
+  // Easting numbers read down the screen; the lines turn around only when the map turns far enough to tip them over.
+  const south = useInteraction((s) => eastingsRunSouth(s.cameraBearing));
   const { colors } = useTheme();
   const grid = useMemo(() => (show && view ? mgrsGrid(view) : null), [show, view]);
-  const lines = useMemo(() => grid && eastingsReadingUp(grid.lines, northUp ? 0 : 180), [grid, northUp]);
+  const lines = useMemo(() => grid && orientEastings(grid.lines, south), [grid, south]);
   const styles = useMemo(() => {
     const visibility = showLabels ? 'visible' : 'none';
     return {
