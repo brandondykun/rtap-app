@@ -48,6 +48,7 @@ import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
 import { DraftPolygonLayer } from './layers/DraftPolygonLayer';
+import { GridLayer } from './layers/GridLayer';
 import { LinesLayer } from './layers/LinesLayer';
 import { MeasureLayer } from './layers/MeasureLayer';
 import { QuickPlotLayer } from './layers/QuickPlotLayer';
@@ -496,6 +497,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onLongPress={onLongPress}
         onPress={onMapPress}
         onUserGesture={onUserGesture}>
+        <GridLayer />
         <PolygonsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />

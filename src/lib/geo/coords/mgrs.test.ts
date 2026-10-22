@@ -1,6 +1,6 @@
 import { inverse } from '../measure/geodesic';
 
-import { parseMgrs, splitMgrs, toMgrs } from './mgrs';
+import { parseMgrs, splitMgrs, squareLetters, toMgrs } from './mgrs';
 
 describe('toMgrs', () => {
   it.each([
@@ -143,5 +143,16 @@ describe('zero-padded zones', () => {
 describe('reported near-boundary references', () => {
   it.each(['18CWS65', '18JUK0823757763', '18SUK267297'])('accepts %p', (ref) => {
     expect(parseMgrs(ref).ok).toBe(true);
+  });
+});
+
+describe('squareLetters', () => {
+  it('names the 100 km square', () => {
+    expect(squareLetters({ lat: 38.8977, lon: -77.0365 })).toBe('UJ');
+    expect(squareLetters({ lat: -33.86, lon: 151.21 })).toBe('LH');
+  });
+
+  it('is null outside MGRS coverage', () => {
+    expect(squareLetters({ lat: 85, lon: 0 })).toBeNull();
   });
 });

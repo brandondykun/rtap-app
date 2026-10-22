@@ -94,6 +94,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const showToolbarText = useSettings((s) => s.showToolbarText);
   const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
+  const showMgrsGrid = useSettings((s) => s.showMgrsGrid);
+  const setShowMgrsGrid = useSettings((s) => s.setShowMgrsGrid);
+  const showGridLabels = useSettings((s) => s.showGridLabels);
+  const setShowGridLabels = useSettings((s) => s.setShowGridLabels);
   const terrainHeight = useSettings((s) => s.terrainExaggeration);
   const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
   const panelBackground = useSettings((s) => s.panelBackground);
@@ -227,6 +231,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
         <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
         <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
+      </MenuSection>
+      <MenuSection label="MGRS grid">
+        <MenuToggle label="Show MGRS grid" value={showMgrsGrid} onValueChange={setShowMgrsGrid} />
+        <MenuToggle label="Show grid labels" value={showGridLabels} disabled={!showMgrsGrid} onValueChange={setShowGridLabels} />
       </MenuSection>
       <MenuSection label="3D terrain height">
         <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />

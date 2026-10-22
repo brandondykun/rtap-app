@@ -240,3 +240,29 @@ export function makePolygonFillStyle(colors: Record<SemanticToken, string>): Fil
 export function makePolygonLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
   return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
 }
+
+/** MGRS grid lines: thin and see-through white, firmer for 100 km lines and firmest for grid zone edges. */
+export function makeGridLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return {
+    lineColor: colors['map-label-text'],
+    lineWidth: ['match', ['get', 'kind'], 'zone', 1.6, 'major', 1.2, 0.8] as LineLayerStyle['lineWidth'],
+    lineOpacity: ['match', ['get', 'kind'], 'zone', 0.85, 'major', 0.7, 0.5] as LineLayerStyle['lineOpacity'],
+  };
+}
+
+/** MGRS grid numbers along the lines: small outlined text, no chip, giving way to anything else. */
+export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return { ...makeGridAreaLabelStyle(colors), symbolPlacement: 'line', symbolSpacing: 250, textSize: 11 };
+}
+
+/** Grid zone and 100 km square names, inside their areas. */
+export function makeGridAreaLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+  return {
+    textField: ['get', 'label'],
+    textFont: MAP_LABEL_FONT,
+    textSize: 13,
+    textColor: colors['map-label-text'],
+    textHaloColor: colors['point-symbol-halo'],
+    textHaloWidth: 1.2,
+  };
+}

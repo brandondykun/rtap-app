@@ -138,6 +138,17 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Show center grid').props.value).toBe(false);
   });
 
+  it('shows or hides the MGRS grid (hidden by default) and its labels, which only switch while the grid shows', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Show MGRS grid').props.value).toBe(false);
+    expect(screen.getByLabelText('Show grid labels')).toBeDisabled();
+    await fireEvent(screen.getByLabelText('Show MGRS grid'), 'valueChange', true);
+    expect(useSettings.getState().showMgrsGrid).toBe(true);
+    expect(screen.getByLabelText('Show grid labels')).not.toBeDisabled();
+    await fireEvent(screen.getByLabelText('Show grid labels'), 'valueChange', false);
+    expect(useSettings.getState().showGridLabels).toBe(false);
+  });
+
   it('shows or hides the toolbar text (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show toolbar text').props.value).toBe(true);

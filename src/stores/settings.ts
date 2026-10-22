@@ -33,6 +33,10 @@ type SettingsValues = {
   showCenterGrid: boolean;
   /** Labels under the toolbar icons; off leaves icons only. */
   showToolbarText: boolean;
+  /** MGRS grid lines over the map. */
+  showMgrsGrid: boolean;
+  /** Numbers on the MGRS grid lines, and grid zone and 100 km square names. */
+  showGridLabels: boolean;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
   /** Tilted map with raised terrain and a sky (the 3D toolbar toggle). */
@@ -54,6 +58,8 @@ type SettingsActions = {
   setShowZoomButtons: (show: boolean) => void;
   setShowCenterGrid: (show: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
+  setShowMgrsGrid: (show: boolean) => void;
+  setShowGridLabels: (show: boolean) => void;
   toggleMapLabels: () => void;
   toggleTerrain3d: () => void;
   /** Returns false (and changes nothing) unless finite and within 1–3. */
@@ -80,6 +86,8 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showZoomButtons: true,
   showCenterGrid: true,
   showToolbarText: true,
+  showMgrsGrid: false,
+  showGridLabels: true,
   showMapLabels: true,
   terrain3d: false,
   terrainExaggeration: 1.5,
@@ -121,6 +129,8 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
     showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
+    showMgrsGrid: typeof p.showMgrsGrid === 'boolean' ? p.showMgrsGrid : current.showMgrsGrid,
+    showGridLabels: typeof p.showGridLabels === 'boolean' ? p.showGridLabels : current.showGridLabels,
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
@@ -143,6 +153,8 @@ export const useSettings = create<SettingsState>()(
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
       setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
+      setShowMgrsGrid: (showMgrsGrid) => set({ showMgrsGrid }),
+      setShowGridLabels: (showGridLabels) => set({ showGridLabels }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       toggleTerrain3d: () => set({ terrain3d: !get().terrain3d }),
       setTerrainExaggeration: (x) => {
@@ -165,7 +177,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -176,6 +188,8 @@ export const useSettings = create<SettingsState>()(
         showZoomButtons,
         showCenterGrid,
         showToolbarText,
+        showMgrsGrid,
+        showGridLabels,
         showMapLabels,
         terrain3d,
         terrainExaggeration,

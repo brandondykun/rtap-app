@@ -1,4 +1,6 @@
-import { bandLatRange, centralMeridian, utmZone, zoneLonRange } from './utm';
+import * as mgrs from 'mgrs';
+
+import { bandLatRange, centralMeridian, fromUtm, toUtm, utmZone, zoneLonRange } from './utm';
 
 describe('utmZone', () => {
   it.each([
@@ -70,5 +72,41 @@ describe('zoneLonRange', () => {
     [61, 'S'],
   ])('zone %p band %p does not exist', (zone, band) => {
     expect(zoneLonRange(zone, band)).toBeNull();
+  });
+});
+
+describe('toUtm / fromUtm', () => {
+  it.each([
+    [38.8977, -77.0365],
+    [-33.86, 151.21],
+    [64.1, -21.9],
+    [0.5, 2.9],
+  ])('agrees with the MGRS library at (%p, %p)', (lat, lon) => {
+    const zone = utmZone({ lat, lon });
+    const { easting, northing } = toUtm({ lat, lon }, zone);
+    // The library's 1 m reference truncates; its last five digits are the easting and northing within the square.
+    const ref = mgrs.forward([lon, lat], 5);
+    expect(Math.floor(easting) % 100_000).toBe(Number(ref.slice(-10, -5)));
+    expect(Math.floor(northing) % 100_000).toBe(Number(ref.slice(-5)));
+  });
+
+  it('puts the southern hemisphere 10,000 km north, so northings stay positive', () => {
+    expect(toUtm({ lat: -0.001, lon: 3 }, 31).northing).toBeCloseTo(10_000_000 - 110.6, 0);
+    expect(toUtm({ lat: 0.001, lon: 3 }, 31).northing).toBeCloseTo(110.6, 0);
+  });
+
+  it('measures from a given zone, even a neighbour (so a zone grid can be drawn up to its edge)', () => {
+    expect(toUtm({ lat: 0, lon: 3 }, 31).easting).toBeCloseTo(500_000, 3);
+    expect(toUtm({ lat: 0, lon: 3 }, 30).easting).toBeGreaterThan(1_000_000);
+  });
+
+  it.each([
+    [38.8977, -77.0365, 18],
+    [-45.5, 170.2, 59],
+    [60.5, 4.5, 32],
+  ])('round-trips (%p, %p) in zone %p to within a few centimetres', (lat, lon, zone) => {
+    const back = fromUtm(toUtm({ lat, lon }, zone), zone, lat < 0);
+    expect(back.lat).toBeCloseTo(lat, 6);
+    expect(back.lon).toBeCloseTo(lon, 6);
   });
 });

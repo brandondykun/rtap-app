@@ -16,7 +16,7 @@ import { useSettings, type Basemap } from '@/stores/settings';
 import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
 import { terrainExaggeration, THREE_D_PITCH } from '../terrain/three-d';
-import { cameraFromMapState, toCameraStop } from './camera';
+import { cameraFromMapState, restingViewFromMapState, toCameraStop } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
 
@@ -101,6 +101,8 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
   const onMapIdle = (state: MapState) => {
     const camera = cameraFromMapState(state);
     if (camera) onCameraIdle(camera);
+    const view = restingViewFromMapState(state);
+    if (view) useInteraction.getState().setRestingView(view);
   };
 
   return (

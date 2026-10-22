@@ -27,6 +27,14 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   { name: 'Show zoom buttons', help: 'The + and − buttons. Pinch to zoom works either way.' },
   { name: 'Show center grid', help: 'The CTR readout of the grid under the crosshair.' },
   { name: 'Show toolbar text', help: 'The names under the toolbar icons.' },
+  {
+    name: 'Show MGRS grid',
+    help: 'Grid lines over the map. They get finer as you zoom in: grid zones, then 100 km, 10 km, 1 km and 100 m squares.',
+  },
+  {
+    name: 'Show grid labels',
+    help: 'Numbers on the grid lines (kilometres, or hundreds of metres, within the 100 km square), and the grid zone and 100 km square names when zoomed out.',
+  },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
   {
     name: 'Panel background',

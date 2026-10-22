@@ -26,6 +26,12 @@ export function toMgrs(p: LatLon, precision: MgrsPrecision = 5): Result<string, 
   }
 }
 
+/** The two letters of the 100 km square containing `p` ('UJ'), or null outside MGRS coverage. */
+export function squareLetters(p: LatLon): string | null {
+  const ref = toMgrs(p, 1);
+  return ref.ok ? ref.value.slice(-4, -2) : null;
+}
+
 export function splitMgrs(input: string): Result<MgrsParts, 'invalid'> {
   const compact = input.replace(/\s+/g, '').toUpperCase();
   const m = COMPACT_RE.exec(compact);

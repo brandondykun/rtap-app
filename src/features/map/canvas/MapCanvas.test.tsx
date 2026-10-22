@@ -151,6 +151,16 @@ describe('MapCanvas', () => {
     expect(props.onUserGesture).toHaveBeenCalled();
   });
 
+  it('keeps the resting view (bounds and zoom) for the MGRS grid, and only when the map goes idle', async () => {
+    await renderCanvas();
+    const { onMapIdle, onCameraChanged } = mapboxMock().__props.MapView.main as Record<string, (s: unknown) => void>;
+    const state = { properties: { center: [-77, 38.9], zoom: 11, heading: 0, bounds: { ne: [-76.9, 39], sw: [-77.1, 38.8] } }, gestures: { isGestureActive: false } };
+    await act(async () => onCameraChanged(state));
+    expect(useInteraction.getState().restingView).toBeNull();
+    await act(async () => onMapIdle(state));
+    expect(useInteraction.getState().restingView).toEqual({ sw: { lat: 38.8, lon: -77.1 }, ne: { lat: 39, lon: -76.9 }, zoom: 11 });
+  });
+
   it('reports the camera when the map goes idle', async () => {
     const props = await renderCanvas();
     const onMapIdle = mapboxMock().__props.MapView.main.onMapIdle as (s: unknown) => void;

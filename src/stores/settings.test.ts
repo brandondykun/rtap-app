@@ -79,6 +79,14 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showToolbarText: false });
   });
 
+  it('sets and persists the MGRS grid (off by default) and its labels (on by default)', () => {
+    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: false, showGridLabels: true });
+    useSettings.getState().setShowMgrsGrid(true);
+    useSettings.getState().setShowGridLabels(false);
+    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
+  });
+
   it('toggles and persists the map labels (shown by default)', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
     useSettings.getState().toggleMapLabels();
@@ -173,6 +181,15 @@ describe('settings store', () => {
       seed({ panelBackground: 'opaque' });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState().panelBackground).toBe('solid');
+    });
+
+    it('loads the MGRS grid toggles and ignores invalid ones', async () => {
+      seed({ showMgrsGrid: true, showGridLabels: false });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
+      seed({ showMgrsGrid: 'yes', showGridLabels: 0 });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
     });
 
     it('ignores an invalid persisted terrain height', async () => {
