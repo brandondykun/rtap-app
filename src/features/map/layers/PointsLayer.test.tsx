@@ -4,11 +4,12 @@ import { placePoint, toggleItemVisibility } from '@/features/map-items/commands'
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { makeTestContext } from '@/lib/db/test-database';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
+import { useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { opSize } from './op-symbol-scale';
+import { opSize, opTextSize } from './op-symbol-scale';
 import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
 import { POINT_SYMBOL_STYLE } from './styles';
 
@@ -127,9 +128,10 @@ describe('PointsLayer', () => {
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
     await renderWithProviders(<PointsLayer missionId="m1" />, ctx);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    useInteraction.setState({ cameraZoom: 18 });
     const before = ['points-labels'].map((id) => size(id));
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
-    ['points-labels'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    ['points-labels'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
     await act(async () => useOp.getState().exit());
     ['points-labels'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });

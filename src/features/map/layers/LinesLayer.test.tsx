@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { LinesLayer } from './LinesLayer';
-import { opSize } from './op-symbol-scale';
+import { opTextSize } from './op-symbol-scale';
 
 jest.mock('@rnmapbox/maps');
 
@@ -80,9 +80,10 @@ describe('LinesLayer', () => {
     await placeLine(ctx, { missionId: 'm1', points: P, lineType: 'restrictive-fire-line', name: 'ALPHA' });
     await renderWithProviders(<LinesLayer missionId="m1" excludeId={null} />, ctx);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    useInteraction.setState({ cameraZoom: 18 });
     const before = ['lines-label'].map((id) => size(id));
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
-    ['lines-label'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    ['lines-label'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
     await act(async () => useOp.getState().exit());
     ['lines-label'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });

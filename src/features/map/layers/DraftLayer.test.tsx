@@ -2,13 +2,14 @@ import { act } from '@testing-library/react-native';
 
 import { composeSidc } from '@/features/symbology/presets';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DraftLayer } from './DraftLayer';
-import { opSize } from './op-symbol-scale';
+import { opSize, opTextSize } from './op-symbol-scale';
 import { DRAFT_SYMBOL_STYLE } from './styles';
 
 jest.mock('@rnmapbox/maps');
@@ -113,9 +114,10 @@ describe('DraftLayer', () => {
     useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
     await renderWithProviders(<DraftLayer />);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    useInteraction.setState({ cameraZoom: 18 });
     const before = ['draft-label', 'draft-range-label'].map((id) => size(id));
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
-    ['draft-label', 'draft-range-label'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    ['draft-label', 'draft-range-label'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
     await act(async () => useOp.getState().exit());
     ['draft-label', 'draft-range-label'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });

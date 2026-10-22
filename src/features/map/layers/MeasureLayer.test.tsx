@@ -8,7 +8,7 @@ import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MeasureLayer } from './MeasureLayer';
-import { opSize } from './op-symbol-scale';
+import { opSize, opTextSize } from './op-symbol-scale';
 
 jest.mock('@rnmapbox/maps');
 
@@ -55,9 +55,10 @@ describe('MeasureLayer', () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureLayer />);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
+    useInteraction.setState({ cameraZoom: 18 });
     const before = ['measure-chip'].map((id) => size(id));
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
-    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(opSize(before[i] as number)));
+    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
     await act(async () => useOp.getState().exit());
     ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
