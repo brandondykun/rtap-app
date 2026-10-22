@@ -98,6 +98,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowMgrsGrid = useSettings((s) => s.setShowMgrsGrid);
   const showGridLabels = useSettings((s) => s.showGridLabels);
   const setShowGridLabels = useSettings((s) => s.setShowGridLabels);
+  const showGrid100m = useSettings((s) => s.showGrid100m);
+  const setShowGrid100m = useSettings((s) => s.setShowGrid100m);
   const terrainHeight = useSettings((s) => s.terrainExaggeration);
   const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
   const panelBackground = useSettings((s) => s.panelBackground);
@@ -235,6 +237,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       <MenuSection label="MGRS grid">
         <MenuToggle label="Show MGRS grid" value={showMgrsGrid} onValueChange={setShowMgrsGrid} />
         <MenuToggle label="Show grid labels" value={showGridLabels} disabled={!showMgrsGrid} onValueChange={setShowGridLabels} />
+        <MenuToggle label="Show 100 m grid lines" value={showGrid100m} disabled={!showMgrsGrid} onValueChange={setShowGrid100m} />
       </MenuSection>
       <MenuSection label="3D terrain height">
         <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />

@@ -27,6 +27,12 @@ describe('gridStep', () => {
   ])('zoom %p → %p m', (zoom, step) => {
     expect(gridStep(zoom)).toBe(step);
   });
+
+  it('stops at 1 km lines when 100 m lines are off', () => {
+    expect(gridStep(14, 1_000)).toBe(1_000);
+    expect(gridStep(20, 1_000)).toBe(1_000);
+    expect(gridStep(9, 1_000)).toBe(10_000);
+  });
 });
 
 describe('mgrsGrid', () => {
@@ -81,6 +87,17 @@ describe('mgrsGrid', () => {
         const v = toUtm({ lat, lon }, 18)[line.properties.axis === 'e' ? 'easting' : 'northing'];
         expect(line.properties.label).toBe(String(Math.round((v % 100_000) / 1000) % 100).padStart(2, '0'));
       }
+    }
+  });
+
+  it('draws 1 km lines, labelled in kilometres, instead of 100 m lines when 100 m lines are off', () => {
+    const lines = mgrsGrid(around(DC, 2, 15), 1_000).lines.features.filter((f) => f.properties.kind === 'minor');
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      const [lon, lat] = line.geometry.coordinates[0];
+      const v = toUtm({ lat, lon }, 18)[line.properties.axis === 'e' ? 'easting' : 'northing'];
+      expect(Math.abs(v - Math.round(v / 1000) * 1000)).toBeLessThan(0.5);
+      expect(line.properties.label).toMatch(/^\d{2}$/);
     }
   });
 

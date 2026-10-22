@@ -21,11 +21,12 @@ const NORTHINGS = ['==', ['get', 'axis'], 'n'] as unknown as Filter;
 export function GridLayer() {
   const show = useSettings((s) => s.showMgrsGrid);
   const showLabels = useSettings((s) => s.showGridLabels);
+  const finest = useSettings((s) => (s.showGrid100m ? 100 : 1_000));
   const view = useInteraction((s) => s.restingView);
   // Easting numbers read down the screen; the lines turn around only when the map turns far enough to tip them over.
   const south = useInteraction((s) => eastingsRunSouth(s.cameraBearing));
   const { colors } = useTheme();
-  const grid = useMemo(() => (show && view ? mgrsGrid(view) : null), [show, view]);
+  const grid = useMemo(() => (show && view ? mgrsGrid(view, finest) : null), [show, view, finest]);
   const lines = useMemo(() => grid && orientEastings(grid.lines, south), [grid, south]);
   const styles = useMemo(() => {
     const visibility = showLabels ? 'visible' : 'none';

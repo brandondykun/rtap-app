@@ -40,13 +40,16 @@ const MAX_VERTEX_SPACING_M = 200_000;
 /** Points sampled along each edge of an area to find its easting and northing range. */
 const EDGE_SAMPLES = 8;
 
-/** Line spacing for a zoom (a few dozen lines across a phone screen), or null to draw only the grid zones. */
-export function gridStep(zoom: number): GridStep | null {
+/**
+ * Line spacing for a zoom (a few dozen lines across a phone screen), never finer than `finest`, or null to draw only
+ * the grid zones.
+ */
+export function gridStep(zoom: number, finest: GridStep = 100): GridStep | null {
   if (zoom < 5) return null;
   if (zoom < 8) return 100_000;
   if (zoom < 11) return 10_000;
   if (zoom < 14) return 1_000;
-  return 100;
+  return Math.max(100, finest) as GridStep;
 }
 
 type Box = { w: number; s: number; e: number; n: number };
@@ -58,11 +61,11 @@ type Cell = { zone: number; band: string; south: boolean; box: Box };
  * Grid zone edges, easting and northing lines and their labels for a view and half a screen around it, so a short
  * pan never shows an edge before the next idle redraws it.
  */
-export function mgrsGrid(view: GridView): MgrsGrid {
+export function mgrsGrid(view: GridView, finest: GridStep = 100): MgrsGrid {
   const cells = paddedBoxes(view).flatMap(cellsIn);
   const lines: LineFeature[] = cells.flatMap(zoneEdges);
   const labels: LabelFeature[] = [];
-  let step = gridStep(view.zoom);
+  let step = gridStep(view.zoom, finest);
   // Zoomed far out there may be a thousand cells, and only their edges are drawn.
   const ranges = step === null ? [] : cells.map(utmRange);
   while (step !== null && ranges.reduce((sum, r) => sum + lineCount(r, step!), 0) > GRID_MAX_LINES) step = coarser(step);

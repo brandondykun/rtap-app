@@ -80,11 +80,12 @@ describe('settings store', () => {
   });
 
   it('sets and persists the MGRS grid (off by default) and its labels (on by default)', () => {
-    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: false, showGridLabels: true });
+    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: false, showGridLabels: true, showGrid100m: true });
     useSettings.getState().setShowMgrsGrid(true);
     useSettings.getState().setShowGridLabels(false);
-    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
-    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
+    useSettings.getState().setShowGrid100m(false);
+    expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
   });
 
   it('toggles and persists the map labels (shown by default)', () => {
@@ -184,12 +185,12 @@ describe('settings store', () => {
     });
 
     it('loads the MGRS grid toggles and ignores invalid ones', async () => {
-      seed({ showMgrsGrid: true, showGridLabels: false });
+      seed({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
       await useSettings.persist.rehydrate();
-      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
-      seed({ showMgrsGrid: 'yes', showGridLabels: 0 });
+      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
+      seed({ showMgrsGrid: 'yes', showGridLabels: 0, showGrid100m: null });
       await useSettings.persist.rehydrate();
-      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false });
+      expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
     });
 
     it('ignores an invalid persisted terrain height', async () => {

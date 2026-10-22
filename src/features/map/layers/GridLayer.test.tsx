@@ -61,6 +61,15 @@ describe('GridLayer', () => {
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(next).lines, true));
   });
 
+  it('stops at 1 km lines with the 100 m lines setting off', async () => {
+    const close = { ...VIEW, zoom: 15 };
+    useInteraction.setState({ restingView: close });
+    await renderWithProviders(<GridLayer />);
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(close).lines, true));
+    await act(async () => useSettings.getState().setShowGrid100m(false));
+    expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(close, 1_000).lines, true));
+  });
+
   it('hides the labels with the grid labels setting', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;

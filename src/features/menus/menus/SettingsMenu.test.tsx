@@ -149,6 +149,15 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().showGridLabels).toBe(false);
   });
 
+  it('shows or hides the 100 m grid lines (shown by default), only while the grid shows', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Show 100 m grid lines').props.value).toBe(true);
+    expect(screen.getByLabelText('Show 100 m grid lines')).toBeDisabled();
+    await fireEvent(screen.getByLabelText('Show MGRS grid'), 'valueChange', true);
+    await fireEvent(screen.getByLabelText('Show 100 m grid lines'), 'valueChange', false);
+    expect(useSettings.getState().showGrid100m).toBe(false);
+  });
+
   it('shows or hides the toolbar text (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show toolbar text').props.value).toBe(true);

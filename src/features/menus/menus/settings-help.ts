@@ -35,6 +35,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
     name: 'Show grid labels',
     help: 'Numbers on the grid lines (kilometres, or hundreds of metres, within the 100 km square), and the grid zone and 100 km square names when zoomed out.',
   },
+  { name: 'Show 100 m grid lines', help: 'The finest grid lines, when zoomed in close. Turn it off to stop at 1 km lines.' },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
   {
     name: 'Panel background',
