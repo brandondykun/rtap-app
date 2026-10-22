@@ -9,7 +9,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   {
     name: 'Basemap',
     choices: 'Satellite · Hybrid · Topo · Dark',
-    help: 'The map underneath. Hybrid adds roads and place names to the imagery, Topo is a contour map, Dark is a dim street map. Offline downloads use Satellite.',
+    help: 'The map underneath. Hybrid adds roads and place names to the imagery, Topo is a contour map, Dark is a dim street map.',
   },
   { name: 'Coordinates', choices: 'MGRS · Lat/Lon', help: 'How positions show in the readouts and menus.' },
   { name: 'Angles', choices: 'Degrees · Mils', help: 'The unit for bearings and the G-M angle. A full circle is 360° or 6400 mils.' },
