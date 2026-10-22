@@ -402,6 +402,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
     if (useOp.getState().phase === 'picking') {
+      // Staking on a unit or point is felt like selecting it; a line or polygon stakes at the tapped spot.
+      if (item.kind === 'point') notifySelected();
       stakeAt(itemAt ?? at);
       return;
     }
@@ -416,6 +418,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       notifySelected();
       openItemMenu(itemId, item);
     }
+  };
+  /** Staking on your own location is felt like selecting a unit or point. */
+  const stakeOnSelf = (at: LatLon) => {
+    notifySelected();
+    stakeAt(at);
   };
   const onLongPress = (coord: LatLon) => {
     if (useMeasure.getState().active) return;
@@ -497,7 +504,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         {drawingPolygon ? <DraftPolygonLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         {measuring ? <MeasureLayer /> : null}
         {plotTemp ? <QuickPlotLayer /> : null}
-        <SelfLayer onPress={opPicking ? stakeAt : measuring ? (at) => useMeasure.getState().place(at) : undefined} />
+        <SelfLayer onPress={opPicking ? stakeOnSelf : measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
       </OpGestures>
       <Crosshair panel={opPhase === 'on' ? null : panel} />

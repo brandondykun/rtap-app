@@ -974,14 +974,15 @@ describe('MapScreen', () => {
       await waitFor(() => expect(mapboxMock().__map._runNative).toHaveBeenCalledWith('setFreeCamera', expect.anything()));
     });
 
-    it('a map tap stakes the OP there', async () => {
+    it('a map tap stakes the OP there, without a haptic', async () => {
       await openMap();
       await fireEvent.press(screen.getByLabelText('OP'));
       await mapPress(-77.1, 38.95);
       expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.95, lon: -77.1 } });
+      expect(Haptics.impactAsync).not.toHaveBeenCalled();
     });
 
-    it('a unit tap stakes at the unit, a line tap at the tapped spot', async () => {
+    it('a unit tap stakes at the unit with a light haptic, a line tap at the tapped spot without one', async () => {
       const { ctx, id } = await openMap();
       const p = await placePoint(ctx, { missionId: id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
       const l = await placeLine(ctx, { missionId: id, points: [{ lat: 38.9, lon: -77 }, { lat: 38.95, lon: -76.95 }], lineType: 'phase-line', name: 'RED' });
@@ -992,20 +993,24 @@ describe('MapScreen', () => {
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }),
       );
       expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 } });
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
       useOp.setState(INITIAL_OP);
+      jest.mocked(Haptics.impactAsync).mockClear();
       await fireEvent.press(screen.getByLabelText('OP'));
       await act(async () =>
         (mapboxMock().__props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: l.value.id } }], coordinates: { latitude: 38.92, longitude: -76.98 }, point: {} }),
       );
       expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.92, lon: -76.98 } });
+      expect(Haptics.impactAsync).not.toHaveBeenCalled();
     });
 
-    it('tapping my location stakes at me', async () => {
+    it('tapping my location stakes at me, with a light haptic', async () => {
       await openMap();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));
       await fireEvent.press(screen.getByLabelText('OP'));
       await act(async () => (mapboxMock().__props.ShapeSource.self.onPress as (e: unknown) => void)({ features: [{ properties: {} }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }));
       expect(useOp.getState()).toMatchObject({ phase: 'on', at: { lat: 38.9, lon: -77 } });
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
     });
 
     it('starting UNIT while picking cancels OP picking', async () => {
