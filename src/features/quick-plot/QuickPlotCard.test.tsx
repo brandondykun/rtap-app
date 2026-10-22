@@ -56,6 +56,8 @@ describe('QuickPlotCard', () => {
   it('centers in portrait and sits flush bottom left in landscape, where the center card goes', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-center');
+    // Centered on the screen: as far in from the left as the zoom column keeps it from the right.
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: EDGE + CONTROL_SIZE + GAP, right: EDGE + CONTROL_SIZE + GAP });
     await screen.unmount();
     await renderWithProviders(<QuickPlotCard landscape />);
     expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-start');
