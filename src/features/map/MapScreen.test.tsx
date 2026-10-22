@@ -718,6 +718,8 @@ describe('MapScreen', () => {
       await plotGrid({ lat: 38.91, lon: -77 });
       expect(screen.queryByTestId('quick-plot-entry')).toBeNull();
       expect(screen.getByTestId('quick-plot-card')).toBeTruthy();
+      // Portrait: the dock keeps the center grid under the card.
+      expect(screen.getByTestId('dock-center')).toBeTruthy();
       const temp = useQuickPlot.getState().temp!;
       const moved = mapboxMock().__camera.setCamera.mock.calls.map((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate);
       expect(moved).toContainEqual([temp.lon, temp.lat]);

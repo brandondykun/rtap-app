@@ -549,7 +549,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           ) : undefined
         }
         landscape={landscape}
-        showCenter={showCenterGrid && !plotTemp && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
+        // In landscape the temp card takes the center card's spot; in portrait the dock keeps its CTR row, under the card.
+        showCenter={showCenterGrid && !(landscape && plotTemp) && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
         barOverDock={!lineDrawing && (!!placing || opPicking)}
         bar={
           lineDrawing ? (
@@ -564,7 +565,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         }
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
-      {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} /> : null}
+      {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} panel={panel} /> : null}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />

@@ -53,6 +53,28 @@ describe('QuickPlotCard', () => {
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE + 250 + GAP });
   });
 
+  it('centers in portrait and sits flush bottom left in landscape, where the center card goes', async () => {
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-center');
+    await screen.unmount();
+    await renderWithProviders(<QuickPlotCard landscape />);
+    expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-start');
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: EDGE, bottom: EDGE });
+  });
+
+  it('in landscape keeps right of an open drawer, like the center card', async () => {
+    await renderWithProviders(<QuickPlotCard landscape panel={{ side: 'left', size: 320 }} />);
+    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: 320 + EDGE });
+  });
+
+  it.each([[false], [true]])('fits its content instead of a fixed width, with buttons only as wide as their labels (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+    expect(screen.getByTestId('quick-plot-card').props.style).not.toHaveProperty('width');
+    const slots = screen.getByTestId('quick-plot-card-buttons').children as { props: { className?: string } }[];
+    expect(slots).toHaveLength(3);
+    for (const slot of slots) expect(slot.props.className ?? '').not.toContain('flex-1');
+  });
+
   it('shows Discard as a trash icon only', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     expect(screen.getByLabelText('Discard')).toBeTruthy();

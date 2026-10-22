@@ -2,6 +2,7 @@ import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MenuButton } from '@/components/menu/MenuButton';
+import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { glassHalo } from '@/components/ui/glass';
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
@@ -11,22 +12,22 @@ import { useMenu } from '@/stores/menu';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useTheme } from '@/theme/ThemeProvider';
 
-/** Wide enough for the grid at full size; the compact buttons share the row under it. */
-const LANDSCAPE_WIDTH = 400;
-
-/** Bottom card for the temporary point: TEMP + grid on its own line, then compact Save unit, Save point and Discard (like the other map bars). */
-export function QuickPlotCard({ landscape }: { landscape: boolean }) {
+/**
+ * Bottom card for the temporary point: TEMP + grid on its own line, then compact Save unit, Save point and Discard (like the
+ * other map bars), as wide as its content. `panel` is the open menu panel, which the card keeps clear of in landscape.
+ */
+export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean; panel?: PanelFrame | null }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
   const temp = useQuickPlot((s) => s.temp);
   const clearance = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
   if (!temp) return null;
-  // Beside your card (bottom right) in landscape, above it in portrait; clear of the zoom column either way.
-  const left = insets.left + EDGE;
+  // Landscape: flush bottom left in the center card's spot (right of a drawer, like MapBottomLeft), beside your card.
+  // Portrait: centered above your card. Clear of the zoom column either way.
+  const left = (landscape ? Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) : insets.left) + EDGE;
   const right = insets.right + EDGE + clearance.right;
   const available = width - left - right;
-  const cardWidth = landscape ? Math.min(LANDSCAPE_WIDTH, available) : available;
 
   const save = (id: 'unit.add' | 'point.add') => {
     useQuickPlot.getState().close();
@@ -63,14 +64,15 @@ export function QuickPlotCard({ landscape }: { landscape: boolean }) {
   );
 
   return (
-    <View testID="quick-plot-card-slot" pointerEvents="box-none" className="absolute items-center" style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
+    <View testID="quick-plot-card-slot" pointerEvents="box-none" className={`absolute ${landscape ? 'items-start' : 'items-center'}`} style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
       {/* 16 pt corners less the 1 pt border and 7 pt padding are the buttons' 8 pt (rounded-lg): concentric, as in the other map bars. */}
-      <View testID="quick-plot-card" style={{ width: cardWidth }} className="gap-2 rounded-2xl border border-accent bg-surface-glass p-[7px]">
+      <View testID="quick-plot-card" style={{ maxWidth: available }} className="gap-2 rounded-2xl border border-accent bg-surface-glass p-[7px]">
         {grid}
         <View testID="quick-plot-card-buttons" className="flex-row gap-1.5">
-          <View className="flex-1">{saveUnit}</View>
-          <View className="flex-1">{savePoint}</View>
-          {discard}
+          {/* Each button only as wide as its label, to cover less of the map. */}
+          <View>{saveUnit}</View>
+          <View>{savePoint}</View>
+          <View>{discard}</View>
         </View>
       </View>
     </View>
