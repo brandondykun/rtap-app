@@ -17,6 +17,11 @@ describe('Crosshair', () => {
     for (const arm of screen.getAllByTestId('crosshair-arm')) expect(arm).toHaveStyle({ backgroundColor: themeColors('dark').text });
   });
 
+  it('is outlined, so it reads over snow and other light ground', async () => {
+    await renderWithProviders(<Crosshair panel={null} />);
+    expect(screen.getAllByTestId('crosshair-outline')).toHaveLength(4);
+  });
+
   it('centers on the whole map without a panel', async () => {
     await renderWithProviders(<Crosshair panel={null} />);
     expect(frameStyle()).toMatchObject({ bottom: 0, left: 0 });
