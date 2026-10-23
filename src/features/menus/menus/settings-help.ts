@@ -37,6 +37,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   },
   { name: 'Show 100 m grid lines', help: 'The finest grid lines, when zoomed in close. Turn it off to stop at 1 km lines.' },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
+  { name: 'Terrain in 2D', help: 'Hills at true scale in 2D. Turn it off to lay the map flat in 2D; 3D always uses the terrain height.' },
   {
     name: 'Panel background',
     choices: 'Clear · Light · Heavy · Solid',

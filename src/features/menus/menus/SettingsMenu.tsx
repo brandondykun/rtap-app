@@ -102,6 +102,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowGrid100m = useSettings((s) => s.setShowGrid100m);
   const terrainHeight = useSettings((s) => s.terrainExaggeration);
   const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
+  const terrainIn2d = useSettings((s) => s.terrainIn2d);
+  const setTerrainIn2d = useSettings((s) => s.setTerrainIn2d);
   const panelBackground = useSettings((s) => s.panelBackground);
   const setPanelBackground = useSettings((s) => s.setPanelBackground);
   const [text, setText] = useState(override === null ? '' : String(override));
@@ -241,6 +243,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       <MenuSection label="3D terrain height">
         <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />
         <Text className="text-xs text-text-muted">How much hills are raised in 3D. 1× is true scale.</Text>
+        <MenuToggle label="Terrain in 2D" value={terrainIn2d} onValueChange={setTerrainIn2d} />
+        <Text className="text-xs text-text-muted">Off lays the map flat in 2D. 3D always uses the height above.</Text>
       </MenuSection>
       <MenuSection label="Panel background">
         <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />

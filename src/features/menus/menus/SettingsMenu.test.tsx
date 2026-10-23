@@ -210,6 +210,14 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().terrainExaggeration).toBe(1);
   });
 
+  it('turns terrain in 2D off and on (on by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Terrain in 2D').props.value).toBe(true);
+    await fireEvent(screen.getByLabelText('Terrain in 2D'), 'valueChange', false);
+    expect(useSettings.getState().terrainIn2d).toBe(false);
+    expect(screen.getByLabelText('Terrain in 2D').props.value).toBe(false);
+  });
+
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);

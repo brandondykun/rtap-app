@@ -7,6 +7,7 @@ import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { useToast } from '@/stores/toast';
+import { FLAT_2D_EXAGGERATION } from '@/features/map/terrain/three-d';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -95,6 +96,21 @@ describe('MapCanvas', () => {
       pitchEnabled: false,
     });
     expect(mapboxMock().__props.Atmosphere.main).toMatchObject({ style: { range: [2, 20] } });
+  });
+
+  it('with terrain in 2D off, lays the terrain flat in 2D and raises it to the setting in 3D', async () => {
+    useSettings.setState({ terrainIn2d: false, terrainExaggeration: 2 });
+    await renderCanvas();
+    // Not quite 0, so elevation lookups still have ground to read (and divide back out).
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: FLAT_2D_EXAGGERATION } });
+    expect(FLAT_2D_EXAGGERATION).toBeGreaterThan(0);
+    expect(FLAT_2D_EXAGGERATION).toBeLessThanOrEqual(0.001);
+    await act(async () => useSettings.getState().toggleTerrain3d());
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 2 } });
+    await act(async () => useSettings.getState().toggleTerrain3d());
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: FLAT_2D_EXAGGERATION } });
+    await act(async () => useSettings.getState().setTerrainIn2d(true));
+    expect(mapboxMock().__props.Terrain.main).toMatchObject({ style: { exaggeration: 1 } });
   });
 
   it('uses the terrain height setting in 3D', async () => {

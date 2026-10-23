@@ -31,6 +31,13 @@ describe('settings store', () => {
     expect(useSettings.getState().terrain3d).toBe(false);
   });
 
+  it('keeps terrain in 2D by default, and persists turning it off', () => {
+    expect(useSettings.getState().terrainIn2d).toBe(true);
+    useSettings.getState().setTerrainIn2d(false);
+    expect(useSettings.getState().terrainIn2d).toBe(false);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ terrainIn2d: false });
+  });
+
   it('defaults terrain height to 1.5 and persists a change', () => {
     expect(useSettings.getState().terrainExaggeration).toBe(1.5);
     expect(useSettings.getState().setTerrainExaggeration(2)).toBe(true);
@@ -191,6 +198,15 @@ describe('settings store', () => {
       seed({ showMgrsGrid: 'yes', showGridLabels: 0, showGrid100m: null });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
+    });
+
+    it('loads terrain in 2D and ignores an invalid value', async () => {
+      seed({ terrainIn2d: false });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().terrainIn2d).toBe(false);
+      seed({ terrainIn2d: 'no' });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().terrainIn2d).toBe(false);
     });
 
     it('ignores an invalid persisted terrain height', async () => {

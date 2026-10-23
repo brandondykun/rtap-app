@@ -45,6 +45,8 @@ type SettingsValues = {
   terrain3d: boolean;
   /** Terrain height multiplier in 3D, 1–3. */
   terrainExaggeration: number;
+  /** Terrain raised at true scale in 2D; off lays it flat in 2D (3D still uses `terrainExaggeration`). */
+  terrainIn2d: boolean;
   labelSize: LabelSize;
   missionSort: MissionSort;
   panelBackground: PanelBackground;
@@ -67,6 +69,7 @@ type SettingsActions = {
   toggleTerrain3d: () => void;
   /** Returns false (and changes nothing) unless finite and within 1–3. */
   setTerrainExaggeration: (x: number) => boolean;
+  setTerrainIn2d: (on: boolean) => void;
   setLabelSize: (size: LabelSize) => void;
   setMissionSort: (sort: MissionSort) => void;
   setPanelBackground: (level: PanelBackground) => void;
@@ -95,6 +98,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showMapLabels: true,
   terrain3d: false,
   terrainExaggeration: 1.5,
+  terrainIn2d: true,
   labelSize: 'medium',
   missionSort: 'recent',
   panelBackground: 'light',
@@ -139,6 +143,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
+    terrainIn2d: typeof p.terrainIn2d === 'boolean' ? p.terrainIn2d : current.terrainIn2d,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
     missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
     panelBackground: pick(p.panelBackground, PANEL_BACKGROUNDS, current.panelBackground),
@@ -168,6 +173,7 @@ export const useSettings = create<SettingsState>()(
         set({ terrainExaggeration: x });
         return true;
       },
+      setTerrainIn2d: (terrainIn2d) => set({ terrainIn2d }),
       setLabelSize: (labelSize) => set({ labelSize }),
       setMissionSort: (missionSort) => set({ missionSort }),
       setPanelBackground: (panelBackground) => set({ panelBackground }),
@@ -183,7 +189,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, showMapLabels, terrain3d, terrainExaggeration, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -200,6 +206,7 @@ export const useSettings = create<SettingsState>()(
         showMapLabels,
         terrain3d,
         terrainExaggeration,
+        terrainIn2d,
         labelSize,
         missionSort,
         panelBackground,

@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react-native';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 
 import { ELEVATION_TIMEOUT_MS, elevationAt, setElevationSource, useElevationSource } from './elevation';
+import { FLAT_2D_EXAGGERATION } from './three-d';
 
 const AT = { lat: 38.8977, lon: -77.0365 };
 
@@ -59,6 +60,13 @@ describe('useElevationSource', () => {
     const queryTerrainElevation = jest.fn(async () => 150);
     await renderHook(() => useElevationSource({ current: { queryTerrainElevation } as never }));
     expect(await elevationAt(AT)).toBe(100);
+  });
+
+  it('divides out the near-flat height in 2D with terrain in 2D off, so the elevation stays true', async () => {
+    useSettings.setState({ terrain3d: false, terrainIn2d: false });
+    const queryTerrainElevation = jest.fn(async () => 100 * FLAT_2D_EXAGGERATION);
+    await renderHook(() => useElevationSource({ current: { queryTerrainElevation } as never }));
+    expect(await elevationAt(AT)).toBeCloseTo(100, 6);
   });
 
   it('divides out a custom terrain height in 3D', async () => {
