@@ -30,13 +30,14 @@ describe('SelfCard', () => {
     expect(screen.getByTestId('gps-line')).toHaveTextContent(/ME18S UJ \d{5} \d{5}/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
-    // Like the portrait dock: your grid in the friendly blue, the ME tag in your location blue.
+    // Like the portrait dock: the arrow, ME and your grid all in the friendly blue.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
     // The arrow, ME and your grid have a crisp dark edge, so the light blue reads over snow.
     const line = within(screen.getByTestId('gps-line'));
     expect(line.getAllByTestId('icon-outline', { includeHiddenElements: true })).toHaveLength(8);
     expect(line.getAllByTestId('text-outline', { includeHiddenElements: true }).map((c) => c.props.children)).toEqual([...Array(8).fill('ME'), ...Array(8).fill(screen.getByTestId('gps-position').props.children)]);
-    expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').self });
+    expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(screen.getByTestId('me-icon')).toHaveStyle({ color: themeColors('dark').friendly });
   });
 
   it('waits for the first fix', async () => {

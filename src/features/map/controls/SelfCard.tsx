@@ -61,7 +61,7 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
       onPress={onRecenter}
       className="active:opacity-60 rounded-2xl bg-surface-glass px-3 py-2">
       <View testID="gps-line" className="flex-row items-center gap-2">
-        <CardLead icon={<Icon name="navigation" size={14} color={colors.self} outline />} tag="ME" tagColor={colors.self} tagStyle={halo} outline />
+        <CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />
         {fix && !off ? (
           <View className="shrink">
             <OutlinedText testID="gps-position" color={colors.friendly} style={halo} className="font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>

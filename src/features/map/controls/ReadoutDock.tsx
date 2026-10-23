@@ -118,7 +118,7 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
       className="active:opacity-60">
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} outline />} tag="ME" tagColor={colors.self} tagStyle={halo} outline />}
+        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown ? (
             <Text testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} style={halo} className="font-mono text-xs text-text">
