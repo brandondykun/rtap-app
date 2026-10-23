@@ -32,6 +32,7 @@ const STEPS: readonly GridStep[] = [100, 1_000, 10_000, 100_000];
 const MIN_LAT = -80;
 const MAX_LAT = 84;
 const BANDS = 'CDEFGHJKLMNPQRSTUVWX';
+const WORLD: Box = { w: -180, s: MIN_LAT, e: 180, n: MAX_LAT };
 /**
  * Grid lines bend slightly in lat/lon, so each gets a vertex every few line spacings (at most this far apart). That
  * keeps a line within about a thousandth of the spacing of the true line: well under a screen point at its zooms.
@@ -58,11 +59,16 @@ const REDRAW_MARGIN = 0.25;
 /**
  * Whether the grid drawn for `drawn` no longer serves `current`: less than a quarter screen of its lines is left past
  * an edge (it draws half a screen), the zoom has reached another line spacing, or it has changed by a whole level.
+ * Never while zoomed out to zones only, which are drawn for the whole world.
  * Cheap enough to ask on every frame of a gesture, so new lines are in place before they scroll into view.
  */
 export function needsNewGrid(drawn: GridView | null, current: GridView, finest: GridStep = 100): boolean {
   if (!drawn) return true;
-  if (gridStep(drawn.zoom, finest) !== gridStep(current.zoom, finest) || Math.abs(current.zoom - drawn.zoom) >= 1) return true;
+  const step = gridStep(current.zoom, finest);
+  if (gridStep(drawn.zoom, finest) !== step) return true;
+  // A zones-only grid covers the world.
+  if (step === null) return false;
+  if (Math.abs(current.zoom - drawn.zoom) >= 1) return true;
   const height = drawn.ne.lat - drawn.sw.lat;
   if (current.sw.lat < drawn.sw.lat - height * REDRAW_MARGIN || current.ne.lat > drawn.ne.lat + height * REDRAW_MARGIN) return true;
   const width = lonSpan(drawn);
@@ -83,13 +89,14 @@ type Cell = { zone: number; band: string; south: boolean; box: Box };
 
 /**
  * Grid zone edges, easting and northing lines and their labels for a view and half a screen around it, so a short
- * pan never shows an edge before the next idle redraws it.
+ * pan never shows an edge before the next redraw. Zoomed out to zones only, every zone in the world (about a
+ * millisecond): the map's reported bounds can be wrong when the view crosses the antimeridian, which left a strip blank.
  */
 export function mgrsGrid(view: GridView, finest: GridStep = 100): MgrsGrid {
-  const cells = paddedBoxes(view).flatMap(cellsIn);
+  let step = gridStep(view.zoom, finest);
+  const cells = (step === null ? [WORLD] : paddedBoxes(view)).flatMap(cellsIn);
   const lines: LineFeature[] = cells.flatMap(zoneEdges);
   const labels: LabelFeature[] = [];
-  let step = gridStep(view.zoom, finest);
   // Zoomed far out there may be a thousand cells, and only their edges are drawn.
   const ranges = step === null ? [] : cells.map(utmRange);
   while (step !== null && ranges.reduce((sum, r) => sum + lineCount(r, step!), 0) > GRID_MAX_LINES) step = coarser(step);

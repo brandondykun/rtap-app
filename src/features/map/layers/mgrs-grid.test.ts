@@ -119,6 +119,14 @@ describe('mgrsGrid', () => {
     expect(labelsOf(view)).toEqual(expect.arrayContaining(['18S', '17R', '14T']));
   });
 
+  it('draws every grid zone in the world when zoomed far out, whatever bounds the map reports', () => {
+    // Map bounds can be wrong when the view crosses the antimeridian; zones-only grids do not depend on them.
+    const world = labelsOf({ sw: { lat: -80, lon: -180 }, ne: { lat: 84, lon: 180 }, zoom: 3 });
+    const narrow = labelsOf({ sw: { lat: -1, lon: 170 }, ne: { lat: 1, lon: 175 }, zoom: 1.5 });
+    expect(narrow).toEqual(world);
+    expect(narrow).toEqual(expect.arrayContaining(['1C', '31U', '60X', '18S']));
+  });
+
   it('follows the Norway exception: no zone line at 6°E in band V, one at 3°E', () => {
     const zone = linesOf({ sw: { lat: 52, lon: 0 }, ne: { lat: 68, lon: 15 }, zoom: 4 }, 'zone');
     const at = (lon: number) => zone.filter((l) => l.geometry.coordinates.every(([x]) => x === lon));
@@ -238,6 +246,13 @@ describe('needsNewGrid', () => {
     const view = { sw: { lat: -17, lon: 179.9 }, ne: { lat: -16.9, lon: -179.9 }, zoom: 13 };
     expect(needsNewGrid(view, { sw: { lat: -17, lon: 179.92 }, ne: { lat: -16.9, lon: -179.88 }, zoom: 13 })).toBe(false);
     expect(needsNewGrid(view, { sw: { lat: -17, lon: -179.9 }, ne: { lat: -16.9, lon: -179.7 }, zoom: 13 })).toBe(true);
+  });
+
+  it('keeps a zones-only grid, which covers the world, until zoomed in to finer lines', () => {
+    const far = { sw: { lat: 30, lon: -80 }, ne: { lat: 40, lon: -70 }, zoom: 3 };
+    expect(needsNewGrid(far, { sw: { lat: -40, lon: 100 }, ne: { lat: -30, lon: 140 }, zoom: 1.5 })).toBe(false);
+    expect(needsNewGrid(far, { ...far, zoom: 4.9 })).toBe(false);
+    expect(needsNewGrid(far, { ...far, zoom: 5 })).toBe(true);
   });
 
   it('keeps a grid that already spans the world', () => {
