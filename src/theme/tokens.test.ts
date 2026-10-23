@@ -27,6 +27,10 @@ describe('theme tokens', () => {
     expect(colors['surface-chrome']).toBe('rgba(10, 10, 10, 0.9)');
   });
 
+  it('makes success a bright green (green-400), so Valid stands out on the dark panels', () => {
+    expect(themeColors('dark').success).toBe('#4ade80');
+  });
+
   it('sets the see-through panel color to the given alpha (0.35 by default)', () => {
     expect(themeColors('dark')['surface-glass']).toBe('rgba(10, 10, 10, 0.35)');
     expect(themeColors('dark', 0.6)['surface-glass']).toBe('rgba(10, 10, 10, 0.6)');
