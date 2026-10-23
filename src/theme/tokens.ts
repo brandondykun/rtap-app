@@ -33,6 +33,10 @@ const dark = {
   'surface-input': 'neutral-950',
   'surface-raised': 'stone-800',
   border: 'stone-700',
+  /** Separator lines on the see-through panels (the CTR/ME dock, the toolbar): faint white. Its alpha follows the Panel background setting (themeColors). */
+  divider: { color: 'stone-50', alpha: 0.35 },
+  /** The toolbar separator while tools are scrolled out of sight behind it. */
+  'divider-lit': { color: 'stone-50', alpha: 0.7 },
   text: 'stone-50',
   'text-muted': 'stone-400',
   accent: 'amber-500',
@@ -64,18 +68,19 @@ function resolve(value: TokenValue): string {
   return `rgba(${r}, ${g}, ${b}, ${value.alpha})`;
 }
 
-/** `glassAlpha` replaces the theme's alpha for `surface-glass` (the Panel background setting). */
-export function themeColors(name: ThemeName, glassAlpha?: number): Record<SemanticToken, string> {
+/** `glassAlpha` and `dividerAlpha` replace the theme's alphas for `surface-glass` and `divider` (the Panel background setting). */
+export function themeColors(name: ThemeName, glassAlpha?: number, dividerAlpha?: number): Record<SemanticToken, string> {
   const theme: Record<SemanticToken, TokenValue> = { ...themes[name] };
   const glass = themes[name]['surface-glass'];
   if (glassAlpha !== undefined) theme['surface-glass'] = { color: glass.color, alpha: glassAlpha };
+  if (dividerAlpha !== undefined) theme.divider = { color: themes[name].divider.color, alpha: dividerAlpha };
   return Object.fromEntries(
     Object.entries(theme).map(([token, value]) => [token, resolve(value)]),
   ) as Record<SemanticToken, string>;
 }
 
-export function cssVars(name: ThemeName, glassAlpha?: number): Record<string, string> {
-  return Object.fromEntries(Object.entries(themeColors(name, glassAlpha)).map(([token, color]) => [`--${token}`, color]));
+export function cssVars(name: ThemeName, glassAlpha?: number, dividerAlpha?: number): Record<string, string> {
+  return Object.fromEntries(Object.entries(themeColors(name, glassAlpha, dividerAlpha)).map(([token, color]) => [`--${token}`, color]));
 }
 
 /** Shades for the MGRS grid (the Grid color setting), lightest first. */

@@ -36,4 +36,21 @@ describe('ThemeProvider', () => {
       expect(screen.getByText(`rgba(10, 10, 10, ${alpha})`)).toBeTruthy();
     }
   });
+
+  it('pairs each Panel background with a separator: more white over a lighter panel', async () => {
+    useSettings.setState(DEFAULT_SETTINGS);
+    function Divider() {
+      return <Text>{useTheme().colors.divider}</Text>;
+    }
+    await render(
+      <ThemeProvider theme="dark">
+        <Divider />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText('rgba(250, 250, 249, 0.35)')).toBeTruthy();
+    for (const [level, alpha] of [['clear', 0.45], ['heavy', 0.3], ['solid', 0.25]] as const) {
+      await act(async () => useSettings.getState().setPanelBackground(level));
+      expect(screen.getByText(`rgba(250, 250, 249, ${alpha})`)).toBeTruthy();
+    }
+  });
 });

@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 import { TOOLBAR_HEIGHT, TOOLBAR_HEIGHT_ICONS } from '@/features/map/layout';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { PANEL_LOOK } from '@/theme/ThemeProvider';
 import { themeColors } from '@/theme/tokens';
 
 import { Toolbar } from './Toolbar';
@@ -95,11 +96,12 @@ describe('Toolbar', () => {
     }
   });
 
-  /** The divider turns a softer white while tools hide behind it. */
+  /** The divider is the panel's separator color, and a brighter white while tools hide behind it. */
   const lit = () => {
+    const colors = themeColors('dark', PANEL_LOOK.light.glass, PANEL_LOOK.light.divider);
     const color = StyleSheet.flatten(screen.getByTestId('divider-start').props.style).backgroundColor;
-    expect([themeColors('dark')['text-muted'], themeColors('dark').border]).toContain(color);
-    return color === themeColors('dark')['text-muted'];
+    expect([colors['divider-lit'], colors.divider]).toContain(color);
+    return color === colors['divider-lit'];
   };
 
   it('shades the hidden side and brightens the divider while tools are scrolled out of sight behind it', async () => {

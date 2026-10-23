@@ -47,6 +47,13 @@ describe('theme tokens', () => {
     expect(themeColors('dark', 0.6)['surface-chrome']).toBe('rgba(10, 10, 10, 0.9)');
   });
 
+  it('draws separators in see-through white at the given alpha (0.35 by default), and brighter when lit', () => {
+    expect(themeColors('dark').divider).toBe('rgba(250, 250, 249, 0.35)');
+    expect(themeColors('dark', 0.6, 0.3).divider).toBe('rgba(250, 250, 249, 0.3)');
+    expect(cssVars('dark', 0.6, 0.3)['--divider']).toBe('rgba(250, 250, 249, 0.3)');
+    expect(themeColors('dark', 0.6, 0.3)['divider-lit']).toBe('rgba(250, 250, 249, 0.7)');
+  });
+
   it('exposes css variables per token', () => {
     expect(cssVars('dark')['--hostile']).toBe('#f87171');
   });

@@ -5,6 +5,8 @@
   "surface-input",
   "surface-raised",
   "border",
+  "divider",
+  "divider-lit",
   "text",
   "text-muted",
   "accent",

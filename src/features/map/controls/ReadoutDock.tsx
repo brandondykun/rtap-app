@@ -27,7 +27,7 @@ export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { s
   return (
     <View testID="readout-dock" className="mx-2 rounded-2xl bg-surface-glass px-3">
       {showCenter ? <CenterRow /> : null}
-      {showCenter ? <View testID="dock-divider" className="h-px bg-border" /> : null}
+      {showCenter ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
       <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} />
     </View>
   );

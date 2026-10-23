@@ -166,12 +166,12 @@ function BarIcon({ icon, label, onPress }: { icon: IconName; label: string; onPr
 
 /**
  * `flush` drops the margin on the tools' side, so the portrait scroller clips right at the line;
- * the scroller's own padding keeps the first and last tool off the line at rest. `lit` fades the line to a soft
- * white while tools are scrolled out of sight behind it.
+ * the scroller's own padding keeps the first and last tool off the line at rest. `lit` fades the line to a
+ * brighter white while tools are scrolled out of sight behind it; at rest it is the panel's separator color.
  */
 function Divider({ flush, lit }: { flush: boolean; lit: boolean }) {
   const margin = flush ? 'ml-1.5' : 'mx-1.5';
   const { colors } = useTheme();
-  const color = useAnimatedStyle(() => ({ backgroundColor: withTiming(lit ? colors['text-muted'] : colors.border, { duration: 250 }) }), [lit, colors]);
+  const color = useAnimatedStyle(() => ({ backgroundColor: withTiming(lit ? colors['divider-lit'] : colors.divider, { duration: 250 }) }), [lit, colors]);
   return <Animated.View testID="divider-start" className={`${margin} h-7 w-px`} style={color} />;
 }
