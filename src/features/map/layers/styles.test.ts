@@ -10,6 +10,8 @@ import {
   LINE_DASH,
   LINE_WIDTHS,
   makeDraftLabelStyle,
+  makeGridAreaLabelStyle,
+  makeGridLineLabelStyle,
   makeLineHaloStyle,
   makeLineLabelStyle,
   makeLineStyle,
@@ -241,5 +243,18 @@ describe('label chip padding', () => {
 
   it('keeps polygon labels the same as point labels', () => {
     expect(makePolygonLabelStyle(colors).iconTextFitPadding).toEqual(makePointLabelStyle(colors).iconTextFitPadding);
+  });
+});
+
+describe('MGRS grid label styles', () => {
+  const colors = themeColors('dark');
+
+  it('shrinks the zone names when zoomed far out, so neighbours stay clear of each other', () => {
+    expect(makeGridAreaLabelStyle(colors).textSize).toEqual(['interpolate', ['linear'], ['zoom'], 1.5, 9, 3, 13]);
+  });
+
+  it('keeps the grid line numbers at 11 pt', () => {
+    expect(makeGridLineLabelStyle(colors).textSize).toBe(11);
+    expect(makeGridLineLabelStyle(colors, false).textSize).toBe(11);
   });
 });

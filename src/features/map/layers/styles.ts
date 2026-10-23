@@ -4,6 +4,7 @@ import { sidcForPointType } from '@/features/symbology/point-types';
 import type { LabelSize } from '@/stores/settings';
 import type { SemanticToken } from '@/theme/tokens';
 
+import { MIN_ZOOM } from '../canvas/camera';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 
 /**
@@ -256,12 +257,15 @@ export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>, up
   return upright ? style : { ...style, textKeepUpright: false };
 }
 
-/** Grid zone and 100 km square names, inside their areas. */
+/**
+ * Grid zone and 100 km square names, inside their areas. Zoomed all the way out a grid zone is barely wider than a
+ * 13 pt name, so the names shrink there (to 9 pt) rather than collide and drop out; full size from zoom 3.
+ */
 export function makeGridAreaLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
   return {
     textField: ['get', 'label'],
     textFont: MAP_LABEL_FONT,
-    textSize: 13,
+    textSize: ['interpolate', ['linear'], ['zoom'], MIN_ZOOM, 9, 3, 13],
     textColor: colors['map-label-text'],
     textHaloColor: colors['point-symbol-halo'],
     textHaloWidth: 1.2,
