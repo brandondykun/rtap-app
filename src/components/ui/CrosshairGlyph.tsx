@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { PixelRatio, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -7,8 +7,8 @@ const FULL = 38;
 const ARM = 14;
 const THICKNESS = 1.5;
 const DOT = 4;
-/** The dark edge around an outlined crosshair: thin, so the arms still read as fine lines. */
-const EDGE = 0.75;
+/** The dark edge around an outlined crosshair, in device pixels: the thinnest there is, so the arms stay fine lines. */
+const EDGE = 1;
 
 type Props = {
   /** Width and height in pt; the arms, gap and dot scale with it. */
@@ -30,16 +30,31 @@ export function CrosshairGlyph({ size = FULL, color, dotColor, outline = false }
   const { colors } = useTheme();
   const arms = color ?? colors.text;
   const dot = dotColor ?? colors.accent;
-  const k = size / FULL;
-  const arm = ARM * k;
-  const thickness = Math.max(1, THICKNESS * k);
-  const dotSize = Math.max(2, DOT * k);
-  const edge = outline ? EDGE : 0;
   const halo = colors['point-symbol-halo'];
-  // Each arm, with its edge drawn as a slightly larger dark bar behind it, centered on the same line.
-  const bar = (along: 'vertical' | 'horizontal', end: 'top' | 'bottom' | 'left' | 'right') => {
-    const vertical = along === 'vertical';
-    const shape = (pad: number) => ({ position: 'absolute' as const, [end]: -pad, width: (vertical ? thickness : arm) + 2 * pad, height: (vertical ? arm : thickness) + 2 * pad });
+  // Laid out in whole device pixels and centred exactly: a line on a half pixel is rounded unevenly, which made one
+  // side of its edge a pixel wider than the other.
+  const scale = PixelRatio.get();
+  const px = (pt: number) => Math.max(1, Math.round(pt * scale));
+  const pt = (p: number) => p / scale;
+  const k = size / FULL;
+  const line = px(Math.max(1, THICKNESS * k));
+  // The box is a pixel larger when that is what centres the line.
+  const box = px(size) + ((px(size) - line) % 2);
+  const arm = px(ARM * k);
+  let dotSize = px(Math.max(2, DOT * k));
+  dotSize += (box - dotSize) % 2;
+  const edge = outline ? EDGE : 0;
+  const mid = (box - line) / 2;
+
+  // Each arm, with its edge drawn as a dark bar one pixel larger all round behind it.
+  const bar = (vertical: boolean, end: 'top' | 'bottom' | 'left' | 'right') => {
+    const shape = (pad: number) => ({
+      position: 'absolute' as const,
+      [vertical ? 'left' : 'top']: pt(mid - pad),
+      [end]: pt(-pad),
+      width: pt((vertical ? line : arm) + 2 * pad),
+      height: pt((vertical ? arm : line) + 2 * pad),
+    });
     return (
       <>
         {outline ? <View testID="crosshair-outline" style={{ ...shape(edge), backgroundColor: halo }} /> : null}
@@ -48,15 +63,25 @@ export function CrosshairGlyph({ size = FULL, color, dotColor, outline = false }
     );
   };
   const dotOuter = dotSize + 2 * edge;
+  const dotAt = pt((box - dotOuter) / 2);
   return (
-    <View testID="crosshair-glyph" style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {bar('vertical', 'top')}
-      {bar('vertical', 'bottom')}
-      {bar('horizontal', 'left')}
-      {bar('horizontal', 'right')}
+    <View testID="crosshair-glyph" style={{ width: pt(box), height: pt(box) }}>
+      {bar(true, 'top')}
+      {bar(true, 'bottom')}
+      {bar(false, 'left')}
+      {bar(false, 'right')}
       <View
         testID="crosshair-dot"
-        style={{ backgroundColor: dot, width: dotOuter, height: dotOuter, borderRadius: dotOuter / 2, ...(outline ? { borderWidth: edge, borderColor: halo } : null) }}
+        style={{
+          position: 'absolute',
+          left: dotAt,
+          top: dotAt,
+          backgroundColor: dot,
+          width: pt(dotOuter),
+          height: pt(dotOuter),
+          borderRadius: pt(dotOuter) / 2,
+          ...(outline ? { borderWidth: pt(edge), borderColor: halo } : null),
+        }}
       />
     </View>
   );
