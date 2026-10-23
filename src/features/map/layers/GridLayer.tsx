@@ -15,14 +15,14 @@ const EASTINGS = ['==', ['get', 'axis'], 'e'] as unknown as Filter;
 const NORTHINGS = ['==', ['get', 'axis'], 'n'] as unknown as Filter;
 
 /**
- * The MGRS grid (the Show MGRS grid setting). Worked out only when the map comes to rest, for the view and half a
- * screen around it; while the map moves, Mapbox moves the lines it already has.
+ * The MGRS grid (the Show MGRS grid setting), for the grid view and half a screen around it. MapCanvas moves the grid
+ * view on, even mid-gesture, only when the lines drawn are about to run out; in between, Mapbox moves the lines it has.
  */
 export function GridLayer() {
   const show = useSettings((s) => s.showMgrsGrid);
   const showLabels = useSettings((s) => s.showGridLabels);
   const finest = useSettings((s) => (s.showGrid100m ? 100 : 1_000));
-  const view = useInteraction((s) => s.restingView);
+  const view = useInteraction((s) => s.gridView);
   // Easting numbers read down the screen; the lines turn around only when the map turns far enough to tip them over.
   const south = useInteraction((s) => eastingsRunSouth(s.cameraBearing));
   const { colors } = useTheme();

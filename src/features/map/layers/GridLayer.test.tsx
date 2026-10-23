@@ -14,11 +14,11 @@ const VIEW = { sw: { lat: 38.85, lon: -77.1 }, ne: { lat: 38.95, lon: -76.98 }, 
 
 beforeEach(() => {
   useSettings.setState({ ...DEFAULT_SETTINGS, showMgrsGrid: true });
-  useInteraction.setState({ ...INITIAL_INTERACTION, restingView: VIEW });
+  useInteraction.setState({ ...INITIAL_INTERACTION, gridView: VIEW });
 });
 
 describe('GridLayer', () => {
-  it('draws the grid for the resting view', async () => {
+  it('draws the grid for the grid view', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;
     expect(props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, true));
@@ -51,19 +51,19 @@ describe('GridLayer', () => {
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(VIEW).lines, true));
   });
 
-  it('redraws only when the map comes to rest, not as the camera moves', async () => {
+  it('redraws only when the grid view moves on, not with every camera change', async () => {
     await renderWithProviders(<GridLayer />);
     const shape = mapboxMock().__props.ShapeSource['mgrs-grid'].shape;
     await act(async () => useInteraction.getState().setCamera({ center: { lat: 10, lon: 10 }, zoom: 3, bearing: 0 }));
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toBe(shape);
     const next = { ...VIEW, zoom: 15 };
-    await act(async () => useInteraction.setState({ restingView: next }));
+    await act(async () => useInteraction.setState({ gridView: next }));
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(next).lines, true));
   });
 
   it('stops at 1 km lines with the 100 m lines setting off', async () => {
     const close = { ...VIEW, zoom: 15 };
-    useInteraction.setState({ restingView: close });
+    useInteraction.setState({ gridView: close });
     await renderWithProviders(<GridLayer />);
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(close).lines, true));
     await act(async () => useSettings.getState().setShowGrid100m(false));
@@ -84,9 +84,9 @@ describe('GridLayer', () => {
   it.each([
     ['the grid is off', { showMgrsGrid: false }, VIEW],
     ['the map has not come to rest yet', {}, null],
-  ])('draws nothing while %s', async (_, settings, restingView) => {
+  ])('draws nothing while %s', async (_, settings, gridView) => {
     useSettings.setState(settings);
-    useInteraction.setState({ restingView });
+    useInteraction.setState({ gridView });
     delete mapboxMock().__props.ShapeSource['mgrs-grid'];
     await renderWithProviders(<GridLayer />);
     expect(mapboxMock().__props.ShapeSource['mgrs-grid']).toBeUndefined();

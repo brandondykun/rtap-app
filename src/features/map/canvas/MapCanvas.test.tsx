@@ -151,14 +151,51 @@ describe('MapCanvas', () => {
     expect(props.onUserGesture).toHaveBeenCalled();
   });
 
-  it('keeps the resting view (bounds and zoom) for the MGRS grid, and only when the map goes idle', async () => {
-    await renderCanvas();
-    const { onMapIdle, onCameraChanged } = mapboxMock().__props.MapView.main as Record<string, (s: unknown) => void>;
-    const state = { properties: { center: [-77, 38.9], zoom: 11, heading: 0, bounds: { ne: [-76.9, 39], sw: [-77.1, 38.8] } }, gestures: { isGestureActive: false } };
-    await act(async () => onCameraChanged(state));
-    expect(useInteraction.getState().restingView).toBeNull();
-    await act(async () => onMapIdle(state));
-    expect(useInteraction.getState().restingView).toEqual({ sw: { lat: 38.8, lon: -77.1 }, ne: { lat: 39, lon: -76.9 }, zoom: 11 });
+  describe('MGRS grid view', () => {
+    const at = (lon: number, zoom = 11) => ({
+      properties: { center: [lon, 38.9], zoom, heading: 0, bounds: { ne: [lon + 0.1, 39], sw: [lon - 0.1, 38.8] } },
+      gestures: { isGestureActive: true },
+    });
+    const view = (lon: number, zoom = 11) => ({ sw: { lat: 38.8, lon: lon - 0.1 }, ne: { lat: 39, lon: lon + 0.1 }, zoom });
+    const handlers = () => mapboxMock().__props.MapView.main as Record<string, (s: unknown) => void>;
+    const frame = () => act(async () => rafQueue.splice(0).forEach((run) => run()));
+
+    beforeEach(() => useSettings.setState({ showMgrsGrid: true }));
+
+    it('moves the grid on mid-gesture, once per frame, only when the drawn lines are about to run out', async () => {
+      await renderCanvas();
+      await act(async () => handlers().onCameraChanged(at(-77)));
+      await frame();
+      expect(useInteraction.getState().gridView).toEqual(view(-77));
+      // A tenth of a screen: the lines drawn half a screen out still serve.
+      await act(async () => handlers().onCameraChanged(at(-76.98)));
+      await frame();
+      expect(useInteraction.getState().gridView).toEqual(view(-77));
+      // A third of a screen: less than a quarter screen of lines is left past the edge.
+      await act(async () => handlers().onCameraChanged(at(-76.93)));
+      await frame();
+      expect(useInteraction.getState().gridView).toEqual(view(-76.93));
+    });
+
+    it('moves it on when the map goes idle, if it needs to', async () => {
+      await renderCanvas();
+      await act(async () => handlers().onMapIdle(at(-77)));
+      expect(useInteraction.getState().gridView).toEqual(view(-77));
+      const drawn = useInteraction.getState().gridView;
+      await act(async () => handlers().onMapIdle(at(-76.98)));
+      expect(useInteraction.getState().gridView).toBe(drawn);
+    });
+
+    it('does nothing while the grid is off, and draws for the current view when it is switched on', async () => {
+      useSettings.setState({ showMgrsGrid: false });
+      await renderCanvas();
+      await act(async () => handlers().onCameraChanged(at(-77)));
+      await frame();
+      await act(async () => handlers().onMapIdle(at(-77)));
+      expect(useInteraction.getState().gridView).toBeNull();
+      await act(async () => useSettings.getState().setShowMgrsGrid(true));
+      expect(useInteraction.getState().gridView).toEqual(view(-77));
+    });
   });
 
   it('reports the camera when the map goes idle', async () => {

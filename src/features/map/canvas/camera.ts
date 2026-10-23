@@ -1,7 +1,7 @@
 import { isValidCamera, type MissionCamera } from '@/features/missions/repository';
 import type { LatLon } from '@/lib/geo/types';
 import { normalizeDeg, wrapLon } from '@/lib/geo/units/angle';
-import type { RestingView } from '@/stores/interaction';
+import type { ViewBounds } from '@/stores/interaction';
 
 /** Shown when a mission has no saved camera and there is no position fix yet. */
 export const WORLD_CAMERA: MissionCamera = { center: { lat: 20, lon: 0 }, zoom: 1, bearing: 0 };
@@ -50,7 +50,7 @@ export function cameraFromMapState(state: MapStateLike): MissionCamera | null {
 type MapBoundsLike = { properties: { zoom: number; bounds?: { ne: number[]; sw: number[] } } };
 
 /** Map state → its bounds and zoom, or null when the state has no finite bounds. */
-export function restingViewFromMapState(state: MapBoundsLike): RestingView | null {
+export function viewFromMapState(state: MapBoundsLike): ViewBounds | null {
   const { bounds, zoom } = state.properties;
   if (!bounds) return null;
   const [swLon, swLat] = bounds.sw;

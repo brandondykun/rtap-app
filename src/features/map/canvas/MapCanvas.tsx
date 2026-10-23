@@ -1,5 +1,5 @@
 import { Atmosphere, Camera, Images, MapView, RasterDemSource, Terrain, type MapState } from '@rnmapbox/maps';
-import { useEffect, useMemo, useState, type ReactNode, type Ref } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,14 +9,15 @@ import type { MissionCamera } from '@/features/missions/repository';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { LatLon } from '@/lib/geo/types';
 import { wrapLon } from '@/lib/geo/units/angle';
-import { useInteraction } from '@/stores/interaction';
+import { useInteraction, type ViewBounds } from '@/stores/interaction';
 import { useOp } from '@/stores/op';
 import { useSettings, type Basemap } from '@/stores/settings';
 
 import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
+import { needsNewGrid } from '../layers/mgrs-grid';
 import { terrainExaggeration, THREE_D_PITCH } from '../terrain/three-d';
-import { cameraFromMapState, restingViewFromMapState, toCameraStop } from './camera';
+import { cameraFromMapState, toCameraStop, viewFromMapState } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
 
@@ -28,6 +29,13 @@ function pressCoord(geometry: unknown): LatLon | null {
 }
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/** Moves the MGRS grid on to `view` if the grid is shown and the lines it has drawn no longer serve it. */
+function refreshGridView(view: ViewBounds) {
+  const { showMgrsGrid, showGrid100m } = useSettings.getState();
+  const { gridView, setGridView } = useInteraction.getState();
+  if (showMgrsGrid && needsNewGrid(gridView, view, showGrid100m ? 100 : 1_000)) setGridView(view);
+}
 const TERRAIN_SOURCE_ID = 'terrain-dem';
 
 type Props = {
@@ -86,6 +94,14 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
     toolbarHeight: toolbar,
   });
   const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
+  const checkGridView = useMemo(() => createLatestThrottle(refreshGridView), []);
+  // The latest view, so the grid can be drawn the moment it is switched on.
+  const latestView = useRef<ViewBounds | null>(null);
+  const showGrid = useSettings((s) => s.showMgrsGrid);
+
+  useEffect(() => {
+    if (showGrid && latestView.current) refreshGridView(latestView.current);
+  }, [showGrid]);
 
   useEffect(() => {
     // The readout must never be blank: start from the camera the map opens at.
@@ -95,14 +111,19 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
   const onCameraChanged = (state: MapState) => {
     const camera = cameraFromMapState(state);
     if (camera) publishCamera(camera);
+    // Checked during gestures too, so new grid lines are drawn before they scroll into view.
+    const view = viewFromMapState(state);
+    latestView.current = view ?? latestView.current;
+    if (view && useSettings.getState().showMgrsGrid) checkGridView(view);
     if (state.gestures.isGestureActive) onUserGesture();
   };
 
   const onMapIdle = (state: MapState) => {
     const camera = cameraFromMapState(state);
     if (camera) onCameraIdle(camera);
-    const view = restingViewFromMapState(state);
-    if (view) useInteraction.getState().setRestingView(view);
+    const view = viewFromMapState(state);
+    latestView.current = view ?? latestView.current;
+    if (view) refreshGridView(view);
   };
 
   return (

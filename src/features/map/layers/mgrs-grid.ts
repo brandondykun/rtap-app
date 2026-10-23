@@ -3,7 +3,7 @@ import { fromUtm, toUtm, zoneLonRange } from '@/lib/geo/coords/utm';
 import type { LatLon } from '@/lib/geo/types';
 import { wrapLon } from '@/lib/geo/units/angle';
 
-/** The map as it came to rest: its bounds and zoom. */
+/** A map view: its bounds and zoom. */
 export type GridView = { sw: LatLon; ne: LatLon; zoom: number };
 /** Grid line spacing in metres. */
 export type GridStep = 100 | 1_000 | 10_000 | 100_000;
@@ -51,6 +51,30 @@ export function gridStep(zoom: number, finest: GridStep = 100): GridStep | null 
   if (zoom < 14) return 1_000;
   return Math.max(100, finest) as GridStep;
 }
+
+/** Drawn lines that must be left past each edge of the screen, in screens, before the grid is drawn again. */
+const REDRAW_MARGIN = 0.25;
+
+/**
+ * Whether the grid drawn for `drawn` no longer serves `current`: less than a quarter screen of its lines is left past
+ * an edge (it draws half a screen), the zoom has reached another line spacing, or it has changed by a whole level.
+ * Cheap enough to ask on every frame of a gesture, so new lines are in place before they scroll into view.
+ */
+export function needsNewGrid(drawn: GridView | null, current: GridView, finest: GridStep = 100): boolean {
+  if (!drawn) return true;
+  if (gridStep(drawn.zoom, finest) !== gridStep(current.zoom, finest) || Math.abs(current.zoom - drawn.zoom) >= 1) return true;
+  const height = drawn.ne.lat - drawn.sw.lat;
+  if (current.sw.lat < drawn.sw.lat - height * REDRAW_MARGIN || current.ne.lat > drawn.ne.lat + height * REDRAW_MARGIN) return true;
+  const width = lonSpan(drawn);
+  // A grid drawn twice as wide as the world already covers every longitude.
+  if (width * 2 >= 360) return false;
+  // Longitudes measured east from the drawn view's centre, so the antimeridian falls nowhere near.
+  const reach = 0.5 + REDRAW_MARGIN;
+  const west = wrapLon(current.sw.lon - (drawn.sw.lon + width / 2));
+  return west < -width * reach || west + lonSpan(current) > width * reach;
+}
+
+const lonSpan = ({ sw, ne }: GridView) => (ne.lon < sw.lon ? ne.lon + 360 : ne.lon) - sw.lon;
 
 type Box = { w: number; s: number; e: number; n: number };
 

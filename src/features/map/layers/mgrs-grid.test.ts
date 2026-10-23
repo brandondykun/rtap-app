@@ -1,6 +1,6 @@
 import { toUtm } from '@/lib/geo/coords/utm';
 
-import { eastingsRunSouth, GRID_MAX_LINES, gridStep, mgrsGrid, orientEastings, type GridView } from './mgrs-grid';
+import { eastingsRunSouth, GRID_MAX_LINES, gridStep, mgrsGrid, needsNewGrid, orientEastings, type GridView } from './mgrs-grid';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
@@ -188,5 +188,60 @@ describe('eastingsRunSouth', () => {
 
   it.each([181, 270, 329, -90])('turns them around at map bearing %p, where they would read upside down', (bearing) => {
     expect(eastingsRunSouth(bearing)).toBe(false);
+  });
+});
+
+describe('needsNewGrid', () => {
+  const drawn = around(DC, 10, 12);
+  const height = drawn.ne.lat - drawn.sw.lat;
+  const width = drawn.ne.lon - drawn.sw.lon;
+  const moved = (view: GridView, dLat: number, dLon: number, zoom = view.zoom): GridView => ({
+    sw: { lat: view.sw.lat + dLat, lon: view.sw.lon + dLon },
+    ne: { lat: view.ne.lat + dLat, lon: view.ne.lon + dLon },
+    zoom,
+  });
+
+  it('wants a grid when none is drawn', () => {
+    expect(needsNewGrid(null, drawn)).toBe(true);
+  });
+
+  it('keeps the grid while at least a quarter screen of drawn lines is left past every edge', () => {
+    expect(needsNewGrid(drawn, drawn)).toBe(false);
+    expect(needsNewGrid(drawn, moved(drawn, height * 0.2, -width * 0.2))).toBe(false);
+  });
+
+  it.each([
+    ['east', 0, 0.3],
+    ['west', 0, -0.3],
+    ['north', 0.3, 0],
+    ['south', -0.3, 0],
+  ])('redraws when panned %s to within a quarter screen of the drawn edge', (_, dLat, dLon) => {
+    expect(needsNewGrid(drawn, moved(drawn, height * dLat, width * dLon))).toBe(true);
+  });
+
+  it('redraws when zoomed out past the drawn lines', () => {
+    const out = { sw: { lat: drawn.sw.lat - height, lon: drawn.sw.lon - width }, ne: { lat: drawn.ne.lat + height, lon: drawn.ne.lon + width }, zoom: 10.5 };
+    expect(needsNewGrid({ ...drawn, zoom: 11.9 }, out)).toBe(true);
+  });
+
+  it('redraws when the zoom reaches another line spacing, unless that spacing is turned off', () => {
+    expect(needsNewGrid({ ...drawn, zoom: 13.9 }, { ...drawn, zoom: 14 })).toBe(true);
+    expect(needsNewGrid({ ...drawn, zoom: 13.9 }, { ...drawn, zoom: 14 }, 1_000)).toBe(false);
+  });
+
+  it('redraws after a whole zoom level, so a coarsened grid refines as the view closes in', () => {
+    expect(needsNewGrid(drawn, { ...drawn, zoom: 12.5 })).toBe(false);
+    expect(needsNewGrid(drawn, { ...drawn, zoom: 13 })).toBe(true);
+  });
+
+  it('measures across the antimeridian', () => {
+    const view = { sw: { lat: -17, lon: 179.9 }, ne: { lat: -16.9, lon: -179.9 }, zoom: 13 };
+    expect(needsNewGrid(view, { sw: { lat: -17, lon: 179.92 }, ne: { lat: -16.9, lon: -179.88 }, zoom: 13 })).toBe(false);
+    expect(needsNewGrid(view, { sw: { lat: -17, lon: -179.9 }, ne: { lat: -16.9, lon: -179.7 }, zoom: 13 })).toBe(true);
+  });
+
+  it('keeps a grid that already spans the world', () => {
+    const world = { sw: { lat: -60, lon: -170 }, ne: { lat: 70, lon: 170 }, zoom: 1 };
+    expect(needsNewGrid(world, moved(world, 0, 100))).toBe(false);
   });
 });
