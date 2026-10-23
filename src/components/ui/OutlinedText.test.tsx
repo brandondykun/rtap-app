@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { PixelRatio, StyleSheet } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 import { themeColors } from '@/theme/tokens';
@@ -8,8 +8,11 @@ import { OutlinedText } from './OutlinedText';
 
 const colors = themeColors('dark');
 
+afterEach(() => jest.restoreAllMocks());
+
 describe('OutlinedText', () => {
-  it('draws the text in its color over dark copies shifted one point each way', async () => {
+  it('draws the text in its color over dark copies shifted one device pixel each way', async () => {
+    jest.spyOn(PixelRatio, 'get').mockReturnValue(3);
     await renderWithProviders(
       <OutlinedText testID="t" color={colors.friendly}>
         18S UJ 12345 67890
@@ -24,7 +27,7 @@ describe('OutlinedText', () => {
       expect(c).toHaveTextContent('18S UJ 12345 67890');
       return s.transform.map((t: Record<string, number>) => Object.values(t)[0]).join(',');
     });
-    expect(new Set(shifts)).toEqual(new Set(['-1,-1', '0,-1', '1,-1', '-1,0', '1,0', '-1,1', '0,1', '1,1']));
+    expect(new Set(shifts)).toEqual(new Set(['-1,-1', '0,-1', '1,-1', '-1,0', '1,0', '-1,1', '0,1', '1,1'].map((s) => s.split(',').map((n) => Number(n) / 3).join(','))));
   });
 
   it('shrinks every copy to fit the same way as the text', async () => {
