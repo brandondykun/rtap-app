@@ -10,7 +10,7 @@ import { useToast } from '@/stores/toast';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { WORLD_CAMERA } from './camera';
+import { MIN_ZOOM, WORLD_CAMERA } from './camera';
 import { BASEMAP_STYLE_URLS } from './mapbox';
 import { MapCanvas } from './MapCanvas';
 
@@ -127,6 +127,11 @@ describe('MapCanvas', () => {
     await renderCanvas({ panel: { side: 'left', size: 400 } });
     const logo = mapboxMock().__props.MapView.main.logoPosition as { left: number };
     expect(logo.left).toBeGreaterThan(400);
+  });
+
+  it('stops pinches from zooming out past the furthest zoom out', async () => {
+    await renderCanvas();
+    expect(mapboxMock().__props.Camera.main.minZoomLevel).toBe(MIN_ZOOM);
   });
 
   it('seeds the interaction store with the initial camera', async () => {

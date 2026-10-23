@@ -17,7 +17,7 @@ import { MAP_IMAGES } from '../images/map-images';
 import { ornamentPositions, type Insets } from '../layout';
 import { needsNewGrid } from '../layers/mgrs-grid';
 import { terrainExaggeration, THREE_D_PITCH } from '../terrain/three-d';
-import { cameraFromMapState, toCameraStop, viewFromMapState } from './camera';
+import { cameraFromMapState, MIN_ZOOM, toCameraStop, viewFromMapState } from './camera';
 import { createLatestThrottle } from './frame-throttle';
 import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
 
@@ -150,7 +150,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
         const coord = pressCoord(feature.geometry);
         if (coord) onLongPress?.(coord);
       }}>
-      <Camera ref={cameraRef} defaultSettings={{ ...toCameraStop(initialCamera), pitch: threeD ? THREE_D_PITCH : 0 }} />
+      <Camera ref={cameraRef} defaultSettings={{ ...toCameraStop(initialCamera), pitch: threeD ? THREE_D_PITCH : 0 }} minZoomLevel={MIN_ZOOM} />
       <Images images={MAP_IMAGES} />
       <Images images={symbolImages} onImageMissing={onSymbolMissing} />
       {/* Ground elevation for units (queryTerrainElevation, which undoes the exaggeration) and the 3D view.

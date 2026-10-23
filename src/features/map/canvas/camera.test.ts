@@ -1,4 +1,4 @@
-import { cameraFromMapState, clampZoom, fitBounds, MAX_ZOOM, toCameraStop, WORLD_CAMERA } from './camera';
+import { cameraFromMapState, clampZoom, fitBounds, MAX_ZOOM, MIN_ZOOM, toCameraStop, WORLD_CAMERA } from './camera';
 
 function state(center: number[], zoom = 12, heading = 0) {
   return { properties: { center, zoom, heading } };
@@ -24,6 +24,10 @@ describe('camera helpers', () => {
     expect(cameraFromMapState(state([0, 0], Number.NaN))).toBeNull();
   });
 
+  it('opens a new mission on the whole world, at the furthest zoom out', () => {
+    expect(WORLD_CAMERA.zoom).toBe(MIN_ZOOM);
+  });
+
   it('builds a camera stop', () => {
     expect(toCameraStop(WORLD_CAMERA)).toEqual({
       centerCoordinate: [WORLD_CAMERA.center.lon, WORLD_CAMERA.center.lat],
@@ -32,8 +36,10 @@ describe('camera helpers', () => {
     });
   });
 
-  it('clamps zoom', () => {
-    expect(clampZoom(-1)).toBe(0);
+  it('clamps zoom, never further out than the whole Earth about filling the screen', () => {
+    expect(MIN_ZOOM).toBe(2);
+    expect(clampZoom(-1)).toBe(MIN_ZOOM);
+    expect(clampZoom(1)).toBe(MIN_ZOOM);
     expect(clampZoom(30)).toBe(22);
     expect(clampZoom(12.5)).toBe(12.5);
   });
@@ -56,6 +62,10 @@ describe('fitBounds', () => {
     const open = fitBounds({ sw, ne }, { width: 400, height: 800 });
     const narrow = fitBounds({ sw, ne }, { width: 200, height: 800 });
     expect(narrow.zoom).toBeLessThan(open.zoom);
+  });
+
+  it('stops at the furthest zoom out for bounds wider than it shows', () => {
+    expect(fitBounds({ sw: { lat: -60, lon: -170 }, ne: { lat: 70, lon: 170 } }, { width: 400, height: 800 }).zoom).toBe(MIN_ZOOM);
   });
 
   it('caps the zoom for a very short line', () => {
