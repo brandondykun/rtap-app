@@ -30,7 +30,7 @@ describe('CenterCard', () => {
     // The crosshair, CTR and the grid have a crisp dark edge, so they read over snow.
     const card = within(screen.getByTestId('center-card'));
     expect(card.getAllByTestId('crosshair-outline', { includeHiddenElements: true })).toHaveLength(4);
-    expect(card.getAllByTestId('text-outline', { includeHiddenElements: true }).map((c) => c.props.children)).toEqual([...Array(8).fill('CTR'), ...Array(8).fill(formatCoordinate(DC, 'mgrs'))]);
+    for (const text of ['CTR', formatCoordinate(DC, 'mgrs')]) expect(card.getAllByTestId('text-outline', { includeHiddenElements: true }).filter((c) => c.props.children === text)).toHaveLength(8);
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     // The CTR icon is the app's crosshair: white arms, amber dot.
     expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
@@ -43,7 +43,10 @@ describe('CenterCard', () => {
     expect(screen.getByTestId('center-vector')).toHaveTextContent(/^DIST 987 m · DIR \d{3}°$/);
     // Same small, muted style as the ME card's ALT · ACC line, so the two cards match in size.
     expect(screen.getByTestId('center-vector').props.className).toContain('text-xs');
-    expect(screen.getByTestId('center-vector').props.className).toContain('mt-0.5');
+    expect((screen.getByTestId('center-card').children[1] as unknown as { props: { className: string } }).props.className).toContain('mt-0.5');
+    // With a crisp dark edge, like the rest of the card.
+    const vector = screen.getByTestId('center-vector').props.children;
+    expect(screen.getAllByTestId('text-outline', { includeHiddenElements: true }).filter((c) => c.props.children === vector)).toHaveLength(8);
   });
 
   it('shows dashes for distance and bearing until there is a GPS fix', async () => {

@@ -121,22 +121,24 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown ? (
-            <Text testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} style={halo} className="font-mono text-xs text-text">
+            <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
               {formatLength(shown.altitudeM, unit)}
-            </Text>
+            </OutlinedText>
           ) : null
         }
         bottom={
           shown ? (
-            <Text testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} style={halo} className="font-mono text-xs text-text">
+            <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
               {`±${formatLength(shown.accuracyM, unit)}`}
-            </Text>
+            </OutlinedText>
           ) : null
         }>
         {shown ? (
           <Grid testID="gps-position" color={colors.friendly} outline>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
-          <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
+          <OutlinedText color={colors.friendly} style={halo} className="text-xs">
+            {off ? 'Location is off' : 'Waiting for GPS…'}
+          </OutlinedText>
         )}
       </Row>
     </Pressable>
@@ -153,7 +155,7 @@ function CenterRow() {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const r = describeReadout(center, from, { coordinateFormat, angleUnit, northRef, declinationOverrideDeg }, new Date());
   const { colors } = useTheme();
-  // The small text is full white with an outline, so it reads over bright ground.
+  // The small text is full white with a crisp dark edge, so it reads over bright ground.
   const halo = glassHalo(colors);
   return (
     <Row
@@ -162,19 +164,19 @@ function CenterRow() {
       top={
         <>
           {isOp ? (
-            <Text testID="readout-from-op" style={halo} className="font-mono text-xs text-text">
+            <OutlinedText testID="readout-from-op" color={colors.text} style={halo} className="font-mono text-xs">
               FROM OP
-            </Text>
+            </OutlinedText>
           ) : null}
-          <Text testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} style={halo} className="font-mono text-xs text-accent">
+          <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">
             {r.distance}
-          </Text>
+          </OutlinedText>
         </>
       }
       bottom={
-        <Text testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} style={halo} className="font-mono text-xs text-text">
+        <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors.text} style={halo} className="font-mono text-xs">
           {r.bearing}
-        </Text>
+        </OutlinedText>
       }>
       <Grid testID="readout-coordinate" outline>
         {r.coordinate}

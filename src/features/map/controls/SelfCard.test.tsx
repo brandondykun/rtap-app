@@ -8,6 +8,8 @@ import { themeColors } from '@/theme/tokens';
 
 import { SelfCard } from './SelfCard';
 
+/** The dark copies drawn under a text to outline it. */
+const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', { includeHiddenElements: true }).filter((c) => c.props.children === text);
 const PROPS = { following: false, disabled: false, onRecenter: () => {} };
 
 const fix = (altitudeM: number | null) =>
@@ -26,10 +28,12 @@ describe('SelfCard', () => {
     const lines = screen.getByTestId('gps-readout').children as unknown[];
     expect(lines).toHaveLength(2);
     expect(lines[0]).toBe(screen.getByTestId('gps-line'));
-    expect(lines[1]).toBe(screen.getByTestId('gps-altitude'));
+    expect(lines[1]).toContainElement(screen.getByTestId('gps-altitude'));
     expect(screen.getByTestId('gps-line')).toHaveTextContent(/ME18S UJ \d{5} \d{5}/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
+    expect(screen.getByTestId('gps-altitude')).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(edgesOf(screen.getByTestId('gps-altitude').props.children)).toHaveLength(8);
     // Like the portrait dock: the arrow, ME and your grid all in the friendly blue.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
     // The arrow, ME and your grid have a crisp dark edge, so the light blue reads over snow.
@@ -42,7 +46,8 @@ describe('SelfCard', () => {
 
   it('waits for the first fix', async () => {
     await renderWithProviders(<SelfCard {...PROPS} />);
-    expect(screen.getByText('Waiting for GPS…')).toBeTruthy();
+    expect(screen.getAllByText('Waiting for GPS…').at(-1)).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(edgesOf('Waiting for GPS…')).toHaveLength(8);
     expect(screen.queryByTestId('gps-altitude')).toBeNull();
   });
 
@@ -62,7 +67,8 @@ describe('SelfCard', () => {
   it('says location is off when it is denied', async () => {
     await renderWithProviders(<SelfCard {...PROPS} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
-    expect(screen.getByText('Location is off')).toBeTruthy();
+    expect(screen.getAllByText('Location is off').at(-1)).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(edgesOf('Location is off')).toHaveLength(8);
   });
 
   it('recenters on press, shows following, and does nothing while disabled', async () => {

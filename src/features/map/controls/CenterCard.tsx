@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { OutlinedText } from '@/components/ui/OutlinedText';
@@ -40,14 +40,17 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
           </OutlinedText>
         </View>
       </View>
-      <Text
-        testID="center-vector"
-        accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
-        style={glassHalo(colors)}
-        // Full white with an outline, so it reads over bright ground.
-        className="mt-0.5 font-mono text-xs text-text">
-        {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
-      </Text>
+      {/* Full white with a crisp dark edge, so it reads over bright ground. */}
+      <View className="mt-0.5">
+        <OutlinedText
+          testID="center-vector"
+          accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
+          color={colors.text}
+          style={glassHalo(colors)}
+          className="font-mono text-xs">
+          {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
+        </OutlinedText>
+      </View>
     </View>
   );
 }

@@ -13,6 +13,8 @@ import { ReadoutDock } from './ReadoutDock';
 const DC = { lat: 38.8977, lon: -77.0365 };
 const CENTER = { lat: 38.905, lon: -77.03 };
 const HIDDEN = { includeHiddenElements: true };
+/** The dark copies drawn under a text to outline it. */
+const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text);
 const PROPS = { following: false, disabled: false, onRecenter: () => {} };
 
 const fix = (altitudeM: number | null) => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 4.6, timestamp: 1, altitudeM });
@@ -33,7 +35,7 @@ describe('ReadoutDock', () => {
     expect(rows).toEqual(['dock-center', 'dock-divider', 'dock-self']);
     // A little in from the screen edges, more than the buttons above it.
     expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
-    expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}.*142 m±5 m$/);
+    expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME.*18S UJ \d{5} \d{5}.*142 m.*±5 m$/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     // The arrow, ME and your grid all in the friendly blue; the crosshair grid stays plain.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
@@ -50,18 +52,21 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-bearing')).toHaveTextContent(/^\d{3}°$/);
   });
 
-  it('gives the CTR and ME tags, icons and grids a crisp dark edge, so they read over snow', async () => {
+  it('gives all the CTR and ME text, and their icons, a crisp dark edge, so they read over snow', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     const ctr = within(screen.getByTestId('dock-center'));
     expect(ctr.getAllByTestId('crosshair-outline', HIDDEN)).toHaveLength(4);
-    expect(ctr.getAllByTestId('text-outline', HIDDEN).map((c) => c.props.children)).toEqual([...Array(8).fill('CTR'), ...Array(8).fill(formatCoordinate(CENTER, 'mgrs'))]);
+    for (const text of ['CTR', formatCoordinate(CENTER, 'mgrs')]) expect(ctr.getAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text)).toHaveLength(8);
     const me = within(screen.getByTestId('dock-self'));
     expect(me.getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
-    expect(me.getAllByTestId('text-outline', HIDDEN).map((c) => c.props.children)).toEqual([...Array(8).fill('ME'), ...Array(8).fill(formatCoordinate(DC, 'mgrs'))]);
-    // The distance, bearing, altitude and accuracy keep just the soft outline.
-    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(within(screen.getByTestId(id)).queryAllByTestId('text-outline', HIDDEN)).toHaveLength(0);
+    for (const text of ['ME', formatCoordinate(DC, 'mgrs')]) expect(me.getAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text)).toHaveLength(8);
+    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(edgesOf(screen.getByTestId(id).props.children)).toHaveLength(8);
+    // Everything in the ME row is in the friendly blue.
+    for (const id of ['gps-altitude', 'gps-accuracy']) expect(screen.getByTestId(id)).toHaveStyle({ color: themeColors('dark').friendly });
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC, groundM: 300 }));
+    expect(edgesOf('FROM OP')).toHaveLength(8);
   });
 
   it('leaves the CTR row out when the center grid is not shown', async () => {
@@ -76,6 +81,8 @@ describe('ReadoutDock', () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/Waiting for GPS…/);
+    expect(screen.getAllByText('Waiting for GPS…').at(-1)).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(edgesOf('Waiting for GPS…')).toHaveLength(8);
     expect(screen.queryByTestId('gps-altitude')).toBeNull();
     expect(screen.getByTestId('readout-range')).toHaveTextContent('—');
     expect(screen.getByTestId('readout-bearing')).toHaveTextContent('—');
@@ -85,6 +92,8 @@ describe('ReadoutDock', () => {
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/Location is off/);
+    expect(screen.getAllByText('Location is off').at(-1)).toHaveStyle({ color: themeColors('dark').friendly });
+    expect(edgesOf('Location is off')).toHaveLength(8);
   });
 
   it('shows altitude and accuracy in the altitude unit, and a dash for an unknown altitude', async () => {

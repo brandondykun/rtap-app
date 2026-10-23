@@ -69,13 +69,17 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
             </OutlinedText>
           </View>
         ) : (
-          <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
+          <OutlinedText color={colors.friendly} style={halo} className="text-xs">
+            {off ? 'Location is off' : 'Waiting for GPS…'}
+          </OutlinedText>
         )}
       </View>
       {fix && !off ? (
-        <Text testID="gps-altitude" style={halo} className="mt-0.5 font-mono text-xs text-text">
-          {`ALT ${formatLength(fix.altitudeM, unit)} · ACC ±${formatLength(fix.accuracyM, unit)}`}
-        </Text>
+        <View className="mt-0.5">
+          <OutlinedText testID="gps-altitude" color={colors.friendly} style={halo} className="font-mono text-xs">
+            {`ALT ${formatLength(fix.altitudeM, unit)} · ACC ±${formatLength(fix.accuracyM, unit)}`}
+          </OutlinedText>
+        </View>
       ) : null}
     </Pressable>
   );
