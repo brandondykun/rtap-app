@@ -115,6 +115,13 @@ describe('AddPolygonMenu', () => {
     expect(JSON.parse((await items(ctx))[0].style!).shape).toBe('points');
   });
 
+  it('shows no elevation for a circle center (units and points only)', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Circle'));
+    expect(screen.getByLabelText('Center')).toBeTruthy();
+    expect(screen.queryByText(/^Elev /)).toBeNull();
+  });
+
   it('fills the next name for the polygon type', async () => {
     await open();
     await waitFor(() => expect(screen.getByLabelText('Name')).toHaveProp('value', 'OBJ-1'));

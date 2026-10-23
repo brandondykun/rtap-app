@@ -6,11 +6,11 @@ import { elevationAt } from '@/features/map/terrain/elevation';
 import { sameCoord, useDraft } from '@/stores/draft';
 import { useSettings } from '@/stores/settings';
 
-/** Wait for the unit to settle before asking the map (typing and dragging move it often). */
+/** Wait for the item to settle before asking the map (typing and dragging move it often). */
 const LOOKUP_DELAY_MS = 250;
 
 /**
- * A unit's ground elevation, in the Altitude unit. While adding or moving it follows the unit (what Add/Save
+ * A unit's or point's ground elevation, in the Altitude unit. While adding or moving it follows the item (what Add/Save
  * will store); while viewing it shows the stored value. A dash while unknown or still being looked up.
  */
 export function ElevationRow() {

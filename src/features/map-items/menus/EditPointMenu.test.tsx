@@ -1,5 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
+import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { setElevationSource } from '@/features/map/terrain/elevation';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { composeSidc } from '@/features/symbology/presets';
 import { makeTestContext } from '@/lib/db/test-database';
@@ -14,12 +16,15 @@ import { findItem } from '../repository';
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
 const AT = { lat: 38.8977, lon: -77.0365 };
+const OTHER = { lat: 38.95, lon: -77.1 };
 
 beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
   useMenu.setState(INITIAL_MENU);
   useToast.setState({ toast: null });
 });
+
+afterEach(() => setElevationSource(null));
 
 async function openEditor() {
   const ctx = makeTestContext();
@@ -44,6 +49,30 @@ describe('EditPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Point'));
     expect((await findItem(ctx.db, id))?.sidc).toBe('GFGPGPPR------X');
+  });
+
+  it('keeps the stored elevation on a save without a move, and looks it up again after a move', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: 'GFGPDPO-------X', name: 'OP-1', elevationM: 88 });
+    if (!r.ok) throw new Error('setup');
+    const query = jest.fn(async () => 40);
+    setElevationSource(query);
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('point.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('OP-1');
+    expect(screen.getByText('Elev 88 m')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'OP RIDGE');
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Point'));
+    expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(88);
+    expect(query).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    const p = mgrsFieldsFor(OTHER);
+    await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(async () => expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(40));
+    expect(screen.getByText('Elev 40 m')).toBeTruthy();
   });
 
   it('deletes after a second tap', async () => {

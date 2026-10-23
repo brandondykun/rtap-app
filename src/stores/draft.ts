@@ -37,7 +37,7 @@ export type DraftValues = {
   /** True once the user edits the name (even clearing it); auto-names never overwrite it. */
   nameEdited: boolean;
   notes: string;
-  /** A unit's ground elevation (m; null unknown) and the coordinate it belongs to; null before any lookup. */
+  /** A unit's or point's ground elevation (m; null unknown) and the coordinate it belongs to; null before any lookup. */
   elevation: { at: LatLon; m: number | null } | null;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
@@ -74,7 +74,7 @@ type DraftActions = {
     pointType: PointType;
     name: string;
     notes: string;
-    /** A unit's stored elevation; left out for points. */
+    /** The unit's or point's stored elevation. */
     elevationM?: number | null;
   }) => void;
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;

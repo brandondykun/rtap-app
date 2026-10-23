@@ -1,11 +1,14 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
+import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { setElevationSource } from '@/features/map/terrain/elevation';
 import { composeSidc } from '@/features/symbology/presets';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { selectOptionLabels } from '@/test-utils/menu-select';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -14,6 +17,7 @@ import { observeMissionItems } from '../repository';
 import { AddPointMenu } from './AddPointMenu';
 
 const CENTER = { lat: 38.8977, lon: -77.0365 };
+const OTHER = { lat: 38.95, lon: -77.1 };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -22,7 +26,10 @@ beforeEach(() => {
   useInteraction.setState(INITIAL_INTERACTION);
   useInteraction.getState().setCamera({ center: CENTER, zoom: 14, bearing: 0 });
   useMenu.getState().openMenu('point.add', {});
+  useSettings.setState(DEFAULT_SETTINGS);
 });
+
+afterEach(() => setElevationSource(null));
 
 async function open(ctx = makeTestContext()) {
   await renderWithProviders(<AddPointMenu params={{}} missionId="m1" />, ctx);
@@ -50,9 +57,39 @@ describe('AddPointMenu', () => {
     expect(within(typeSection).getByLabelText('Point type: Checkpoint')).toBeTruthy();
   });
 
-  it('has no elevation (units only)', async () => {
+  it('shows the ground elevation at the point and saves it with the point', async () => {
+    setElevationSource(async () => 312.4);
+    const ctx = await open();
+    expect(await screen.findByText('Elev 312 m')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Add'));
+    await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
+    expect((await items(ctx))[0].elevationM).toBe(312.4);
+  });
+
+  it('shows elevation in feet with the Altitude setting', async () => {
+    useSettings.setState({ altitudeUnit: 'ft' });
+    setElevationSource(async () => 312.4);
     await open();
-    expect(screen.queryByText(/^Elev /)).toBeNull();
+    expect(await screen.findByText('Elev 1025 ft')).toBeTruthy();
+  });
+
+  it('saves an unknown elevation when the map has none, without blocking Add', async () => {
+    const ctx = await open();
+    expect(screen.getByText('Elev —')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Add'));
+    await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
+    expect((await items(ctx))[0].elevationM).toBeNull();
+  });
+
+  it('saves the elevation of where the point ends up, even when Add comes before the display catches up', async () => {
+    setElevationSource(async (c) => (Math.abs(c.lat - OTHER.lat) < 0.001 ? 50 : 312));
+    const ctx = await open();
+    await screen.findByText('Elev 312 m');
+    const p = mgrsFieldsFor(OTHER);
+    await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
+    await fireEvent.press(screen.getByLabelText('Add'));
+    await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
+    expect((await items(ctx))[0].elevationM).toBe(50);
   });
 
   it('renames with the type and adds the point, then shows it selected', async () => {

@@ -28,12 +28,11 @@ export type ItemAdapter = {
 const notes = (d: DraftState) => d.notes.trim() || null;
 
 /**
- * A unit's ground elevation where it is saved: the one already looked up for that exact spot (or stored, when it
+ * A unit's or point's ground elevation where it is saved: the one already looked up for that exact spot (or stored, when it
  * has not moved), otherwise a fresh lookup. The draft keeps it, so the read-only view shows what was saved.
- * Undefined for points, which have none.
  */
 async function savedElevation(d: DraftState): Promise<number | null | undefined> {
-  if (d.category !== 'unit' || !d.coord) return undefined;
+  if (!d.coord) return undefined;
   if (d.elevation && sameCoord(d.elevation.at, d.coord)) return d.elevation.m;
   const m = await elevationAt(d.coord);
   useDraft.getState().setElevation(d.coord, m);
