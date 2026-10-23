@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
+import { OutlinedText } from '@/components/ui/OutlinedText';
 import { formatLength } from '@/features/location/gps-format';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
@@ -62,9 +63,11 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
       <View testID="gps-line" className="flex-row items-center gap-2">
         <CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />
         {fix && !off ? (
-          <Text testID="gps-position" style={[halo, { color: colors.friendly }]} className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
-            {formatCoordinate(fix.position, coordinateFormat)}
-          </Text>
+          <View className="shrink">
+            <OutlinedText testID="gps-position" color={colors.friendly} style={halo} className="font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
+              {formatCoordinate(fix.position, coordinateFormat)}
+            </OutlinedText>
+          </View>
         ) : (
           <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
         )}

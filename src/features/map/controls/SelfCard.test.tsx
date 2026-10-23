@@ -27,11 +27,13 @@ describe('SelfCard', () => {
     expect(lines).toHaveLength(2);
     expect(lines[0]).toBe(screen.getByTestId('gps-line'));
     expect(lines[1]).toBe(screen.getByTestId('gps-altitude'));
-    expect(screen.getByTestId('gps-line')).toHaveTextContent(/ME18S UJ \d{5} \d{5}$/);
+    expect(screen.getByTestId('gps-line')).toHaveTextContent(/ME18S UJ \d{5} \d{5}/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
     // Like the portrait dock: your grid in the friendly blue, the ME tag in your location blue.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
+    // With a crisp dark edge, so the light blue reads over snow.
+    expect(screen.getAllByTestId('text-outline', { includeHiddenElements: true })).toHaveLength(8);
     expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').self });
   });
 

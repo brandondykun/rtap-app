@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { Icon } from '@/components/ui/Icon';
+import { OutlinedText } from '@/components/ui/OutlinedText';
 import { formatLength } from '@/features/location/gps-format';
 import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
@@ -60,8 +61,13 @@ function Row({ testID, lead, children, top, bottom }: RowProps) {
 function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
-  return (
-    <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+  // A colored grid (yours) gets a crisp dark edge as well, so the light blue reads over snow.
+  return color ? (
+    <OutlinedText testID={testID} color={color} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+      {children}
+    </OutlinedText>
+  ) : (
+    <Text testID={testID} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </Text>
   );

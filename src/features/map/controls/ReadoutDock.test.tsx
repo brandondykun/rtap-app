@@ -32,9 +32,13 @@ describe('ReadoutDock', () => {
     expect(rows).toEqual(['dock-center', 'dock-divider', 'dock-self']);
     // A little in from the screen edges, more than the buttons above it.
     expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
-    expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}142 m±5 m$/);
-    // Your grid in the friendly blue; the crosshair grid stays plain.
+    expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}.*142 m±5 m$/);
+    expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
+    // Your grid in the friendly blue with a crisp dark edge (so it reads over snow); the crosshair grid stays plain.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
+    const edges = screen.getAllByTestId('text-outline', { includeHiddenElements: true });
+    expect(edges).toHaveLength(8);
+    for (const edge of edges) expect(edge).toHaveTextContent(screen.getByTestId('gps-position').props.children);
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     // The CTR icon is the app's crosshair: white arms, amber dot.
     expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
