@@ -150,7 +150,6 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
       <MenuSection label="Basemap">
         <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
-        <Text className="text-xs text-text-muted">Offline map downloads use Satellite.</Text>
       </MenuSection>
       <MenuSection label="Coordinates">
         <MenuSegmented<CoordinateFormat>

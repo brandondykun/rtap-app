@@ -174,7 +174,7 @@ describe('SettingsMenu', () => {
     await fireEvent.press(screen.getByLabelText('Topo'));
     expect(useSettings.getState().basemap).toBe('topo');
     expect(screen.getByLabelText('Topo')).toBeSelected();
-    expect(screen.getByText('Offline map downloads use Satellite.')).toBeTruthy();
+    expect(screen.queryByText('Offline map downloads use Satellite.')).toBeNull();
   });
 
   it('sets the label text size (Medium by default)', async () => {
