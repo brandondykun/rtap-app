@@ -128,6 +128,9 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('op-position')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
     expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 300 m');
     expect(screen.queryByTestId('gps-position')).toBeNull();
+    // The binoculars, OP, its grid and elevation have a crisp dark edge, like the ME row.
+    expect(within(screen.getByTestId('dock-self')).getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
+    for (const text of ['OP', formatCoordinate(CENTER, 'mgrs'), 'ELV 300 m']) expect(edgesOf(text)).toHaveLength(8);
     await fireEvent.press(screen.getByTestId('dock-self'));
     expect(onRecenter).not.toHaveBeenCalled();
     await act(async () => useSettings.setState({ altitudeUnit: 'ft' }));

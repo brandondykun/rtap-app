@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { OutlinedText } from '@/components/ui/OutlinedText';
@@ -39,14 +39,18 @@ export function SelfCard({ following, disabled, onRecenter }: Props) {
     return (
       <View testID="gps-readout" accessibilityLabel="OP position" className="rounded-2xl bg-surface-glass px-3 py-2">
         <View testID="gps-line" className="flex-row items-center gap-2">
-          <CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} tagStyle={halo} />
-          <Text testID="op-position" style={halo} className="shrink font-mono-bold text-sm text-text" adjustsFontSizeToFit numberOfLines={1}>
-            {formatCoordinate(op.at, coordinateFormat)}
-          </Text>
+          <CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={halo} outline />
+          <View className="shrink">
+            <OutlinedText testID="op-position" color={colors.text} style={halo} className="font-mono-bold text-sm" adjustsFontSizeToFit numberOfLines={1}>
+              {formatCoordinate(op.at, coordinateFormat)}
+            </OutlinedText>
+          </View>
         </View>
-        <Text testID="op-elevation" style={halo} className="mt-0.5 font-mono text-xs text-text">
-          {`ELV ${formatLength(op.elevationM, unit)}`}
-        </Text>
+        <View className="mt-0.5">
+          <OutlinedText testID="op-elevation" color={colors.text} style={halo} className="font-mono text-xs">
+            {`ELV ${formatLength(op.elevationM, unit)}`}
+          </OutlinedText>
+        </View>
       </View>
     );
   }

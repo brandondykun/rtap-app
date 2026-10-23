@@ -86,13 +86,15 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
     <View testID="dock-self" accessibilityLabel="OP position">
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} />}
+        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
-          <Text testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} style={glassHalo(colors)} className="font-mono text-xs text-text">
+          <OutlinedText testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} color={colors.text} style={glassHalo(colors)} className="font-mono text-xs">
             {`ELV ${formatLength(elevationM, unit)}`}
-          </Text>
+          </OutlinedText>
         }>
-        <Grid testID="op-position">{formatCoordinate(at, coordinateFormat)}</Grid>
+        <Grid testID="op-position" outline>
+          {formatCoordinate(at, coordinateFormat)}
+        </Grid>
       </Row>
     </View>
   );

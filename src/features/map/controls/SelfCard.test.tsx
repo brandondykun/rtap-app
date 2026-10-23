@@ -102,8 +102,11 @@ describe('SelfCard', () => {
     const onRecenter = jest.fn();
     useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: 450 });
     await renderWithProviders(<SelfCard {...PROPS} onRecenter={onRecenter} />);
-    expect(screen.getByTestId('gps-line')).toHaveTextContent(/OP18S UJ \d{5} \d{5}$/);
+    expect(screen.getByTestId('gps-line')).toHaveTextContent(/OP.*18S UJ \d{5} \d{5}$/);
     expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 300 m');
+    // The binoculars, OP, its grid and elevation have a crisp dark edge, like the ME card.
+    expect(within(screen.getByTestId('gps-line')).getAllByTestId('icon-outline', { includeHiddenElements: true })).toHaveLength(8);
+    for (const text of ['OP', screen.getByTestId('op-position').props.children, 'ELV 300 m']) expect(edgesOf(text)).toHaveLength(8);
     await fireEvent.press(screen.getByTestId('gps-readout'));
     expect(onRecenter).not.toHaveBeenCalled();
   });
