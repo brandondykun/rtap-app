@@ -106,7 +106,7 @@ describe('EditUnitMenu', () => {
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
     await screen.findByDisplayValue('FRD-2');
-    expect(screen.getByText('Elev 88 m')).toBeTruthy();
+    expect(screen.getByLabelText('Elevation 88 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     await fireEvent.press(screen.getByLabelText('Save'));
@@ -118,7 +118,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(async () => expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(40));
-    expect(screen.getByText('Elev 40 m')).toBeTruthy();
+    expect(screen.getByLabelText('Elevation 40 m')).toBeTruthy();
   });
 
   it('Save stores the new echelon in the symbol', async () => {

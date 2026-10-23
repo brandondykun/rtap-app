@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
@@ -60,22 +60,36 @@ describe('AddPointMenu', () => {
   it('shows the ground elevation at the point and saves it with the point', async () => {
     setElevationSource(async () => 312.4);
     const ctx = await open();
-    expect(await screen.findByText('Elev 312 m')).toBeTruthy();
+    expect(await screen.findByLabelText('Elevation 312 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     expect((await items(ctx))[0].elevationM).toBe(312.4);
+  });
+
+  it('makes the elevation stand out: a small label, then the value in bold, muted while unknown', async () => {
+    let answer: ((m: number) => void) | null = null;
+    setElevationSource(() => new Promise((resolve) => (answer = resolve)));
+    await open();
+    await waitFor(() => expect(answer).not.toBeNull());
+    const row = screen.getByLabelText('Elevation unknown');
+    expect(within(row).getByText('Elevation').props.className).toContain('uppercase');
+    expect(within(row).getByText('—').props.className).toContain('text-text-muted');
+    await act(async () => answer!(312.4));
+    const value = within(await screen.findByLabelText('Elevation 312 m')).getByText('312 m');
+    expect(value.props.className).toContain('font-mono-bold');
+    expect(value.props.className).toMatch(/(^| )text-text( |$)/);
   });
 
   it('shows elevation in feet with the Altitude setting', async () => {
     useSettings.setState({ altitudeUnit: 'ft' });
     setElevationSource(async () => 312.4);
     await open();
-    expect(await screen.findByText('Elev 1025 ft')).toBeTruthy();
+    expect(await screen.findByLabelText('Elevation 1025 ft')).toBeTruthy();
   });
 
   it('saves an unknown elevation when the map has none, without blocking Add', async () => {
     const ctx = await open();
-    expect(screen.getByText('Elev —')).toBeTruthy();
+    expect(screen.getByLabelText('Elevation unknown')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     expect((await items(ctx))[0].elevationM).toBeNull();
@@ -84,7 +98,7 @@ describe('AddPointMenu', () => {
   it('saves the elevation of where the point ends up, even when Add comes before the display catches up', async () => {
     setElevationSource(async (c) => (Math.abs(c.lat - OTHER.lat) < 0.001 ? 50 : 312));
     const ctx = await open();
-    await screen.findByText('Elev 312 m');
+    await screen.findByLabelText('Elevation 312 m');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Add'));

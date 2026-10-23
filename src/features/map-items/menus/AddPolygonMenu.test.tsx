@@ -119,7 +119,7 @@ describe('AddPolygonMenu', () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Circle'));
     expect(screen.getByLabelText('Center')).toBeTruthy();
-    expect(screen.queryByText(/^Elev /)).toBeNull();
+    expect(screen.queryByLabelText(/^Elevation/)).toBeNull();
   });
 
   it('fills the next name for the polygon type', async () => {

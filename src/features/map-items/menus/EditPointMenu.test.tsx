@@ -60,7 +60,7 @@ describe('EditPointMenu', () => {
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('point.edit', { itemId: r.value.id }));
     await screen.findByDisplayValue('OP-1');
-    expect(screen.getByText('Elev 88 m')).toBeTruthy();
+    expect(screen.getByLabelText('Elevation 88 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OP RIDGE');
     await fireEvent.press(screen.getByLabelText('Save'));
@@ -72,7 +72,7 @@ describe('EditPointMenu', () => {
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(async () => expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(40));
-    expect(screen.getByText('Elev 40 m')).toBeTruthy();
+    expect(screen.getByLabelText('Elevation 40 m')).toBeTruthy();
   });
 
   it('deletes after a second tap', async () => {

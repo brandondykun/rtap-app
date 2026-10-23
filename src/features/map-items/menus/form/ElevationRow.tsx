@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { formatLength } from '@/features/location/gps-format';
 import { elevationAt } from '@/features/map/terrain/elevation';
@@ -28,5 +28,12 @@ export function ElevationRow() {
   }, [coord, locked]);
 
   const m = elevation && sameCoord(elevation.at, coord) ? elevation.m : null;
-  return <Text className="font-mono text-sm text-text-muted">{`Elev ${formatLength(m, unit)}`}</Text>;
+  const value = formatLength(m, unit);
+  // Stands out by size and weight alone, like the G-M angle: no border or fill, which would make it look editable.
+  return (
+    <View accessible accessibilityLabel={`Elevation ${m === null ? 'unknown' : value}`} className="flex-row items-baseline gap-3">
+      <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">Elevation</Text>
+      <Text className={`font-mono-bold text-lg ${m === null ? 'text-text-muted' : 'text-text'}`}>{value}</Text>
+    </View>
+  );
 }
