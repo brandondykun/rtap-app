@@ -58,16 +58,16 @@ function Row({ testID, lead, children, top, bottom }: RowProps) {
   );
 }
 
-function Grid({ testID, color, children }: { testID: string; color?: string; children: string }) {
+/** `outline` adds a crisp dark edge to the soft one, so the grid reads over snow (CTR and yours). */
+function Grid({ testID, color, outline = false, children }: { testID: string; color?: string; outline?: boolean; children: string }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
-  // A colored grid (yours) gets a crisp dark edge as well, so the light blue reads over snow.
-  return color ? (
-    <OutlinedText testID={testID} color={color} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+  return outline ? (
+    <OutlinedText testID={testID} color={color ?? colors.text} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </OutlinedText>
   ) : (
-    <Text testID={testID} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+    <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </Text>
   );
@@ -118,7 +118,7 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
       className="active:opacity-60">
       <Row
         testID="dock-self-row"
-        lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} />} tag="ME" tagColor={colors.self} tagStyle={halo} />}
+        lead={<CardLead icon={<Icon name="navigation" size={14} color={colors.self} outline />} tag="ME" tagColor={colors.self} tagStyle={halo} outline />}
         top={
           shown ? (
             <Text testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} style={halo} className="font-mono text-xs text-text">
@@ -134,7 +134,7 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
           ) : null
         }>
         {shown ? (
-          <Grid testID="gps-position" color={colors.friendly}>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
+          <Grid testID="gps-position" color={colors.friendly} outline>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
           <Text style={halo} className="text-xs text-text">{off ? 'Location is off' : 'Waiting for GPS…'}</Text>
         )}
@@ -158,7 +158,7 @@ function CenterRow() {
   return (
     <Row
       testID="dock-center"
-      lead={<CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={colors.text} tagStyle={halo} />}
+      lead={<CardLead icon={<CrosshairGlyph size={14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
       top={
         <>
           {isOp ? (
@@ -176,7 +176,9 @@ function CenterRow() {
           {r.bearing}
         </Text>
       }>
-      <Grid testID="readout-coordinate">{r.coordinate}</Grid>
+      <Grid testID="readout-coordinate" outline>
+        {r.coordinate}
+      </Grid>
     </Row>
   );
 }

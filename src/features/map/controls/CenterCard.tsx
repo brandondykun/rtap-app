@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
+import { OutlinedText } from '@/components/ui/OutlinedText';
 import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -31,15 +32,13 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       // See-through, so it hides less of the map.
       className="rounded-2xl bg-surface-glass px-3 py-2">
       <View className="flex-row items-center gap-2">
-        <CardLead icon={<CrosshairGlyph size={14} />} tag="CTR" tagColor={colors.text} tagStyle={glassHalo(colors)} />
-        <Text
-          testID="readout-coordinate"
-          style={glassHalo(colors)}
-          className="shrink font-mono-bold text-sm text-text"
-          adjustsFontSizeToFit
-          numberOfLines={1}>
-          {r.coordinate}
-        </Text>
+        <CardLead icon={<CrosshairGlyph size={14} outline />} tag="CTR" tagColor={colors.text} tagStyle={glassHalo(colors)} outline />
+        {/* A crisp dark edge as well as the soft one, so the grid reads over snow. */}
+        <View className="shrink">
+          <OutlinedText testID="readout-coordinate" color={colors.text} style={glassHalo(colors)} className="font-mono-bold text-sm" adjustsFontSizeToFit numberOfLines={1}>
+            {r.coordinate}
+          </OutlinedText>
+        </View>
       </View>
       <Text
         testID="center-vector"

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react-native';
+import { screen, within } from '@testing-library/react-native';
 
 import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -25,8 +25,12 @@ describe('CenterCard', () => {
   it('shows CTR and the crosshair grid', async () => {
     useInteraction.getState().setCamera({ center: DC, zoom: 12, bearing: 0 });
     await renderWithProviders(<CenterCard />);
-    expect(screen.getByTestId('center-card')).toHaveTextContent(new RegExp(`^CTR${formatCoordinate(DC, 'mgrs')}DIST`));
+    expect(screen.getByTestId('center-card')).toHaveTextContent(new RegExp(`^CTR.*${formatCoordinate(DC, 'mgrs')}DIST`));
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(DC, 'mgrs'));
+    // The crosshair, CTR and the grid have a crisp dark edge, so they read over snow.
+    const card = within(screen.getByTestId('center-card'));
+    expect(card.getAllByTestId('crosshair-outline', { includeHiddenElements: true })).toHaveLength(4);
+    expect(card.getAllByTestId('text-outline', { includeHiddenElements: true }).map((c) => c.props.children)).toEqual([...Array(8).fill('CTR'), ...Array(8).fill(formatCoordinate(DC, 'mgrs'))]);
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     // The CTR icon is the app's crosshair: white arms, amber dot.
     expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });

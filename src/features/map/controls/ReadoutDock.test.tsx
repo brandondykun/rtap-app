@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -12,6 +12,7 @@ import { ReadoutDock } from './ReadoutDock';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 const CENTER = { lat: 38.905, lon: -77.03 };
+const HIDDEN = { includeHiddenElements: true };
 const PROPS = { following: false, disabled: false, onRecenter: () => {} };
 
 const fix = (altitudeM: number | null) => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 4.6, timestamp: 1, altitudeM });
@@ -34,11 +35,8 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
     expect(screen.getByTestId('dock-self')).toHaveTextContent(/ME18S UJ \d{5} \d{5}.*142 m±5 m$/);
     expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
-    // Your grid in the friendly blue with a crisp dark edge (so it reads over snow); the crosshair grid stays plain.
+    // Your grid in the friendly blue; the crosshair grid stays plain.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
-    const edges = screen.getAllByTestId('text-outline', { includeHiddenElements: true });
-    expect(edges).toHaveLength(8);
-    for (const edge of edges) expect(edge).toHaveTextContent(screen.getByTestId('gps-position').props.children);
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     // The CTR icon is the app's crosshair: white arms, amber dot.
     expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
@@ -48,6 +46,20 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
     expect(screen.getByTestId('readout-range')).toHaveTextContent('987 m');
     expect(screen.getByTestId('readout-bearing')).toHaveTextContent(/^\d{3}°$/);
+  });
+
+  it('gives the CTR and ME tags, icons and grids a crisp dark edge, so they read over snow', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    const ctr = within(screen.getByTestId('dock-center'));
+    expect(ctr.getAllByTestId('crosshair-outline', HIDDEN)).toHaveLength(4);
+    expect(ctr.getAllByTestId('text-outline', HIDDEN).map((c) => c.props.children)).toEqual([...Array(8).fill('CTR'), ...Array(8).fill(formatCoordinate(CENTER, 'mgrs'))]);
+    const me = within(screen.getByTestId('dock-self'));
+    expect(me.getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
+    expect(me.getAllByTestId('text-outline', HIDDEN).map((c) => c.props.children)).toEqual([...Array(8).fill('ME'), ...Array(8).fill(formatCoordinate(DC, 'mgrs'))]);
+    // The distance, bearing, altitude and accuracy keep just the soft outline.
+    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(within(screen.getByTestId(id)).queryAllByTestId('text-outline', HIDDEN)).toHaveLength(0);
   });
 
   it('leaves the CTR row out when the center grid is not shown', async () => {

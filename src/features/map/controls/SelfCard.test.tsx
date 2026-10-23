@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
@@ -32,8 +32,10 @@ describe('SelfCard', () => {
     expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m · ACC ±5 m');
     // Like the portrait dock: your grid in the friendly blue, the ME tag in your location blue.
     expect(screen.getByTestId('gps-position')).toHaveStyle({ color: themeColors('dark').friendly });
-    // With a crisp dark edge, so the light blue reads over snow.
-    expect(screen.getAllByTestId('text-outline', { includeHiddenElements: true })).toHaveLength(8);
+    // The arrow, ME and your grid have a crisp dark edge, so the light blue reads over snow.
+    const line = within(screen.getByTestId('gps-line'));
+    expect(line.getAllByTestId('icon-outline', { includeHiddenElements: true })).toHaveLength(8);
+    expect(line.getAllByTestId('text-outline', { includeHiddenElements: true }).map((c) => c.props.children)).toEqual([...Array(8).fill('ME'), ...Array(8).fill(screen.getByTestId('gps-position').props.children)]);
     expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').self });
   });
 
