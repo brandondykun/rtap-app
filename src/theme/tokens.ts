@@ -4,7 +4,9 @@
  */
 export const palette = {
   'stone-50': '#fafaf9',
+  'stone-300': '#d6d3d1',
   'stone-400': '#a8a29e',
+  'stone-500': '#78716c',
   'stone-700': '#44403c',
   'stone-800': '#292524',
   'stone-900': '#1c1917',
@@ -74,6 +76,24 @@ export function themeColors(name: ThemeName, glassAlpha?: number): Record<Semant
 
 export function cssVars(name: ThemeName, glassAlpha?: number): Record<string, string> {
   return Object.fromEntries(Object.entries(themeColors(name, glassAlpha)).map(([token, color]) => [`--${token}`, color]));
+}
+
+/** Shades for the MGRS grid (the Grid color setting), lightest first. */
+export type GridShade = 'white' | 'light-gray' | 'gray' | 'dark-gray' | 'black';
+export const GRID_SHADES: readonly GridShade[] = ['white', 'light-gray', 'gray', 'dark-gray', 'black'];
+
+/** Each shade's line and label color, and the label outline: dark under light shades, light under dark ones. */
+const gridShades: Record<GridShade, { line: PaletteName; halo: PaletteName }> = {
+  white: { line: 'stone-50', halo: 'neutral-950' },
+  'light-gray': { line: 'stone-300', halo: 'neutral-950' },
+  gray: { line: 'stone-500', halo: 'neutral-950' },
+  'dark-gray': { line: 'stone-700', halo: 'stone-50' },
+  black: { line: 'neutral-950', halo: 'stone-50' },
+};
+
+export function gridShadeColors(shade: GridShade): { line: string; halo: string } {
+  const { line, halo } = gridShades[shade];
+  return { line: palette[line], halo: palette[halo] };
 }
 
 /** Raw colors for Mapbox layer styles and build scripts; identical to the UI colors. */

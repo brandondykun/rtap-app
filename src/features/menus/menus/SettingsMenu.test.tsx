@@ -158,6 +158,19 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().showGrid100m).toBe(false);
   });
 
+  it('picks the grid color from white (the default) to black, only while the grid shows', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('Grid color')).toBeTruthy();
+    expect(screen.getByLabelText('White')).toBeSelected();
+    for (const shade of ['White', 'Light gray', 'Gray', 'Dark gray', 'Black']) expect(screen.getByLabelText(shade)).toBeDisabled();
+    await fireEvent(screen.getByLabelText('Show MGRS grid'), 'valueChange', true);
+    await fireEvent.press(screen.getByLabelText('Black'));
+    expect(useSettings.getState().gridColor).toBe('black');
+    expect(screen.getByLabelText('Black')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Light gray'));
+    expect(useSettings.getState().gridColor).toBe('light-gray');
+  });
+
   it('shows or hides the toolbar text (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show toolbar text').props.value).toBe(true);

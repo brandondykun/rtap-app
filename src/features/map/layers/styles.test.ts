@@ -1,5 +1,5 @@
 import { POINT_TYPES, sidcForPointType } from '@/features/symbology/point-types';
-import { themeColors } from '@/theme/tokens';
+import { gridShadeColors, themeColors } from '@/theme/tokens';
 
 import { LABEL_CHIP_IMAGE_OPTIONS } from '../images/map-image-specs';
 import { MAP_IMAGE_IDS } from '../images/map-images';
@@ -247,7 +247,7 @@ describe('label chip padding', () => {
 });
 
 describe('MGRS grid label styles', () => {
-  const colors = themeColors('dark');
+  const colors = gridShadeColors('white');
 
   it('shrinks the zone names when zoomed far out, so neighbours stay clear of each other', () => {
     expect(makeGridAreaLabelStyle(colors).textSize).toEqual(['interpolate', ['linear'], ['zoom'], 1.5, 9, 3, 13]);

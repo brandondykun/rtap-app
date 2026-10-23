@@ -9,6 +9,7 @@ import { TextField } from '@/components/ui/TextField';
 import { gridMagneticAngle } from '@/lib/geo/north/convert';
 import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
+import { gridShadeColors, type GridShade } from '@/theme/tokens';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
 import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize, type PanelBackground } from '@/stores/settings';
@@ -22,6 +23,15 @@ const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'topo', label: 'Topo' },
   { value: 'dark', label: 'Dark' },
 ];
+
+const GRID_COLOR_LABELS: Record<GridShade, string> = { white: 'White', 'light-gray': 'Light gray', gray: 'Gray', 'dark-gray': 'Dark gray', black: 'Black' };
+
+/** Each grid shade as a swatch of its color (the label is its accessible name). */
+const GRID_COLOR_OPTIONS = (Object.keys(GRID_COLOR_LABELS) as GridShade[]).map((value) => ({
+  value,
+  label: GRID_COLOR_LABELS[value],
+  icon: <View testID={`grid-swatch-${value}`} className="h-5 w-5 rounded-full border border-border" style={{ backgroundColor: gridShadeColors(value).line }} />,
+}));
 
 const PANEL_BACKGROUND_OPTIONS: { value: PanelBackground; label: string }[] = [
   { value: 'clear', label: 'Clear' },
@@ -100,6 +110,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowGridLabels = useSettings((s) => s.setShowGridLabels);
   const showGrid100m = useSettings((s) => s.showGrid100m);
   const setShowGrid100m = useSettings((s) => s.setShowGrid100m);
+  const gridColor = useSettings((s) => s.gridColor);
+  const setGridColor = useSettings((s) => s.setGridColor);
   const terrainHeight = useSettings((s) => s.terrainExaggeration);
   const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
   const terrainIn2d = useSettings((s) => s.terrainIn2d);
@@ -239,6 +251,9 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuToggle label="Show MGRS grid" value={showMgrsGrid} onValueChange={setShowMgrsGrid} />
         <MenuToggle label="Show grid labels" value={showGridLabels} disabled={!showMgrsGrid} onValueChange={setShowGridLabels} />
         <MenuToggle label="Show 100 m grid lines" value={showGrid100m} disabled={!showMgrsGrid} onValueChange={setShowGrid100m} />
+      </MenuSection>
+      <MenuSection label="Grid color">
+        <MenuSegmented<GridShade> options={GRID_COLOR_OPTIONS} value={gridColor} disabled={!showMgrsGrid} onChange={setGridColor} />
       </MenuSection>
       <MenuSection label="3D terrain height">
         <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />

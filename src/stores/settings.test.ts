@@ -31,6 +31,13 @@ describe('settings store', () => {
     expect(useSettings.getState().terrain3d).toBe(false);
   });
 
+  it('draws the grid white by default, and persists another shade', () => {
+    expect(useSettings.getState().gridColor).toBe('white');
+    useSettings.getState().setGridColor('dark-gray');
+    expect(useSettings.getState().gridColor).toBe('dark-gray');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ gridColor: 'dark-gray' });
+  });
+
   it('keeps terrain in 2D by default, and persists turning it off', () => {
     expect(useSettings.getState().terrainIn2d).toBe(true);
     useSettings.getState().setTerrainIn2d(false);
@@ -198,6 +205,15 @@ describe('settings store', () => {
       seed({ showMgrsGrid: 'yes', showGridLabels: 0, showGrid100m: null });
       await useSettings.persist.rehydrate();
       expect(useSettings.getState()).toMatchObject({ showMgrsGrid: true, showGridLabels: false, showGrid100m: false });
+    });
+
+    it('loads the grid color and ignores an invalid one', async () => {
+      seed({ gridColor: 'black' });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().gridColor).toBe('black');
+      seed({ gridColor: 'purple' });
+      await useSettings.persist.rehydrate();
+      expect(useSettings.getState().gridColor).toBe('black');
     });
 
     it('loads terrain in 2D and ignores an invalid value', async () => {

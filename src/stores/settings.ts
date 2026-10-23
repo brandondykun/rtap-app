@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
+import { GRID_SHADES, type GridShade } from '@/theme/tokens';
 
 export type CoordinateFormat = 'mgrs' | 'latlon';
 /** Mapbox basemap styles offered in Settings. */
@@ -39,6 +40,8 @@ type SettingsValues = {
   showGridLabels: boolean;
   /** 100 m MGRS grid lines when zoomed in close; off stops at 1 km lines. */
   showGrid100m: boolean;
+  /** The shade the MGRS grid lines and labels draw in. */
+  gridColor: GridShade;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
   /** Tilted map with raised terrain and a sky (the 3D toolbar toggle). */
@@ -65,6 +68,7 @@ type SettingsActions = {
   setShowMgrsGrid: (show: boolean) => void;
   setShowGridLabels: (show: boolean) => void;
   setShowGrid100m: (show: boolean) => void;
+  setGridColor: (shade: GridShade) => void;
   toggleMapLabels: () => void;
   toggleTerrain3d: () => void;
   /** Returns false (and changes nothing) unless finite and within 1–3. */
@@ -95,6 +99,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showMgrsGrid: false,
   showGridLabels: true,
   showGrid100m: true,
+  gridColor: 'white',
   showMapLabels: true,
   terrain3d: false,
   terrainExaggeration: 1.5,
@@ -140,6 +145,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showMgrsGrid: typeof p.showMgrsGrid === 'boolean' ? p.showMgrsGrid : current.showMgrsGrid,
     showGridLabels: typeof p.showGridLabels === 'boolean' ? p.showGridLabels : current.showGridLabels,
     showGrid100m: typeof p.showGrid100m === 'boolean' ? p.showGrid100m : current.showGrid100m,
+    gridColor: pick(p.gridColor, GRID_SHADES, current.gridColor),
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
@@ -166,6 +172,7 @@ export const useSettings = create<SettingsState>()(
       setShowMgrsGrid: (showMgrsGrid) => set({ showMgrsGrid }),
       setShowGridLabels: (showGridLabels) => set({ showGridLabels }),
       setShowGrid100m: (showGrid100m) => set({ showGrid100m }),
+      setGridColor: (gridColor) => set({ gridColor }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       toggleTerrain3d: () => set({ terrain3d: !get().terrain3d }),
       setTerrainExaggeration: (x) => {
@@ -189,7 +196,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -203,6 +210,7 @@ export const useSettings = create<SettingsState>()(
         showMgrsGrid,
         showGridLabels,
         showGrid100m,
+        gridColor,
         showMapLabels,
         terrain3d,
         terrainExaggeration,

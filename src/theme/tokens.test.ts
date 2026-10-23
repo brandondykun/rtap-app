@@ -1,5 +1,5 @@
 import names from './semantic-token-names.json';
-import { cssVars, mapColors, palette, themeColors, themes } from './tokens';
+import { cssVars, GRID_SHADES, gridShadeColors, mapColors, palette, themeColors, themes } from './tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const tailwindConfig = require('../../tailwind.config.js');
@@ -25,6 +25,15 @@ describe('theme tokens', () => {
     expect(colors.surface).toBe('#1c1917');
     expect(colors.accent).toBe('#f59e0b');
     expect(colors['surface-chrome']).toBe('rgba(10, 10, 10, 0.9)');
+  });
+
+  it('offers grid shades from white (the grid as it was) to black, with a dark outline on light shades and a light one on dark', () => {
+    expect(GRID_SHADES).toEqual(['white', 'light-gray', 'gray', 'dark-gray', 'black']);
+    expect(gridShadeColors('white')).toEqual({ line: themeColors('dark')['map-label-text'], halo: themeColors('dark')['point-symbol-halo'] });
+    expect(gridShadeColors('light-gray')).toEqual({ line: '#d6d3d1', halo: '#0a0a0a' });
+    expect(gridShadeColors('gray')).toEqual({ line: '#78716c', halo: '#0a0a0a' });
+    expect(gridShadeColors('dark-gray')).toEqual({ line: '#44403c', halo: '#fafaf9' });
+    expect(gridShadeColors('black')).toEqual({ line: '#0a0a0a', halo: '#fafaf9' });
   });
 
   it('makes success a bright green (green-400), so Valid stands out on the dark panels', () => {

@@ -36,6 +36,11 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
     help: 'Numbers on the grid lines (kilometres, or hundreds of metres, within the 100 km square), and the grid zone and 100 km square names when zoomed out.',
   },
   { name: 'Show 100 m grid lines', help: 'The finest grid lines, when zoomed in close. Turn it off to stop at 1 km lines.' },
+  {
+    name: 'Grid color',
+    choices: 'White · Light gray · Gray · Dark gray · Black',
+    help: 'The shade of the MGRS grid lines and numbers. Pick one that stands out from the ground: white over dark forest, black over snow.',
+  },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
   { name: 'Terrain in 2D', help: 'Hills at true scale in 2D. Turn it off to lay the map flat in 2D; 3D always uses the terrain height.' },
   {

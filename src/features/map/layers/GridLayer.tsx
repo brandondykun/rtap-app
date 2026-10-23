@@ -3,7 +3,7 @@ import { useMemo, type ComponentProps } from 'react';
 
 import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
-import { useTheme } from '@/theme/ThemeProvider';
+import { gridShadeColors } from '@/theme/tokens';
 
 import { eastingsRunSouth, mgrsGrid, orientEastings } from './mgrs-grid';
 import { makeGridAreaLabelStyle, makeGridLineLabelStyle, makeGridLineStyle } from './styles';
@@ -25,18 +25,19 @@ export function GridLayer() {
   const view = useInteraction((s) => s.gridView);
   // Easting numbers read down the screen; the lines turn around only when the map turns far enough to tip them over.
   const south = useInteraction((s) => eastingsRunSouth(s.cameraBearing));
-  const { colors } = useTheme();
+  const shade = useSettings((s) => s.gridColor);
   const grid = useMemo(() => (show && view ? mgrsGrid(view, finest) : null), [show, view, finest]);
   const lines = useMemo(() => grid && orientEastings(grid.lines, south), [grid, south]);
   const styles = useMemo(() => {
     const visibility = showLabels ? 'visible' : 'none';
+    const colors = gridShadeColors(shade);
     return {
       line: makeGridLineStyle(colors),
       eastingLabel: { ...makeGridLineLabelStyle(colors, false), visibility } as const,
       northingLabel: { ...makeGridLineLabelStyle(colors), visibility } as const,
       areaLabel: { ...makeGridAreaLabelStyle(colors), visibility } as const,
     };
-  }, [colors, showLabels]);
+  }, [shade, showLabels]);
   if (!grid || !lines) return null;
 
   return (

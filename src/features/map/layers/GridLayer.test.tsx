@@ -2,6 +2,7 @@ import { act } from '@testing-library/react-native';
 
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
+import { gridShadeColors, themeColors } from '@/theme/tokens';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -68,6 +69,19 @@ describe('GridLayer', () => {
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(close).lines, true));
     await act(async () => useSettings.getState().setShowGrid100m(false));
     expect(mapboxMock().__props.ShapeSource['mgrs-grid'].shape).toEqual(orientEastings(mgrsGrid(close, 1_000).lines, true));
+  });
+
+  it('draws the lines and labels in the grid color, white by default as before', async () => {
+    await renderWithProviders(<GridLayer />);
+    const props = mapboxMock().__props;
+    const labels = () => [props.SymbolLayer['mgrs-grid-easting-labels'], props.SymbolLayer['mgrs-grid-northing-labels'], props.SymbolLayer['mgrs-grid-area-labels']];
+    expect(props.LineLayer['mgrs-grid-lines'].style).toMatchObject({ lineColor: themeColors('dark')['map-label-text'] });
+    for (const l of labels()) expect(l.style).toMatchObject({ textColor: themeColors('dark')['map-label-text'], textHaloColor: themeColors('dark')['point-symbol-halo'] });
+    await act(async () => useSettings.getState().setGridColor('black'));
+    const black = gridShadeColors('black');
+    expect(props.LineLayer['mgrs-grid-lines'].style).toMatchObject({ lineColor: black.line });
+    // Black numbers get a light outline, so they still read over dark ground.
+    for (const l of labels()) expect(l.style).toMatchObject({ textColor: black.line, textHaloColor: black.halo });
   });
 
   it('hides the labels with the grid labels setting', async () => {

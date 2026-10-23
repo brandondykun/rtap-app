@@ -242,18 +242,21 @@ export function makePolygonLabelStyle(colors: Record<SemanticToken, string>, tex
   return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
 }
 
-/** MGRS grid lines: thin and see-through white, firmer for 100 km lines and firmest for grid zone edges. */
-export function makeGridLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+/** Colors for the MGRS grid: its lines and labels (`line`), and the outline around the labels (`halo`). */
+export type GridColors = { line: string; halo: string };
+
+/** MGRS grid lines: thin and see-through, firmer for 100 km lines and firmest for grid zone edges. */
+export function makeGridLineStyle(grid: GridColors): LineLayerStyle {
   return {
-    lineColor: colors['map-label-text'],
+    lineColor: grid.line,
     lineWidth: ['match', ['get', 'kind'], 'zone', 1.6, 'major', 1.2, 0.8] as LineLayerStyle['lineWidth'],
     lineOpacity: ['match', ['get', 'kind'], 'zone', 0.85, 'major', 0.7, 0.5] as LineLayerStyle['lineOpacity'],
   };
 }
 
 /** MGRS grid numbers along the lines: small outlined text, no chip. `upright` false lets them follow the line's direction. */
-export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>, upright = true): SymbolLayerStyle {
-  const style: SymbolLayerStyle = { ...makeGridAreaLabelStyle(colors), symbolPlacement: 'line', symbolSpacing: 250, textSize: 11 };
+export function makeGridLineLabelStyle(grid: GridColors, upright = true): SymbolLayerStyle {
+  const style: SymbolLayerStyle = { ...makeGridAreaLabelStyle(grid), symbolPlacement: 'line', symbolSpacing: 250, textSize: 11 };
   return upright ? style : { ...style, textKeepUpright: false };
 }
 
@@ -261,13 +264,13 @@ export function makeGridLineLabelStyle(colors: Record<SemanticToken, string>, up
  * Grid zone and 100 km square names, inside their areas. Zoomed all the way out a grid zone is barely wider than a
  * 13 pt name, so the names shrink there (to 9 pt) rather than collide and drop out; full size from zoom 3.
  */
-export function makeGridAreaLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
+export function makeGridAreaLabelStyle(grid: GridColors): SymbolLayerStyle {
   return {
     textField: ['get', 'label'],
     textFont: MAP_LABEL_FONT,
     textSize: ['interpolate', ['linear'], ['zoom'], MIN_ZOOM, 9, 3, 13],
-    textColor: colors['map-label-text'],
-    textHaloColor: colors['point-symbol-halo'],
+    textColor: grid.line,
+    textHaloColor: grid.halo,
     textHaloWidth: 1.2,
   };
 }
