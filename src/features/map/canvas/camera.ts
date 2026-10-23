@@ -3,8 +3,8 @@ import type { LatLon } from '@/lib/geo/types';
 import { normalizeDeg, wrapLon } from '@/lib/geo/units/angle';
 import type { ViewBounds } from '@/stores/interaction';
 
-/** The furthest the map zooms out: the whole Earth about fills a phone screen, with little empty space around it. */
-export const MIN_ZOOM = 2;
+/** The furthest the map zooms out: the whole Earth fits a phone screen, with a little space around it. */
+export const MIN_ZOOM = 1.5;
 /** Shown when a mission has no saved camera and there is no position fix yet. */
 export const WORLD_CAMERA: MissionCamera = { center: { lat: 20, lon: 0 }, zoom: MIN_ZOOM, bearing: 0 };
 /** Zoom used when centering on the user (first fix, recenter). */

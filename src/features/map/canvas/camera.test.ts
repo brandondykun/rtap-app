@@ -37,7 +37,7 @@ describe('camera helpers', () => {
   });
 
   it('clamps zoom, never further out than the whole Earth about filling the screen', () => {
-    expect(MIN_ZOOM).toBe(2);
+    expect(MIN_ZOOM).toBe(1.5);
     expect(clampZoom(-1)).toBe(MIN_ZOOM);
     expect(clampZoom(1)).toBe(MIN_ZOOM);
     expect(clampZoom(30)).toBe(22);
