@@ -116,7 +116,7 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
         <View className="flex-row items-center gap-1">
           {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
           {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}
-          <Text testID="mgrs-status" className="shrink text-sm text-text-muted">
+          <Text testID="mgrs-status" className="shrink text-sm text-text">
             {status.status === 'valid' ? (
               <>
                 <Text className="text-success">Valid</Text>

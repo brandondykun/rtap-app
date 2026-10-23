@@ -20,6 +20,9 @@ describe('MgrsInput', () => {
     expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue(parts.zoneBand);
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(parts.northing);
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent('Valid · 1.15 km @ 103° GRID');
+    // The distance and direction are white, not muted gray, so they read easily.
+    expect(screen.getByTestId('mgrs-status').props.className).toContain('text-text');
+    expect(screen.getByTestId('mgrs-status').props.className).not.toContain('text-text-muted');
   });
 
   it('uppercases letters and strips non-digits', async () => {
