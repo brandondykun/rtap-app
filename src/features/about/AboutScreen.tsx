@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +11,8 @@ import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { SETTINGS_HELP, type SettingHelp } from '@/features/menus/menus/settings-help';
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
+
+import { updateLabel } from './update-label';
 
 const APP_ICON = require('../../../assets/images/icon.png');
 
@@ -141,6 +144,9 @@ function IdentityCard({ version }: { version: string }) {
       <View className="self-start rounded-full border border-border px-3 py-1">
         <Text className="font-mono text-sm text-text">{`Version ${version}`}</Text>
       </View>
+      <Text testID="about-update" className="font-mono text-sm text-text-muted">
+        {updateLabel(Updates)}
+      </Text>
     </View>
   );
 }

@@ -24,6 +24,8 @@ describe('AboutScreen', () => {
     expect(screen.getByText('RTAP').props.className).toContain('text-accent');
     expect(card).toHaveTextContent(/RTAP.*Realtime Team Awareness Platform.*Built by military and geospatial professionals\..*Version/);
     expect(screen.getByText(`Version ${Constants.expoConfig?.version ?? '—'}`)).toBeTruthy();
+    // Which code the phone runs: what shipped in the store build, or an over-the-air update.
+    expect(screen.getByTestId('about-update')).toHaveTextContent(/built-in|update /);
     // The real app icon, not a stand-in glyph.
     expect(screen.getByTestId('about-app-icon').props.source).toBeTruthy();
     expect(screen.queryByTestId('about-mark')).toBeNull();

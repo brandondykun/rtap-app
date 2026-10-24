@@ -3,6 +3,12 @@
     "name": "RTAP",
     "slug": "map",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/865061f6-4c5e-4070-abdb-392c927ddcc3"
+    },
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "map",
