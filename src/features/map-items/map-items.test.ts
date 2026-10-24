@@ -1,5 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 
+import type { MapItem } from '@/lib/db/models/MapItem';
+import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
 import {
@@ -14,7 +16,7 @@ import {
   updateLine,
   updatePolygon,
 } from './commands';
-import { parseLineGeometry, parsePolygonGeometry, pointCoord } from './geometry';
+import { parseLineGeometry, parsePolygonGeometry, pointCoord, pointGeometry } from './geometry';
 import {
   findItem,
   getMissionItemNames,
@@ -280,6 +282,53 @@ describe('map items', () => {
       expect(item).toMatchObject({ notes: 'n', style: '{"polygonType":"free-fire-area","shape":"points"}' });
       expect(parsePolygonGeometry(item!.geometry)).toEqual(tri);
     });
+  });
+});
+
+describe('items from a newer version of the app', () => {
+  const tri = [at, { lat: at.lat + 0.01, lon: at.lon }, { lat: at.lat, lon: at.lon + 0.01 }];
+  // What a sync could bring down from a teammate on a newer version: a kind this app does not know.
+  const placeUnknownKind = (ctx: ReturnType<typeof makeTestContext>) =>
+    ctx.db.write(() =>
+      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
+        i.missionId = 'm1';
+        i.kind = 'text' as MapItem['kind'];
+        i.geometry = pointGeometry(at);
+        i.sidc = null;
+        i.name = 'NOTE';
+        i.createdBy = 'other';
+        i.updatedBy = 'other';
+      }),
+    );
+  const restyle = (ctx: ReturnType<typeof makeTestContext>, id: string, extra: Record<string, unknown>) =>
+    findItem(ctx.db, id).then((item) =>
+      ctx.db.write(() => item!.update((i) => void (i.style = JSON.stringify({ ...JSON.parse(i.style!), ...extra })))),
+    );
+
+  it('ignores items of a kind this app does not know, so they are never drawn as something else', async () => {
+    const ctx = makeTestContext();
+    const unknown = await placeUnknownKind(ctx);
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    expect((await firstValueFrom(observeMissionItems(ctx.db, 'm1'))).map((i) => i.name)).toEqual(['HOS-1']);
+    expect(await firstValueFrom(observeItem(ctx.db, unknown.id))).toBeNull();
+  });
+
+  it('keeps style details it does not know when a line is edited', async () => {
+    const ctx = makeTestContext();
+    const r = await placeLine(ctx, { missionId: 'm1', lineType: 'phase-line', name: 'RED', points: tri.slice(0, 2) });
+    if (!r.ok) throw new Error('setup');
+    await restyle(ctx, r.value.id, { dash: 'long' });
+    await updateLine(ctx, r.value.id, { lineType: 'boundary' });
+    expect(JSON.parse((await findItem(ctx.db, r.value.id))!.style!)).toEqual({ lineType: 'boundary', dash: 'long' });
+  });
+
+  it('keeps style details it does not know when a polygon is edited, and still drops the old circle', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: '1', shape: { kind: 'circle', center: at, radiusM: 500 } });
+    if (!r.ok) throw new Error('setup');
+    await restyle(ctx, r.value.id, { dash: 'long' });
+    await updatePolygon(ctx, r.value.id, { polygonType: 'objective', shape: { kind: 'points', points: tri } });
+    expect(JSON.parse((await findItem(ctx.db, r.value.id))!.style!)).toEqual({ polygonType: 'objective', shape: 'points', dash: 'long' });
   });
 });
 

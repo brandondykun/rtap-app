@@ -219,7 +219,7 @@ export async function updateLine(
     await ctx.db.write(() =>
       item.update((i) => {
         if (patch.points) i.geometry = lineGeometry(patch.points);
-        if (patch.lineType) i.style = lineStyle(patch.lineType);
+        if (patch.lineType) i.style = lineStyle(patch.lineType, i.style);
         if (patch.name !== undefined) i.name = patch.name.trim();
         if (patch.notes !== undefined) i.notes = patch.notes;
         i.updatedBy = ctx.actorId();
@@ -299,7 +299,7 @@ export async function updatePolygon(
     await ctx.db.write(() =>
       item.update((i) => {
         if (parts) i.geometry = parts.geometry;
-        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape);
+        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, i.style);
         if (patch.name !== undefined) i.name = patch.name.trim();
         if (patch.notes !== undefined) i.notes = patch.notes;
         i.updatedBy = ctx.actorId();

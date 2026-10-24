@@ -2,7 +2,7 @@ import { Q, type Database } from '@nozbe/watermelondb';
 import { distinctUntilChanged, map, type Observable } from 'rxjs';
 
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
-import type { MapItem, MapItemKind } from '@/lib/db/models/MapItem';
+import { MAP_ITEM_KINDS, type MapItem, type MapItemKind } from '@/lib/db/models/MapItem';
 import { isKnownSidc } from '@/features/symbology/categories';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
 import { Tables } from '@/lib/db/schema';
@@ -39,8 +39,12 @@ function missionQuery(db: Database, missionId: string) {
   return db.get<MapItem>(Tables.mapItems).query(Q.where('mission_id', missionId));
 }
 
+// Items of a kind this app does not know (from a newer version) are never shown, so they cannot be drawn as something else.
+const knownKind = Q.where('kind', Q.oneOf([...MAP_ITEM_KINDS]));
+
 export function observeMissionItems(db: Database, missionId: string): Observable<MapItemSnapshot[]> {
   return missionQuery(db, missionId)
+    .extend(knownKind)
     .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'elevation_m', 'updated_at'])
     .pipe(map((items) => items.map(snapshot)));
 }
@@ -61,7 +65,7 @@ export function observeMissionSidcs(db: Database, missionId: string): Observable
 export function observeItem(db: Database, id: string): Observable<MapItemSnapshot | null> {
   return db
     .get<MapItem>(Tables.mapItems)
-    .query(Q.where('id', id))
+    .query(Q.where('id', id), knownKind)
     .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
     .pipe(map((items) => (items[0] ? snapshot(items[0]) : null)));
 }

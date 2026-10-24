@@ -4,6 +4,8 @@ import { date, field, readonly, text } from '@nozbe/watermelondb/decorators';
 import { Tables } from '../schema';
 
 export type MapItemKind = 'point' | 'line' | 'polygon';
+/** The kinds this version of the app can show; a newer version may sync down others, which are left alone. */
+export const MAP_ITEM_KINDS: readonly MapItemKind[] = ['point', 'line', 'polygon'];
 
 export class MapItem extends Model {
   static table = Tables.mapItems;

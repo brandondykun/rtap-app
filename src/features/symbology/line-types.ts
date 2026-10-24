@@ -1,3 +1,5 @@
+import { mergeStyle } from './style-json';
+
 /** Military control lines the Line menu offers (spec 2026-10-13-lines-design.md §3.1). */
 export type LineType =
   | 'phase-line'
@@ -65,8 +67,9 @@ export function lineLabel(type: LineType, name: string): string {
   return `${prefix} ${trimmed}`;
 }
 
-export function lineStyle(type: LineType): string {
-  return JSON.stringify({ lineType: type });
+/** The style for a line of `type`; pass the line's current style when editing, to keep what this app does not know. */
+export function lineStyle(type: LineType, existing?: string | null): string {
+  return mergeStyle(existing, ['lineType'], { lineType: type });
 }
 
 /** The line type stored in an item's `style`; unknown or missing values read as a phase line. */

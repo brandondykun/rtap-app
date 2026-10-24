@@ -1,5 +1,7 @@
 import type { LatLon } from '@/lib/geo/types';
 
+import { mergeStyle } from './style-json';
+
 /** Military areas the Polygon menu offers (spec 2026-10-13-polygons-design.md §3.1). */
 export type PolygonType =
   | 'assembly-area'
@@ -51,8 +53,13 @@ export type PolygonStyle = { polygonType: PolygonType; shape: PolygonShape };
 /** Largest circle the app accepts (500 km). */
 export const MAX_RADIUS_M = 500_000;
 
-export function polygonStyle(type: PolygonType, shape: PolygonShape): string {
-  return JSON.stringify(shape.kind === 'circle' ? { polygonType: type, shape: 'circle', center: shape.center, radiusM: shape.radiusM } : { polygonType: type, shape: 'points' });
+/** The style for a polygon; pass its current style when editing, to keep what this app does not know. */
+export function polygonStyle(type: PolygonType, shape: PolygonShape, existing?: string | null): string {
+  return mergeStyle(
+    existing,
+    ['polygonType', 'shape', 'center', 'radiusM'],
+    shape.kind === 'circle' ? { polygonType: type, shape: 'circle', center: shape.center, radiusM: shape.radiusM } : { polygonType: type, shape: 'points' },
+  );
 }
 
 const validCenter = (c: unknown): c is LatLon => {
