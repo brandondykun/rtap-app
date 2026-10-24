@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 
 import { placePoint } from '@/features/map-items/commands';
 import { makeTestContext } from '@/lib/db/test-database';
+import { DEFAULT_PROFILE, useProfile } from '@/stores/profile';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -40,6 +41,39 @@ beforeEach(() => {
   jest.clearAllMocks();
   Object.assign(mockDims, { width: 390, height: 844 });
   useSettings.setState(DEFAULT_SETTINGS);
+  useProfile.setState({ ...DEFAULT_PROFILE, callsignPrompted: true });
+});
+
+describe('MissionsScreen callsign prompt', () => {
+  beforeEach(() => useProfile.setState(DEFAULT_PROFILE));
+
+  it('asks for a callsign on first launch and saves it', async () => {
+    await renderWithProviders(<MissionsScreen />);
+    expect(await screen.findByText('Choose a callsign')).toBeTruthy();
+    const save = screen.getByRole('button', { name: 'Save callsign' });
+    expect(save).toBeDisabled();
+    await fireEvent.changeText(screen.getByLabelText('Callsign'), 'viper_6');
+    expect(screen.getByText('Up to 16 letters, numbers, spaces or hyphens')).toBeTruthy();
+    expect(save).toBeDisabled();
+    await fireEvent.changeText(screen.getByLabelText('Callsign'), 'viper 6');
+    await fireEvent.press(save);
+    expect(useProfile.getState()).toMatchObject({ callsign: 'VIPER 6', callsignPrompted: true });
+    expect(screen.queryByText('Choose a callsign')).toBeNull();
+  });
+
+  it('can be put off with Later, and does not come back', async () => {
+    await renderWithProviders(<MissionsScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Later' }));
+    expect(useProfile.getState()).toMatchObject({ callsign: null, callsignPrompted: true });
+    expect(screen.queryByText('Choose a callsign')).toBeNull();
+  });
+
+  it('is not shown once answered', async () => {
+    useProfile.getState().dismissCallsignPrompt();
+    await renderWithProviders(<MissionsScreen />);
+    expect(await screen.findByText('No missions yet')).toBeTruthy();
+    expect(screen.queryByText('Choose a callsign')).toBeNull();
+  });
 });
 
 describe('MissionsScreen', () => {

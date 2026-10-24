@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Icon } from '@/components/ui/Icon';
 import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
 import { notifySuccess } from '@/features/feedback/feedback';
+import { CallsignPrompt } from '@/features/profile/CallsignPrompt';
 import { isLandscape } from '@/features/map/layout';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
@@ -151,6 +152,7 @@ export function MissionsScreen() {
           ) : null
         }
       />
+      <CallsignPrompt />
       {missions === null ? null : missions.length === 0 ? (
         <EmptyState onCreate={openCreate} />
       ) : landscape ? (

@@ -3,6 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { declination } from '@/lib/geo/north/magnetic';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { DEFAULT_PROFILE, useProfile } from '@/stores/profile';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -15,9 +16,40 @@ beforeEach(() => {
   useInteraction.setState(INITIAL_INTERACTION);
   useInteraction.getState().setCamera({ center: DC, zoom: 12, bearing: 0 });
   useMenu.setState(INITIAL_MENU);
+  useProfile.setState(DEFAULT_PROFILE);
 });
 
 describe('SettingsMenu', () => {
+  it('starts with your callsign, saved in capitals when the edit finishes', async () => {
+    useProfile.getState().setCallsign('VIPER 6');
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getAllByTestId(/^menu-section-/)[0].props.testID).toBe('menu-section-Callsign');
+    const field = screen.getByLabelText('Callsign');
+    expect(field.props.value).toBe('VIPER 6');
+    await fireEvent.changeText(field, 'red one');
+    expect(useProfile.getState().callsign).toBe('VIPER 6');
+    await fireEvent(field, 'submitEditing');
+    expect(useProfile.getState().callsign).toBe('RED ONE');
+    expect(field.props.value).toBe('RED ONE');
+  });
+
+  it('explains the rule and keeps the old callsign when the new one is not valid', async () => {
+    useProfile.getState().setCallsign('VIPER 6');
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    const field = screen.getByLabelText('Callsign');
+    await fireEvent.changeText(field, 'viper_6');
+    await fireEvent(field, 'blur');
+    expect(screen.getByText('Up to 16 letters, numbers, spaces or hyphens')).toBeTruthy();
+    expect(useProfile.getState().callsign).toBe('VIPER 6');
+  });
+
+  it('saves a typed callsign when the menu closes with the keyboard up', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    await fireEvent.changeText(screen.getByLabelText('Callsign'), 'hawk');
+    await screen.unmount();
+    expect(useProfile.getState().callsign).toBe('HAWK');
+  });
+
   it('changes coordinate format, angle unit and north reference', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     await fireEvent.press(screen.getByLabelText('Lat/Lon'));

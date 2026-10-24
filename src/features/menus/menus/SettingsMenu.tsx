@@ -6,6 +6,7 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { TextField } from '@/components/ui/TextField';
+import { CallsignSetting } from '@/features/profile/CallsignSetting';
 import { gridMagneticAngle } from '@/lib/geo/north/convert';
 import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
@@ -162,6 +163,9 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   return (
     <View>
       <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
+      <MenuSection label="Callsign">
+        <CallsignSetting />
+      </MenuSection>
       <MenuSection label="Basemap">
         <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
       </MenuSection>
