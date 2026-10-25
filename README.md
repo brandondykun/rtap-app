@@ -100,6 +100,20 @@ Builds use EAS. Each build profile has its own update channel:
 The runtime version uses the **fingerprint** policy, so an update only reaches builds with matching native code.
 Changes to native code (a new native library, new permissions) need a new build instead.
 
+Each profile is its own app, so all three can sit on one phone, each with its own data:
+
+| Profile | App name | Bundle id / package | Link scheme |
+| --- | --- | --- | --- |
+| `development` | RTAP Dev | `com.eratas.rtap.dev` | `map-dev` |
+| `preview` | RTAP Preview | `com.eratas.rtap.preview` | `map-preview` |
+| `production` | RTAP | `com.eratas.rtap` | `map` |
+
+`app.config.ts` picks the variant from `APP_VARIANT`, which is set in each EAS environment (not in `eas.json`), and
+each build profile names its environment. The bundle id is part of the fingerprint, so **always publish with
+`--environment` matching the channel**: an update published for preview without `--environment preview` is
+calculated for the store app's fingerprint and never reaches preview builds. Local native builds default to the store
+app; prefix them to get the dev app, e.g. `APP_VARIANT=development npx expo run:ios`.
+
 ```bash
 npx eas-cli@latest build --profile preview --platform ios                      # internal test build
 npx eas-cli@latest update --channel preview --environment preview --message "…"   # ship JS changes to it
