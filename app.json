@@ -44,6 +44,14 @@
       ],
       "@rnmapbox/maps",
       [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "eratas-software-llc",
+          "project": "rtap"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "RTAP shows your position and heading on the map.",

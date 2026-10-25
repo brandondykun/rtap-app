@@ -9,8 +9,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { getAppCommandContext } from '@/lib/db/app-command-context';
 import { CommandContextProvider } from '@/lib/db/command-context-provider';
+import { initMonitoring, wrapRoot } from '@/lib/monitoring/sentry';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 
+initMonitoring();
 void SplashScreen.preventAutoHideAsync();
 
 function ThemedStack() {
@@ -33,7 +35,9 @@ function ThemedStack() {
   );
 }
 
-export default function RootLayout() {
+export default wrapRoot(RootLayout);
+
+function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ JetBrainsMono_500Medium, JetBrainsMono_700Bold });
   // A font failure falls back to the system font rather than blocking the app.
   const ready = fontsLoaded || fontError !== null;
