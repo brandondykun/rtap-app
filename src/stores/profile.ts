@@ -18,6 +18,8 @@ type ProfileActions = {
   /** Saves the callsign normalized; an empty one clears it. Returns false (and changes nothing) when invalid. */
   setCallsign: (raw: string) => boolean;
   dismissCallsignPrompt: () => void;
+  /** Back to a first launch: no callsign, not yet asked (the development Reset callsign button). */
+  resetProfile: () => void;
 };
 
 export type ProfileState = ProfileValues & ProfileActions;
@@ -56,6 +58,7 @@ export const useProfile = create<ProfileState>()(
         return true;
       },
       dismissCallsignPrompt: () => set({ callsignPrompted: true }),
+      resetProfile: () => set(DEFAULT_PROFILE),
     }),
     {
       name: 'profile',

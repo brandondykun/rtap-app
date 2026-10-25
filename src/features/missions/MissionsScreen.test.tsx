@@ -52,6 +52,14 @@ describe('MissionsScreen callsign screen', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/callsign');
   });
 
+  it('in development, Reset callsign clears it and opens the sheet as on first launch', async () => {
+    useProfile.getState().setCallsign('HAWK');
+    await renderWithProviders(<MissionsScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Reset callsign' }));
+    expect(useProfile.getState()).toMatchObject({ callsign: null, callsignPrompted: false });
+    expect(mockRouter.push).toHaveBeenCalledWith('/callsign');
+  });
+
   it('does not open it once it has been answered', async () => {
     await renderWithProviders(<MissionsScreen />);
     expect(await screen.findByText('No missions yet')).toBeTruthy();

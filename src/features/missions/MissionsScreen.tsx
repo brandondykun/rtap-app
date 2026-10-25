@@ -151,9 +151,22 @@ export function MissionsScreen() {
         onNew={openCreate}
         extra={
           __DEV__ ? (
-            <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8} className="active:opacity-60">
-              <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
-            </Pressable>
+            <View className="flex-row items-center gap-4">
+              <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8} className="active:opacity-60">
+                <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
+              </Pressable>
+              {/* Shows the first-launch callsign sheet again. */}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  useProfile.getState().resetProfile();
+                  router.push('/callsign');
+                }}
+                hitSlop={8}
+                className="active:opacity-60">
+                <Text className="text-xs uppercase tracking-wider text-text-muted">Reset callsign</Text>
+              </Pressable>
+            </View>
           ) : null
         }
       />

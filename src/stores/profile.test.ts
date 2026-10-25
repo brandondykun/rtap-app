@@ -36,6 +36,12 @@ describe('profile store', () => {
     expect(stored()).toMatchObject({ callsign: null, callsignPrompted: true });
   });
 
+  it('resets to a first launch: no callsign, not yet asked', () => {
+    useProfile.getState().setCallsign('VIPER 6');
+    useProfile.getState().resetProfile();
+    expect(stored()).toMatchObject({ callsign: null, callsignPrompted: false });
+  });
+
   it('ignores a stored callsign that is not valid', async () => {
     Storage.setItemSync('profile', JSON.stringify({ state: { callsign: 'bad_one', callsignPrompted: 'yes' }, version: 1 }));
     await useProfile.persist.rehydrate();
