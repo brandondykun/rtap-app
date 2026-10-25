@@ -25,6 +25,8 @@ function ThemedStack() {
         name="missions/rename/[missionId]"
         options={{ presentation: 'formSheet', sheetAllowedDetents: 'fitToContents', sheetGrabberVisible: true }}
       />
+      {/* Room to explain: a full sheet, the same in portrait and landscape. */}
+      <Stack.Screen name="callsign" options={{ presentation: 'modal' }} />
       {/* Edge swipes belong to the map, never to navigation. */}
       <Stack.Screen name="missions/[missionId]" options={{ gestureEnabled: false }} />
     </Stack>

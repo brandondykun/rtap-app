@@ -5,6 +5,8 @@ import { renderWithProviders } from '@/test-utils/render';
 import { SETTINGS_HELP } from './settings-help';
 import { SettingsMenu } from './SettingsMenu';
 
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+
 /**
  * Each setting in the Settings menu, in menu order: a section's segmented choice (by the section's name, or the
  * section itself when it has no toggles), then its toggles.

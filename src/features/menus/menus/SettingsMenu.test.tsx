@@ -11,6 +11,14 @@ import { SettingsMenu } from './SettingsMenu';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
+const mockRouter = { push: jest.fn() };
+// A getter: the mock factory runs before mockRouter is assigned.
+jest.mock('expo-router', () => ({
+  get router() {
+    return mockRouter;
+  },
+}));
+
 beforeEach(() => {
   useSettings.setState(DEFAULT_SETTINGS);
   useInteraction.setState(INITIAL_INTERACTION);
@@ -41,6 +49,14 @@ describe('SettingsMenu', () => {
     await fireEvent(field, 'blur');
     expect(screen.getByText('Up to 16 letters, numbers, spaces or hyphens')).toBeTruthy();
     expect(useProfile.getState().callsign).toBe('VIPER 6');
+  });
+
+  it('opens the callsign screen from About callsigns, and shows what it saved', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    await fireEvent.press(screen.getByRole('button', { name: 'About callsigns' }));
+    expect(mockRouter.push).toHaveBeenCalledWith('/callsign');
+    await act(() => void useProfile.getState().setCallsign('HAWK'));
+    expect(screen.getByLabelText('Callsign').props.value).toBe('HAWK');
   });
 
   it('saves a typed callsign when the menu closes with the keyboard up', async () => {

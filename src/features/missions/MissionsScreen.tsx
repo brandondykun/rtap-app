@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,10 +8,10 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Icon } from '@/components/ui/Icon';
 import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
 import { notifySuccess } from '@/features/feedback/feedback';
-import { CallsignPrompt } from '@/features/profile/CallsignPrompt';
 import { isLandscape } from '@/features/map/layout';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
+import { useProfile } from '@/stores/profile';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -31,6 +31,11 @@ export function MissionsScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
+
+  // First launch: ask for a callsign once (the sheet marks it answered as it opens).
+  useEffect(() => {
+    if (!useProfile.getState().callsignPrompted) router.push('/callsign');
+  }, [router]);
   const missions = useObservable<MissionSummary[] | null>(() => observeMissionSummaries(ctx.db), null, [ctx]);
   const idsKey = (missions ?? []).map((m) => m.id).join(',');
   const counts = useObservable(() => observeCountsByMission(ctx.db, idsKey ? idsKey.split(',') : []), NO_COUNT_MAP, [ctx, idsKey]);
@@ -152,7 +157,6 @@ export function MissionsScreen() {
           ) : null
         }
       />
-      <CallsignPrompt />
       {missions === null ? null : missions.length === 0 ? (
         <EmptyState onCreate={openCreate} />
       ) : landscape ? (
