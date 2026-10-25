@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/images/icon.png" alt="RTAP app icon" width="128" height="128" />
+</p>
+
 # RTAP
 
 **Realtime Team Awareness Platform**: an offline-first tactical map for iOS. Plan missions on satellite,
