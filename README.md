@@ -104,8 +104,8 @@ Each profile is its own app, so all three can sit on one phone, each with its ow
 
 | Profile | App name | Bundle id / package | Link scheme |
 | --- | --- | --- | --- |
-| `development` | RTAP Dev | `com.eratas.rtap.dev` | `map-dev` |
-| `preview` | RTAP Preview | `com.eratas.rtap.preview` | `map-preview` |
+| `development` | RTAP (D) | `com.eratas.rtap.dev` | `map-dev` |
+| `preview` | RTAP (P) | `com.eratas.rtap.preview` | `map-preview` |
 | `production` | RTAP | `com.eratas.rtap` | `map` |
 
 `app.config.ts` picks the variant from `APP_VARIANT`, which is set in each EAS environment (not in `eas.json`), and

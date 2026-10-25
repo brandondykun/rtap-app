@@ -6,8 +6,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * `eas update --environment …` resolve the same config and runtime version. Unset means the store app.
  */
 const VARIANTS = {
-  development: { id: 'com.eratas.rtap.dev', name: 'RTAP Dev', scheme: 'map-dev' },
-  preview: { id: 'com.eratas.rtap.preview', name: 'RTAP Preview', scheme: 'map-preview' },
+  development: { id: 'com.eratas.rtap.dev', name: 'RTAP (D)', scheme: 'map-dev' },
+  preview: { id: 'com.eratas.rtap.preview', name: 'RTAP (P)', scheme: 'map-preview' },
   production: { id: 'com.eratas.rtap', name: 'RTAP', scheme: 'map' },
 } as const;
 
