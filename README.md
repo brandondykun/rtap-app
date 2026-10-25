@@ -103,11 +103,28 @@ Changes to native code (a new native library, new permissions) need a new build 
 ```bash
 npx eas-cli@latest build --profile preview --platform ios                      # internal test build
 npx eas-cli@latest update --channel preview --environment preview --message "…"   # ship JS changes to it
+npx sentry-expo-upload-sourcemaps dist                                          # then, every time, upload its source maps
 ```
 
 Phones download updates in the background and apply them the next time the app opens. The About page shows which
 channel and update a phone is running. Cloud builds don't read `.env`, so set `EXPO_PUBLIC_MAPBOX_TOKEN` as an EAS
 environment variable.
+
+### Crash reporting (Sentry)
+
+Preview and production builds report crashes and errors to the `rtap` project in the `eratas-software-llc` Sentry
+org. Development builds report nothing. Reports are grouped by channel (the Sentry environment) and tagged with the
+update id, and they never carry personal data or positions: grids and lat/longs in messages are redacted
+(`src/lib/monitoring`).
+
+- `EXPO_PUBLIC_SENTRY_DSN` is set in every EAS environment. It's public and safe to ship in the app.
+- `SENTRY_AUTH_TOKEN` (one org auth token, sensitive EAS variable, all environments) lets EAS builds upload source
+  maps and debug symbols automatically.
+- An update's source maps are uploaded by hand: run `npx sentry-expo-upload-sourcemaps dist` right after
+  `eas update`, with `SENTRY_AUTH_TOKEN` in your shell. Without it, errors from that update show unreadable stack
+  traces.
+- If a local release build (`npx expo run:ios --configuration Release`) fails at the Sentry upload step, set
+  `SENTRY_AUTH_TOKEN` or `SENTRY_DISABLE_AUTO_UPLOAD=true`.
 
 ## Conventions
 
