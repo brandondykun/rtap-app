@@ -56,3 +56,10 @@ jest.mock('expo-file-system', () => jest.requireActual('./__mocks__/expo-file-sy
 jest.mock('expo-image-manipulator', () => jest.requireActual('./__mocks__/expo-image-manipulator'));
 jest.mock('@shopify/react-native-skia', () => ({ Skia: {}, ImageFormat: { PNG: 4 } }));
 jest.mock('@/features/symbology/render/get-symbol-image', () => ({ getSymbolImage: jest.fn(async () => null) }));
+
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  setTag: jest.fn(),
+  captureException: jest.fn(),
+  wrap: <T>(component: T) => component,
+}));
