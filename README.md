@@ -117,7 +117,7 @@ app; prefix them to get the dev app, e.g. `APP_VARIANT=development npx expo run:
 ```bash
 npx eas-cli@latest build --profile preview --platform ios                      # internal test build
 npx eas-cli@latest update --channel preview --environment preview --message "…"   # ship JS changes to it
-npx sentry-expo-upload-sourcemaps dist                                          # then, every time, upload its source maps
+npx eas-cli@latest env:exec preview 'npx sentry-expo-upload-sourcemaps dist'    # then, every time, upload its source maps
 ```
 
 Phones download updates in the background and apply them the next time the app opens. The About page shows which
@@ -134,9 +134,12 @@ update id, and they never carry personal data or positions: grids and lat/longs 
 - `EXPO_PUBLIC_SENTRY_DSN` is set in every EAS environment. It's public and safe to ship in the app.
 - `SENTRY_AUTH_TOKEN` (one org auth token, sensitive EAS variable, all environments) lets EAS builds upload source
   maps and debug symbols automatically.
-- An update's source maps are uploaded by hand: run `npx sentry-expo-upload-sourcemaps dist` right after
-  `eas update`, with `SENTRY_AUTH_TOKEN` in your shell. Without it, errors from that update show unreadable stack
-  traces.
+- An update's source maps are uploaded by hand right after `eas update`, from the `dist` it just wrote:
+  `npx eas-cli@latest env:exec <environment> 'npx sentry-expo-upload-sourcemaps dist'`. `env:exec` supplies
+  `SENTRY_AUTH_TOKEN` from EAS, so the token never needs to be on your machine. Skip it and errors from that update
+  show unreadable stack traces.
+- Sentry's project setting **Prevent Storing of IP Addresses** must stay on: otherwise Sentry derives a city from
+  each report's IP address.
 - If a local release build (`npx expo run:ios --configuration Release`) fails at the Sentry upload step, set
   `SENTRY_AUTH_TOKEN` or `SENTRY_DISABLE_AUTO_UPLOAD=true`.
 
