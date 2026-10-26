@@ -151,51 +151,55 @@ describe('Toolbar', () => {
     expect(screen.getByLabelText('POINT')).not.toBeDisabled();
   });
 
-  it('has a LAYERS tool that runs its handler and shows when active', async () => {
+  it('starts the scrolling tools with LAYERS, before UNIT, and shows it when active', async () => {
     const onLayers = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool="layers" onLayers={onLayers} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.slice(0, 3)).toEqual(['Menu', 'LAYERS', 'UNIT']);
+    expect(screen.getByTestId('toolbar-tools')).toContainElement(screen.getByLabelText('LAYERS'));
+    expect(screen.getByTestId('toolbar-tools')).toContainElement(screen.getByLabelText('UNIT'));
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(onLayers).toHaveBeenCalled();
   });
 
-  it('orders UNIT, POINT, LAYERS and marks the active one', async () => {
+  it('orders LAYERS, UNIT, POINT and marks the active one', async () => {
     const onUnit = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool="unit" onUnit={onUnit} onPoint={jest.fn()} onLayers={jest.fn()} />);
     const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(labels.filter((l) => ['UNIT', 'POINT', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LAYERS']);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LAYERS'].includes(l))).toEqual(['LAYERS', 'UNIT', 'POINT']);
     expect(screen.getByLabelText('UNIT')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('UNIT'));
     expect(onUnit).toHaveBeenCalled();
   });
 
-  it('orders UNIT, POINT, LINE, LAYERS and marks LINE active', async () => {
+  it('orders LAYERS, UNIT, POINT, LINE and marks LINE active', async () => {
     const onLine = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool="line" onUnit={jest.fn()} onPoint={jest.fn()} onLine={onLine} onLayers={jest.fn()} />);
     const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LINE', 'LAYERS']);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'LAYERS'].includes(l))).toEqual(['LAYERS', 'UNIT', 'POINT', 'LINE']);
     expect(screen.getByLabelText('LINE')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('LINE'));
     expect(onLine).toHaveBeenCalled();
   });
 
-  it('orders UNIT, POINT, LINE, MEASURE, LAYERS and marks MEASURE active', async () => {
+  it('orders LAYERS, UNIT, POINT, LINE, MEASURE and marks MEASURE active', async () => {
     const onMeasure = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool="measure" onUnit={jest.fn()} onPoint={jest.fn()} onLine={jest.fn()} onMeasure={onMeasure} onLayers={jest.fn()} />);
     const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LINE', 'MEASURE', 'LAYERS']);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['LAYERS', 'UNIT', 'POINT', 'LINE', 'MEASURE']);
     expect(screen.getByLabelText('MEASURE')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('MEASURE'));
     expect(onMeasure).toHaveBeenCalled();
   });
 
-  it('orders UNIT, POINT, LINE, POLYGON, MEASURE, LAYERS and marks POLYGON active', async () => {
+  it('orders LAYERS, UNIT, POINT, LINE, POLYGON, MEASURE and marks POLYGON active', async () => {
     const onPolygon = jest.fn();
     await renderWithProviders(
       <Toolbar landscape={false} activeTool="polygon" onUnit={jest.fn()} onPoint={jest.fn()} onLine={jest.fn()} onPolygon={onPolygon} onMeasure={jest.fn()} onLayers={jest.fn()} />,
     );
     const labels = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE', 'LAYERS']);
+    expect(labels.filter((l) => ['UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE', 'LAYERS'].includes(l))).toEqual(['LAYERS', 'UNIT', 'POINT', 'LINE', 'POLYGON', 'MEASURE']);
     expect(screen.getByLabelText('POLYGON')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('POLYGON'));
     expect(onPolygon).toHaveBeenCalled();

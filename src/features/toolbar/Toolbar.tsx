@@ -48,12 +48,12 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
 
   const tools = (
     <>
+      <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
       <ToolButton icon="rhombus-outline" label="UNIT" active={activeTool === 'unit'} onPress={onUnit} />
       <ToolButton icon="map-marker-outline" label="POINT" active={activeTool === 'point'} onPress={onPoint} />
       <ToolButton icon="vector-polyline" label="LINE" active={activeTool === 'line'} onPress={onLine} />
       <ToolButton icon="pentagon-outline" label="POLYGON" active={activeTool === 'polygon'} onPress={onPolygon} />
       <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />
-      <ToolButton icon="layers-outline" label="LAYERS" active={activeTool === 'layers'} onPress={onLayers} />
       <ToolButton icon="target" label="PLOT" active={activeTool === 'plot'} onPress={onPlot} />
       {/* Toggles, not tools: their icons show the state, with no highlight. */}
       <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" toggled={labelsOn} onPress={onLabels} />
