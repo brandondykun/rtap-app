@@ -2,15 +2,18 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { Icon } from '@/components/ui/Icon';
 import { TextField } from '@/components/ui/TextField';
 import { CALLSIGN_MAX, CALLSIGN_RULE } from '@/lib/identity/callsign';
 import { useProfile } from '@/stores/profile';
+import { useTheme } from '@/theme/ThemeProvider';
 
 /**
  * The Settings menu's callsign field: saved when the edit finishes (or the menu closes), shown back as stored. About
  * callsigns opens the callsign sheet, which explains it and can set it too.
  */
 export function CallsignSetting() {
+  const { colors } = useTheme();
   const stored = useProfile((s) => s.callsign);
   const [text, setText] = useState(stored ?? '');
   const [error, setError] = useState(false);
@@ -59,7 +62,13 @@ export function CallsignSetting() {
         returnKeyType="done"
       />
       <Text className={`text-sm ${error ? 'text-danger' : 'text-text-muted'}`}>{error ? CALLSIGN_RULE : 'How your team will see you once missions are shared.'}</Text>
-      <Pressable accessibilityRole="button" onPress={() => router.push('/callsign')} hitSlop={8} className="min-h-11 justify-center self-start active:opacity-60">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="About callsigns"
+        onPress={() => router.push('/callsign')}
+        hitSlop={8}
+        className="min-h-11 flex-row items-center gap-1.5 self-start active:opacity-60">
+        <Icon testID="about-callsigns-icon" name="information-outline" size={20} color={colors.accent} />
         <Text className="text-base font-semibold text-accent">About callsigns</Text>
       </Pressable>
     </View>

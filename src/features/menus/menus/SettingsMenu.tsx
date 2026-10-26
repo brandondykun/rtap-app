@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { MenuGroup } from '@/components/menu/MenuGroup';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { TextField } from '@/components/ui/TextField';
 import { CallsignSetting } from '@/features/profile/CallsignSetting';
-import { gridMagneticAngle } from '@/lib/geo/north/convert';
+import { gmConversion, gridMagneticAngle } from '@/lib/geo/north/convert';
 import { declination } from '@/lib/geo/north/magnetic';
 import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { gridShadeColors, type GridShade } from '@/theme/tokens';
@@ -16,7 +17,7 @@ import { useMenu } from '@/stores/menu';
 import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize, type PanelBackground } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
-import { formatEastWest, formatEastWestBoth } from './settings-format';
+import { formatAngleSize, formatEastWest, formatEastWestBoth, roundsToZero } from './settings-format';
 
 const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'satellite', label: 'Satellite' },
@@ -65,13 +66,36 @@ function GridMagneticLine() {
   const override = useSettings((s) => s.declinationOverrideDeg);
   const gm = center ? gridMagneticAngle(center, { date: new Date(), declinationOverrideDeg: override }) : null;
   const value = formatEastWest(gm, angleUnit);
+  // The other unit too, so degrees and mils are both at hand whichever is chosen.
+  const other = formatEastWest(gm, angleUnit === 'mil' ? 'deg' : 'mil');
   // The number a user sets on a compass against the map grid, so it stands out by size alone: no
   // border or fill, which would make it look like the selectable options above it.
   return (
-    <View accessible accessibilityLabel={`G-M angle here, grid to magnetic: ${value}`} className="pb-2 pt-4">
+    <View accessible accessibilityLabel={`G-M angle here, grid to magnetic: ${value}, ${other}`} className="pb-2 pt-4">
       <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">G-M angle here · grid → magnetic</Text>
       <Text testID="gm-angle" className="font-mono-bold text-2xl text-text">
         {value}
+      </Text>
+      <Text testID="gm-angle-other" className="font-mono text-base text-text-muted">
+        {other}
+      </Text>
+      {gm !== null ? <GmConversionNote gm={gm} unit={angleUnit} /> : null}
+    </View>
+  );
+}
+
+/** The map sheet's declination note: whether to add or subtract the G-M angle, which flips with where you are. */
+function GmConversionNote({ gm, unit }: { gm: number; unit: AngleUnit }) {
+  const rule = roundsToZero(gm, unit) ? null : gmConversion(gm);
+  if (rule === null) return <Text className="pt-2 text-sm text-text-muted">Grid and magnetic north agree here: nothing to add or subtract.</Text>;
+  const size = formatAngleSize(gm, unit);
+  return (
+    <View className="gap-0.5 pt-2">
+      <Text testID="gm-grid-to-magnetic" className="text-sm text-text-muted">
+        Grid → magnetic: <Text className="font-semibold text-text">{`${rule.gridToMagnetic} ${size}`}</Text>
+      </Text>
+      <Text testID="gm-magnetic-to-grid" className="text-sm text-text-muted">
+        Magnetic → grid: <Text className="font-semibold text-text">{`${rule.magneticToGrid} ${size}`}</Text>
       </Text>
     </View>
   );
@@ -80,7 +104,7 @@ function GridMagneticLine() {
 function ModelDeclinationHint() {
   const center = useInteraction((s) => s.cameraCenter);
   const model = center ? declination(center, new Date()) : null;
-  return model !== null ? <Text className="text-sm text-text-muted">{`Declination here (true → magnetic, WMM2025): ${formatEastWestBoth(model)}`}</Text> : null;
+  return model !== null ? <Text className="text-sm text-text-muted">{`Declination here (true → magnetic, WMM2025):\n${formatEastWestBoth(model)}`}</Text> : null;
 }
 
 export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
@@ -163,112 +187,124 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   return (
     <View>
       <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
-      <MenuSection label="Callsign">
-        <CallsignSetting />
-      </MenuSection>
-      <MenuSection label="Basemap">
-        <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
-      </MenuSection>
-      <MenuSection label="Coordinates">
-        <MenuSegmented<CoordinateFormat>
-          options={[
-            { value: 'mgrs', label: 'MGRS' },
-            { value: 'latlon', label: 'Lat/Lon' },
-          ]}
-          value={coordinateFormat}
-          onChange={setCoordinateFormat}
-        />
-      </MenuSection>
-      <MenuSection label="Angles">
-        <MenuSegmented<AngleUnit>
-          options={[
-            { value: 'deg', label: 'Degrees' },
-            { value: 'mil', label: 'Mils' },
-          ]}
-          value={angleUnit}
-          onChange={setAngleUnit}
-        />
-      </MenuSection>
-      <MenuSection label="Altitude">
-        <MenuSegmented<AltitudeUnit>
-          options={[
-            { value: 'm', label: 'Meters' },
-            { value: 'ft', label: 'Feet' },
-          ]}
-          value={altitudeUnit}
-          onChange={setAltitudeUnit}
-        />
-      </MenuSection>
-      <MenuSection label="North reference">
-        <MenuSegmented<NorthRef>
-          options={[
-            { value: 'grid', label: 'Grid' },
-            { value: 'magnetic', label: 'Magnetic' },
-            { value: 'true', label: 'True' },
-          ]}
-          value={northRef}
-          onChange={setNorthRef}
-        />
-        <GridMagneticLine />
-      </MenuSection>
-      <MenuSection label="Declination">
-        <MenuToggle label="Manual declination" value={override !== null} onValueChange={toggleManual} />
-        {override !== null ? (
-          <>
-            <TextField
-              mono
-              accessibilityLabel="Declination degrees"
-              value={text}
-              onChangeText={change}
-              onEndEditing={commit}
-              onSubmitEditing={commit}
-              keyboardType="numbers-and-punctuation"
-              invalid={error !== null}
-              placeholder="e.g. -10.6"
-            />
-            {error ? (
-              <Text className="text-sm text-danger">{error}</Text>
-            ) : parseDeclination(text) !== null ? (
-              <Text className="text-sm text-text-muted">{`Manual declination (true → magnetic): ${formatEastWestBoth(parseDeclination(text))}`}</Text>
-            ) : null}
-          </>
-        ) : null}
-        <ModelDeclinationHint />
-      </MenuSection>
-      <MenuSection label="Label text size">
-        <MenuSegmented<LabelSize>
-          options={[
-            { value: 'small', label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large', label: 'Large' },
-          ]}
-          value={labelSize}
-          onChange={setLabelSize}
-        />
-      </MenuSection>
-      <MenuSection label="Map">
-        <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
-        <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
-        <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
-      </MenuSection>
-      <MenuSection label="MGRS grid">
-        <MenuToggle label="Show MGRS grid" value={showMgrsGrid} onValueChange={setShowMgrsGrid} />
-        <MenuToggle label="Show grid labels" value={showGridLabels} disabled={!showMgrsGrid} onValueChange={setShowGridLabels} />
-        <MenuToggle label="Show 100 m grid lines" value={showGrid100m} disabled={!showMgrsGrid} onValueChange={setShowGrid100m} />
-      </MenuSection>
-      <MenuSection label="Grid color">
-        <MenuSegmented<GridShade> options={GRID_COLOR_OPTIONS} value={gridColor} disabled={!showMgrsGrid} onChange={setGridColor} />
-      </MenuSection>
-      <MenuSection label="3D terrain height">
-        <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />
-        <Text className="text-xs text-text-muted">How much hills are raised in 3D. 1× is true scale.</Text>
-        <MenuToggle label="Terrain in 2D" value={terrainIn2d} onValueChange={setTerrainIn2d} />
-        <Text className="text-xs text-text-muted">Off lays the map flat in 2D. 3D always uses the height above.</Text>
-      </MenuSection>
-      <MenuSection label="Panel background">
-        <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />
-        <Text className="text-xs text-text-muted">How much the toolbar, readouts and map buttons hide the map. Heavier reads better over snow.</Text>
-      </MenuSection>
+      <MenuGroup title="Profile" icon="account-outline">
+        <MenuSection label="Callsign">
+          <CallsignSetting />
+        </MenuSection>
+      </MenuGroup>
+      <MenuGroup title="Map" icon="map-outline">
+        <MenuSection label="Basemap">
+          <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
+        </MenuSection>
+        <MenuSection label="Label text size">
+          <MenuSegmented<LabelSize>
+            options={[
+              { value: 'small', label: 'Small' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large' },
+            ]}
+            value={labelSize}
+            onChange={setLabelSize}
+          />
+        </MenuSection>
+        <MenuSection label="3D terrain height">
+          <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />
+          <Text className="text-xs text-text-muted">How much hills are raised in 3D. 1× is true scale.</Text>
+          <MenuToggle label="Terrain in 2D" value={terrainIn2d} onValueChange={setTerrainIn2d} />
+          <Text className="text-xs text-text-muted">Off lays the map flat in 2D. 3D always uses the height above.</Text>
+        </MenuSection>
+      </MenuGroup>
+      <MenuGroup title="MGRS grid" icon="grid">
+        <MenuSection label="Grid lines">
+          <MenuToggle label="Show MGRS grid" value={showMgrsGrid} onValueChange={setShowMgrsGrid} />
+          <MenuToggle label="Show grid labels" value={showGridLabels} disabled={!showMgrsGrid} onValueChange={setShowGridLabels} />
+          <MenuToggle label="Show 100 m grid lines" value={showGrid100m} disabled={!showMgrsGrid} onValueChange={setShowGrid100m} />
+        </MenuSection>
+        <MenuSection label="Grid color">
+          <MenuSegmented<GridShade> options={GRID_COLOR_OPTIONS} value={gridColor} disabled={!showMgrsGrid} onChange={setGridColor} />
+        </MenuSection>
+      </MenuGroup>
+      <MenuGroup title="Units" icon="ruler">
+        <MenuSection label="Coordinates">
+          <MenuSegmented<CoordinateFormat>
+            options={[
+              { value: 'mgrs', label: 'MGRS' },
+              { value: 'latlon', label: 'Lat/Lon' },
+            ]}
+            value={coordinateFormat}
+            onChange={setCoordinateFormat}
+          />
+        </MenuSection>
+        <MenuSection label="Angles">
+          <MenuSegmented<AngleUnit>
+            options={[
+              { value: 'deg', label: 'Degrees' },
+              { value: 'mil', label: 'Mils' },
+            ]}
+            value={angleUnit}
+            onChange={setAngleUnit}
+          />
+        </MenuSection>
+        <MenuSection label="Altitude">
+          <MenuSegmented<AltitudeUnit>
+            options={[
+              { value: 'm', label: 'Meters' },
+              { value: 'ft', label: 'Feet' },
+            ]}
+            value={altitudeUnit}
+            onChange={setAltitudeUnit}
+          />
+        </MenuSection>
+      </MenuGroup>
+      <MenuGroup title="North & declination" icon="compass-outline">
+        <MenuSection label="North reference">
+          <MenuSegmented<NorthRef>
+            options={[
+              { value: 'grid', label: 'Grid' },
+              { value: 'magnetic', label: 'Magnetic' },
+              { value: 'true', label: 'True' },
+            ]}
+            value={northRef}
+            onChange={setNorthRef}
+          />
+          <GridMagneticLine />
+        </MenuSection>
+        <MenuSection label="Declination">
+          <MenuToggle label="Manual declination" value={override !== null} onValueChange={toggleManual} />
+          {override !== null ? (
+            <>
+              <TextField
+                mono
+                accessibilityLabel="Declination degrees"
+                value={text}
+                onChangeText={change}
+                onEndEditing={commit}
+                onSubmitEditing={commit}
+                keyboardType="numbers-and-punctuation"
+                invalid={error !== null}
+                placeholder="e.g. -10.6"
+              />
+              {error ? (
+                <Text className="text-sm text-danger">{error}</Text>
+              ) : parseDeclination(text) !== null ? (
+                <Text className="text-sm text-text-muted">{`Manual declination (true → magnetic): ${formatEastWestBoth(parseDeclination(text))}`}</Text>
+              ) : null}
+            </>
+          ) : null}
+          <ModelDeclinationHint />
+        </MenuSection>
+      </MenuGroup>
+      <MenuGroup title="Display" icon="cellphone">
+        <MenuSection label="On screen">
+          <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
+          <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
+          <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
+        </MenuSection>
+        <MenuSection label="Panel background">
+          <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />
+          <Text className="text-xs text-text-muted">How much the toolbar, readouts and map buttons hide the map. Heavier reads better over snow.</Text>
+        </MenuSection>
+      </MenuGroup>
     </View>
   );
 }

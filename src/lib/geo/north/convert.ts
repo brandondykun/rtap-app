@@ -34,3 +34,14 @@ export function toTrue(az: number, ref: NorthRef, p: LatLon, ctx: NorthContext):
 export function gridMagneticAngle(p: LatLon, ctx: NorthContext): number {
   return northOffset('magnetic', p, ctx) - northOffset('grid', p, ctx);
 }
+
+export type GmConversion = { gridToMagnetic: 'add' | 'subtract'; magneticToGrid: 'add' | 'subtract' };
+
+/**
+ * Whether to add or subtract the G-M angle between grid and magnetic azimuths (the declination diagram's note).
+ * Magnetic north west of grid north (negative) adds grid → magnetic; east subtracts. Null when they agree or unknown.
+ */
+export function gmConversion(gmDeg: number): GmConversion | null {
+  if (!Number.isFinite(gmDeg) || gmDeg === 0) return null;
+  return gmDeg < 0 ? { gridToMagnetic: 'add', magneticToGrid: 'subtract' } : { gridToMagnetic: 'subtract', magneticToGrid: 'add' };
+}

@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { declination } from '@/lib/geo/north/magnetic';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -53,6 +53,7 @@ describe('SettingsMenu', () => {
 
   it('opens the callsign screen from About callsigns, and shows what it saved', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByTestId('about-callsigns-icon')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'About callsigns' }));
     expect(mockRouter.push).toHaveBeenCalledWith('/callsign');
     await act(() => void useProfile.getState().setCallsign('HAWK'));
@@ -140,11 +141,12 @@ describe('SettingsMenu', () => {
     await act(async () => useInteraction.getState().setCamera({ center: { lat: 64.1, lon: -21.9 }, zoom: 12, bearing: 0 }));
     expect(screen.getByText(/^Declination here \(true → magnetic, WMM2025\):/).props.children).not.toBe(hint);
     expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+\.\d° [EW]$/);
+    expect(screen.getByTestId('gm-angle-other')).toHaveTextContent(/^\d+ mils [EW]$/);
   });
 
   it('shows the model and manual declination in degrees and mils', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getByText(/^Declination here \(true → magnetic, WMM2025\): \d+\.\d° [EW] · \d+ mils [EW]$/)).toBeTruthy();
+    expect(screen.getByText(/^Declination here \(true → magnetic, WMM2025\):\s\d+\.\d° [EW] · \d+ mils [EW]$/)).toBeTruthy();
     await fireEvent(screen.getByLabelText('Manual declination'), 'valueChange', true);
     await fireEvent.changeText(screen.getByLabelText('Declination degrees'), '-9.5');
     expect(screen.getByText('Manual declination (true → magnetic): 9.5° W · 169 mils W')).toBeTruthy();
@@ -153,6 +155,7 @@ describe('SettingsMenu', () => {
   it('shows the G-M angle at the crosshair', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+\.\d° [EW]$/);
+    expect(screen.getByTestId('gm-angle-other')).toHaveTextContent(/^\d+ mils [EW]$/);
   });
 
   it('shows the G-M angle in the chosen angle unit with a grid → magnetic label', async () => {
@@ -160,6 +163,35 @@ describe('SettingsMenu', () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText('G-M angle here · grid → magnetic')).toBeTruthy();
     expect(screen.getByTestId('gm-angle')).toHaveTextContent(/^\d+ mils [EW]$/);
+    expect(screen.getByTestId('gm-angle-other')).toHaveTextContent(/^\d+\.\d° [EW]$/);
+  });
+
+  // On zone 31's central meridian at the equator grid north is true north, so the G-M angle is the declination.
+  const ON_CENTRAL_MERIDIAN = { lat: 0, lon: 3 };
+
+  it('says to add grid → magnetic and subtract magnetic → grid where magnetic north is west of grid north', async () => {
+    useInteraction.getState().setCamera({ center: ON_CENTRAL_MERIDIAN, zoom: 12, bearing: 0 });
+    useSettings.getState().setDeclinationOverride(-10);
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByTestId('gm-grid-to-magnetic')).toHaveTextContent('Grid → magnetic: add 10.0°');
+    expect(screen.getByTestId('gm-magnetic-to-grid')).toHaveTextContent('Magnetic → grid: subtract 10.0°');
+  });
+
+  it('says the reverse where magnetic north is east of grid north, in the chosen angle unit', async () => {
+    useInteraction.getState().setCamera({ center: ON_CENTRAL_MERIDIAN, zoom: 12, bearing: 0 });
+    useSettings.getState().setDeclinationOverride(10);
+    useSettings.getState().setAngleUnit('mil');
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByTestId('gm-grid-to-magnetic')).toHaveTextContent('Grid → magnetic: subtract 178 mils');
+    expect(screen.getByTestId('gm-magnetic-to-grid')).toHaveTextContent('Magnetic → grid: add 178 mils');
+  });
+
+  it('says grid and magnetic north agree when the G-M angle is zero', async () => {
+    useInteraction.getState().setCamera({ center: ON_CENTRAL_MERIDIAN, zoom: 12, bearing: 0 });
+    useSettings.getState().setDeclinationOverride(0);
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('Grid and magnetic north agree here: nothing to add or subtract.')).toBeTruthy();
+    expect(screen.queryByTestId('gm-grid-to-magnetic')).toBeNull();
   });
 
   it('switches the altitude unit between meters and feet', async () => {
@@ -226,11 +258,23 @@ describe('SettingsMenu', () => {
     expect(useSettings.getState().showToolbarText).toBe(false);
   });
 
+  it('groups the settings under titled headings, in order', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getAllByTestId(/^menu-group-/).map((g) => g.props.testID)).toEqual([
+      'menu-group-Profile',
+      'menu-group-Map',
+      'menu-group-MGRS grid',
+      'menu-group-Units',
+      'menu-group-North & declination',
+      'menu-group-Display',
+    ]);
+    expect(screen.getAllByRole('header').length).toBeGreaterThanOrEqual(6);
+  });
+
   it('switches the basemap', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    // First section, right under the header.
-    const sections = screen.getAllByText(/^(Basemap|Coordinates|Angles|Altitude|North reference|Declination|Map)$/).map((t) => t.props.children);
-    expect(sections[0]).toBe('Basemap');
+    // First section of the Map group.
+    expect(within(screen.getByTestId('menu-group-Map')).getAllByTestId(/^menu-section-/)[0].props.testID).toBe('menu-section-Basemap');
     expect(screen.getByLabelText('Satellite')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('Topo'));
     expect(useSettings.getState().basemap).toBe('topo');
