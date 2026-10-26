@@ -175,4 +175,5 @@ Commit e5cb5d7: Impact area polygon type (hostile red) and the per-polygon Fill 
 |---|-------|--------|
 | 86 | Seed 5k mission plus one polygon: panning stays smooth | PASS (2026-10-26) |
 | 87 | Drawing a polygon looks right | PASS (2026-10-26) |
-| 88 | Impact area draws red (outline and fill, also while drawing); each Fill option (0% to 75%) shows on the map and is kept after Save; existing polygons still look the same | PENDING |
+| 88 | Impact area draws red; each Fill option (0% to 75%) works | PASS (2026-10-26) |
+| 89 | Polygons saved before the Fill setting still show the light 15% fill | PENDING |
