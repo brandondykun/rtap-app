@@ -872,7 +872,9 @@ describe('MapScreen', () => {
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
       );
       expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+      // The sheet opens (and pads the camera) once its content is measured.
       await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77, 38.9]));
+      await waitFor(() => expect(fullyPadded(calls().at(-1) as Stop)).toBe(true));
 
       const opened = calls().findIndex(fullyPadded);
       expect(opened).toBeGreaterThanOrEqual(0);
@@ -897,8 +899,8 @@ describe('MapScreen', () => {
         }),
       );
       expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
-      await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77.03, 38.9]));
-      expect(fullyPadded(calls().at(-1) as Stop)).toBe(true);
+      await waitFor(() => expect(fullyPadded(calls().at(-1) as Stop)).toBe(true));
+      expect(calls().at(-1)?.centerCoordinate).toEqual([-77.03, 38.9]);
     });
 
     it('re-centers on the user when a panel opens while following', async () => {

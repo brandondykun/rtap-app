@@ -314,6 +314,5 @@ export const settingsMenu = defineMenu({
   family: 'app',
   title: 'Settings',
   icon: 'cog-outline',
-  detents: ['half', 'full'],
   component: SettingsMenu,
 });

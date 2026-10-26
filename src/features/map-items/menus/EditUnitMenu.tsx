@@ -7,4 +7,4 @@ export function EditUnitMenu({ params, missionId }: MenuComponentProps<'unit.edi
   return <EditItemPanel category="unit" itemId={params.itemId} missionId={missionId} form={<UnitForm missionId={missionId} mode="edit" />} />;
 }
 
-export const editUnitMenu = defineMenu({ id: 'unit.edit', family: 'action', title: 'Edit unit', icon: 'rhombus-outline', detents: ['peek', 'half', 'full'], component: EditUnitMenu });
+export const editUnitMenu = defineMenu({ id: 'unit.edit', family: 'action', title: 'Edit unit', icon: 'rhombus-outline', component: EditUnitMenu });

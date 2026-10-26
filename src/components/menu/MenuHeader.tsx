@@ -1,22 +1,42 @@
+import { useContext, useLayoutEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { PanelHeaderSlot } from './panel-header-slot';
+
 export type MenuHeaderAction = { label: string; onPress: () => void; disabled?: boolean; icon?: IconName };
 
-/** Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button. */
-export function MenuHeader({ title, leading, trailing }: { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction }) {
+export type MenuHeaderProps = { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction };
+
+/**
+ * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button. Inside a
+ * Panel it is drawn pinned above the scrolling content, so Close and the primary action never scroll away.
+ */
+export function MenuHeader(props: MenuHeaderProps) {
+  const slot = useContext(PanelHeaderSlot);
+  // Every render hands the Panel the current row (its handlers close over the menu's latest state).
+  useLayoutEffect(() => {
+    slot?.(props);
+  });
+  // A layout cleanup: it runs before the next menu's header hands over its row, so it never clears that one.
+  useLayoutEffect(() => () => slot?.(null), [slot]);
+  return slot ? null : <MenuHeaderRow {...props} />;
+}
+
+/** The header row itself (in a portrait Panel it is also the sheet's drag area). */
+export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
   const { colors } = useTheme();
   return (
-    <View className="flex-row items-center px-4 pb-3">
+    <View className="flex-row items-center px-4 py-2">
       <View className="min-w-20 items-start">
         {leading ? (
           <Pressable
             accessibilityRole="button"
             onPress={leading.onPress}
             hitSlop={8}
-            className={`flex-row items-center rounded-xl border border-border bg-surface-raised py-2 active:opacity-60 ${leading.icon ? 'pl-2 pr-4' : 'px-4'}`}>
+            className={`flex-row items-center rounded-xl border border-border bg-surface-raised py-1.5 active:opacity-60 ${leading.icon ? 'pl-2 pr-4' : 'px-4'}`}>
             {leading.icon ? <Icon name={leading.icon} size={18} color={colors.text} /> : null}
             <Text className="font-semibold text-text">{leading.label}</Text>
           </Pressable>
@@ -33,7 +53,7 @@ export function MenuHeader({ title, leading, trailing }: { title: string; leadin
             accessibilityState={{ disabled: !!trailing.disabled }}
             disabled={trailing.disabled}
             onPress={trailing.onPress}
-            className={`active:opacity-60 flex-row items-center gap-1 rounded-xl bg-accent px-4 py-2 ${trailing.disabled ? 'opacity-40' : ''}`}>
+            className={`active:opacity-60 flex-row items-center gap-1 rounded-xl bg-accent px-4 py-1.5 ${trailing.disabled ? 'opacity-40' : ''}`}>
             {trailing.icon ? <Icon name={trailing.icon} size={18} color={colors['on-accent']} /> : null}
             <Text className="font-bold text-on-accent">{trailing.label}</Text>
           </Pressable>

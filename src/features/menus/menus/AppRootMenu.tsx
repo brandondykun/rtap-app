@@ -38,4 +38,4 @@ export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
   );
 }
 
-export const appRootMenu = defineMenu({ id: 'app.root', family: 'app', title: 'Menu', icon: 'menu', detents: ['half', 'full'], component: AppRootMenu });
+export const appRootMenu = defineMenu({ id: 'app.root', family: 'app', title: 'Menu', icon: 'menu', component: AppRootMenu });

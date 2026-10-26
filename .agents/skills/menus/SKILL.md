@@ -15,20 +15,27 @@ description: Use whenever you add or change a menu, panel content, or anything o
    `MenuVertexRow` (one point of a line), `MgrsInput` (backspace in an empty field hops to the previous one).
    No raw colors, no new one-off controls — add a primitive instead.
 3. **Definition** — in the same file:
-   `export const xMenu = defineMenu({ id, family, title, icon, detents, component })` (`icon`: the toolbar icon, shown on the minimized drawer button).
+   `export const xMenu = defineMenu({ id, family, title, icon, component })` (`icon`: the toolbar icon, shown on the minimized drawer button).
 4. **Register** — add it to `MENU_REGISTRY` in `src/features/menus/registry.ts` (the type
    forces every `MenuId` to be registered).
 5. **Open** — `useMenu.getState().openMenu(id, params)` (replaces the stack) or `pushMenu`
    (drill-in, `back()` returns). Invalid params are rejected and logged.
 
 ## Conventions
+- **The header is pinned.** Inside the Panel, `MenuHeader` is drawn above the scroll view (via `PanelHeaderSlot`), so
+  Close / Cancel / Back and the primary action never scroll away. In portrait the header row is also the drag area (no
+  grip icon or grip row). Keep one `MenuHeader` per menu, first in its tree.
 - **Families:** `app` menus have a leading "Close"; `action` menus have "Cancel" plus one amber
   primary action (`trailing`) that is disabled until the input is valid.
-- **Detents:** smallest first; menus open at `half` when listed. Landscape is always a drawer.
-- **Minimizing (landscape):** the drawer's edge tab slides it off screen (`panelMinimized` in the menu
-  store) and back; nothing else happens and the menu stays mounted. While minimized the Panel reports no
-  frame, so the map, crosshair and controls use the whole screen. Opening, pushing or closing a menu
-  shows the drawer again.
+- **Detents are the same for every menu** (`MENU_DETENTS`: peek, half, full; menus open at half). Menus don't pick
+  their own, so every sheet drags and snaps alike. In portrait no detent is taller than the content needs
+  (`fitToContent`), so a short menu opens just tall enough; the sheet waits for its content to be measured and then
+  moves once (never toward a detent and then to the fit). The keyboard still opens the sheet fully. Landscape is always a drawer.
+- **Minimizing:** the hide rail (the drawer's right edge in landscape, the sheet's top edge in portrait) slides the
+  panel off screen (`panelMinimized` in the menu store) and its reopen button brings it back; nothing else happens and the
+  menu stays mounted, also across rotation. Landscape: a floating spine tab on the left, and the Panel reports no frame, so
+  the map, crosshair and controls use the whole screen. Portrait: a bar along the very bottom, and the Panel reports that
+  bar as its frame, so the grid readouts sit on top of it. Opening, pushing or closing a menu shows the panel again.
 - **The map stays interactive.** No backdrop. While a panel is open the camera is padded by
   the panel area, the crosshair centers in the visible map, the location banner hides, and the grid readouts
   stay: the full-width dock (CTR over ME) above a bottom sheet, or in landscape your card bottom

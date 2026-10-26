@@ -7,8 +7,9 @@ import * as SafeArea from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 
+import { MenuHeader } from './MenuHeader';
 import { Panel } from './Panel';
-import { detentHeights, drawerWidth } from './panel-geometry';
+import { detentHeights, drawerWidth, MINIMIZED_BAR_HEIGHT, minimizedBarSize, SHEET_CHROME_HEIGHT, SHEET_EDGE_HEIGHT } from './panel-geometry';
 
 const Theme = ({ children }: { children: ReactNode }) => <ThemeProvider theme="dark">{children}</ThemeProvider>;
 const render = (ui: ReactElement) => rtlRender(ui, { wrapper: Theme });
@@ -20,6 +21,9 @@ function metrics() {
   const { width, height } = Dimensions.get('window');
   return { width, height, insets: INSETS, topReserved: TOP_RESERVED };
 }
+
+/** What a device does right after layout: the sheet learns how tall its content is (tall unless given). */
+const measure = (height = 5000) => fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, height);
 
 function Probe({ onMount }: { onMount: () => void }) {
   useEffect(() => {
@@ -38,6 +42,7 @@ describe('Panel', () => {
     );
     expect(screen.getByText('content')).toBeTruthy();
     expect(screen.getByTestId('menu-panel-handle')).toBeTruthy();
+    await measure();
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
   });
 
@@ -60,6 +65,7 @@ describe('Panel', () => {
       </Panel>
     );
     const { rerender } = await render(ui(['peek', 'half', 'full'], 'peek'));
+    await measure();
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).peek });
     await rerender(ui(['half', 'full'], 'half'));
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
@@ -73,6 +79,7 @@ describe('Panel', () => {
       </Panel>
     );
     const { rerender } = await render(ui(['peek', 'half', 'full'], 'peek'));
+    await measure();
     await rerender(ui(['half', 'full'], 'half'));
     await rerender(ui(['peek', 'half', 'full'], 'half'));
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
@@ -104,6 +111,7 @@ describe('Panel', () => {
         <Text>content</Text>
       </Panel>,
     );
+    await measure();
     const show = handlers.keyboardWillShow ?? handlers.keyboardDidShow;
     const hide = handlers.keyboardWillHide ?? handlers.keyboardDidHide;
     await act(async () => show());
@@ -112,6 +120,147 @@ describe('Panel', () => {
     await act(async () => hide());
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
     spy.mockRestore();
+  });
+
+  describe('the menu header', () => {
+    const withHeader = (onFrameChange = jest.fn(), onClose = jest.fn(), landscape = false) => (
+      <Panel landscape={landscape} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={onFrameChange}>
+        <MenuHeader title="Settings" leading={{ label: 'Close', onPress: onClose }} trailing={{ label: 'Save', onPress: jest.fn() }} />
+        <Text>content</Text>
+      </Panel>
+    );
+
+    it.each([[false], [true]])('stays pinned above the scrolling content (landscape=%s)', async (landscape) => {
+      const onClose = jest.fn();
+      await render(withHeader(jest.fn(), onClose, landscape));
+      const header = screen.getByTestId('menu-panel-header');
+      expect(screen.getByTestId('menu-panel')).toContainElement(header);
+      expect(header).toContainElement(screen.getByText('Close'));
+      expect(header).toContainElement(screen.getByLabelText('Save'));
+      expect(screen.getByTestId('menu-panel-scroll')).not.toContainElement(screen.getByText('Close'));
+      expect(screen.getByTestId('menu-panel-scroll')).toContainElement(screen.getByText('content'));
+      await fireEvent.press(screen.getByText('Close'));
+      expect(onClose).toHaveBeenCalled();
+    });
+
+    it.each([[false], [true]])('shows no drag grip with a header, which is itself the drag area (landscape=%s)', async (landscape) => {
+      await render(withHeader(jest.fn(), jest.fn(), landscape));
+      expect(screen.queryByTestId('menu-panel-grip')).toBeNull();
+      expect(screen.queryByTestId('menu-panel-handle')).toBeNull();
+    });
+
+    it('counts the pinned header when fitting short content', async () => {
+      const onFrameChange = jest.fn();
+      await render(withHeader(onFrameChange));
+      await fireEvent(screen.getByTestId('menu-panel-header'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 52 } } });
+      await measure(180);
+      // The header is the drag area, so there is no grip row to count.
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_EDGE_HEIGHT + 52 });
+    });
+
+    it('shows the next menu\'s header when the menu changes, and none once a menu without one is shown', async () => {
+      const ui = (menu: 'root' | 'settings' | 'bare') => (
+        <Panel landscape={false} detents={['half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} contentKey={menu} onFrameChange={jest.fn()}>
+          {menu === 'bare' ? <Text key="bare">bare</Text> : <MenuHeader key={menu} title={menu} leading={{ label: menu === 'root' ? 'Close' : 'Back', onPress: jest.fn() }} />}
+        </Panel>
+      );
+      const { rerender } = await render(ui('root'));
+      expect(screen.getByTestId('menu-panel-header')).toHaveTextContent(/Close/);
+      await rerender(ui('settings'));
+      expect(screen.getByTestId('menu-panel-header')).toHaveTextContent(/Back/);
+      await rerender(ui('bare'));
+      expect(screen.queryByTestId('menu-panel-header')).toBeNull();
+    });
+
+    it('draws in place outside a panel', async () => {
+      await render(<MenuHeader title="Settings" leading={{ label: 'Close', onPress: jest.fn() }} />);
+      expect(screen.getByText('Close')).toBeTruthy();
+      expect(screen.queryByTestId('menu-panel-header')).toBeNull();
+    });
+  });
+
+  describe('fitting short content', () => {
+    const sheet = (onFrameChange: jest.Mock, landscape = false) => (
+      <Panel landscape={landscape} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={onFrameChange}>
+        <Text>content</Text>
+      </Panel>
+    );
+
+    it('opens only as tall as short content needs', async () => {
+      const onFrameChange = jest.fn();
+      await render(sheet(onFrameChange));
+      await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 180);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT });
+    });
+
+    it('stays closed until its content is measured, then opens once, straight to the fitted height', async () => {
+      const onFrameChange = jest.fn();
+      await render(sheet(onFrameChange));
+      expect(onFrameChange).not.toHaveBeenCalled();
+      await measure(180);
+      expect(onFrameChange.mock.calls).toEqual([[{ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT }]]);
+    });
+
+    it('opens anyway when no measurement comes', async () => {
+      jest.useFakeTimers();
+      try {
+        const onFrameChange = jest.fn();
+        await render(sheet(onFrameChange));
+        await act(async () => jest.advanceTimersByTime(250));
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('holds its height when the menu changes until the new content is measured', async () => {
+      const onFrameChange = jest.fn();
+      const ui = (key: string) => (
+        <Panel landscape={false} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} contentKey={key} onFrameChange={onFrameChange}>
+          <Text>content</Text>
+        </Panel>
+      );
+      const { rerender } = await render(ui('root'));
+      await measure(180);
+      await rerender(ui('settings'));
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT });
+      await measure(5000);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
+      expect(onFrameChange).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps its detent for content taller than it', async () => {
+      const onFrameChange = jest.fn();
+      await render(sheet(onFrameChange));
+      await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 5000);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
+    });
+
+    it('still opens fully while the keyboard is up, so a focused field stays in view', async () => {
+      const handlers: Record<string, () => void> = {};
+      const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: () => void) => {
+        handlers[event] = cb;
+        return { remove: jest.fn() };
+      }) as never);
+      try {
+        const onFrameChange = jest.fn();
+        await render(sheet(onFrameChange));
+        await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 180);
+        await act(async () => (handlers.keyboardWillShow ?? handlers.keyboardDidShow)());
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).full });
+        await act(async () => (handlers.keyboardWillHide ?? handlers.keyboardDidHide)());
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT });
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('does not change the landscape drawer', async () => {
+      const onFrameChange = jest.fn();
+      await render(sheet(onFrameChange, true));
+      await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 320, 180);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
+    });
   });
 
   describe('minimizing the landscape drawer', () => {
@@ -208,15 +357,114 @@ describe('Panel', () => {
       expect(tab.props.className).toContain('border-accent');
     });
 
+    it('edges its content column with a left border just past the notch', async () => {
+      const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 0, right: 59, bottom: 21, left: 59 });
+      try {
+        await render(drawer({ minimized: false }));
+        const column = screen.getByTestId('menu-panel-column');
+        expect(column.props.className).toContain('border-l');
+        expect(StyleSheet.flatten(column.props.style).marginLeft).toBe(59);
+      } finally {
+        insets.mockReturnValue(INSETS);
+      }
+    });
+
+    it('has no left border on the portrait sheet', async () => {
+      await render(drawer({ minimized: false, landscape: false }));
+      expect(screen.getByTestId('menu-panel-column').props.className ?? '').not.toContain('border-l');
+    });
+
     it('keeps the floating button off the screen edge where there is no notch', async () => {
       await render(drawer({ minimized: true }));
       expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style).left).toBe(4);
     });
 
-    it('has no rail or tab in portrait (the sheet already drags down)', async () => {
-      await render(drawer({ minimized: false, landscape: false }));
-      expect(screen.queryByLabelText('Hide menu')).toBeNull();
-      expect(screen.queryByTestId('menu-panel-rail')).toBeNull();
+  });
+
+  describe('minimizing the portrait sheet', () => {
+    const sheet = (props: { minimized: boolean; onMinimizedChange?: (m: boolean) => void; onFrameChange?: jest.Mock; landscape?: boolean }) => (
+      <Panel
+        landscape={props.landscape ?? false}
+        detents={['peek', 'half', 'full']}
+        initialDetent="half"
+        topReserved={TOP_RESERVED}
+        title="Add unit"
+        minimized={props.minimized}
+        minimizedTab={{ icon: 'account-group', label: 'HOS-1', detail: 'INF', spoken: 'HOS-1, infantry' }}
+        onMinimizedChange={props.onMinimizedChange ?? jest.fn()}
+        onFrameChange={props.onFrameChange ?? jest.fn()}>
+        <Text>content</Text>
+      </Panel>
+    );
+
+    it('has square corners and a full-width rail along its top edge that hides the sheet', async () => {
+      const onMinimizedChange = jest.fn();
+      await render(sheet({ minimized: false, onMinimizedChange }));
+      const panel = screen.getByTestId('menu-panel');
+      expect(panel.props.className).not.toMatch(/rounded/);
+      const rail = screen.getByLabelText('Hide menu');
+      expect(rail.props.testID).toBe('menu-panel-rail');
+      expect(panel).toContainElement(rail);
+      expect(rail.props.className).toContain('w-full');
+      // As slim as the landscape rail, turned on its side.
+      expect(StyleSheet.flatten(rail.props.style).height).toBe(16);
+      expect(screen.queryByTestId('menu-panel-tab')).toBeNull();
+      await fireEvent.press(rail);
+      expect(onMinimizedChange).toHaveBeenCalledWith(true);
+    });
+
+    it('drags by a dotted grip under the rail', async () => {
+      await render(sheet({ minimized: false }));
+      expect(screen.getByTestId('menu-panel-handle')).toContainElement(screen.getByTestId('menu-panel-grip'));
+    });
+
+    it('while minimized, keeps the menu mounted and reports only the reopen bar along the bottom', async () => {
+      const onMinimizedChange = jest.fn();
+      const onFrameChange = jest.fn();
+      await render(sheet({ minimized: true, onMinimizedChange, onFrameChange }));
+      // The grid readouts sit on top of the bar, not where the sheet was.
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: minimizedBarSize(0) });
+      expect(screen.getByText('content', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.queryByText('content')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('Show Add unit, HOS-1, infantry'));
+      expect(onMinimizedChange).toHaveBeenCalledWith(false);
+    });
+
+    it('lays the reopen bar along the very bottom, styled like the landscape tab but reading across', async () => {
+      const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 47, right: 0, bottom: 34, left: 0 });
+      try {
+        const onFrameChange = jest.fn();
+        await render(sheet({ minimized: true, onFrameChange }));
+        const frame = StyleSheet.flatten(screen.getByTestId('menu-panel-tab-frame').props.style);
+        // As wide as the grid dock above it.
+        expect(frame).toMatchObject({ bottom: 34, left: 12, right: 12, height: MINIMIZED_BAR_HEIGHT });
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: minimizedBarSize(34) });
+        const tab = screen.getByTestId('menu-panel-tab');
+        expect(tab.props.className).toContain('rounded-xl');
+        expect(tab.props.className).toContain('border-accent');
+        expect(tab).toHaveTextContent(/HOS-1.*INF/);
+        expect(StyleSheet.flatten(screen.getByTestId('menu-panel-tab-label').props.style)?.transform).toBeUndefined();
+      } finally {
+        insets.mockReturnValue(INSETS);
+      }
+    });
+
+    it('stays minimized when the phone turns from landscape to portrait', async () => {
+      const onFrameChange = jest.fn();
+      const { rerender } = await render(sheet({ minimized: true, landscape: true, onFrameChange }));
+      expect(onFrameChange).toHaveBeenLastCalledWith(null);
+      await rerender(sheet({ minimized: true, landscape: false, onFrameChange }));
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: minimizedBarSize(0) });
+      expect(screen.getByLabelText('Show Add unit, HOS-1, infantry')).toBeTruthy();
+      expect(screen.queryByText('content')).toBeNull();
+    });
+
+    it('reports its height again when restored', async () => {
+      const onFrameChange = jest.fn();
+      const { rerender } = await render(sheet({ minimized: true, onFrameChange }));
+      await rerender(sheet({ minimized: false, onFrameChange }));
+      await measure();
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
     });
   });
 

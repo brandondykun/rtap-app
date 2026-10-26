@@ -7,4 +7,4 @@ export function EditPointMenu({ params, missionId }: MenuComponentProps<'point.e
   return <EditItemPanel category="point" itemId={params.itemId} missionId={missionId} form={<PointForm missionId={missionId} mode="edit" />} />;
 }
 
-export const editPointMenu = defineMenu({ id: 'point.edit', family: 'action', title: 'Edit point', icon: 'map-marker-outline', detents: ['peek', 'half', 'full'], component: EditPointMenu });
+export const editPointMenu = defineMenu({ id: 'point.edit', family: 'action', title: 'Edit point', icon: 'map-marker-outline', component: EditPointMenu });

@@ -5,7 +5,7 @@ import { MENU_PARAMS, type MenuId, type MenuParams } from '@/features/menus/para
 
 export type MenuEntry = { [I in MenuId]: { id: I; params: MenuParams<I> } }[MenuId];
 
-/** `panelMinimized`: the landscape drawer is slid off screen (only its tab shows); the menu stays open. */
+/** `panelMinimized`: the panel is slid off screen (only its reopen button shows, in either orientation); the menu stays open. */
 type MenuValues = { stack: MenuEntry[]; panelFrame: PanelFrame | null; panelMinimized: boolean };
 
 type MenuActions = {

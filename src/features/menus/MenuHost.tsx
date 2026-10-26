@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Panel } from '@/components/menu/Panel';
+import { MENU_DETENTS, MENU_INITIAL_DETENT } from '@/components/menu/panel-geometry';
 import { EDGE, GAP } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { useDraft } from '@/stores/draft';
@@ -33,13 +34,12 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
 
   if (!top || !definition) return null;
   const Component = definition.component as ComponentType<MenuComponentProps<MenuId>>;
-  const initialDetent = definition.detents.includes('half') ? 'half' : definition.detents[0];
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <Panel
         landscape={landscape}
-        detents={definition.detents}
-        initialDetent={initialDetent}
+        detents={MENU_DETENTS}
+        initialDetent={MENU_INITIAL_DETENT}
         topReserved={insets.top + EDGE + toolbar + GAP}
         title={definition.title}
         minimized={minimized}

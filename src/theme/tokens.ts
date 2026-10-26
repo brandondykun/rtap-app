@@ -33,6 +33,8 @@ const dark = {
   'surface-input': 'neutral-950',
   'surface-raised': 'stone-800',
   border: 'stone-700',
+  /** Faint lines inside a panel (the drawer's notch edge, the header's scroll divider): a step off the surface. */
+  'border-subtle': 'stone-800',
   /** Separator lines on the see-through panels (the CTR/ME dock, the toolbar): faint white. Its alpha follows the Panel background setting (themeColors). */
   divider: { color: 'stone-50', alpha: 0.35 },
   /** The toolbar separator while tools are scrolled out of sight behind it. */

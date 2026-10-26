@@ -7,4 +7,4 @@ export function EditPolygonMenu({ params, missionId }: MenuComponentProps<'polyg
   return <EditItemPanel category="polygon" itemId={params.itemId} missionId={missionId} form={<PolygonForm missionId={missionId} mode="edit" />} />;
 }
 
-export const editPolygonMenu = defineMenu({ id: 'polygon.edit', family: 'action', title: 'Edit polygon', icon: 'pentagon-outline', detents: ['peek', 'half', 'full'], component: EditPolygonMenu });
+export const editPolygonMenu = defineMenu({ id: 'polygon.edit', family: 'action', title: 'Edit polygon', icon: 'pentagon-outline', component: EditPolygonMenu });

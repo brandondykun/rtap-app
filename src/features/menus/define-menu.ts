@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react';
 
-import type { Detent } from '@/components/menu/panel-geometry';
 import type { IconName } from '@/components/ui/Icon';
 
 import type { MenuId, MenuParams } from './params';
@@ -16,8 +15,6 @@ export type MenuDefinition<I extends MenuId> = {
   title: string;
   /** The toolbar icon for this menu; shown on the minimized drawer's button. */
   icon: IconName;
-  /** Bottom-sheet detents in portrait, smallest first. Opens at `half` when listed. */
-  detents: readonly Detent[];
   component: ComponentType<MenuComponentProps<I>>;
 };
 

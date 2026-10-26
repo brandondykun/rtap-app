@@ -3,6 +3,8 @@ import {
   DRAWER_MAX_WIDTH,
   DRAWER_MIN_WIDTH,
   detentHeights,
+  fitToContent,
+  SHEET_CHROME_HEIGHT,
   DRAWER_FRACTION,
   RAIL_WIDTH,
   drawerWidth,
@@ -23,6 +25,18 @@ describe('panel geometry', () => {
     expect(h.peek).toBe(PEEK_HEIGHT + 34);
     expect(h.peek).toBeLessThan(h.half);
     expect(h.half).toBeLessThan(h.full);
+  });
+
+  it('shrinks every detent to what short content needs, rail and grip included', () => {
+    const h = detentHeights(phone);
+    const fitted = fitToContent(h, 200);
+    expect(fitted).toEqual({ peek: Math.min(h.peek, 200 + SHEET_CHROME_HEIGHT), half: 200 + SHEET_CHROME_HEIGHT, full: 200 + SHEET_CHROME_HEIGHT });
+  });
+
+  it('leaves the detents alone for tall content, or before the content is measured', () => {
+    const h = detentHeights(phone);
+    expect(fitToContent(h, 2000)).toEqual(h);
+    expect(fitToContent(h, null)).toEqual(h);
   });
 
   it('never lets half exceed full on short screens', () => {

@@ -7,4 +7,4 @@ export function AddPolygonMenu({ missionId }: MenuComponentProps<'polygon.add'>)
   return <AddItemPanel category="polygon" missionId={missionId} form={<PolygonForm missionId={missionId} mode="add" />} />;
 }
 
-export const addPolygonMenu = defineMenu({ id: 'polygon.add', family: 'action', title: 'Add polygon', icon: 'pentagon-outline', detents: ['peek', 'half', 'full'], component: AddPolygonMenu });
+export const addPolygonMenu = defineMenu({ id: 'polygon.add', family: 'action', title: 'Add polygon', icon: 'pentagon-outline', component: AddPolygonMenu });

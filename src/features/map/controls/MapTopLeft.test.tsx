@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react-native';
 
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
+import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { renderWithProviders } from '@/test-utils/render';
@@ -12,6 +13,7 @@ beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useMeasure.setState(INITIAL_MEASURE);
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
+  useMenu.setState(INITIAL_MENU);
 });
 
 describe('MapTopLeft', () => {
@@ -31,6 +33,12 @@ describe('MapTopLeft', () => {
     expect(screen.getByTestId('map-top-left')).toHaveStyle({ left: 320 + EDGE });
   });
 
+  it('shows the notice while the portrait sheet is minimized to its bottom bar', async () => {
+    useMenu.setState({ panelMinimized: true });
+    await renderWithProviders(<MapTopLeft landscape={false} panel={{ side: 'bottom', size: 48 }} />);
+    await act(async () => usePresence.getState().setLocationStatus('denied'));
+    expect(screen.getByTestId('location-banner')).toBeTruthy();
+  });
 
   it('keeps the location notice in place while measuring (the measure bar is at the bottom)', async () => {
     useMeasure.getState().startMeasure();

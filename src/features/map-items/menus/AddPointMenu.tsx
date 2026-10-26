@@ -7,4 +7,4 @@ export function AddPointMenu({ params, missionId }: MenuComponentProps<'point.ad
   return <AddItemPanel category="point" at={params.at} missionId={missionId} form={<PointForm missionId={missionId} mode="add" />} />;
 }
 
-export const addPointMenu = defineMenu({ id: 'point.add', family: 'action', title: 'Add point', icon: 'map-marker-outline', detents: ['peek', 'half', 'full'], component: AddPointMenu });
+export const addPointMenu = defineMenu({ id: 'point.add', family: 'action', title: 'Add point', icon: 'map-marker-outline', component: AddPointMenu });
