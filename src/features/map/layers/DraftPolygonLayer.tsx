@@ -9,11 +9,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 import { draftPolygonFeatures } from './draft-polygon-features';
 import {
-  makeLineDashedStyle,
   makeLineHaloStyle,
-  makeLineStyle,
   makePolygonFillStyle,
   makePolygonLabelStyle,
+  makePolygonOutlineDashedStyle,
+  makePolygonOutlineStyle,
   makeRangeLabelStyle,
 } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
@@ -42,23 +42,24 @@ export function DraftPolygonLayer({ onVertexPress, onPress }: { onVertexPress?: 
   const center = useDraft((s) => s.coord);
   const radiusM = useDraft((s) => s.circleRadiusM);
   const polygonType = useDraft((s) => s.polygonType);
+  const fill = useDraft((s) => s.polygonFill);
   const name = useDraft((s) => s.name);
   const showDistances = useSettings((s) => s.showLineDistances);
   const labelSize = useLabelTextSize();
   // The fill gets its own untappable source: a touchable fill would swallow taps on items inside an open polygon.
   const { fills, shape } = useMemo(() => {
-    const all = draftPolygonFeatures({ polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances });
+    const all = draftPolygonFeatures({ polygonShape, vertices, selected, center, radiusM, polygonType, fill, name, showDistances });
     return {
       fills: { type: 'FeatureCollection' as const, features: all.features.filter((f) => f.properties.role === 'fill') },
       shape: { type: 'FeatureCollection' as const, features: all.features.filter((f) => f.properties.role !== 'fill') },
     };
-  }, [polygonShape, vertices, selected, center, radiusM, polygonType, name, showDistances]);
+  }, [polygonShape, vertices, selected, center, radiusM, polygonType, fill, name, showDistances]);
   const styles = useMemo(
     () => ({
       fill: makePolygonFillStyle(colors),
       halo: makeLineHaloStyle(colors),
-      solid: makeLineStyle(colors),
-      dashed: makeLineDashedStyle(colors),
+      solid: makePolygonOutlineStyle(colors),
+      dashed: makePolygonOutlineDashedStyle(colors),
       chip: makeRangeLabelStyle(colors),
       label: makePolygonLabelStyle(colors, labelSize),
       vertex: { ...VERTEX_STYLE, textColor: colors['surface-input'] },

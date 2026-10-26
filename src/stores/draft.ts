@@ -4,7 +4,7 @@ import * as lineDraft from '@/features/map-items/line-draft';
 import type { LineEdit } from '@/features/map-items/line-draft';
 import type { ItemCategory } from '@/features/symbology/categories';
 import type { LineType } from '@/features/symbology/line-types';
-import { MAX_RADIUS_M, type PolygonType } from '@/features/symbology/polygon-types';
+import { DEFAULT_POLYGON_FILL, MAX_RADIUS_M, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
 import type { PointType } from '@/features/symbology/point-types';
 import type { Affiliation, Echelon, UnitType } from '@/features/symbology/presets';
 import { inverse } from '@/lib/geo/measure/geodesic';
@@ -50,8 +50,9 @@ export type DraftValues = {
   lineType: LineType;
   /** Undo stack of earlier vertex states (most recent last), at most HISTORY_LIMIT. */
   history: LineEdit[];
-  /** Polygon drafts (category 'polygon'): type and shape. Points use `vertices`; a circle uses `coord` as its center. */
+  /** Polygon drafts (category 'polygon'): type, fill and shape. Points use `vertices`; a circle uses `coord` as its center. */
   polygonType: PolygonType;
+  polygonFill: PolygonFill;
   polygonShape: 'points' | 'circle';
   circleRadiusM: number | null;
   /** Bounds to fit the camera to (a saved line opened); `focusRev` increments with each new request. */
@@ -103,6 +104,7 @@ type DraftActions = {
   startEditPolygon: (polygon: {
     itemId: string;
     polygonType: PolygonType;
+    fill: PolygonFill;
     shape: { kind: 'points'; points: LatLon[] } | { kind: 'circle'; center: LatLon; radiusM: number };
     ring: LatLon[];
     name: string;
@@ -110,6 +112,7 @@ type DraftActions = {
   }) => void;
   setPolygonType: (polygonType: PolygonType) => void;
   setPolygonShape: (shape: 'points' | 'circle') => void;
+  setPolygonFill: (fill: PolygonFill) => void;
   setCircleRadius: (radiusM: number | null) => void;
   setCircleEdge: (p: LatLon) => void;
   clear: () => void;
@@ -139,6 +142,7 @@ export const INITIAL_DRAFT: DraftValues = {
   lineType: 'phase-line',
   history: [],
   polygonType: 'objective',
+  polygonFill: DEFAULT_POLYGON_FILL,
   polygonShape: 'points',
   circleRadiusM: null,
   focusBounds: null,
@@ -289,7 +293,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev,
       focusRev: s.focusRev,
     })),
-  startEditPolygon: ({ itemId, polygonType, shape, ring, name, notes }) =>
+  startEditPolygon: ({ itemId, polygonType, fill, shape, ring, name, notes }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
@@ -297,6 +301,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       category: 'polygon',
       itemId,
       polygonType,
+      polygonFill: fill,
       polygonShape: shape.kind,
       vertices: shape.kind === 'points' ? shape.points : [],
       // The center is the draft coord; coordRev is left alone so the camera fit below wins.
@@ -318,6 +323,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       remembered: s.mode === 'add' ? { ...s.remembered, polygonType } : s.remembered,
     })),
   setPolygonShape: (polygonShape) => set((s) => (s.locked ? {} : { polygonShape })),
+  setPolygonFill: (polygonFill) => set((s) => (s.locked ? {} : { polygonFill })),
   setCircleRadius: (radiusM) =>
     set((s) =>
       s.locked ? {} : { circleRadiusM: radiusM !== null && Number.isFinite(radiusM) && radiusM > 0 && radiusM <= MAX_RADIUS_M ? radiusM : null },

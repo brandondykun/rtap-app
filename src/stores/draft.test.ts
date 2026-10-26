@@ -226,9 +226,19 @@ describe('polygon drafts', () => {
 
   it('opens a saved circle locked with its exact center and radius, and frames it', () => {
     const rev = d().focusRev;
-    d().startEditPolygon({ itemId: 'c', polygonType: 'no-fire-area', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
-    expect(d()).toMatchObject({ mode: 'edit', category: 'polygon', polygonShape: 'circle', coord: p(1), circleRadiusM: 500, locked: true, polygonType: 'no-fire-area' });
+    d().startEditPolygon({ itemId: 'c', polygonType: 'no-fire-area', fill: 'heavy', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    expect(d()).toMatchObject({ mode: 'edit', category: 'polygon', polygonShape: 'circle', coord: p(1), circleRadiusM: 500, locked: true, polygonType: 'no-fire-area', polygonFill: 'heavy' });
     expect(d().focusRev).toBe(rev + 1);
+  });
+
+  it('starts new polygons at the light fill and changes the fill only while unlocked', () => {
+    d().startAddPolygon();
+    expect(d().polygonFill).toBe('light');
+    d().setPolygonFill('solid');
+    expect(d().polygonFill).toBe('solid');
+    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'points', points: [p(0), p(1), p(2)] }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    d().setPolygonFill('medium');
+    expect(d().polygonFill).toBe('none');
   });
 
   it('remembers the type used last for the next Add polygon', () => {

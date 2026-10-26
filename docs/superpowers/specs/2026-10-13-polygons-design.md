@@ -17,9 +17,9 @@ tapped center, saves both, finds them in Layers and edits the circle's radius la
 
 | Topic | Decision |
 |---|---|
-| Types | Balanced 10 (table §3.1). |
+| Types | Balanced 10, plus Impact area (table §3.1). |
 | Shapes | Any type can be **Points** (≥ 3 points, closed) or **Circle** (center + radius), chosen with a Shape switch in the menu. |
-| Look | Friendly blue outline with a dark halo (like lines) plus a light translucent blue fill; fire-control areas dashed; label chip at the center. |
+| Look | Friendly blue outline with a dark halo (like lines) plus a light translucent blue fill (hostile red for an impact area); fire-control areas dashed; label chip at the center. The fill is set per polygon in its menu (Fill: 0%, 15% default, 30%, 50%, 75%; stored as `fill` in `style`, left out when 15%; added 2026-10-26). |
 | Circle input | Center like a point (map tap, Center, typed MGRS); radius typed (m/km) or set by tapping the map at the edge. |
 | Storage | One kind `polygon`; geometry is always a real closed GeoJSON Polygon (a circle is stored as a 64-sided ring); the circle's exact center and radius are kept in `style`. No schema change. |
 | Tapping | The outline and the label open a saved polygon; taps inside the fill reach the map (a big area never blocks the units inside it). |
@@ -48,6 +48,7 @@ export function polygonLabel(type: PolygonType, name: string): string; // "OBJ I
 | no-fire-area | No fire area | NFA | dashed |
 | restrictive-fire-area | Restrictive fire area | RFA | dashed |
 | airspace-coordination-area | Airspace coordination area | ACA | dashed |
+| impact-area | Impact area | IA | solid, hostile red (added 2026-10-26) |
 
 `polygonLabel` follows `lineLabel`'s rule: `"<prefix> <name>"`, or the name alone when it already
 starts with the prefix.

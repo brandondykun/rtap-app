@@ -11,7 +11,7 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
 import { formatCoordinate } from '@/features/map/interaction/readout';
-import { POLYGON_TYPES, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
+import { POLYGON_FILLS, POLYGON_TYPES, polygonTypeInfo, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { formatDistance } from '@/lib/geo/format/measure';
 import { useDraft, type DraftMode } from '@/stores/draft';
@@ -30,6 +30,7 @@ import { PolygonSample } from './PolygonSample';
 const TYPE_OPTIONS = POLYGON_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <PolygonSample polygonType={t.id} /> })).sort((a, b) =>
   a.label.localeCompare(b.label),
 );
+const FILLS = POLYGON_FILLS.map((f) => ({ value: f.id, label: f.label }));
 const SHAPES = [
   { value: 'points' as const, label: 'Points' },
   { value: 'circle' as const, label: 'Circle' },
@@ -46,11 +47,12 @@ const radiusText = (m: number | null, unit: 'm' | 'km') => (m === null ? '' : un
 /** Zone and 100 km square at the map center: typed points are most likely nearby. */
 const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCenter);
 
-/** Add/Edit polygon: name, type, shape (points list or circle center + radius), notes. Edits only the draft store. */
+/** Add/Edit polygon: name, type, fill, shape (points list or circle center + radius), notes. Edits only the draft store. */
 export function PolygonForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const name = useDraft((s) => s.name);
   const polygonType = useDraft((s) => s.polygonType);
   useAutoName(missionId, mode, polygonTypeInfo(polygonType).prefix);
+  const fill = useDraft((s) => s.polygonFill);
   const shape = useDraft((s) => s.polygonShape);
   const vertices = useDraft((s) => s.vertices);
   const selected = useDraft((s) => s.selectedVertex);
@@ -109,6 +111,9 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
       </MenuSection>
       <MenuSection label="Polygon type">
         <MenuSelect<PolygonType> label="Polygon type" options={TYPE_OPTIONS} value={polygonType} onChange={(t) => useDraft.getState().setPolygonType(t)} disabled={locked} />
+      </MenuSection>
+      <MenuSection label="Fill">
+        <MenuSegmented<PolygonFill> options={FILLS} value={fill} onChange={(f) => useDraft.getState().setPolygonFill(f)} disabled={locked} />
       </MenuSection>
       <MenuSection label="Shape">
         <MenuSegmented<'points' | 'circle'> options={SHAPES} value={shape} onChange={(s) => useDraft.getState().setPolygonShape(s)} disabled={locked} />

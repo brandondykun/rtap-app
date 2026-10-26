@@ -88,15 +88,16 @@ const polygonAdapter: ItemAdapter = {
     (d.polygonShape === 'circle'
       ? d.coord !== null && d.coordInputValid && d.circleRadiusM !== null && d.circleRadiusM > 0 && d.circleRadiusM <= MAX_RADIUS_M
       : d.vertices.length >= 3),
-  place: (ctx, missionId, d) => placePolygon(ctx, { missionId, polygonType: d.polygonType, name: d.name, notes: notes(d), shape: polygonShape(d) }),
-  update: (ctx, id, d) => updatePolygon(ctx, id, { polygonType: d.polygonType, name: d.name, notes: notes(d), shape: polygonShape(d) }),
+  place: (ctx, missionId, d) => placePolygon(ctx, { missionId, polygonType: d.polygonType, fill: d.polygonFill, name: d.name, notes: notes(d), shape: polygonShape(d) }),
+  update: (ctx, id, d) => updatePolygon(ctx, id, { polygonType: d.polygonType, fill: d.polygonFill, name: d.name, notes: notes(d), shape: polygonShape(d) }),
   select: (item) => {
     const ring = parsePolygonGeometry(item.geometry);
     if (!ring) return false;
-    const { polygonType, shape } = polygonStyleOf(item.style);
+    const { polygonType, shape, fill } = polygonStyleOf(item.style);
     useDraft.getState().startEditPolygon({
       itemId: item.id,
       polygonType,
+      fill,
       shape: shape.kind === 'circle' ? shape : { kind: 'points', points: ring },
       ring,
       name: item.name,

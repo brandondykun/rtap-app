@@ -2,7 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 
 import { isKnownSidc } from '@/features/symbology/categories';
 import { lineStyle, type LineType } from '@/features/symbology/line-types';
-import { MAX_RADIUS_M, polygonStyle, polygonStyleOf, type PolygonType } from '@/features/symbology/polygon-types';
+import { DEFAULT_POLYGON_FILL, MAX_RADIUS_M, polygonStyle, polygonStyleOf, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
 import type { CommandContext } from '@/lib/db/command-context';
 import type { ItemViewState } from '@/lib/db/models/ItemViewState';
 import type { MapItem } from '@/lib/db/models/MapItem';
@@ -252,7 +252,7 @@ const SHAPE_MESSAGES: Record<PolygonShapeError, string> = {
   invalid_radius: 'Radius must be more than 0 and at most 500 km',
 };
 
-export type PlacePolygonInput = { missionId: string; polygonType: PolygonType; name: string; notes?: string | null; shape: PolygonShapeInput };
+export type PlacePolygonInput = { missionId: string; polygonType: PolygonType; fill?: PolygonFill; name: string; notes?: string | null; shape: PolygonShapeInput };
 
 export async function placePolygon(
   ctx: CommandContext,
@@ -271,7 +271,7 @@ export async function placePolygon(
         i.sidc = null;
         i.name = name;
         i.notes = input.notes ?? null;
-        i.style = polygonStyle(input.polygonType, parts.shape);
+        i.style = polygonStyle(input.polygonType, parts.shape, input.fill ?? DEFAULT_POLYGON_FILL);
         i.createdBy = ctx.actorId();
         i.updatedBy = ctx.actorId();
       }),
@@ -282,7 +282,7 @@ export async function placePolygon(
   }
 }
 
-export type UpdatePolygonPatch = { polygonType?: PolygonType; name?: string; notes?: string | null; shape?: PolygonShapeInput };
+export type UpdatePolygonPatch = { polygonType?: PolygonType; fill?: PolygonFill; name?: string; notes?: string | null; shape?: PolygonShapeInput };
 
 export async function updatePolygon(
   ctx: CommandContext,
@@ -299,7 +299,7 @@ export async function updatePolygon(
     await ctx.db.write(() =>
       item.update((i) => {
         if (parts) i.geometry = parts.geometry;
-        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, i.style);
+        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, patch.fill ?? current.fill, i.style);
         if (patch.name !== undefined) i.name = patch.name.trim();
         if (patch.notes !== undefined) i.notes = patch.notes;
         i.updatedBy = ctx.actorId();

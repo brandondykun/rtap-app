@@ -51,6 +51,21 @@ describe('AddPolygonMenu', () => {
     expect(useMenu.getState().stack).toEqual([{ id: 'polygon.edit', params: { itemId: item.id } }]);
   });
 
+  it('saves the fill picked from the 5 Fill options (15% to start)', async () => {
+    const ctx = await open();
+    for (const label of ['0%', '15%', '30%', '50%', '75%']) expect(screen.getByLabelText(label)).toBeTruthy();
+    expect(screen.getByLabelText('15%')).toBeSelected();
+    await act(async () => {
+      for (const n of [0, 1, 2]) useDraft.getState().addVertex(p(n));
+    });
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'IRON');
+    await fireEvent.press(screen.getByLabelText('50%'));
+    expect(screen.getByLabelText('50%')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
+    expect(JSON.parse((await items(ctx))[0].style!)).toMatchObject({ fill: 'heavy' });
+  });
+
   it('shows Inserting points while inserting after a point, and Done ends it', async () => {
     await open();
     await act(async () => {
@@ -136,6 +151,7 @@ describe('AddPolygonMenu', () => {
       'Battle position',
       'Engagement area',
       'Free fire area',
+      'Impact area',
       'Named area of interest',
       'No fire area',
       'Objective',

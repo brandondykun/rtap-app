@@ -230,11 +230,29 @@ export function makeMeasureChipStyle(colors: Record<SemanticToken, string>): Sym
   };
 }
 
-/** Light friendly-blue fill under polygon outlines. */
+/** Fill opacity of a polygon feature without an `opacity` property (the default, light fill). */
 export const POLYGON_FILL_OPACITY = 0.15;
 
+/** A polygon's color from its `color` property (its type's): hostile red, otherwise friendly blue. */
+function polygonColor(colors: Record<SemanticToken, string>): unknown {
+  return ['match', ['get', 'color'], 'hostile', colors.hostile, colors.friendly];
+}
+
 export function makePolygonFillStyle(colors: Record<SemanticToken, string>): FillLayerStyle {
-  return { fillColor: colors.friendly, fillOpacity: POLYGON_FILL_OPACITY };
+  return {
+    fillColor: polygonColor(colors) as FillLayerStyle['fillColor'],
+    // Each polygon's own fill (its menu's Fill setting).
+    fillOpacity: ['coalesce', ['get', 'opacity'], POLYGON_FILL_OPACITY] as FillLayerStyle['fillOpacity'],
+  };
+}
+
+/** Polygon outlines: drawn like lines, in the polygon's color. */
+export function makePolygonOutlineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { ...makeLineStyle(colors), lineColor: polygonColor(colors) as LineLayerStyle['lineColor'] };
+}
+
+export function makePolygonOutlineDashedStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { ...makeLineDashedStyle(colors), lineColor: polygonColor(colors) as LineLayerStyle['lineColor'] };
 }
 
 /** "OBJ IRON" chip centered in the polygon. */

@@ -22,12 +22,23 @@ describe('createPolygonFeatureSelector', () => {
   it('builds a fill, a dashed outline and a centered label', () => {
     const { fills, shapes } = createPolygonFeatureSelector()([poly('a', 1)]);
     expect(fills.features).toHaveLength(1);
-    expect(fills.features[0].properties).toEqual({ id: 'a' });
+    expect(fills.features[0].properties).toEqual({ id: 'a', color: 'friendly', opacity: 0.15 });
     const outline = shapes.features.find((f) => f.properties.role === 'outline')!;
-    expect(outline.properties).toMatchObject({ id: 'a', dash: 'dashed' });
+    expect(outline.properties).toMatchObject({ id: 'a', dash: 'dashed', color: 'friendly' });
     expect(outline.geometry.coordinates).toHaveLength(4); // closed
     const label = shapes.features.find((f) => f.properties.role === 'label')!;
     expect(label.properties.label).toBe('NFA 1');
+  });
+
+  it('gives each fill its own opacity from the stored fill', () => {
+    const { fills } = createPolygonFeatureSelector()([poly('a', 1, { style: '{"polygonType":"objective","shape":"points","fill":"heavy"}' }), poly('b', 1, { style: '{"polygonType":"objective","shape":"points","fill":"none"}' })]);
+    expect(fills.features.map((f) => f.properties.opacity)).toEqual([0.5, 0]);
+  });
+
+  it('colors an impact area hostile red, fill and outline', () => {
+    const { fills, shapes } = createPolygonFeatureSelector()([poly('a', 1, { style: '{"polygonType":"impact-area","shape":"points"}' })]);
+    expect(fills.features[0].properties.color).toBe('hostile');
+    expect(shapes.features.find((f) => f.properties.role === 'outline')!.properties).toMatchObject({ dash: 'solid', color: 'hostile' });
   });
 
   it('puts a circle label at its exact center, skips unreadable polygons and other kinds, and caches', () => {

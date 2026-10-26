@@ -1,4 +1,4 @@
-import { polygonLabel, polygonStyleOf, polygonTypeInfo } from '@/features/symbology/polygon-types';
+import { polygonFillOpacity, polygonLabel, polygonStyleOf, polygonTypeInfo, type PolygonColor } from '@/features/symbology/polygon-types';
 import type { LatLon } from '@/lib/geo/types';
 
 import { parsePolygonGeometry } from './geometry';
@@ -6,8 +6,8 @@ import { ringCenter } from './polygon-measure';
 import type { MapItemSnapshot } from './repository';
 
 type Ring = [number, number][];
-export type PolygonFillFeature = { type: 'Feature'; id: string; geometry: { type: 'Polygon'; coordinates: Ring[] }; properties: { id: string } };
-type ShapeProps = { id: string; role: 'outline' | 'label'; dash: 'solid' | 'dashed'; label: string };
+export type PolygonFillFeature = { type: 'Feature'; id: string; geometry: { type: 'Polygon'; coordinates: Ring[] }; properties: { id: string; color: PolygonColor; opacity: number } };
+type ShapeProps = { id: string; role: 'outline' | 'label'; dash: 'solid' | 'dashed'; color: PolygonColor; label: string };
 export type PolygonShapeFeature =
   | { type: 'Feature'; id: string; geometry: { type: 'LineString'; coordinates: Ring }; properties: ShapeProps }
   | { type: 'Feature'; id: string; geometry: { type: 'Point'; coordinates: [number, number] }; properties: ShapeProps };
@@ -22,12 +22,13 @@ const lonLat = (p: LatLon): [number, number] => [p.lon, p.lat];
 function build(item: MapItemSnapshot): Built | null {
   const points = parsePolygonGeometry(item.geometry);
   if (!points) return null;
-  const { polygonType, shape } = polygonStyleOf(item.style);
+  const { polygonType, shape, fill } = polygonStyleOf(item.style);
   const ring: Ring = [...points.map(lonLat), lonLat(points[0])];
-  const props = { id: item.id, dash: polygonTypeInfo(polygonType).dash, label: polygonLabel(polygonType, item.name) };
+  const { dash, color } = polygonTypeInfo(polygonType);
+  const props = { id: item.id, dash, color, label: polygonLabel(polygonType, item.name) };
   const center = shape.kind === 'circle' ? shape.center : ringCenter(points);
   return {
-    fill: { type: 'Feature', id: item.id, geometry: { type: 'Polygon', coordinates: [ring] }, properties: { id: item.id } },
+    fill: { type: 'Feature', id: item.id, geometry: { type: 'Polygon', coordinates: [ring] }, properties: { id: item.id, color, opacity: polygonFillOpacity(fill) } },
     shapes: [
       { type: 'Feature', id: `${item.id}:outline`, geometry: { type: 'LineString', coordinates: ring }, properties: { ...props, role: 'outline' } },
       { type: 'Feature', id: `${item.id}:label`, geometry: { type: 'Point', coordinates: lonLat(center) }, properties: { ...props, role: 'label' } },

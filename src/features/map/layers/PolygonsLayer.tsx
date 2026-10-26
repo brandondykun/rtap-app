@@ -12,7 +12,7 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { useOpSymbolStyle } from './op-symbol-scale';
-import { makeLineDashedStyle, makeLineHaloStyle, makeLineStyle, makePolygonFillStyle, makePolygonLabelStyle } from './styles';
+import { makeLineHaloStyle, makePolygonFillStyle, makePolygonLabelStyle, makePolygonOutlineDashedStyle, makePolygonOutlineStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
 
 type Filter = ComponentProps<typeof LineLayer>['filter'];
@@ -38,8 +38,8 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
     () => ({
       fill: makePolygonFillStyle(colors),
       halo: makeLineHaloStyle(colors),
-      solid: makeLineStyle(colors),
-      dashed: makeLineDashedStyle(colors),
+      solid: makePolygonOutlineStyle(colors),
+      dashed: makePolygonOutlineDashedStyle(colors),
       label: { ...makePolygonLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' } as const,
     }),
     [colors, showLabels, labelSize],

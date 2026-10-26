@@ -12,12 +12,15 @@ import {
   makeDraftLabelStyle,
   makeGridAreaLabelStyle,
   makeGridLineLabelStyle,
+  makeLineDashedStyle,
   makeLineHaloStyle,
   makeLineLabelStyle,
   makeLineStyle,
   makePointLabelStyle,
   makePolygonFillStyle,
   makePolygonLabelStyle,
+  makePolygonOutlineDashedStyle,
+  makePolygonOutlineStyle,
   MARKER_ICON_SIZE,
   POINT_ICON_SIZE,
   POINT_SYMBOL_STYLE,
@@ -52,6 +55,8 @@ function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
   switch (op) {
     case 'literal':
       return args[0];
+    case 'coalesce':
+      return args.map((a) => evaluate(a, props)).find((x) => x !== undefined && x !== null);
     case 'get':
       return props[args[0] as string];
     case '+':
@@ -167,10 +172,29 @@ describe('line end labels', () => {
 });
 
 describe('polygon styles', () => {
-  it('fills in light friendly blue', () => {
+  it('fills lightly in friendly blue, or hostile red for a hostile-colored type', () => {
     const colors = themeColors('dark');
-    expect(makePolygonFillStyle(colors)).toEqual({ fillColor: colors.friendly, fillOpacity: POLYGON_FILL_OPACITY });
+    const fill = makePolygonFillStyle(colors);
     expect(POLYGON_FILL_OPACITY).toBe(0.15);
+    // Each polygon's own fill, or the light default.
+    expect(evaluate(fill.fillOpacity, { opacity: 0.5 })).toBe(0.5);
+    expect(evaluate(fill.fillOpacity, { opacity: 0 })).toBe(0);
+    expect(evaluate(fill.fillOpacity, {})).toBe(POLYGON_FILL_OPACITY);
+    expect(evaluate(fill.fillColor, {})).toBe(colors.friendly);
+    expect(evaluate(fill.fillColor, { color: 'friendly' })).toBe(colors.friendly);
+    expect(evaluate(fill.fillColor, { color: 'hostile' })).toBe(colors.hostile);
+  });
+
+  it('draws outlines like lines, in the same color as the fill', () => {
+    const colors = themeColors('dark');
+    for (const [outline, line] of [
+      [makePolygonOutlineStyle(colors), makeLineStyle(colors)],
+      [makePolygonOutlineDashedStyle(colors), makeLineDashedStyle(colors)],
+    ]) {
+      expect({ ...outline, lineColor: undefined }).toEqual({ ...line, lineColor: undefined });
+      expect(evaluate(outline.lineColor, { color: 'hostile' })).toBe(colors.hostile);
+      expect(evaluate(outline.lineColor, { color: 'friendly' })).toBe(colors.friendly);
+    }
   });
 });
 
