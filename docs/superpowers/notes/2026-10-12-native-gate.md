@@ -166,3 +166,13 @@ Run `npx expo start --dev-client --clear`, open the app on the device.
 | 83 | Status shows "Valid · distance @ bearing REF from you"; Plot and the keyboard's Go plot only a full valid grid; the map eases to the amber TEMP reticle with the dashed range line from me | PENDING |
 | 84 | TEMP card sits left of the zoom/recenter buttons (all still tappable); Discard removes it; Save unit / Save point open Add unit / Add point at that grid; PLOT while a temporary point shows removes it | PENDING |
 | 85 | Quick plot ends on PLOT again, a map tap while entering, opening Layers/Menu/Settings, or MEASURE | PENDING |
+
+## Impact area and polygon fill device checks (dev build, 2026-10-26)
+
+Commit e5cb5d7: Impact area polygon type (hostile red) and the per-polygon Fill setting.
+
+| # | Check | Result |
+|---|-------|--------|
+| 86 | Seed 5k mission plus one polygon: panning stays smooth | PASS (2026-10-26) |
+| 87 | Drawing a polygon looks right | PASS (2026-10-26) |
+| 88 | Impact area draws red (outline and fill, also while drawing); each Fill option (0% to 75%) shows on the map and is kept after Save; existing polygons still look the same | PENDING |
