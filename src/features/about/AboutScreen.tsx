@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -147,8 +148,22 @@ function IdentityCard({ version }: { version: string }) {
       <Text testID="about-update" className="font-mono text-sm text-text-muted">
         {updateLabel(Updates)}
       </Text>
+      {/* TEMPORARY: Sentry verification on preview; removed by the next update. */}
+      {Updates.channel === 'preview' ? (
+        <Pressable onPress={sendSentryTestError} className="self-start rounded-full border border-accent px-3 py-1 active:opacity-60">
+          <Text className="font-mono text-sm text-accent">Send test error</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
+}
+
+function sendSentryTestError() {
+  try {
+    throw new Error('RTAP Sentry test error near 18SUJ2348306479 at 38.8977, -77.0365');
+  } catch (e) {
+    Sentry.captureException(e);
+  }
 }
 
 /** One toolbar button: its icon in a tile, its name and what it does. */
