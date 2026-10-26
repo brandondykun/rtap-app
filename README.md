@@ -35,15 +35,28 @@ and look out from an observation post in 3D.
 
    Without it the map shows a "missing token" screen. After changing it, restart Metro with `npx expo start --clear`.
 
-3. The app uses native modules, so it runs in a development build, not Expo Go. Build one with EAS (or locally with
-   `npx expo run:ios`), install it, then start Metro:
+3. The app uses native modules, so it runs in a **development build** (the **RTAP (D)** app), not Expo Go. Build
+   one and install it on your phone (see [Making builds](#making-builds)):
 
    ```bash
    npx eas-cli@latest build --profile development --platform ios
-   npx expo start
    ```
 
-   A new development build is needed whenever a native library or native config changes.
+4. Start the dev server, then open RTAP (D) on your phone and pick the server, or scan the QR code with the
+   camera:
+
+   ```bash
+   npx expo start --dev-client
+   ```
+
+   The phone must be on the same Wi-Fi as your Mac. Code changes reload instantly. Useful variations:
+
+   ```bash
+   npx expo start --dev-client --clear    # after changing .env or when Metro acts stale: clear its cache
+   npx expo start --dev-client --tunnel   # when the phone can't reach your Mac over Wi-Fi
+   ```
+
+   You only need a new development build when native code changes (see [Build or update?](#build-or-update)).
 
 ## Checks
 
@@ -87,61 +100,132 @@ The data layer is built so team sharing can be added on top later:
 - Live positions are kept in memory (`stores/presence`), never in the database.
 - The callsign lives in the on-phone profile, not in records. Records carry ids, and names are looked up from them.
 
-## Releases and over-the-air updates
+## Builds, updates and releases
 
-Builds use EAS. Each build profile has its own update channel:
+Everything is built in the cloud with EAS (no Xcode needed). Run every command below from the repo root.
 
-| Profile | Channel | Use |
-| --- | --- | --- |
-| `development` | `development` | Development builds with Metro |
-| `preview` | `preview` | Internal test builds |
-| `production` | `production` | App Store builds |
+### The three apps
 
-The runtime version uses the **fingerprint** policy, so an update only reaches builds with matching native code.
-Changes to native code (a new native library, new permissions) need a new build instead.
+Each build profile makes its own app with its own bundle id, so all three install side by side on one phone. Each
+keeps its own data: missions in RTAP (D) never show up in RTAP (P) or RTAP.
 
-Each profile is its own app, so all three can sit on one phone, each with its own data:
-
-| Profile | App name | Bundle id / package | Link scheme |
+| Profile / channel | App on the phone | Bundle id | What it's for |
 | --- | --- | --- | --- |
-| `development` | RTAP (D) | `com.eratas.rtap.dev` | `map-dev` |
-| `preview` | RTAP (P) | `com.eratas.rtap.preview` | `map-preview` |
-| `production` | RTAP | `com.eratas.rtap` | `map` |
+| `development` | RTAP (D) | `com.eratas.rtap.dev` | Day-to-day coding. Loads JS from your Mac's dev server. |
+| `preview` | RTAP (P) | `com.eratas.rtap.preview` | Testing a real, standalone build before release. Gets OTA updates. |
+| `production` | RTAP | `com.eratas.rtap` | The App Store app. Gets OTA updates. |
 
-`app.config.ts` picks the variant from `APP_VARIANT`, which is set in each EAS environment (not in `eas.json`), and
-each build profile names its environment. The bundle id is part of the fingerprint, so **always publish with
-`--environment` matching the channel**: an update published for preview without `--environment preview` is
-calculated for the store app's fingerprint and never reaches preview builds. Local native builds default to the store
-app; prefix them to get the dev app, e.g. `APP_VARIANT=development npx expo run:ios`.
+The About page shows which channel and update the app is running: `preview · built-in` means the code that came with
+the build, `preview · update 01a175db` means a downloaded update. The development app shows just `built-in`.
+
+### Build or update?
+
+- **Only JavaScript/TypeScript, styles or images changed** → publish an **over-the-air (OTA) update**. Takes a
+  couple of minutes; phones pick it up without reinstalling.
+- **Native code changed** → make a **new build** and reinstall. That means: a package added with native code, an
+  Expo SDK upgrade, anything in `app.json` / `app.config.ts` (plugins, permissions, icon, name), `eas.json`, the
+  `patches/` folder, or even the `scripts` block of `package.json`.
+
+You don't have to guess. The app's runtime version is a **fingerprint** of its native code, and an update only
+reaches builds with the same fingerprint. `scripts/ota-update.sh` checks this and refuses with "Native code has changed"
+when a new build is needed.
+
+### Making builds
 
 ```bash
-npx eas-cli@latest build --profile preview --platform ios                      # internal test build
-npx eas-cli@latest update --channel preview --environment preview --message "…"   # ship JS changes to it
-npx eas-cli@latest env:exec preview 'npx sentry-expo-upload-sourcemaps dist'    # then, every time, upload its source maps
+npx eas-cli@latest build --profile development --platform ios   # RTAP (D)
+npx eas-cli@latest build --profile preview --platform ios       # RTAP (P)
+npx eas-cli@latest build --profile production --platform ios    # RTAP, for the App Store
 ```
 
-Phones download updates in the background and apply them the next time the app opens. The About page shows which
-channel and update a phone is running. Cloud builds don't read `.env`, so set `EXPO_PUBLIC_MAPBOX_TOKEN` as an EAS
-environment variable.
+- Run these in your own terminal: the first build of each app asks you to sign in to Apple to create its App ID and
+  provisioning profile.
+- To put the phone on a development or preview build, open the install link (or QR code) EAS prints at the end on the
+  phone. A phone must be registered with the Apple account to install these internal builds; add one with
+  `npx eas-cli@latest device:create` and then build again.
+- Production builds go to the App Store, not straight to a phone. Send the latest one to App Store Connect / TestFlight
+  with `npx eas-cli@latest submit --platform ios --latest`.
+- Build numbers count up automatically (`appVersionSource: remote`). Change the version shown in the store (`1.0.0`)
+  in `app.json`.
+- Builds take their environment variables from EAS, never from your `.env` (see
+  [Environment variables](#environment-variables)).
+
+### Publishing an over-the-air update
+
+Commit your changes, then:
+
+```bash
+scripts/ota-update.sh preview "Fix the grid readout"       # to RTAP (P)
+scripts/ota-update.sh production "Fix the grid readout"    # to the App Store app
+```
+
+`scripts/ota-update.sh` does it in this order, and stops at the first problem:
+
+1. Checks you gave a message and have no uncommitted changes, so every update matches a commit.
+2. Compares your code's fingerprint with the latest build on that channel. If they differ, it stops and tells you to
+   build instead, because no phone could run the update.
+3. **`eas update --channel <channel> --environment <channel> --platform ios`** bundles the app into `dist/` and
+   publishes it. The channel decides which app receives it; the environment supplies that app's EAS variables
+   (`APP_VARIANT`, Mapbox token, Sentry DSN). They must always match, or the update gets the wrong fingerprint and
+   silently reaches nobody. The script guarantees that.
+4. **`eas env:exec <channel> 'npx sentry-expo-upload-sourcemaps dist'`** uploads the source maps from that
+   `dist/` to Sentry, so crash reports from this update show your real file names and line numbers instead of
+   minified code. `env:exec` runs the command with the channel's EAS variables, which is how it gets
+   `SENTRY_AUTH_TOKEN` without the token ever being on your machine. (Builds upload their own source maps; only
+   updates need this step.)
+
+**Getting it onto the phone:** apps check for an update when they open and download it in the background. It runs on
+the next launch. So: force-quit the app and open it (it downloads), then force-quit and open it again (it runs). The
+About page then shows `update <id>`.
+
+**Test on preview first.** Publish to preview, check it on RTAP (P), then publish the same commit to production.
+
+### Undoing a bad update
+
+```bash
+npx eas-cli@latest update:list --branch production --platform ios        # find the group id of the last good update
+npx eas-cli@latest update:republish --group <group-id> --message "Roll back"   # make it the newest again
+npx eas-cli@latest update:roll-back-to-embedded --channel production --platform ios   # or go back to the build's own code
+```
+
+Phones pick up a rollback the same way as any update (two launches).
+
+### Environment variables
+
+Builds and updates read these from **EAS** (expo.dev → project → Environment variables), set separately for each
+environment. Your local `.env` is only for the dev server and is git-ignored.
+
+| Variable | Environments | What it does |
+| --- | --- | --- |
+| `APP_VARIANT` | each env = its own name | Picks the app's name and bundle id in `app.config.ts`. Never change it. |
+| `EXPO_PUBLIC_MAPBOX_TOKEN` | all, and `.env` | The map. Missing → "missing token" screen. |
+| `EXPO_PUBLIC_SENTRY_DSN` | all, and `.env` | Where crash reports go. Public, safe in the app. |
+| `SENTRY_AUTH_TOKEN` | all (sensitive) | Lets builds and `env:exec` upload source maps. Never in `.env` or code. |
 
 ### Crash reporting (Sentry)
 
-Preview and production builds report crashes and errors to the `rtap` project in the `eratas-software-llc` Sentry
-org. Development builds report nothing. Reports are grouped by channel (the Sentry environment) and tagged with the
-update id, and they never carry personal data or positions: grids and lat/longs in messages are redacted
-(`src/lib/monitoring`).
+Preview and production apps report crashes and errors to the `rtap` project in the `eratas-software-llc` Sentry
+org. RTAP (D) reports nothing. Reports are split by environment (`preview` / `production`) and tagged with
+`expo-update-id`, so you can tell which update an error came from. They never carry personal data or positions: no
+session replay or console logs are sent, and grids and lat/longs in messages are replaced with `[grid]` and `[coord]`
+(`src/lib/monitoring`). The Sentry project setting **Prevent Storing of IP Addresses** must stay on; otherwise
+Sentry works out a city from each report's IP address.
 
-- `EXPO_PUBLIC_SENTRY_DSN` is set in every EAS environment. It's public and safe to ship in the app.
-- `SENTRY_AUTH_TOKEN` (one org auth token, sensitive EAS variable, all environments) lets EAS builds upload source
-  maps and debug symbols automatically.
-- An update's source maps are uploaded by hand right after `eas update`, from the `dist` it just wrote:
-  `npx eas-cli@latest env:exec <environment> 'npx sentry-expo-upload-sourcemaps dist'`. `env:exec` supplies
-  `SENTRY_AUTH_TOKEN` from EAS, so the token never needs to be on your machine. Skip it and errors from that update
-  show unreadable stack traces.
-- Sentry's project setting **Prevent Storing of IP Addresses** must stay on: otherwise Sentry derives a city from
-  each report's IP address.
-- If a local release build (`npx expo run:ios --configuration Release`) fails at the Sentry upload step, set
-  `SENTRY_AUTH_TOKEN` or `SENTRY_DISABLE_AUTO_UPLOAD=true`.
+### Command cheat sheet
+
+| I want to… | Run |
+| --- | --- |
+| Start coding | `npx expo start --dev-client` |
+| Start with a clean cache | `npx expo start --dev-client --clear` |
+| Build the dev / preview / store app | `npx eas-cli@latest build --profile <development\|preview\|production> --platform ios` |
+| Ship JS changes to testers | `scripts/ota-update.sh preview "message"` |
+| Ship JS changes to the store app | `scripts/ota-update.sh production "message"` |
+| Send a store build to App Store Connect | `npx eas-cli@latest submit --platform ios --latest` |
+| See recent builds | `npx eas-cli@latest build:list --platform ios` |
+| See recent updates | `npx eas-cli@latest update:list --branch <preview\|production>` |
+| Register a new iPhone for internal builds | `npx eas-cli@latest device:create` |
+| Check EAS variables | `npx eas-cli@latest env:list --environment <development\|preview\|production>` |
+| Build locally instead of on EAS | `APP_VARIANT=development npx expo run:ios` (makes RTAP (D)) |
 
 ## Conventions
 
