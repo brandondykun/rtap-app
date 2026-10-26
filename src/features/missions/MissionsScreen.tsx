@@ -129,7 +129,11 @@ export function MissionsScreen() {
         </>
       }
       ListEmptyComponent={
-        query?.trim() ? <Text className="py-8 text-center text-base text-text-muted">{`No missions match “${query.trim()}”`}</Text> : null
+        query?.trim() ? (
+          <Text className="py-8 text-center text-base text-text-muted">{`No missions match “${query.trim()}”`}</Text>
+        ) : pinned ? (
+          <Text className="py-8 text-center text-base text-text-muted">Your other missions will show up here</Text>
+        ) : null
       }
       ListFooterComponent={<SwipeHint />}
       contentContainerStyle={{ paddingHorizontal: landscape ? 0 : 16, paddingBottom: insets.bottom + 16, gap: 12 }}

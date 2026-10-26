@@ -91,6 +91,7 @@ describe('MissionsScreen', () => {
     expect(screen.getByText('Last opened')).toBeTruthy();
     expect(screen.getByLabelText('Resume Op Cobra')).toBeTruthy();
     expect(screen.getByText('EARLIER')).toBeTruthy();
+    expect(screen.queryByText('Your other missions will show up here')).toBeNull();
     expect(await screen.findByLabelText('2 units · 0 points · 0 lines · 0 polygons')).toBeTruthy();
     expect(screen.getByText('Never opened')).toBeTruthy();
     // The pinned mission is not listed again.
@@ -171,6 +172,17 @@ describe('MissionsScreen', () => {
     // The row holding both columns reaches the bottom of the screen.
     expect(StyleSheet.flatten(screen.getByTestId('landscape-columns').props.style)?.paddingBottom ?? 0).toBe(0);
     expect(StyleSheet.flatten(pinnedColumn.props.style).paddingBottom).toBeGreaterThan(0);
+  });
+
+  it('says where other missions go when the only mission is pinned', async () => {
+    const ctx = makeTestContext();
+    const iron = await createMission(ctx, { name: 'Op Iron' });
+    if (!iron.ok) throw new Error('setup');
+    await markMissionOpened(ctx, iron.value.id);
+    await renderWithProviders(<MissionsScreen />, ctx);
+
+    expect(await screen.findByText('Your other missions will show up here')).toBeTruthy();
+    expect(screen.getByText('Last opened')).toBeTruthy();
   });
 
   it('opens a mission and offers New when the list is not empty', async () => {
