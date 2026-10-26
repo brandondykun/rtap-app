@@ -102,7 +102,6 @@ export function MissionsScreen() {
   const all = missions ?? [];
   const pinned = query === null ? pinnedMission(all) : null;
   const listed = sortMissions(filterMissions(all, query ?? ''), sort, counts).filter((m) => m.id !== pinned?.id);
-  const units = all.reduce((n, m) => n + countsOf(m.id).units, 0);
   const heading = query === null && listed.length > 0 ? sortHeading(sort) : null;
   const cardProps = (m: MissionSummary) => ({
     mission: m,
@@ -142,7 +141,7 @@ export function MissionsScreen() {
     <View className="flex-1 bg-surface" style={{ paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}>
       <MissionsHeader
         landscape={landscape}
-        subtitle={formatMissionTotals(all.length, units)}
+        subtitle={formatMissionTotals(all.length)}
         showControls={all.length > 0}
         sort={sort}
         onSort={setSort}

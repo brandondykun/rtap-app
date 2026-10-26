@@ -54,8 +54,8 @@ describe('labels', () => {
     expect(mgrsSquare({ lat: 89, lon: 0 })).toBeNull();
   });
   it('formatMissionTotals uses singular forms for one', () => {
-    expect(formatMissionTotals(3, 43)).toBe('3 missions · 43 units plotted');
-    expect(formatMissionTotals(1, 1)).toBe('1 mission · 1 unit plotted');
+    expect(formatMissionTotals(3)).toBe('3 missions');
+    expect(formatMissionTotals(1)).toBe('1 mission');
   });
   it('sortHeading names the list under the pinned card', () => {
     expect([sortHeading('recent'), sortHeading('name'), sortHeading('most')]).toEqual(['EARLIER', 'BY NAME', 'MOST ITEMS']);

@@ -6,7 +6,7 @@ import { renderWithProviders } from '@/test-utils/render';
 import { MissionsHeader } from './MissionsHeader';
 
 const props = {
-  subtitle: '3 missions · 43 units plotted',
+  subtitle: '3 missions',
   showControls: true,
   sort: 'recent' as const,
   onSort: jest.fn(),
@@ -28,7 +28,7 @@ describe('MissionsHeader in landscape', () => {
     // The title column takes the room the controls leave, so its text wraps instead of running under them.
     expect(classes('missions-title')).toContain('flex-1');
     expect(classes('missions-title')).not.toContain('flex-row');
-    expect(screen.getByTestId('missions-title')).toHaveTextContent(/Missions.*3 missions · 43 units plotted/);
+    expect(screen.getByTestId('missions-title')).toHaveTextContent(/Missions.*3 missions/);
     expect(classes('missions-controls')).toContain('shrink-0');
     expect(screen.getByTestId('missions-controls')).toHaveTextContent(/Recent.*Name.*Most items.*New/);
   });
@@ -46,7 +46,7 @@ describe('MissionsHeader in landscape', () => {
     expect(classes('missions-title')).not.toContain('flex-1');
     expect(screen.getByTestId('missions-title')).toHaveTextContent('Missions', { exact: true });
     expect(screen.queryByText('Seed 5k')).toBeNull();
-    expect(screen.queryByText('3 missions · 43 units plotted')).toBeNull();
+    expect(screen.queryByText('3 missions')).toBeNull();
     expect(screen.getByLabelText('Search by name')).toBeTruthy();
   });
 

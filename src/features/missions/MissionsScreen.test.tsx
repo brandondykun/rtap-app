@@ -87,7 +87,7 @@ describe('MissionsScreen', () => {
 
     await renderWithProviders(<MissionsScreen />, ctx);
 
-    expect(await screen.findByText('2 missions · 2 units plotted')).toBeTruthy();
+    expect(await screen.findByText('2 missions')).toBeTruthy();
     expect(screen.getByText('Last opened')).toBeTruthy();
     expect(screen.getByLabelText('Resume Op Cobra')).toBeTruthy();
     expect(screen.getByText('EARLIER')).toBeTruthy();

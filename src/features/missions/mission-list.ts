@@ -56,8 +56,8 @@ export function mgrsSquare(center: LatLon): string | null {
 
 const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
 
-export function formatMissionTotals(missions: number, units: number): string {
-  return `${plural(missions, 'mission')} · ${plural(units, 'unit')} plotted`;
+export function formatMissionTotals(missions: number): string {
+  return plural(missions, 'mission');
 }
 
 export function sortHeading(sort: MissionSort): string {
