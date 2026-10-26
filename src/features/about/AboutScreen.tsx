@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
@@ -15,6 +15,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { updateLabel } from './update-label';
 
 const APP_ICON = require('../../../assets/images/icon.png');
+
+/** The company's website, opened in the phone's browser. */
+export const COMPANY_URL = 'https://eratas.dev';
 
 /** Readable line length on wide (landscape, tablet) screens. */
 const MAX_CONTENT_WIDTH = 720;
@@ -106,6 +109,21 @@ export function AboutScreen() {
             </View>
           </View>
 
+          <View className="items-center gap-1">
+            <Text testID="about-built-by" className="text-center text-sm text-text-muted">
+              Built by <Text className="font-semibold text-text">Eratas Software LLC</Text>
+            </Text>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="eratas.dev, opens in your browser"
+              // Nothing to do if no browser can open it.
+              onPress={() => void Linking.openURL(COMPANY_URL).catch(() => {})}
+              hitSlop={8}
+              className="min-h-11 flex-row items-center gap-1 px-2 active:opacity-60">
+              <Text className="text-base font-semibold text-accent">eratas.dev</Text>
+              <Icon name="open-in-new" size={16} color={colors.accent} />
+            </Pressable>
+          </View>
           <Text className="text-center text-xs text-text-muted">
             Map data © Mapbox © OpenStreetMap. Symbols: milsymbol (MIL-STD-2525C). Magnetic model: WMM2025.
           </Text>

@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fireEvent, screen } from '@testing-library/react-native';
 import Constants from 'expo-constants';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
@@ -30,6 +30,21 @@ describe('AboutScreen', () => {
     expect(screen.getByTestId('about-app-icon').props.source).toBeTruthy();
     expect(screen.queryByTestId('about-mark')).toBeNull();
     expect(screen.getByText(/Mapbox/)).toBeTruthy();
+  });
+
+  it('credits Eratas Software LLC at the bottom, above the map and symbol credits', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByTestId('about-built-by')).toHaveTextContent('Built by Eratas Software LLC');
+    expect(screen.getByTestId('about-identity')).not.toHaveTextContent(/Eratas/);
+  });
+
+  it('opens eratas.dev in the browser from the link under the credit', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    await renderWithProviders(<AboutScreen />);
+    const link = screen.getByRole('link', { name: 'eratas.dev, opens in your browser' });
+    expect(link).toHaveTextContent(/^eratas\.dev/);
+    await fireEvent.press(link);
+    expect(open).toHaveBeenCalledWith('https://eratas.dev');
   });
 
   it('warns that it is for training and simulation only', async () => {
