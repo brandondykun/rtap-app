@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react-native';
 import { TextInput } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { bannerTop, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
@@ -114,5 +115,14 @@ describe('QuickPlotEntry', () => {
     await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
     await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent(/^Valid · 1\.11 km @ 000° TRUE from you$/);
+  });
+
+  it('sits below the Mapbox logo in portrait, and right under the toolbar in landscape', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: bannerTop(false) });
+    await screen.unmount();
+
+    await renderWithProviders(<QuickPlotEntry landscape />);
+    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
   });
 });

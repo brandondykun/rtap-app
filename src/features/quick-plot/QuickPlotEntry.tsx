@@ -6,7 +6,7 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { MapButton } from '@/features/map/controls/MapButton';
-import { EDGE, GAP } from '@/features/map/layout';
+import { bannerTop, EDGE } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { describeVector } from '@/lib/geo/vector';
@@ -68,7 +68,8 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   );
 
   return (
-    <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + toolbar + GAP }}>
+    // Below the Mapbox logo row, which must stay visible (in landscape the logo is beside the toolbar: right under it).
+    <View testID="quick-plot-frame" pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + bannerTop(landscape, toolbar) }}>
       {/* 16 pt corners less 8 pt padding are the fields' and Plot's 8 pt (rounded-lg): concentric. */}
       <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         <View testID="quick-plot-row" className="flex-row items-start gap-1">
