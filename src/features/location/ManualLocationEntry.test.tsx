@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { bannerTop, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MANUAL_ENTRY, useManualEntry } from '@/stores/manual-entry';
 import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
@@ -127,5 +128,15 @@ describe('ManualLocationEntry', () => {
     expect(portraitRow.getByLabelText('Cancel')).toBeTruthy();
     expect(portraitRow.getByLabelText('Set')).toBeTruthy();
     expect(portraitRow.queryByLabelText('Choose on map')).toBeNull();
+  });
+
+  it('sits below the Mapbox logo in portrait, and right under the toolbar in landscape', async () => {
+    useManualEntry.getState().open('map', null);
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: bannerTop(false) });
+    await screen.unmount();
+
+    await renderWithProviders(<ManualLocationEntry landscape />);
+    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
   });
 });

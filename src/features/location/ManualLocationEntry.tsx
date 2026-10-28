@@ -6,7 +6,7 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { glassHalo } from '@/components/ui/glass';
-import { EDGE, GAP } from '@/features/map/layout';
+import { bannerTop, EDGE } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { LatLon } from '@/lib/geo/types';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
@@ -71,10 +71,13 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
   const chooseButton = <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />;
 
   return (
+    // Below the Mapbox logo row, which must stay visible: in portrait it sits under the toolbar; in landscape it is
+    // beside the toolbar, so the box goes right under the toolbar.
     <View
+      testID="manual-location-frame"
       pointerEvents={hidden ? 'none' : 'box-none'}
       className="absolute left-0 right-0 items-center"
-      style={{ top: insets.top + EDGE + toolbar + GAP, display: hidden ? 'none' : 'flex' }}>
+      style={{ top: insets.top + bannerTop(landscape, toolbar), display: hidden ? 'none' : 'flex' }}>
       <View testID="manual-location-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         {/* Full text color, not muted: gray is hard to read on the see-through background. */}
         <Text style={halo} className="px-1 text-xs font-semibold uppercase tracking-widest text-text">
