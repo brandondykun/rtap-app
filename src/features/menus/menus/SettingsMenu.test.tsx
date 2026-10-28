@@ -31,7 +31,7 @@ describe('SettingsMenu', () => {
   it('starts with your callsign, saved in capitals when the edit finishes', async () => {
     useProfile.getState().setCallsign('VIPER 6');
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    expect(screen.getAllByTestId(/^menu-section-/)[0].props.testID).toBe('menu-section-Callsign');
+    expect(screen.getAllByTestId(/^menu-section-/).map((s) => s.props.testID)).toContain('menu-section-Callsign');
     const field = screen.getByLabelText('Callsign');
     expect(field.props.value).toBe('VIPER 6');
     await fireEvent.changeText(field, 'red one');
@@ -261,6 +261,7 @@ describe('SettingsMenu', () => {
   it('groups the settings under titled headings, in order', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getAllByTestId(/^menu-group-/).map((g) => g.props.testID)).toEqual([
+      'menu-group-Location',
       'menu-group-Profile',
       'menu-group-Map',
       'menu-group-MGRS grid',

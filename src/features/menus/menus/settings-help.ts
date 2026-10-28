@@ -6,6 +6,11 @@ export type SettingHelp = { name: string; choices?: string; help: string };
 
 /** What each setting does (shown on the About page), in Settings menu order. A test keeps it in step with the menu. */
 export const SETTINGS_HELP: readonly SettingHelp[] = [
+  {
+    name: 'Use my position from',
+    choices: 'GPS · Manual',
+    help: 'Where your position comes from. Manual uses a position you set by hand, for when GPS is off or jammed, and stops using GPS. Switching back to GPS clears it.',
+  },
   { name: 'Callsign', help: 'The name your team will see you by once missions are shared. Kept on this phone.' },
   {
     name: 'Basemap',

@@ -7,6 +7,7 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuToggle } from '@/components/menu/MenuToggle';
 import { TextField } from '@/components/ui/TextField';
+import { LocationOffNotice, LocationSettingsGroup } from '@/features/location/LocationSettings';
 import { CallsignSetting } from '@/features/profile/CallsignSetting';
 import { gmConversion, gridMagneticAngle } from '@/lib/geo/north/convert';
 import { declination } from '@/lib/geo/north/magnetic';
@@ -187,6 +188,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   return (
     <View>
       <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
+      <LocationOffNotice />
+      <LocationSettingsGroup />
       <MenuGroup title="Profile" icon="account-outline">
         <MenuSection label="Callsign">
           <CallsignSetting />
