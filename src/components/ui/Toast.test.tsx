@@ -42,4 +42,15 @@ describe('Toast', () => {
     expect(card).toContain('bg-surface-glass');
     expect(card).toContain('border-danger');
   });
+
+  it('keeps a sticky toast until its close button is pressed; tapping the message does nothing', async () => {
+    jest.useFakeTimers();
+    await renderWithProviders(<Toast top={0} />);
+    await act(async () => useToast.getState().show('Stay', 'info', { sticky: true }));
+    await act(async () => jest.advanceTimersByTime(TOAST_DURATION_MS * 3));
+    await fireEvent.press(screen.getByText('Stay'));
+    expect(screen.getByText('Stay')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Dismiss'));
+    expect(screen.queryByText('Stay')).toBeNull();
+  });
 });

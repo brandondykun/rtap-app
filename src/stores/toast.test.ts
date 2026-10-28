@@ -20,4 +20,11 @@ describe('toast store', () => {
     useToast.getState().hide();
     expect(useToast.getState().toast).toBeNull();
   });
+
+  it('marks a toast sticky only when asked', () => {
+    useToast.getState().show('Plain');
+    expect(useToast.getState().toast).toMatchObject({ sticky: false });
+    useToast.getState().show('Stay', 'info', { sticky: true });
+    expect(useToast.getState().toast).toMatchObject({ message: 'Stay', kind: 'info', sticky: true });
+  });
 });

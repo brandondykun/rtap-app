@@ -9,14 +9,14 @@ import { Icon } from './Icon';
 
 export const TOAST_DURATION_MS = 3000;
 
-/** One short message at the top of the screen (command failures, confirmations). Tap to dismiss. */
+/** One short message at the top of the screen (command failures, confirmations). Tap to dismiss; a sticky one has ✕. */
 export function Toast({ top }: { top: number }) {
   const toast = useToast((s) => s.toast);
   const hide = useToast((s) => s.hide);
   const { colors } = useTheme();
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.sticky) return;
     const timer = setTimeout(() => hide(toast.id), TOAST_DURATION_MS);
     return () => clearTimeout(timer);
   }, [toast, hide]);
@@ -28,10 +28,16 @@ export function Toast({ top }: { top: number }) {
     <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top }}>
       <Pressable
         accessibilityRole="alert"
+        disabled={toast.sticky}
         onPress={() => hide(toast.id)}
         className={`active:opacity-60 mx-4 flex-row items-center gap-2 rounded-2xl bg-surface-glass px-4 py-3 ${error ? 'border border-danger' : ''}`}>
         <Icon name={error ? 'alert-circle-outline' : 'information-outline'} size={18} color={error ? colors.danger : colors.text} style={halo} />
         <Text style={halo} className="shrink text-sm text-text">{toast.message}</Text>
+        {toast.sticky ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => hide(toast.id)} hitSlop={8} className="active:opacity-60">
+            <Icon name="close" size={18} color={colors.text} style={halo} />
+          </Pressable>
+        ) : null}
       </Pressable>
     </View>
   );
