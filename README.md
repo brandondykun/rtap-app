@@ -132,6 +132,17 @@ when a new build is needed.
 
 ### Making builds
 
+Commit your changes, then run `scripts/build.sh`. It asks for the profile and platform (press 1, 2 or 3) and an
+optional message, shows the command and starts the build once you confirm. Along the way it:
+
+- Refuses to run with uncommitted changes, like the update script, so every build matches a commit.
+- Compares your code's fingerprint with the latest finished build of that profile and platform. If they match, the
+  build would install the same native app, so it warns and asks before using up a build (ship JS changes with
+  `scripts/ota-update.sh` instead).
+- For production, asks whether to submit the build to the store when it finishes (`--auto-submit`).
+
+The commands it runs:
+
 ```bash
 npx eas-cli@latest build --profile development --platform ios   # RTAP (D)
 npx eas-cli@latest build --profile preview --platform ios       # RTAP (P)
@@ -217,7 +228,7 @@ Sentry works out a city from each report's IP address.
 | --- | --- |
 | Start coding | `npx expo start --dev-client` |
 | Start with a clean cache | `npx expo start --dev-client --clear` |
-| Build the dev / preview / store app | `npx eas-cli@latest build --profile <development\|preview\|production> --platform ios` |
+| Build the dev / preview / store app | `scripts/build.sh` |
 | Ship JS changes to testers | `scripts/ota-update.sh preview "message"` |
 | Ship JS changes to the store app | `scripts/ota-update.sh production "message"` |
 | Send a store build to App Store Connect | `npx eas-cli@latest submit --platform ios --latest` |
