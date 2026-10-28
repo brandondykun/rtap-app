@@ -86,7 +86,7 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
         <MgrsInput value={parts} onChange={setParts} status={status} autoFocus={from ? undefined : parts.square ? 'easting' : 'zone'} nested />
         <View className="flex-row items-center gap-2">
           <View className="flex-1">
-            <MenuButton compact glass label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />
+            <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />
           </View>
           <Pressable
             accessibilityRole="button"

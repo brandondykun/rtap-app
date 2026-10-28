@@ -85,4 +85,14 @@ describe('ManualLocationEntry', () => {
     expect(useManualEntry.getState().phase).toBe('closed');
     expect(useMyLocation.getState().manual).toBeNull();
   });
+
+  it('draws Choose on map and Adjust on map as solid buttons, not see-through ones that look disabled', async () => {
+    useManualEntry.getState().open('map', null);
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    const choose = screen.getByLabelText('Choose on map');
+    expect(choose.props.className).toContain('bg-surface-raised');
+    expect(choose.props.className).not.toContain('bg-surface-glass');
+    await act(async () => useManualEntry.getState().choose(DC));
+    expect(screen.getByLabelText('Adjust on map').props.className).toContain('bg-surface-raised');
+  });
 });
