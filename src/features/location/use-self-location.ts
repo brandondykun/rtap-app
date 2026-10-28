@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { normalizeDeg } from '@/lib/geo/units/angle';
+import { useMyLocation } from '@/stores/my-location';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
@@ -34,6 +35,10 @@ function orientationName(o: ScreenOrientation.Orientation): Orientation {
  * Streams the device position and heading into the presence store while mounted
  * (foreground, when-in-use only). Retries when the app returns to the foreground so
  * enabling location in Settings takes effect without restarting.
+ *
+ * With the Manual source it stops using location altogether (no watch, no prompt) and publishes the position set by
+ * hand instead, marked `manual`, so everything that uses "me" works from it. Permission is still read, without
+ * prompting, for the location-off notices.
  */
 export function useSelfLocation(): void {
   useEffect(() => {
@@ -45,7 +50,10 @@ export function useSelfLocation(): void {
     let orientation: Orientation = 'unknown';
     let lastEvent: Location.LocationHeadingObject | null = null;
 
+    const manualSource = () => useMyLocation.getState().source === 'manual';
+
     const onPosition = (loc: Location.LocationObject) => {
+      if (manualSource()) return;
       usePresence.getState().setSelfPosition({
         position: { lat: loc.coords.latitude, lon: loc.coords.longitude },
         accuracyM: loc.coords.accuracy ?? null,
@@ -55,6 +63,7 @@ export function useSelfLocation(): void {
     };
 
     const onHeading = (event: Location.LocationHeadingObject, force = false) => {
+      if (manualSource()) return;
       lastEvent = event;
       const presence = usePresence.getState();
       const compass = trueHeadingFrom(
@@ -75,12 +84,38 @@ export function useSelfLocation(): void {
       presence.setSelfHeading(heading);
     };
 
-    const start = async () => {
+    const stopGps = () => {
+      subscriptions.forEach((sub) => sub.remove());
+      subscriptions = [];
+      lastHeading = null;
+      lastEvent = null;
+    };
+
+    const applyManual = async () => {
+      stopGps();
+      const presence = usePresence.getState();
+      if (presence.selfHeading !== null) presence.setSelfHeading(null);
+      const { manual } = useMyLocation.getState();
+      if (manual) presence.setSelfPosition({ position: manual, accuracyM: null, timestamp: Date.now(), altitudeM: null, manual: true });
+      else presence.clearSelfPosition();
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (disposed || !manualSource()) return;
+        usePresence.getState().setLocationStatus(status === 'granted' ? 'granted' : 'denied');
+      } catch (e) {
+        console.warn('[location] permission unavailable', e);
+        if (!disposed && manualSource()) usePresence.getState().setLocationStatus('unavailable');
+      }
+    };
+
+    const startGps = async () => {
       if (starting || subscriptions.length > 0) return;
       starting = true;
+      // A manual position must not stay up as "me" once GPS is the source again.
+      if (usePresence.getState().selfPosition?.manual) usePresence.getState().clearSelfPosition();
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (disposed) return;
+        if (disposed || manualSource()) return;
         if (status !== 'granted') {
           usePresence.getState().setLocationStatus('denied');
           return;
@@ -89,7 +124,7 @@ export function useSelfLocation(): void {
           { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 1 },
           onPosition,
         );
-        if (disposed) {
+        if (disposed || manualSource()) {
           position.remove();
           return;
         }
@@ -97,7 +132,7 @@ export function useSelfLocation(): void {
         usePresence.getState().setLocationStatus('granted');
         try {
           const heading = await Location.watchHeadingAsync(onHeading);
-          if (disposed) heading.remove();
+          if (disposed || manualSource()) heading.remove();
           else subscriptions.push(heading);
         } catch (e) {
           // No compass: position still works; the self icon shows without a heading.
@@ -111,8 +146,16 @@ export function useSelfLocation(): void {
       }
     };
 
+    const start = () => (manualSource() ? applyManual() : startGps());
+
     const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && usePresence.getState().locationStatus !== 'granted') void start();
+      if (state !== 'active') return;
+      // Manual only re-reads permission; GPS retries after a denial.
+      if (manualSource()) void applyManual();
+      else if (usePresence.getState().locationStatus !== 'granted') void startGps();
+    });
+    const source = useMyLocation.subscribe((next, prev) => {
+      if (next.source !== prev.source || next.manual !== prev.manual) void start();
     });
     void start();
 
@@ -131,8 +174,8 @@ export function useSelfLocation(): void {
       disposed = true;
       orientationChange.remove();
       appState.remove();
-      subscriptions.forEach((s) => s.remove());
-      subscriptions = [];
+      source();
+      stopGps();
       usePresence.getState().reset();
     };
   }, []);

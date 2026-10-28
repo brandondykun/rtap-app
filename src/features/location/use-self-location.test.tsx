@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { AppState, type AppStateStatus } from 'react-native';
 
+import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 
 import { useSelfLocation } from './use-self-location';
@@ -36,6 +37,8 @@ function grant() {
 beforeEach(() => {
   jest.clearAllMocks();
   usePresence.setState(INITIAL_PRESENCE);
+  useMyLocation.setState(DEFAULT_MY_LOCATION);
+  mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'denied', granted: false } as never);
   mocked.requestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied', granted: false } as never);
 });
 
@@ -126,5 +129,56 @@ describe('useSelfLocation', () => {
     await act(async () => {});
     await act(async () => fake.heading({ trueHeading: 350, magHeading: 0, accuracy: 1 }));
     expect(usePresence.getState().selfHeading).toBe(80);
+  });
+
+  describe('with Manual chosen', () => {
+    it('does not ask for or watch location, and publishes the manual position', async () => {
+      useMyLocation.getState().setManual({ lat: 38.9, lon: -77 });
+      await render(<Probe />);
+      await act(async () => {});
+      expect(mocked.requestForegroundPermissionsAsync).not.toHaveBeenCalled();
+      expect(mocked.watchPositionAsync).not.toHaveBeenCalled();
+      expect(usePresence.getState().selfPosition).toMatchObject({ position: { lat: 38.9, lon: -77 }, accuracyM: null, altitudeM: null, manual: true });
+      expect(usePresence.getState()).toMatchObject({ selfHeading: null, locationStatus: 'denied' });
+    });
+
+    it('stops GPS when switched to Manual, ignores later fixes, and starts it again when switched back', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useMyLocation.getState().setManual({ lat: 1, lon: 2 }));
+      expect(fake.removes.position).toHaveBeenCalled();
+      expect(fake.removes.heading).toHaveBeenCalled();
+      expect(usePresence.getState().selfPosition?.manual).toBe(true);
+      await act(async () => fake.position({ coords: { latitude: 9, longitude: 9, accuracy: 3 }, timestamp: 5 }));
+      expect(usePresence.getState().selfPosition?.position).toEqual({ lat: 1, lon: 2 });
+      await act(async () => useMyLocation.getState().switchToGps());
+      expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(2);
+      expect(usePresence.getState().selfPosition).toBeNull();
+    });
+
+    it('stays Manual when permission is granted later (no GPS watch)', async () => {
+      let onChange: (s: AppStateStatus) => void = () => {};
+      const spy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, cb) => {
+        onChange = cb as (s: AppStateStatus) => void;
+        return { remove: jest.fn() };
+      });
+      useMyLocation.getState().setManual({ lat: 1, lon: 2 });
+      await render(<Probe />);
+      await act(async () => {});
+      expect(usePresence.getState().locationStatus).toBe('denied');
+      mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+      await act(async () => onChange('active'));
+      expect(mocked.watchPositionAsync).not.toHaveBeenCalled();
+      expect(usePresence.getState()).toMatchObject({ locationStatus: 'granted', selfPosition: { manual: true } });
+      spy.mockImplementation(() => ({ remove: jest.fn() }));
+    });
+
+    it('publishes no position while no manual position is set', async () => {
+      useMyLocation.getState().switchToManual();
+      mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+      await render(<Probe />);
+      await act(async () => {});
+      expect(usePresence.getState()).toMatchObject({ selfPosition: null, locationStatus: 'granted' });
+    });
   });
 });

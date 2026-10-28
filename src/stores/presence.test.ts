@@ -25,4 +25,11 @@ describe('presence store', () => {
     usePresence.getState().reset();
     expect(usePresence.getState()).toMatchObject(INITIAL_PRESENCE);
   });
+
+  it('clears the position without touching the location status', () => {
+    usePresence.getState().setLocationStatus('denied');
+    usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: null, timestamp: 1, manual: true });
+    usePresence.getState().clearSelfPosition();
+    expect(usePresence.getState()).toMatchObject({ selfPosition: null, locationStatus: 'denied' });
+  });
 });

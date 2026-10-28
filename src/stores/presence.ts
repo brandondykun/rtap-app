@@ -8,6 +8,8 @@ export type SelfPosition = {
   timestamp: number;
   /** Altitude in meters (iOS: above sea level; Android: above the WGS84 ellipsoid), if known. */
   altitudeM?: number | null;
+  /** Set by hand (Manual source), not a GPS fix. */
+  manual?: boolean;
 };
 export type LocationStatus = 'unknown' | 'granted' | 'denied' | 'unavailable';
 
@@ -21,6 +23,7 @@ type PresenceValues = {
 type PresenceActions = {
   /** Ignores fixes with non-finite or out-of-range coordinates. */
   setSelfPosition: (fix: SelfPosition) => void;
+  clearSelfPosition: () => void;
   setSelfHeading: (heading: number | null) => void;
   setLocationStatus: (status: LocationStatus) => void;
   reset: () => void;
@@ -38,6 +41,7 @@ export const usePresence = create<PresenceValues & PresenceActions>()((set) => (
   setSelfPosition: (fix) => {
     if (isValidPosition(fix.position)) set({ selfPosition: fix });
   },
+  clearSelfPosition: () => set({ selfPosition: null }),
   setSelfHeading: (selfHeading) => set({ selfHeading }),
   setLocationStatus: (locationStatus) => set({ locationStatus }),
   reset: () => set(INITIAL_PRESENCE),

@@ -23,6 +23,7 @@ jest.mock('react-native-safe-area-context', () => require('react-native-safe-are
 jest.mock('expo-location', () => ({
   Accuracy: { BestForNavigation: 6, High: 4 },
   requestForegroundPermissionsAsync: jest.fn(async () => ({ status: 'denied', granted: false })),
+  getForegroundPermissionsAsync: jest.fn(async () => ({ status: 'denied', granted: false })),
   watchPositionAsync: jest.fn(async () => ({ remove: jest.fn() })),
   watchHeadingAsync: jest.fn(async () => ({ remove: jest.fn() })),
 }));
