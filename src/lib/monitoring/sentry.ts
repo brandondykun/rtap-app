@@ -17,6 +17,7 @@ export function initMonitoring() {
     environment: Updates.channel || 'development',
     sendDefaultPii: false,
     tracesSampleRate: 0.2,
+    integrations: [Sentry.expoRouterIntegration()],
     beforeBreadcrumb: (crumb) => (crumb.category === 'console' ? null : crumb),
     beforeSend: redactEvent,
   });
