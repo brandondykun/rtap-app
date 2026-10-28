@@ -77,11 +77,12 @@ describe('ManualLocationEntry', () => {
     expect(useToast.getState().toast).toBeNull();
   });
 
-  it('closes without saving', async () => {
+  it('Cancel closes without saving, and there is no corner ✕', async () => {
     useManualEntry.getState().open('map', null);
     useManualEntry.getState().choose(DC);
     await renderWithProviders(<ManualLocationEntry landscape={false} />);
-    await fireEvent.press(screen.getByLabelText('Close'));
+    expect(screen.queryByLabelText('Close')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Cancel'));
     expect(useManualEntry.getState().phase).toBe('closed');
     expect(useMyLocation.getState().manual).toBeNull();
   });
@@ -94,5 +95,23 @@ describe('ManualLocationEntry', () => {
     expect(choose.props.className).not.toContain('bg-surface-glass');
     await act(async () => useManualEntry.getState().choose(DC));
     expect(screen.getByLabelText('Adjust on map').props.className).toContain('bg-surface-raised');
+  });
+
+  it('draws its title and hint in the full text color, not the hard-to-read muted gray', async () => {
+    useManualEntry.getState().open('map', null);
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    for (const text of ['MY POSITION', 'Type your grid, or choose your spot on the map.']) {
+      expect(screen.getByText(text).props.className).toMatch(/\btext-text\b(?!-)/);
+      expect(screen.getByText(text).props.className).not.toContain('text-text-muted');
+    }
+  });
+
+  it('dims Set only lightly while the grid is invalid', async () => {
+    useManualEntry.getState().open('map', null);
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    expect(setPressable().props.className).toContain('opacity-70');
+    expect(setPressable().props.className).not.toMatch(/(^|\s)opacity-40\b/);
+    await act(async () => useManualEntry.getState().choose(DC));
+    expect(setPressable().props.className).not.toMatch(/(^|\s)opacity-\d/);
   });
 });

@@ -82,7 +82,7 @@ the camera, so it is not a stand-in for "this is where I am".
 
 ### Set manually box
 
-- Opens under the toolbar like the quick plot entry (`QuickPlotEntry`), titled MY POSITION, with a close ✕.
+- Opens under the toolbar like the quick plot entry (`QuickPlotEntry`), titled MY POSITION, with a Cancel button beside Set (no corner ✕: no other popup has one).
 - Four MGRS fields (zone, square, easting, northing), like quick plot. Zone and square start filled from the crosshair,
   as in quick plot.
 - **Choose on map** button: hides the box and shows the placing bar at the bottom ("Tap your position", like `PlaceBar`),

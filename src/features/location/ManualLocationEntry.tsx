@@ -6,7 +6,6 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { glassHalo } from '@/components/ui/glass';
-import { Icon } from '@/components/ui/Icon';
 import { EDGE, GAP } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { LatLon } from '@/lib/geo/types';
@@ -75,18 +74,15 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
       className="absolute left-0 right-0 items-center"
       style={{ top: insets.top + EDGE + toolbar + GAP, display: hidden ? 'none' : 'flex' }}>
       <View testID="manual-location-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
-        <View className="flex-row items-center justify-between px-1">
-          <Text style={halo} className="text-xs font-semibold uppercase tracking-widest text-text-muted">
-            MY POSITION
-          </Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => useManualEntry.getState().close()} hitSlop={8} className="active:opacity-60">
-            <Icon name="close" size={18} color={colors.text} style={halo} />
-          </Pressable>
-        </View>
+        {/* Full text color, not muted: gray is hard to read on the see-through background. */}
+        <Text style={halo} className="px-1 text-xs font-semibold uppercase tracking-widest text-text">
+          MY POSITION
+        </Text>
         <MgrsInput value={parts} onChange={setParts} status={status} autoFocus={from ? undefined : parts.square ? 'easting' : 'zone'} nested />
+        <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />
         <View className="flex-row items-center gap-2">
           <View className="flex-1">
-            <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />
+            <MenuButton compact label="Cancel" icon="close" onPress={() => useManualEntry.getState().close()} />
           </View>
           <Pressable
             accessibilityRole="button"
@@ -94,11 +90,11 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
             accessibilityState={{ disabled: !valid }}
             disabled={!valid}
             onPress={set}
-            className={`active:opacity-60 h-10 flex-1 items-center justify-center rounded-lg bg-accent ${valid ? '' : 'opacity-40'}`}>
+            className={`active:opacity-60 h-10 flex-1 items-center justify-center rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
             <Text className="text-lg font-bold text-on-accent">Set</Text>
           </Pressable>
         </View>
-        <Text style={halo} className="px-1 text-xs text-text-muted">
+        <Text style={halo} className="px-1 text-xs text-text">
           {from ? 'Edit the grid, or adjust the spot on the map.' : 'Type your grid, or choose your spot on the map.'}
         </Text>
       </View>
