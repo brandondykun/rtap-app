@@ -28,8 +28,8 @@ the camera, so it is not a stand-in for "this is where I am".
 
 ## Anti-goals
 
-- A manual position that can be mistaken for a live GPS fix. It is marked wherever "me" appears: MANUAL in the ME
-  readout, a distinct self icon on the map, and "(MAN)" after "from you" in quick plot.
+- A manual position that can be mistaken for a live GPS fix. It is marked by MANUAL in the ME readout and a distinct
+  self icon on the map (the user asked to drop the "(MAN)" tags from the CTR readout and quick plot).
 - The app quietly changing which position "me" is.
 - The location-off banner nagging: once closed, it never returns.
 
@@ -45,7 +45,7 @@ the camera, so it is not a stand-in for "this is where I am".
 - While the source is Manual, "me" is the manual position everywhere the app uses the user's position today:
   - the CTR readout's distance and bearing (no visible tag: the user asked to drop "FROM ME (MAN)"; screen readers
     still hear "from you (manual position)");
-  - quick plot's range line, with its text reading "… from you (MAN)";
+  - quick plot's range line (it reads "… from you", with no manual tag: the user asked to drop "(MAN)");
   - the range line while placing or editing a point or unit;
   - the self icon on the map, drawn differently from a GPS fix (e.g. a hollow or dashed blue ring instead of the
     solid disc) and without a heading cone, so it can't be mistaken for GPS even when the ME readout is hidden;
@@ -112,7 +112,7 @@ the camera, so it is not a stand-in for "this is where I am".
 ## Decided by the user
 
 Everything above except the items listed under "Builder's calls" below. After a builder review the user also decided:
-the distinct self icon and "(MAN)" marking, stopping location while Manual is selected, and hiding the banner while a
+the distinct self icon and "(MAN)" marking (later dropped from the CTR readout and quick plot), stopping location while Manual is selected, and hiding the banner while a
 manual position is set.
 
 ## Builder's calls

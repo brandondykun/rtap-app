@@ -106,13 +106,13 @@ describe('QuickPlotEntry', () => {
     }
   });
 
-  it('says the range is from a manual position', async () => {
+  it('reads plain "from you" when measuring from a manual position', async () => {
     useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
     usePresence.getState().setSelfPosition({ position: C, accuracyM: null, timestamp: 1, manual: true });
     await renderWithProviders(<QuickPlotEntry landscape />);
     const g = mgrsFieldsFor(T);
     await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
     await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
-    expect(screen.getByTestId('mgrs-status')).toHaveTextContent('Valid · 1.11 km @ 000° TRUE from you (MAN)');
+    expect(screen.getByTestId('mgrs-status')).toHaveTextContent(/^Valid · 1\.11 km @ 000° TRUE from you$/);
   });
 });
