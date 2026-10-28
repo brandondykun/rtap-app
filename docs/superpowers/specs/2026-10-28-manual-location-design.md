@@ -29,7 +29,7 @@ the camera, so it is not a stand-in for "this is where I am".
 ## Anti-goals
 
 - A manual position that can be mistaken for a live GPS fix. It is marked wherever "me" appears: MANUAL in the ME
-  readout, a distinct self icon on the map, and "(MAN)" after "from you" in the range readouts.
+  readout, a distinct self icon on the map, and "(MAN)" after "from you" in quick plot.
 - The app quietly changing which position "me" is.
 - The location-off banner nagging: once closed, it never returns.
 
@@ -43,7 +43,8 @@ the camera, so it is not a stand-in for "this is where I am".
 - Switching to GPS **clears** the manual position. Switching to Manual again starts from "Not set".
 - If location permission is granted later while the source is Manual, the source stays Manual.
 - While the source is Manual, "me" is the manual position everywhere the app uses the user's position today:
-  - the CTR readout's distance and bearing, labelled "from you (MAN)" instead of "from you";
+  - the CTR readout's distance and bearing (no visible tag: the user asked to drop "FROM ME (MAN)"; screen readers
+    still hear "from you (manual position)");
   - quick plot's range line, with its text reading "… from you (MAN)";
   - the range line while placing or editing a point or unit;
   - the self icon on the map, drawn differently from a GPS fix (e.g. a hollow or dashed blue ring instead of the

@@ -179,10 +179,6 @@ function CenterRow() {
             <OutlinedText testID="readout-from-op" color={colors.text} style={halo} className="font-mono text-xs">
               FROM OP
             </OutlinedText>
-          ) : isManual ? (
-            <OutlinedText testID="readout-from-manual" color={colors.text} style={halo} className="font-mono text-xs">
-              FROM ME (MAN)
-            </OutlinedText>
           ) : null}
           <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">
             {r.distance}

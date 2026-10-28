@@ -49,7 +49,7 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
           color={colors.text}
           style={glassHalo(colors)}
           className="font-mono text-xs">
-          {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : isManual ? ' FROM ME (MAN)' : ''}`}
+          {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
         </OutlinedText>
       </View>
     </View>

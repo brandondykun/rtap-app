@@ -94,11 +94,11 @@ describe('CenterCard', () => {
     expect(vector).toHaveStyle({ textShadowRadius: 3 });
   });
 
-  it('says FROM ME (MAN) when measuring from a manual position, and FROM OP still wins in OP mode', async () => {
+  it('adds nothing after DIR when measuring from a manual position, and still says FROM OP in OP mode', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     usePresence.getState().setSelfPosition({ position: DC, accuracyM: null, timestamp: 1, manual: true });
     await renderWithProviders(<CenterCard />);
-    expect(screen.getByTestId('center-vector')).toHaveTextContent(/ FROM ME \(MAN\)$/);
+    expect(screen.getByTestId('center-vector')).toHaveTextContent(/^DIST .+ · DIR \d{3}°$/);
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER }));
     expect(screen.getByTestId('center-vector')).toHaveTextContent(/ FROM OP$/);
   });
