@@ -68,6 +68,8 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
     useManualEntry.getState().startChoosing();
   };
 
+  const chooseButton = <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />;
+
   return (
     <View
       pointerEvents={hidden ? 'none' : 'box-none'}
@@ -79,8 +81,10 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
           MY POSITION
         </Text>
         <MgrsInput value={parts} onChange={setParts} status={status} autoFocus={from ? undefined : parts.square ? 'easting' : 'zone'} nested />
-        <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />
-        <View className="flex-row items-center gap-2">
+        {landscape ? null : chooseButton}
+        {/* Landscape has the width: Choose on map joins Cancel and Set in one row. */}
+        <View testID="manual-location-actions" className="flex-row items-center gap-2">
+          {landscape ? <View className="flex-1">{chooseButton}</View> : null}
           <View className="flex-1">
             <MenuButton compact label="Cancel" icon="close" onPress={() => useManualEntry.getState().close()} />
           </View>

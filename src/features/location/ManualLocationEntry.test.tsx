@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -113,5 +113,19 @@ describe('ManualLocationEntry', () => {
     expect(setPressable().props.className).not.toMatch(/(^|\s)opacity-40\b/);
     await act(async () => useManualEntry.getState().choose(DC));
     expect(setPressable().props.className).not.toMatch(/(^|\s)opacity-\d/);
+  });
+
+  it('puts Choose on map, Cancel and Set in one row in landscape, and Choose on map on its own row in portrait', async () => {
+    useManualEntry.getState().open('map', null);
+    await renderWithProviders(<ManualLocationEntry landscape />);
+    const row = within(screen.getByTestId('manual-location-actions'));
+    for (const label of ['Choose on map', 'Cancel', 'Set']) expect(row.getByLabelText(label)).toBeTruthy();
+    await screen.unmount();
+
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    const portraitRow = within(screen.getByTestId('manual-location-actions'));
+    expect(portraitRow.getByLabelText('Cancel')).toBeTruthy();
+    expect(portraitRow.getByLabelText('Set')).toBeTruthy();
+    expect(portraitRow.queryByLabelText('Choose on map')).toBeNull();
   });
 });
