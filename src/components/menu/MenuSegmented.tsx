@@ -15,11 +15,15 @@ export const SLIDE = { duration: 350, dampingRatio: 1, reduceMotion: ReduceMotio
 export const TEXT_COLOR_DELAY_MS = 120;
 const TEXT_COLOR_MS = 150;
 
-/** The control's outer corner, border and padding; the highlight's corner is what is left inside them (concentric). */
+/** The control's outer corner, border and padding. */
 export const SEGMENTED_RADIUS = 12;
 export const SEGMENTED_BORDER = 1;
 export const SEGMENTED_PAD = 4;
-const HIGHLIGHT_RADIUS = SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD;
+/**
+ * The highlight's corner. Strictly concentric is what is left inside the border and padding (7 pt), but under its
+ * 2 pt accent border that reads too square, so it is 2 pt rounder to look concentric.
+ */
+export const SEGMENTED_HIGHLIGHT_RADIUS = SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 2;
 
 /**
  * One-of-N control. Options with an icon show only the icon; the label is their accessible name. A disabled option is greyed out.
@@ -54,7 +58,7 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
           testID="segmented-highlight"
           pointerEvents="none"
           className="absolute left-0 border-2 border-accent bg-accent-subtle"
-          style={[{ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD, borderRadius: HIGHLIGHT_RADIUS }, highlight]}
+          style={[{ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD, borderRadius: SEGMENTED_HIGHLIGHT_RADIUS }, highlight]}
         />
       ) : null}
       {options.map((option) => {

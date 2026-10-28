@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MenuSegmented, SEGMENTED_BORDER, SEGMENTED_PAD, SEGMENTED_RADIUS, SLIDE, TEXT_COLOR_DELAY_MS } from './MenuSegmented';
+import { MenuSegmented, SEGMENTED_BORDER, SEGMENTED_HIGHLIGHT_RADIUS, SEGMENTED_PAD, SEGMENTED_RADIUS, SLIDE, TEXT_COLOR_DELAY_MS } from './MenuSegmented';
 
 describe('MenuSegmented', () => {
   it('greys out a disabled option and ignores presses on it, leaving the others working', async () => {
@@ -82,7 +82,7 @@ describe('MenuSegmented', () => {
     expect(SLIDE.duration).toBeGreaterThan(200);
   });
 
-  it('keeps the highlight evenly inset (as much above as below) with corners concentric to the outside', async () => {
+  it('keeps the highlight evenly inset (as much above as below) with corners that read as concentric with the outside', async () => {
     await renderWithProviders(<Picker start="a" />);
     await layOut();
     const style = flat(screen.getByTestId('segmented-highlight').props.style);
@@ -90,8 +90,9 @@ describe('MenuSegmented', () => {
     expect(style).toMatchObject({ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD });
     expect(pillAt().x).toBe(SEGMENTED_PAD);
     expect(style.height).toBeUndefined();
-    // Outer corner less the border and padding.
-    expect(style.borderRadius).toBe(SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD);
+    // Outer corner less the border and padding is 7 pt, which reads too square under the 2 pt accent border: optically rounder.
+    expect(style.borderRadius).toBe(SEGMENTED_HIGHLIGHT_RADIUS);
+    expect(SEGMENTED_HIGHLIGHT_RADIUS).toBe(SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 2);
     expect(flat(screen.getByTestId('segmented-control').props.style)).toMatchObject({ borderRadius: SEGMENTED_RADIUS, borderWidth: SEGMENTED_BORDER, padding: SEGMENTED_PAD });
   });
 });
