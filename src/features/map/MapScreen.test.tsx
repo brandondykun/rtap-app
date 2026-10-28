@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import { AppState, type AppStateStatus, StyleSheet } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
@@ -9,6 +10,8 @@ import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
 import { elevationAt } from '@/features/map/terrain/elevation';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { INITIAL_MANUAL_ENTRY, useManualEntry } from '@/stores/manual-entry';
+import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
@@ -46,6 +49,10 @@ beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
   useOp.setState(INITIAL_OP);
+  useManualEntry.setState(INITIAL_MANUAL_ENTRY);
+  // A real phone has a GPS fix only with location on: tests that publish a fix run with permission granted.
+  jest.mocked(Location.requestForegroundPermissionsAsync).mockResolvedValue({ status: 'granted', granted: true } as never);
+  useMyLocation.setState(DEFAULT_MY_LOCATION);
 });
 
 describe('MapScreen', () => {
@@ -1225,6 +1232,77 @@ describe('MapScreen', () => {
       await act(async () => props.onMapIdle(state(false)));
       await screen.unmount();
       expect(await getMissionCamera(ctx.db, id)).toBeNull();
+    });
+  });
+
+  describe('manual location', () => {
+    // Same helpers as the OP mode tests.
+    const mapPress = (lon: number, lat: number) =>
+      act(async () => (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }));
+    const openMap = async () => {
+      const ctx = makeTestContext();
+      const r = await createMission(ctx, { name: 'Op Iron' });
+      if (!r.ok) throw new Error('setup');
+      await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+      await screen.findByTestId('map-view');
+      await act(async () => usePresence.getState().setLocationStatus('denied'));
+    };
+    const openBox = async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+    };
+
+    it('tapping the ME readout with location off opens the box; Choose on map hides it until a map tap fills the grid', async () => {
+      await openBox();
+      expect(screen.getByText('MY POSITION')).toBeTruthy();
+      await fireEvent.press(screen.getByText('Choose on map'));
+      expect(screen.queryByText('MY POSITION')).toBeNull();
+      expect(screen.getByText('Tap your position')).toBeTruthy();
+      await mapPress(-77.1, 38.95);
+      expect(screen.queryByText('Tap your position')).toBeNull();
+      expect(screen.getByText('Adjust on map')).toBeTruthy();
+      expect(useManualEntry.getState().chosen).toEqual({ lat: 38.95, lon: -77.1 });
+      expect(useMyLocation.getState().manual).toBeNull();
+    });
+
+    it('CTR on the choosing bar chooses the crosshair', async () => {
+      await openBox();
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 0 }));
+      await fireEvent.press(screen.getByText('Choose on map'));
+      await fireEvent.press(screen.getByLabelText('Add at center'));
+      expect(useManualEntry.getState()).toMatchObject({ phase: 'entry', chosen: { lat: 38.9, lon: -77 } });
+    });
+
+    it('a map tap while the box is open (not choosing) keeps the box and saves nothing', async () => {
+      await openBox();
+      await mapPress(-77.1, 38.95);
+      expect(screen.getByText('MY POSITION')).toBeTruthy();
+      expect(useManualEntry.getState().chosen).toBeNull();
+      expect(useMyLocation.getState().manual).toBeNull();
+    });
+
+    it('opening a menu while choosing ends choosing and closes the box', async () => {
+      await openBox();
+      await fireEvent.press(screen.getByText('Choose on map'));
+      await act(async () => useMenu.getState().openMenu('settings', {}));
+      expect(useManualEntry.getState().phase).toBe('closed');
+      expect(screen.queryByText('Tap your position')).toBeNull();
+    });
+
+    it('opening the box ends quick plot', async () => {
+      await openMap();
+      await act(async () => useQuickPlot.getState().open());
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+      expect(useQuickPlot.getState().entryOpen).toBe(false);
+      expect(screen.getByText('MY POSITION')).toBeTruthy();
+    });
+
+    it('previews the spot on the map while the box is open', async () => {
+      await openBox();
+      await act(async () => useManualEntry.getState().choose({ lat: 38.95, lon: -77.1 }));
+      const shape = mapboxMock().__props.ShapeSource['manual-preview'].shape as { features: { geometry: { coordinates: number[] } }[] };
+      expect(shape.features).toHaveLength(1);
+      expect(shape.features[0].geometry.coordinates[0]).toBeCloseTo(-77.1, 4);
     });
   });
 });

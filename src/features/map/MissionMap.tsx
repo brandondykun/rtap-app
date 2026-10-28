@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
+import { ManualLocationEntry } from '@/features/location/ManualLocationEntry';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { draftSidc } from '@/features/map-items/draft-sidc';
 import { openItemMenu } from '@/features/map-items/menus/item-menus';
@@ -27,6 +28,7 @@ import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
 import { useOp } from '@/stores/op';
+import { useManualEntry } from '@/stores/manual-entry';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useMenu, topMenu } from '@/stores/menu';
 import { usePlacing, type PlacingCategory } from '@/stores/placing';
@@ -43,6 +45,7 @@ import { LineDrawBar } from './controls/LineDrawBar';
 import { MapControls } from './controls/MapControls';
 import { MapTopLeft } from './controls/MapTopLeft';
 import { PlaceBar } from './controls/PlaceBar';
+import { ManualPreviewLayer } from './layers/ManualPreviewLayer';
 import { OpEyeSlider } from './op/OpEyeSlider';
 import { Crosshair } from './interaction/Crosshair';
 import { DraftLayer } from './layers/DraftLayer';
@@ -135,6 +138,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const placing = usePlacing((s) => s.category);
   const opPhase = useOp((s) => s.phase);
   const opPicking = opPhase === 'picking';
+  const manualChoosing = useManualEntry((s) => s.phase === 'choosing');
   const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const lineDrawing = useDraft((s) => (s.category === 'line' || s.category === 'polygon') && s.mode !== null && !s.locked);
   const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
@@ -243,6 +247,20 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         if (usePlacing.getState().category) usePlacing.getState().stop();
         const q = useQuickPlot.getState();
         if (q.entryOpen || q.temp) q.close();
+        useManualEntry.getState().close();
+      }),
+    [],
+  );
+  // Opening the Set manually box (from the ME readout or Settings) ends menus and the other map modes, like quick plot.
+  useEffect(
+    () =>
+      useManualEntry.subscribe((state, prev) => {
+        if (prev.phase !== 'closed' || state.phase !== 'entry') return;
+        useMenu.getState().closeMenu();
+        useQuickPlot.getState().close();
+        useMeasure.getState().stopMeasure();
+        usePlacing.getState().stop();
+        useOp.getState().cancel();
       }),
     [],
   );
@@ -251,6 +269,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMeasure.getState().stopMeasure();
       useQuickPlot.getState().close();
       usePlacing.getState().stop();
+      useManualEntry.getState().close();
     },
     [],
   );
@@ -382,6 +401,16 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const lastItemPressAt = useRef(0);
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
+    const manual = useManualEntry.getState();
+    if (manual.phase === 'choosing') {
+      manual.choose(coord);
+      return;
+    }
+    // A stray tap must not lose what was typed in the Set manually box: it only puts the keyboard away.
+    if (manual.phase === 'entry') {
+      Keyboard.dismiss();
+      return;
+    }
     if (useOp.getState().phase === 'picking') {
       stakeAt(coord);
       return;
@@ -402,6 +431,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     }
   };
   const onItemPress = (itemId: string, at: LatLon, item: ItemRef, itemAt?: LatLon | null) => {
+    if (useManualEntry.getState().phase === 'choosing') {
+      useManualEntry.getState().choose(itemAt ?? at);
+      return;
+    }
     if (useOp.getState().phase === 'picking') {
       // Staking on a unit or point is felt like selecting it; a line or polygon stakes at the tapped spot.
       if (item.kind === 'point') notifySelected();
@@ -506,6 +539,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         {drawingPolygon ? <DraftPolygonLayer onVertexPress={(i) => useDraft.getState().selectVertex(i)} onPress={onMapPress} /> : null}
         {measuring ? <MeasureLayer /> : null}
         {plotTemp ? <QuickPlotLayer /> : null}
+        <ManualPreviewLayer />
         <SelfLayer onPress={opPicking ? stakeOnSelf : measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
       </OpGestures>
@@ -534,7 +568,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <MapControls
         following={followMode}
         canRecenter={hasSelfPosition}
-        onSetLocation={() => {}}
+        onSetLocation={() => useManualEntry.getState().open('map', null)}
         onNorthUp={northUp}
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
@@ -553,8 +587,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         }
         landscape={landscape}
         // In landscape the temp card takes the center card's spot; in portrait the dock keeps its CTR row, under the card.
-        showCenter={showCenterGrid && !(landscape && plotTemp) && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || measuring))}
-        barOverDock={!lineDrawing && (!!placing || opPicking)}
+        showCenter={showCenterGrid && !(landscape && plotTemp) && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || manualChoosing || measuring))}
+        barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing)}
         bar={
           lineDrawing ? (
             <LineDrawBar />
@@ -562,12 +596,19 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             <PlaceBar onAtCenter={() => placeAt(placing)} onCancel={() => usePlacing.getState().stop()} />
           ) : opPicking ? (
             <PlaceBar onAtCenter={() => stakeAt(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)} onCancel={() => useOp.getState().cancel()} />
+          ) : manualChoosing ? (
+            <PlaceBar
+              hint="Tap your position"
+              onAtCenter={() => useManualEntry.getState().choose(useInteraction.getState().cameraCenter ?? WORLD_CAMERA.center)}
+              onCancel={() => useManualEntry.getState().cancelChoosing()}
+            />
           ) : measuring ? (
             <MeasureBar />
           ) : null
         }
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
+      <ManualLocationEntry landscape={landscape} />
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} panel={panel} /> : null}
       <MapTopLeft landscape={landscape} panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
