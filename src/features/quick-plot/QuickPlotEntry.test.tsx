@@ -67,9 +67,27 @@ describe('QuickPlotEntry', () => {
   });
 
 
-  it('puts Plot beside the grid in landscape so the keyboard cannot cover it', async () => {
+  it.each([[false], [true]])('puts Clear right of the grid, with Cancel and Plot side by side below it (landscape=%s)', async (landscape) => {
+    await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
+    const row = within(screen.getByTestId('quick-plot-row'));
+    expect(row.getByLabelText('Clear grid')).toBeTruthy();
+    expect(row.queryByLabelText('Plot')).toBeNull();
+    const actions = within(screen.getByTestId('quick-plot-actions'));
+    expect(actions.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Cancel', 'Plot']);
+  });
+
+  it('Cancel closes the box without plotting', async () => {
+    useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    await fireEvent.press(screen.getByLabelText('Cancel'));
+    expect(useQuickPlot.getState()).toMatchObject({ entryOpen: false, temp: null });
+  });
+
+  it('draws Plot like Set in MY POSITION: same height, sharing the row with Cancel', async () => {
     await renderWithProviders(<QuickPlotEntry landscape />);
-    expect(within(screen.getByTestId('quick-plot-row')).getByLabelText('Plot')).toBeTruthy();
+    const plot = screen.getByLabelText('Plot').props.className as string;
+    expect(plot).toMatch(/\bh-10\b/);
+    expect(plot).toMatch(/\bflex-1\b/);
   });
 
 
@@ -77,12 +95,6 @@ describe('QuickPlotEntry', () => {
     await renderWithProviders(<QuickPlotEntry landscape={false} />);
     expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
     expect(screen.getByLabelText('Northing').props.onSubmitEditing).toBeUndefined();
-  });
-
-  it.each([[false], [true]])('puts the clear button right of Plot (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
-    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(order.filter((l) => ['Plot', 'Clear grid'].includes(l))).toEqual(['Plot', 'Clear grid']);
   });
 
   it('is see-through with no border', async () => {

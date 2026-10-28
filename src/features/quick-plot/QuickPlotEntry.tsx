@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Keyboard, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
@@ -19,7 +20,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 const LANDSCAPE_WIDTH = 520;
 const PORTRAIT_MARGIN = 6;
 
-/** Quick plot grid entry: centered under the toolbar (above the keyboard), four MGRS fields and Plot. */
+/** Quick plot grid entry: centered under the toolbar (above the keyboard), four MGRS fields with Clear, then Cancel and Plot. */
 export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   const toolbar = useToolbarHeight();
   const insets = useSafeAreaInsets();
@@ -53,25 +54,17 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   };
 
   const clearButton = <MapButton grouped label="Clear grid" icon="close-circle-outline" onPress={clear} />;
-  const plotButton = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Plot"
-      accessibilityState={{ disabled: !valid }}
-      disabled={!valid}
-      onPress={plot}
-      className={`active:opacity-60 h-12 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-70'}`}>
-      {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
-      <CrosshairGlyph size={20} color={colors['on-accent']} dotColor={colors['on-accent']} />
-      <Text className="text-lg font-bold text-on-accent">Plot</Text>
-    </Pressable>
-  );
+  const close = () => {
+    Keyboard.dismiss();
+    useQuickPlot.getState().close();
+  };
 
   return (
     // Below the Mapbox logo row, which must stay visible (in landscape the logo is beside the toolbar: right under it).
     <View testID="quick-plot-frame" pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + bannerTop(landscape, toolbar) }}>
       {/* 16 pt corners less 8 pt padding are the fields' and Plot's 8 pt (rounded-lg): concentric. */}
       <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
+        {/* Clear right of the grid; Cancel and Plot side by side below, like the MY POSITION box. */}
         <View testID="quick-plot-row" className="flex-row items-start gap-1">
           <View className="flex-1">
             <MgrsInput
@@ -84,16 +77,24 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
               nested
             />
           </View>
-          {/* Landscape: Plot (then Clear) beside the fields, above the tall keyboard. */}
-          {landscape ? plotButton : null}
-          {landscape ? clearButton : null}
+          {clearButton}
         </View>
-        {landscape ? null : (
-          <View className="flex-row items-center gap-1">
-            <View className="flex-1">{plotButton}</View>
-            {clearButton}
+        <View testID="quick-plot-actions" className="flex-row items-center gap-2">
+          <View className="flex-1">
+            <MenuButton compact label="Cancel" icon="close" onPress={close} />
           </View>
-        )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Plot"
+            accessibilityState={{ disabled: !valid }}
+            disabled={!valid}
+            onPress={plot}
+            className={`active:opacity-60 h-10 flex-1 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
+            {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
+            <CrosshairGlyph size={20} color={colors['on-accent']} dotColor={colors['on-accent']} />
+            <Text className="text-lg font-bold text-on-accent">Plot</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
