@@ -1,11 +1,19 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, Text, View, type LayoutRectangle } from 'react-native';
-import Animated, { Easing, ReduceMotion, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { Pressable, View, type LayoutRectangle } from 'react-native';
+import Animated, { ReduceMotion, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+
+import { useTheme } from '@/theme/ThemeProvider';
 
 type Option<T extends string> = { value: T; label: string; icon?: ReactNode; disabled?: boolean };
 
-/** The highlight moves across the control: ease-in-out, brief. With Reduce Motion on it jumps instead. */
-const SLIDE = { duration: 200, easing: Easing.bezier(0.77, 0, 0.175, 1), reduceMotion: ReduceMotion.System };
+/**
+ * The highlight glides across the control on a spring that settles without overshoot (a quick tap mid-slide turns it
+ * smoothly instead of restarting). With Reduce Motion on it jumps instead.
+ */
+export const SLIDE = { duration: 350, dampingRatio: 1, reduceMotion: ReduceMotion.System };
+/** The labels swap color a little after the highlight sets off, so the new one lights up as the highlight arrives. */
+export const TEXT_COLOR_DELAY_MS = 120;
+const TEXT_COLOR_MS = 150;
 
 /**
  * One-of-N control. Options with an icon show only the icon; the label is their accessible name. A disabled option is greyed out.
@@ -17,9 +25,10 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
   const target = layouts[value];
   // The highlight appears in place (opening the menu, rotating) and slides only once the user picks an option.
   const [slide, setSlide] = useState(false);
+  const { colors } = useTheme();
 
   const highlight = useAnimatedStyle(
-    () => (target ? { transform: [{ translateX: slide ? withTiming(target.x, SLIDE) : target.x }], width: slide ? withTiming(target.width, SLIDE) : target.width } : {}),
+    () => (target ? { transform: [{ translateX: slide ? withSpring(target.x, SLIDE) : target.x }], width: slide ? withSpring(target.width, SLIDE) : target.width } : {}),
     [target?.x, target?.width, slide],
   );
 
@@ -53,7 +62,18 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
               setLayouts((prev) => ({ ...prev, [option.value]: l }));
             }}
             className={`active:opacity-60 flex-1 items-center justify-center rounded-lg border-2 border-transparent py-2 ${option.disabled ? 'opacity-40' : ''}`}>
-            {option.icon ?? <Text className={`text-sm font-semibold ${selected ? 'text-accent' : 'text-text'}`}>{option.label}</Text>}
+            {option.icon ?? (
+              <Animated.Text
+                className="text-sm font-semibold"
+                style={{
+                  color: selected ? colors.accent : colors.text,
+                  transitionProperty: 'color',
+                  transitionDuration: TEXT_COLOR_MS,
+                  transitionDelay: TEXT_COLOR_DELAY_MS,
+                }}>
+                {option.label}
+              </Animated.Text>
+            )}
           </Pressable>
         );
       })}

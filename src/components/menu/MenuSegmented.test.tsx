@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MenuSegmented } from './MenuSegmented';
+import { MenuSegmented, SLIDE, TEXT_COLOR_DELAY_MS } from './MenuSegmented';
 
 describe('MenuSegmented', () => {
   it('greys out a disabled option and ignores presses on it, leaving the others working', async () => {
@@ -65,5 +65,18 @@ describe('MenuSegmented', () => {
     expect(pillAt()).toEqual({ x: 212, width: 100 });
     expect(screen.getByLabelText('C').props.accessibilityState).toMatchObject({ selected: true });
     expect(screen.getByLabelText('A').props.accessibilityState).toMatchObject({ selected: false });
+  });
+
+  it('changes the label color a little after the highlight starts moving', async () => {
+    await renderWithProviders(<Picker start="a" />);
+    const style = Object.assign({}, ...[screen.getByText('B').props.style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
+    expect(style).toMatchObject({ transitionProperty: 'color', transitionDelay: TEXT_COLOR_DELAY_MS });
+    expect(TEXT_COLOR_DELAY_MS).toBeGreaterThan(0);
+    expect(TEXT_COLOR_DELAY_MS).toBeLessThan(SLIDE.duration);
+  });
+
+  it('slides on a gentle spring that settles without overshoot', () => {
+    expect(SLIDE).toMatchObject({ dampingRatio: 1 });
+    expect(SLIDE.duration).toBeGreaterThan(200);
   });
 });
