@@ -101,7 +101,8 @@ export function useSelfLocation(): void {
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
         if (disposed || !manualSource()) return;
-        usePresence.getState().setLocationStatus(status === 'granted' ? 'granted' : 'denied');
+        // Not yet decided (e.g. iOS "Allow Once" expired) is not off: GPS stays selectable and asks when chosen.
+        usePresence.getState().setLocationStatus(status === 'granted' ? 'granted' : status === 'undetermined' ? 'unknown' : 'denied');
       } catch (e) {
         console.warn('[location] permission unavailable', e);
         if (!disposed && manualSource()) usePresence.getState().setLocationStatus('unavailable');

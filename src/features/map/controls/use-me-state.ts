@@ -14,8 +14,9 @@ export function useMeState(): MeState {
   const off = status === 'denied' || status === 'unavailable';
   // A position set by hand shows whatever the permission; a GPS fix only while location is on.
   if (fix && (fix.manual || !off)) return { kind: 'fix', fix };
-  if (off) return { kind: 'set', reason: 'off' };
+  // On Manual without a position, that is what matters (location is usually off then anyway).
   if (source === 'manual') return { kind: 'set', reason: 'unset' };
+  if (off) return { kind: 'set', reason: 'off' };
   return { kind: 'waiting' };
 }
 

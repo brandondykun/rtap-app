@@ -1304,5 +1304,31 @@ describe('MapScreen', () => {
       expect(shape.features).toHaveLength(1);
       expect(shape.features[0].geometry.coordinates[0]).toBeCloseTo(-77.1, 4);
     });
+
+    it.each(['UNIT', 'POINT', 'MEASURE', 'OP'])('%s while choosing ends choosing and closes the box, so the tool gets the next tap', async (tool) => {
+      await openBox();
+      await fireEvent.press(screen.getByText('Choose on map'));
+      await fireEvent.press(screen.getByLabelText(tool));
+      expect(useManualEntry.getState().phase).toBe('closed');
+      expect(screen.queryByText('Tap your position')).toBeNull();
+      expect(screen.queryByText('MY POSITION')).toBeNull();
+    });
+
+    it('PLOT with the box open closes the box (the two never overlap)', async () => {
+      await openBox();
+      await fireEvent.press(screen.getByLabelText('PLOT'));
+      expect(useQuickPlot.getState().entryOpen).toBe(true);
+      expect(useManualEntry.getState().phase).toBe('closed');
+    });
+
+    it('Cancel while choosing returns to the box with the typed grid unchanged', async () => {
+      await openBox();
+      await fireEvent.changeText(screen.getByLabelText('Easting'), '1234');
+      await fireEvent.press(screen.getByText('Choose on map'));
+      await act(async () => useInteraction.getState().setCamera({ center: { lat: -33.9, lon: 151.2 }, zoom: 14, bearing: 0 }));
+      await fireEvent.press(screen.getByLabelText('Cancel'));
+      expect(screen.getByText('MY POSITION')).toBeTruthy();
+      expect(screen.getByLabelText('Easting')).toHaveDisplayValue('1234');
+    });
   });
 });

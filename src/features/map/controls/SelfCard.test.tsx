@@ -165,5 +165,13 @@ describe('SelfCard', () => {
       await fireEvent.press(screen.getByLabelText('Recenter on me'));
       expect(onRecenter).toHaveBeenCalledTimes(1);
     });
+
+    it('says the manual position is not set (not that location is off) when Manual has none and location is off', async () => {
+      useMyLocation.getState().switchToManual();
+      usePresence.getState().setLocationStatus('denied');
+      await renderWithProviders(<SelfCard {...PROPS} disabled />);
+      expect(screen.getAllByText('Manual position not set').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('Location is off')).toHaveLength(0);
+    });
   });
 });

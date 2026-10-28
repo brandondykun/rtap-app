@@ -30,13 +30,14 @@ export function ManualLocationEntry({ landscape }: { landscape: boolean }) {
   const phase = useManualEntry((s) => s.phase);
   const chosen = useManualEntry((s) => s.chosen);
   const start = useManualEntry((s) => s.start);
-  if (phase !== 'entry') return null;
+  if (phase === 'closed') return null;
   const from = chosen ?? start;
-  // A newly chosen spot remounts the fields with its grid.
-  return <EntryBox key={from ? `${from.lat},${from.lon}` : 'none'} landscape={landscape} from={from} />;
+  // A newly chosen spot remounts the fields with its grid. While choosing the box stays mounted but hidden, so Cancel
+  // brings back exactly what was typed.
+  return <EntryBox key={from ? `${from.lat},${from.lon}` : 'none'} landscape={landscape} from={from} hidden={phase === 'choosing'} />;
 }
 
-function EntryBox({ landscape, from }: { landscape: boolean; from: LatLon | null }) {
+function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLon | null; hidden: boolean }) {
   const toolbar = useToolbarHeight();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -69,7 +70,10 @@ function EntryBox({ landscape, from }: { landscape: boolean; from: LatLon | null
   };
 
   return (
-    <View pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + EDGE + toolbar + GAP }}>
+    <View
+      pointerEvents={hidden ? 'none' : 'box-none'}
+      className="absolute left-0 right-0 items-center"
+      style={{ top: insets.top + EDGE + toolbar + GAP, display: hidden ? 'none' : 'flex' }}>
       <View testID="manual-location-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         <View className="flex-row items-center justify-between px-1">
           <Text style={halo} className="text-xs font-semibold uppercase tracking-widest text-text-muted">

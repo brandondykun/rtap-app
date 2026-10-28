@@ -280,6 +280,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useQuickPlot.getState().close();
       usePlacing.getState().stop();
+      useManualEntry.getState().close();
       // Measuring works inside OP mode; it only ends picking an OP.
       useOp.getState().cancel();
       useMeasure.getState().startMeasure();
@@ -293,6 +294,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       useMenu.getState().closeMenu();
       useMeasure.getState().stopMeasure();
       usePlacing.getState().stop();
+      useManualEntry.getState().close();
       // Plotting works inside OP mode; it only ends picking an OP.
       useOp.getState().cancel();
       q.open();
@@ -346,6 +348,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useMeasure.getState().stopMeasure();
     useQuickPlot.getState().close();
     usePlacing.getState().stop();
+    useManualEntry.getState().close();
     useOp.getState().startPicking();
   };
 
@@ -373,6 +376,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     useMenu.getState().closeMenu();
     useMeasure.getState().stopMeasure();
     useQuickPlot.getState().close();
+    useManualEntry.getState().close();
     // Placing a unit or point works inside OP mode (tap or CTR); it only ends picking an OP.
     useOp.getState().cancel();
     p.start(category);

@@ -180,5 +180,13 @@ describe('useSelfLocation', () => {
       await act(async () => {});
       expect(usePresence.getState()).toMatchObject({ selfPosition: null, locationStatus: 'granted' });
     });
+
+    it('reports a permission that can still be asked for (iOS Allow Once expired) as unknown, not denied', async () => {
+      useMyLocation.getState().setManual({ lat: 1, lon: 2 });
+      mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'undetermined', granted: false, canAskAgain: true } as never);
+      await render(<Probe />);
+      await act(async () => {});
+      expect(usePresence.getState().locationStatus).toBe('unknown');
+    });
   });
 });
