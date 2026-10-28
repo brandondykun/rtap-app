@@ -15,6 +15,12 @@ export const SLIDE = { duration: 350, dampingRatio: 1, reduceMotion: ReduceMotio
 export const TEXT_COLOR_DELAY_MS = 120;
 const TEXT_COLOR_MS = 150;
 
+/** The control's outer corner, border and padding; the highlight's corner is what is left inside them (concentric). */
+export const SEGMENTED_RADIUS = 12;
+export const SEGMENTED_BORDER = 1;
+export const SEGMENTED_PAD = 4;
+const HIGHLIGHT_RADIUS = SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD;
+
 /**
  * One-of-N control. Options with an icon show only the icon; the label is their accessible name. A disabled option is greyed out.
  * One highlight sits behind the options and slides under the selected one.
@@ -28,19 +34,27 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
   const { colors } = useTheme();
 
   const highlight = useAnimatedStyle(
-    () => (target ? { transform: [{ translateX: slide ? withSpring(target.x, SLIDE) : target.x }], width: slide ? withSpring(target.width, SLIDE) : target.width } : {}),
+    () => {
+      if (!target) return {};
+      // Measured positions count from the outer edge (border included); the highlight is placed from inside the border.
+      const x = target.x - SEGMENTED_BORDER;
+      return { transform: [{ translateX: slide ? withSpring(x, SLIDE) : x }], width: slide ? withSpring(target.width, SLIDE) : target.width };
+    },
     [target?.x, target?.width, slide],
   );
 
   return (
-    <View className="flex-row gap-1 rounded-xl border border-border bg-surface-input p-1">
+    <View
+      testID="segmented-control"
+      className="flex-row gap-1 border-border bg-surface-input"
+      style={{ borderRadius: SEGMENTED_RADIUS, borderWidth: SEGMENTED_BORDER, padding: SEGMENTED_PAD }}>
       {/* Out of flow and childless, so moving it re-lays-out nothing else. */}
       {target ? (
         <Animated.View
           testID="segmented-highlight"
           pointerEvents="none"
-          className="absolute left-0 rounded-lg border-2 border-accent bg-accent-subtle"
-          style={[{ top: target.y, height: target.height }, highlight]}
+          className="absolute left-0 border-2 border-accent bg-accent-subtle"
+          style={[{ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD, borderRadius: HIGHLIGHT_RADIUS }, highlight]}
         />
       ) : null}
       {options.map((option) => {

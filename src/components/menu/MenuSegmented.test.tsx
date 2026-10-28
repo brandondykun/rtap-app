@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MenuSegmented, SLIDE, TEXT_COLOR_DELAY_MS } from './MenuSegmented';
+import { MenuSegmented, SEGMENTED_BORDER, SEGMENTED_PAD, SEGMENTED_RADIUS, SLIDE, TEXT_COLOR_DELAY_MS } from './MenuSegmented';
 
 describe('MenuSegmented', () => {
   it('greys out a disabled option and ignores presses on it, leaving the others working', async () => {
@@ -28,6 +28,7 @@ describe('MenuSegmented', () => {
   });
 
   type V = 'a' | 'b' | 'c';
+  const flat = (style: unknown) => Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
   const OPTIONS = [
     { value: 'a' as const, label: 'A' },
     { value: 'b' as const, label: 'B' },
@@ -37,14 +38,14 @@ describe('MenuSegmented', () => {
     const [value, setValue] = useState<V>(start);
     return <MenuSegmented<V> options={OPTIONS} value={value} onChange={setValue} />;
   }
-  /** Mimics native layout: each option 100 pt wide with a 4 pt gap, inside 4 pt padding. */
+  /** Mimics native layout: each option 100 pt wide with a 4 pt gap; positions count from the outer edge, so they include the 1 pt border and 4 pt padding. */
   const layOut = async () => {
     for (const [i, label] of ['A', 'B', 'C'].entries()) {
-      await act(async () => fireEvent(screen.getByLabelText(label), 'layout', { nativeEvent: { layout: { x: 4 + i * 104, y: 4, width: 100, height: 40 } } }));
+      await act(async () => fireEvent(screen.getByLabelText(label), 'layout', { nativeEvent: { layout: { x: 5 + i * 104, y: 5, width: 100, height: 40 } } }));
     }
   };
   const pillAt = () => {
-    const style = Object.assign({}, ...[screen.getByTestId('segmented-highlight').props.style].flat(Infinity).filter(Boolean)) as { transform: { translateX: number }[]; width: number };
+    const style = flat(screen.getByTestId('segmented-highlight').props.style) as { transform: { translateX: number }[]; width: number };
     return { x: style.transform[0].translateX, width: style.width };
   };
 
@@ -53,6 +54,7 @@ describe('MenuSegmented', () => {
     expect(screen.queryByTestId('segmented-highlight')).toBeNull();
     await layOut();
     expect(pillAt()).toEqual({ x: 108, width: 100 });
+    expect(flat(screen.getByTestId('segmented-highlight').props.style)).toMatchObject({ top: 4, bottom: 4 });
     // The options draw no highlight of their own: the one shared highlight slides between them.
     for (const label of ['A', 'B', 'C']) expect(screen.getByLabelText(label).props.className).not.toContain('bg-accent-subtle');
   });
@@ -78,5 +80,18 @@ describe('MenuSegmented', () => {
   it('slides on a gentle spring that settles without overshoot', () => {
     expect(SLIDE).toMatchObject({ dampingRatio: 1 });
     expect(SLIDE.duration).toBeGreaterThan(200);
+  });
+
+  it('keeps the highlight evenly inset (as much above as below) with corners concentric to the outside', async () => {
+    await renderWithProviders(<Picker start="a" />);
+    await layOut();
+    const style = flat(screen.getByTestId('segmented-highlight').props.style);
+    // Positioned inside the border: the padding alone above, below and to the side.
+    expect(style).toMatchObject({ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD });
+    expect(pillAt().x).toBe(SEGMENTED_PAD);
+    expect(style.height).toBeUndefined();
+    // Outer corner less the border and padding.
+    expect(style.borderRadius).toBe(SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD);
+    expect(flat(screen.getByTestId('segmented-control').props.style)).toMatchObject({ borderRadius: SEGMENTED_RADIUS, borderWidth: SEGMENTED_BORDER, padding: SEGMENTED_PAD });
   });
 });
