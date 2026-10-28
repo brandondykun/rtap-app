@@ -27,6 +27,11 @@ describe('SelfLayer', () => {
     expect(props.SymbolLayer['self-icon'].style).toMatchObject({ iconRotationAlignment: 'map' });
   });
 
+  it('draws a manual position with the manual icon', async () => {
+    await renderWithProviders(<SelfLayer />);
+    await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: null, timestamp: 1, manual: true }));
+    expect((mapboxMock().__props.ShapeSource.self.shape as Shape).features[0].properties).toEqual({ icon: 'self-manual', heading: 0 });
+  });
 
   it('is not tappable unless a press handler is given (it would swallow taps on nearby symbols)', async () => {
     usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 });

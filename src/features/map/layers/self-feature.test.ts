@@ -16,4 +16,9 @@ describe('selfFeatureCollection', () => {
     const [f] = selfFeatureCollection({ lat: 38.9, lon: -77 }, null).features;
     expect(f.properties).toEqual({ icon: MAP_IMAGE_IDS.selfNoHeading, heading: 0 });
   });
+
+  it('draws a manual position with its own icon and no heading, even if a heading is known', () => {
+    const [f] = selfFeatureCollection({ lat: 1, lon: 2 }, 90, true).features;
+    expect(f.properties).toEqual({ icon: MAP_IMAGE_IDS.selfManual, heading: 0 });
+  });
 });

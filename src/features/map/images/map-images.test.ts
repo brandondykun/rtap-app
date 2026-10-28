@@ -12,7 +12,7 @@ describe('map images', () => {
   });
 
   it('has the generated files on disk', () => {
-    for (const name of ['self', 'self-no-heading']) {
+    for (const name of ['self', 'self-no-heading', 'self-manual']) {
       for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `${name}${suffix}.png`))).toBe(true);
     }
     for (const suffix of ['', '@2x', '@3x']) expect(existsSync(join(ASSETS, `draft-ring${suffix}.png`))).toBe(true);

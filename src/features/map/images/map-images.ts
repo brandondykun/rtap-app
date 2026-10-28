@@ -5,6 +5,7 @@ import { LABEL_CHIP_IMAGE_OPTIONS } from './map-image-specs';
 export const MAP_IMAGE_IDS = {
   self: 'self',
   selfNoHeading: 'self-no-heading',
+  selfManual: 'self-manual',
   labelChip: 'label-chip',
   labelChipAccent: 'label-chip-accent',
   labelChipSquare: 'label-chip-square',
@@ -19,6 +20,7 @@ export const MAP_IMAGE_IDS = {
 export const MAP_IMAGES: Record<string, ImageEntry> = {
   [MAP_IMAGE_IDS.self]: require('../../../../assets/map/self.png'),
   [MAP_IMAGE_IDS.selfNoHeading]: require('../../../../assets/map/self-no-heading.png'),
+  [MAP_IMAGE_IDS.selfManual]: require('../../../../assets/map/self-manual.png'),
   [MAP_IMAGE_IDS.labelChip]: { image: require('../../../../assets/map/label-chip.png'), ...LABEL_CHIP_IMAGE_OPTIONS },
   [MAP_IMAGE_IDS.labelChipAccent]: { image: require('../../../../assets/map/label-chip-accent.png'), ...LABEL_CHIP_IMAGE_OPTIONS },
   // Line labels turn with the line; a stretchable (nine-piece) chip comes apart at steep angles.

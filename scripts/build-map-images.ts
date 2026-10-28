@@ -36,6 +36,10 @@ function writeScaled(name: string, source: string) {
 mkdirSync(OUT_DIR, { recursive: true });
 writeScaled('self', svg(cone + disc + arrow));
 writeScaled('self-no-heading', svg(disc + dot));
+// Position set by hand: a dashed ring around a small dot, so it never passes for a live GPS fix (and has no heading).
+const manualRing = `<circle cx="${C}" cy="${C}" r="11" fill="${colors['surface-input']}" fill-opacity="0.6" stroke="${colors.self}" stroke-width="3" stroke-dasharray="5 3"/>`;
+const manualDot = `<circle cx="${C}" cy="${C}" r="3" fill="${colors.self}"/>`;
+writeScaled('self-manual', svg(manualRing + manualDot));
 
 // Chips are drawn at 3× and saved under their @3x name (see LABEL_CHIP_SPEC for why there is no scale option).
 const { sizePx, radiusPx, scale: chipScale } = LABEL_CHIP_SPEC;
