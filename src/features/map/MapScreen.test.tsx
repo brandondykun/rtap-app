@@ -736,12 +736,16 @@ describe('MapScreen', () => {
       expect(screen.queryByTestId('quick-plot-card')).toBeNull();
     });
 
-    it('ends on a map tap while entering, and when Layers opens or MEASURE starts', async () => {
+    it('stays open on a map tap while entering (only Cancel closes it), and ends when Layers opens or MEASURE starts', async () => {
       await openMap();
       await fireEvent.press(screen.getByLabelText('PLOT'));
+      await fireEvent.changeText(screen.getByLabelText('Easting'), '123');
       await act(async () =>
         (mapboxMock().__props.MapView.main.onPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77, 38.9] }, properties: {} }),
       );
+      expect(screen.getByTestId('quick-plot-entry')).toBeTruthy();
+      expect(screen.getByLabelText('Easting')).toHaveDisplayValue('123');
+      await fireEvent.press(screen.getByLabelText('Cancel'));
       expect(screen.queryByTestId('quick-plot-entry')).toBeNull();
       await fireEvent.press(screen.getByLabelText('PLOT'));
       await plotGrid({ lat: 38.91, lon: -77 });

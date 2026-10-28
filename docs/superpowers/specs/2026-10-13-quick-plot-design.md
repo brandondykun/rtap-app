@@ -33,8 +33,8 @@ Add point at that spot.
 
 - Tapping **PLOT** (highlighted while quick plot is active) closes any open menu, stops measuring,
   and shows the entry card with the keyboard up.
-- Tapping PLOT again, or tapping the map while the entry card is up, closes quick plot (the entry
-  and any temporary point).
+- Tapping PLOT again, or **Cancel** on the entry card, closes quick plot (the entry and any temporary point).
+  Tapping the map while the entry card is up only puts the keyboard away (changed 2026-10-28: it used to close it).
 - Opening any menu (tool, Menu, Settings, Layers, an item) or starting MEASURE closes quick plot.
 
 ### 3.2 Entry card — `QuickPlotEntry`
@@ -98,7 +98,7 @@ The entry's Clear sets the fields to empty and remounts the input (a React `key`
 - Entry: prefilled zone/square from the crosshair; Plot disabled until valid; status text; Clear.
 - Card: Discard clears; Save unit / Save point open the Add menus at the temp point.
 - Map screen: PLOT toggles and closes an open menu; plotting closes the entry and shows the card;
-  opening Layers or starting MEASURE ends quick plot; a map tap closes the entry.
+  opening Layers or starting MEASURE ends quick plot; a map tap leaves the entry open; Cancel closes it.
 
 ## 6. Out of scope
 

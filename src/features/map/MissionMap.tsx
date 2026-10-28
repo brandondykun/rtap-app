@@ -419,9 +419,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       stakeAt(coord);
       return;
     }
+    // Likewise for quick plot: only its Cancel closes it.
     if (useQuickPlot.getState().entryOpen) {
       Keyboard.dismiss();
-      useQuickPlot.getState().close();
       return;
     }
     const placingCategory = usePlacing.getState().category;
