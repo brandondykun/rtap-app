@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
+import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
@@ -10,7 +11,7 @@ import { SelfCard } from './SelfCard';
 
 /** The dark copies drawn under a text to outline it. */
 const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', { includeHiddenElements: true }).filter((c) => c.props.children === text);
-const PROPS = { following: false, disabled: false, onRecenter: () => {} };
+const PROPS = { following: false, disabled: false, onRecenter: () => {}, onSetLocation: () => {} };
 
 const fix = (altitudeM: number | null) =>
   usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 4.6, timestamp: 1, altitudeM });
@@ -19,6 +20,7 @@ beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
   useOp.setState(INITIAL_OP);
+  useMyLocation.setState(DEFAULT_MY_LOCATION);
 });
 
 describe('SelfCard', () => {
@@ -73,14 +75,14 @@ describe('SelfCard', () => {
 
   it('recenters on press, shows following, and does nothing while disabled', async () => {
     const onRecenter = jest.fn();
-    await renderWithProviders(<SelfCard following disabled={false} onRecenter={onRecenter} />);
+    await renderWithProviders(<SelfCard following disabled={false} onRecenter={onRecenter} onSetLocation={() => {}} />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Recenter on me')).toBeSelected();
     // Following is for screen readers only: the border stays plain.
     expect(screen.getByTestId('gps-readout').props.className).not.toContain('border-accent');
     await screen.unmount();
-    await renderWithProviders(<SelfCard following={false} disabled onRecenter={onRecenter} />);
+    await renderWithProviders(<SelfCard following={false} disabled onRecenter={onRecenter} onSetLocation={() => {}} />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('Recenter on me')).not.toBeSelected();
@@ -126,5 +128,42 @@ describe('SelfCard', () => {
     useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.905, lon: -77.03 }, groundM: null });
     await renderWithProviders(<SelfCard {...PROPS} />);
     expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV —');
+  });
+
+  describe('setting a location by hand', () => {
+    it('with location off, offers to set the location by hand and opens it on tap, even while disabled', async () => {
+      usePresence.getState().setLocationStatus('denied');
+      const onSetLocation = jest.fn();
+      const onRecenter = jest.fn();
+      await renderWithProviders(<SelfCard {...PROPS} disabled onRecenter={onRecenter} onSetLocation={onSetLocation} />);
+      expect(screen.getAllByText('Location is off').length).toBeGreaterThan(0);
+      expect(screen.getByTestId('set-location-hint')).toHaveTextContent('Tap to set your location');
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+      expect(onSetLocation).toHaveBeenCalledTimes(1);
+      expect(onRecenter).not.toHaveBeenCalled();
+    });
+
+    it('says the manual position is not set when Manual is chosen without one', async () => {
+      useMyLocation.getState().switchToManual();
+      usePresence.getState().setLocationStatus('granted');
+      const onSetLocation = jest.fn();
+      await renderWithProviders(<SelfCard {...PROPS} disabled onSetLocation={onSetLocation} />);
+      expect(screen.getAllByText('Manual position not set').length).toBeGreaterThan(0);
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+      expect(onSetLocation).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows a manual position with MANUAL and no altitude, and recenters on tap', async () => {
+      usePresence.getState().setLocationStatus('denied');
+      usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: null, timestamp: 1, manual: true });
+      const onRecenter = jest.fn();
+      await renderWithProviders(<SelfCard {...PROPS} onRecenter={onRecenter} />);
+      expect(screen.getByTestId('gps-position')).toBeTruthy();
+      expect(screen.getByTestId('gps-manual')).toHaveTextContent('MANUAL');
+      expect(screen.queryByTestId('gps-altitude')).toBeNull();
+      expect(screen.queryByTestId('set-location-hint')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      expect(onRecenter).toHaveBeenCalledTimes(1);
+    });
   });
 });

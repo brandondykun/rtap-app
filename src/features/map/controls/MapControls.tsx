@@ -19,6 +19,8 @@ import { SelfCard } from './SelfCard';
 type Props = {
   following: boolean;
   canRecenter: boolean;
+  /** Opens setting the location by hand from the ME readout. */
+  onSetLocation: () => void;
   onNorthUp: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -55,7 +57,7 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
  * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
  * An action bar takes the dock's or your card's place while it is up (centered in portrait); in portrait it can float centered over the dock instead.
  */
-export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
+export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { height } = useWindowDimensions();
@@ -88,7 +90,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
       </SelfCardSlot>
     ) : room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
       <SelfCardSlot onHeight={setDockHeight}>
-        <ReadoutDock showCenter={showCenter} following={following} disabled={!canRecenter} onRecenter={onRecenter} />
+        <ReadoutDock showCenter={showCenter} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
       </SelfCardSlot>
     );
     const below = (docked ? dockSize + STACK_GAP : 0) + (over ? barHeight + STACK_GAP : 0);
@@ -115,7 +117,7 @@ export function MapControls({ following, canRecenter, onNorthUp, onZoomIn, onZoo
     <SelfCardSlot>{bar}</SelfCardSlot>
   ) : room < cardHeight ? null : (
     <SelfCardSlot onHeight={setCardHeight}>
-      <SelfCard following={following} disabled={!canRecenter} onRecenter={onRecenter} />
+      <SelfCard following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
     </SelfCardSlot>
   );
   const below = card ? cardHeight + STACK_GAP : 0;

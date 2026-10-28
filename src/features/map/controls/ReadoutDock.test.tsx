@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
+import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
@@ -15,7 +16,7 @@ const CENTER = { lat: 38.905, lon: -77.03 };
 const HIDDEN = { includeHiddenElements: true };
 /** The dark copies drawn under a text to outline it. */
 const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text);
-const PROPS = { following: false, disabled: false, onRecenter: () => {} };
+const PROPS = { following: false, disabled: false, onRecenter: () => {}, onSetLocation: () => {} };
 
 const fix = (altitudeM: number | null) => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 4.6, timestamp: 1, altitudeM });
 
@@ -24,6 +25,7 @@ beforeEach(() => {
   usePresence.setState(INITIAL_PRESENCE);
   useSettings.setState(DEFAULT_SETTINGS);
   useOp.setState(INITIAL_OP);
+  useMyLocation.setState(DEFAULT_MY_LOCATION);
 });
 
 describe('ReadoutDock', () => {
@@ -108,13 +110,13 @@ describe('ReadoutDock', () => {
 
   it('recenters when the ME row is tapped, adds no accent border while following, and does nothing while disabled', async () => {
     const onRecenter = jest.fn();
-    await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} showCenter />);
+    await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} onSetLocation={() => {}} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('dock-self')).toBeSelected();
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
     await screen.unmount();
-    await renderWithProviders(<ReadoutDock following={false} disabled onRecenter={onRecenter} showCenter />);
+    await renderWithProviders(<ReadoutDock following={false} disabled onRecenter={onRecenter} onSetLocation={() => {}} showCenter />);
     await fireEvent.press(screen.getByLabelText('Recenter on me'));
     expect(onRecenter).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-accent');
@@ -187,5 +189,42 @@ describe('ReadoutDock', () => {
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     expect(screen.getByTestId('readout-from-manual')).toHaveTextContent('FROM ME (MAN)');
     expect(screen.getByTestId('readout-range').props.accessibilityLabel).toMatch(/^Distance from you \(manual position\)/);
+  });
+
+  describe('setting a location by hand', () => {
+    it('with location off, offers to set the location by hand and opens it on tap, even while disabled', async () => {
+      usePresence.getState().setLocationStatus('denied');
+      const onSetLocation = jest.fn();
+      const onRecenter = jest.fn();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter disabled onRecenter={onRecenter} onSetLocation={onSetLocation} />);
+      expect(screen.getAllByText('Location is off').length).toBeGreaterThan(0);
+      expect(screen.getByTestId('set-location-hint')).toHaveTextContent('Tap to set your location');
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+      expect(onSetLocation).toHaveBeenCalledTimes(1);
+      expect(onRecenter).not.toHaveBeenCalled();
+    });
+
+    it('says the manual position is not set when Manual is chosen without one', async () => {
+      useMyLocation.getState().switchToManual();
+      usePresence.getState().setLocationStatus('granted');
+      const onSetLocation = jest.fn();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter disabled onSetLocation={onSetLocation} />);
+      expect(screen.getAllByText('Manual position not set').length).toBeGreaterThan(0);
+      await fireEvent.press(screen.getByLabelText('Set your location'));
+      expect(onSetLocation).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows a manual position with MANUAL and no altitude, and recenters on tap', async () => {
+      usePresence.getState().setLocationStatus('denied');
+      usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: null, timestamp: 1, manual: true });
+      const onRecenter = jest.fn();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter onRecenter={onRecenter} />);
+      expect(screen.getByTestId('gps-position')).toBeTruthy();
+      expect(screen.getByTestId('gps-manual')).toHaveTextContent('MANUAL');
+      expect(screen.queryByTestId('gps-altitude')).toBeNull();
+      expect(screen.queryByTestId('set-location-hint')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('Recenter on me'));
+      expect(onRecenter).toHaveBeenCalledTimes(1);
+    });
   });
 });

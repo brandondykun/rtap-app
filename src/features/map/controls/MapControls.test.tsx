@@ -16,7 +16,7 @@ beforeEach(() => {
 });
 
 function handlers() {
-  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn() };
+  return { onNorthUp: jest.fn(), onZoomIn: jest.fn(), onZoomOut: jest.fn(), onRecenter: jest.fn(), onSetLocation: jest.fn() };
 }
 
 describe('MapControls', () => {

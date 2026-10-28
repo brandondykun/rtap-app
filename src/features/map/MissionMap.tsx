@@ -534,6 +534,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <MapControls
         following={followMode}
         canRecenter={hasSelfPosition}
+        onSetLocation={() => {}}
         onNorthUp={northUp}
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}

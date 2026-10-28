@@ -7,7 +7,6 @@ import { OutlinedText } from '@/components/ui/OutlinedText';
 import { formatLength } from '@/features/location/gps-format';
 import type { LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
-import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
@@ -15,6 +14,7 @@ import { describeReadout, formatCoordinate } from '../interaction/readout';
 import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { useOpPosition } from '../op/use-op-position';
 import { CardLead } from './CardLead';
+import { SET_LOCATION_MESSAGE, useMeState } from './use-me-state';
 import { glassHalo } from '@/components/ui/glass';
 
 /**
@@ -22,13 +22,13 @@ import { glassHalo } from '@/components/ui/glass';
  * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`. In OP mode the
  * ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
  */
-export function ReadoutDock({ showCenter, following, disabled, onRecenter }: { showCenter: boolean } & SelfProps) {
+export function ReadoutDock({ showCenter, following, disabled, onRecenter, onSetLocation }: { showCenter: boolean } & SelfProps) {
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
     <View testID="readout-dock" className="mx-2 rounded-2xl bg-surface-glass px-3">
       {showCenter ? <CenterRow /> : null}
       {showCenter ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
-      <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} />
+      <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} />
     </View>
   );
 }
@@ -38,6 +38,8 @@ type SelfProps = {
   following: boolean;
   disabled: boolean;
   onRecenter: () => void;
+  /** Opens setting the location by hand (offered while location is off or Manual has no position). */
+  onSetLocation: () => void;
 };
 
 type RowProps = { testID: string; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
@@ -100,36 +102,44 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
   );
 }
 
-function MeRow({ following, disabled, onRecenter }: SelfProps) {
+function MeRow({ following, disabled, onRecenter, onSetLocation }: SelfProps) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
-  const fix = usePresence((s) => s.selfPosition);
-  const status = usePresence((s) => s.locationStatus);
+  const me = useMeState();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
-  const off = status === 'denied' || status === 'unavailable';
-  const shown = fix && !off ? fix : null;
+  const shown = me.kind === 'fix' ? me.fix : null;
+  const setting = me.kind === 'set';
   return (
     <Pressable
       testID="dock-self"
       accessibilityRole="button"
-      accessibilityLabel="Recenter on me"
-      accessibilityState={{ selected: following, disabled }}
-      disabled={disabled}
-      onPress={onRecenter}
+      accessibilityLabel={setting ? 'Set your location' : 'Recenter on me'}
+      accessibilityState={setting ? undefined : { selected: following, disabled }}
+      // With nothing to recenter on, a tap sets the location by hand instead.
+      disabled={setting ? false : disabled}
+      onPress={setting ? onSetLocation : onRecenter}
       className="active:opacity-60">
       <Row
         testID="dock-self-row"
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
-          shown ? (
+          shown && !shown.manual ? (
             <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
               {formatLength(shown.altitudeM, unit)}
             </OutlinedText>
           ) : null
         }
         bottom={
-          shown ? (
+          shown?.manual ? (
+            <OutlinedText testID="gps-manual" color={colors.friendly} style={halo} className="font-mono text-xs">
+              MANUAL
+            </OutlinedText>
+          ) : setting ? (
+            <OutlinedText testID="set-location-hint" color={colors.friendly} style={halo} className="text-xs">
+              Tap to set your location
+            </OutlinedText>
+          ) : shown ? (
             <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
               {`±${formatLength(shown.accuracyM, unit)}`}
             </OutlinedText>
@@ -139,7 +149,7 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
           <Grid testID="gps-position" color={colors.friendly} outline>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
           <OutlinedText color={colors.friendly} style={halo} className="text-xs">
-            {off ? 'Location is off' : 'Waiting for GPS…'}
+            {me.kind === 'set' ? SET_LOCATION_MESSAGE[me.reason] : 'Waiting for GPS…'}
           </OutlinedText>
         )}
       </Row>
