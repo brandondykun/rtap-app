@@ -37,12 +37,14 @@ mkdirSync(OUT_DIR, { recursive: true });
 writeScaled('self', svg(cone + disc + arrow));
 writeScaled('self-no-heading', svg(disc + dot));
 
-const { sizePx, radiusPx } = LABEL_CHIP_SPEC;
+// Chips are drawn at 3× and saved under their @3x name (see LABEL_CHIP_SPEC for why there is no scale option).
+const { sizePx, radiusPx, scale: chipScale } = LABEL_CHIP_SPEC;
+const chipFile = (name: string) => join(OUT_DIR, `${name}@${chipScale}x.png`);
 const chip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" rx="${radiusPx}" fill="${colors['map-label-bg']}"/></svg>`;
-writeFileSync(join(OUT_DIR, 'label-chip.png'), new Resvg(chip).render().asPng());
+writeFileSync(chipFile('label-chip'), new Resvg(chip).render().asPng());
 // Square chip for line labels: scaled as one piece (no stretch zones), so it stays whole when rotated.
 const squareChip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" fill="${colors['map-label-bg']}"/></svg>`;
-writeFileSync(join(OUT_DIR, 'label-chip-square.png'), new Resvg(squareChip).render().asPng());
+writeFileSync(chipFile('label-chip-square'), new Resvg(squareChip).render().asPng());
 
 // Draft selection ring: dashed amber circle with four tick marks (mockup "HOS-4 · NEW").
 const D = DRAFT_RING_SIZE;
@@ -63,7 +65,7 @@ writeScaled('draft-ring', ring);
 
 // Accent label chip for the draft ("HOS-4 · NEW"): same geometry as the dark chip.
 const accentChip = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}"><rect width="${sizePx}" height="${sizePx}" rx="${radiusPx}" fill="${colors.accent}"/></svg>`;
-writeFileSync(join(OUT_DIR, 'label-chip-accent.png'), new Resvg(accentChip).render().asPng());
+writeFileSync(chipFile('label-chip-accent'), new Resvg(accentChip).render().asPng());
 
 console.log(`Wrote map images to ${OUT_DIR}`);
 

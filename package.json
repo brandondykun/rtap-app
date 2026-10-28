@@ -83,7 +83,10 @@
     ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@nozbe/.*|@rnmapbox/.*|nativewind|react-native-css-interop|geographiclib-geodesic|mgrs|geomagnetism|milsymbol)"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^(.*/assets/map/label-chip(?:-accent|-square)?)\\.png$": "$1@3x.png"
+    }
   },
   "expo": {
     "autolinking": {

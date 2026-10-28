@@ -1,7 +1,7 @@
 import { POINT_TYPES, sidcForPointType } from '@/features/symbology/point-types';
 import { gridShadeColors, themeColors } from '@/theme/tokens';
 
-import { LABEL_CHIP_IMAGE_OPTIONS } from '../images/map-image-specs';
+import { LABEL_CHIP_CONTENT_INSET_PT } from '../images/map-image-specs';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 
 import {
@@ -253,7 +253,7 @@ describe('label chip padding', () => {
     expect(left).toBe(right);
     return [contentInset + top, contentInset + left];
   };
-  const roundedInset = LABEL_CHIP_IMAGE_OPTIONS.content[0];
+  const roundedInset = LABEL_CHIP_CONTENT_INSET_PT;
 
   it('gives point labels a little more room than line labels, and less than before (3 pt high, 5 pt wide)', () => {
     const [pointV, pointH] = visible(makePointLabelStyle(colors), roundedInset);
