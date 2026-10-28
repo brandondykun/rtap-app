@@ -149,8 +149,8 @@ function MeRow({ following, disabled, onRecenter }: SelfProps) {
 
 function CenterRow() {
   const center = useInteraction((s) => s.cameraCenter);
-  const { from, isOp } = useReadoutOrigin();
-  const who = isOp ? 'the OP' : 'you';
+  const { from, isOp, isManual } = useReadoutOrigin();
+  const who = isOp ? 'the OP' : isManual ? 'you (manual position)' : 'you';
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
@@ -168,6 +168,10 @@ function CenterRow() {
           {isOp ? (
             <OutlinedText testID="readout-from-op" color={colors.text} style={halo} className="font-mono text-xs">
               FROM OP
+            </OutlinedText>
+          ) : isManual ? (
+            <OutlinedText testID="readout-from-manual" color={colors.text} style={halo} className="font-mono text-xs">
+              FROM ME (MAN)
             </OutlinedText>
           ) : null}
           <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">

@@ -180,4 +180,12 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-from-op')).toHaveTextContent('FROM OP');
     expect(screen.getByTestId('readout-range').props.accessibilityLabel).toContain('from the OP');
   });
+
+  it('marks distance and bearing measured from a manual position', async () => {
+    usePresence.getState().setSelfPosition({ position: DC, accuracyM: null, timestamp: 1, manual: true });
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('readout-from-manual')).toHaveTextContent('FROM ME (MAN)');
+    expect(screen.getByTestId('readout-range').props.accessibilityLabel).toMatch(/^Distance from you \(manual position\)/);
+  });
 });

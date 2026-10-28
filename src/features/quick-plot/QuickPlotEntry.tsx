@@ -30,12 +30,13 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   // Bumped by Clear: remounts the fields so Zone takes focus.
   const [generation, setGeneration] = useState(0);
   const self = usePresence((s) => s.selfPosition?.position ?? null);
+  const selfManual = usePresence((s) => s.selfPosition?.manual === true);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const status = evaluateMgrsFields(parts);
   const v = status.status === 'valid' && self ? describeVector(self, status.coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
-  const validDetail = v ? `${v.distanceLabel} @ ${v.bearingLabel} ${v.refLabel} from you` : undefined;
+  const validDetail = v ? `${v.distanceLabel} @ ${v.bearingLabel} ${v.refLabel} ${selfManual ? 'from you (MAN)' : 'from you'}` : undefined;
   // Portrait uses slimmer side margins than the map's usual edge so the four fields get more room.
   const cardWidth = landscape
     ? Math.min(LANDSCAPE_WIDTH, width - insets.left - insets.right - 2 * EDGE)

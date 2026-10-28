@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react-native';
+import { act, screen, within } from '@testing-library/react-native';
 
 import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
@@ -92,5 +92,14 @@ describe('CenterCard', () => {
     const vector = screen.getByTestId('center-vector');
     expect(vector.props.className).not.toContain('text-text-muted');
     expect(vector).toHaveStyle({ textShadowRadius: 3 });
+  });
+
+  it('says FROM ME (MAN) when measuring from a manual position, and FROM OP still wins in OP mode', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    usePresence.getState().setSelfPosition({ position: DC, accuracyM: null, timestamp: 1, manual: true });
+    await renderWithProviders(<CenterCard />);
+    expect(screen.getByTestId('center-vector')).toHaveTextContent(/ FROM ME \(MAN\)$/);
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: CENTER }));
+    expect(screen.getByTestId('center-vector')).toHaveTextContent(/ FROM OP$/);
   });
 });

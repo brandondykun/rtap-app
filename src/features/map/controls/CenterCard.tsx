@@ -19,7 +19,8 @@ import { glassHalo } from '@/components/ui/glass';
 export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }) {
   const { colors } = useTheme();
   const center = useInteraction((s) => s.cameraCenter);
-  const { from, isOp } = useReadoutOrigin();
+  const { from, isOp, isManual } = useReadoutOrigin();
+  const who = isOp ? 'the OP' : isManual ? 'you (manual position)' : 'you';
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
@@ -44,11 +45,11 @@ export function CenterCard({ onHeight }: { onHeight?: (height: number) => void }
       <View className="mt-0.5">
         <OutlinedText
           testID="center-vector"
-          accessibilityLabel={`Distance from ${isOp ? 'the OP' : 'you'} ${r.distance}, direction ${r.bearing} ${r.ref}`}
+          accessibilityLabel={`Distance from ${who} ${r.distance}, direction ${r.bearing} ${r.ref}`}
           color={colors.text}
           style={glassHalo(colors)}
           className="font-mono text-xs">
-          {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : ''}`}
+          {`DIST ${r.distance} · DIR ${r.bearing}${isOp ? ' FROM OP' : isManual ? ' FROM ME (MAN)' : ''}`}
         </OutlinedText>
       </View>
     </View>
