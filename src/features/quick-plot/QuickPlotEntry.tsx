@@ -60,7 +60,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       accessibilityState={{ disabled: !valid }}
       disabled={!valid}
       onPress={plot}
-      className={`active:opacity-60 h-12 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-40'}`}>
+      className={`active:opacity-60 h-12 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${landscape ? 'ml-2 px-4' : ''} ${valid ? '' : 'opacity-70'}`}>
       {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
       <CrosshairGlyph size={20} color={colors['on-accent']} dotColor={colors['on-accent']} />
       <Text className="text-lg font-bold text-on-accent">Plot</Text>

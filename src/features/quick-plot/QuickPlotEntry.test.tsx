@@ -125,4 +125,17 @@ describe('QuickPlotEntry', () => {
     await renderWithProviders(<QuickPlotEntry landscape />);
     expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
   });
+
+  it('dims Plot only lightly while the grid is invalid, like Set in MY POSITION', async () => {
+    useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    const plot = () => screen.getByLabelText('Plot');
+    expect(plot()).toBeDisabled();
+    expect(plot().props.className).toContain('opacity-70');
+    expect(plot().props.className).not.toMatch(/(^|\s)opacity-40\b/);
+    const g = mgrsFieldsFor(T);
+    await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
+    await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
+    expect(plot().props.className).not.toMatch(/(^|\s)opacity-\d/);
+  });
 });
