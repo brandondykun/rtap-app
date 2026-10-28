@@ -21,9 +21,9 @@ export const SEGMENTED_BORDER = 1;
 export const SEGMENTED_PAD = 4;
 /**
  * The highlight's corner. Strictly concentric is what is left inside the border and padding (7 pt), but under its
- * 2 pt accent border that reads too square, so it is 2 pt rounder to look concentric.
+ * 2 pt accent border that reads too square, so it is 1 pt rounder to look concentric.
  */
-export const SEGMENTED_HIGHLIGHT_RADIUS = SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 2;
+export const SEGMENTED_HIGHLIGHT_RADIUS = SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 1;
 
 /**
  * One-of-N control. Options with an icon show only the icon; the label is their accessible name. A disabled option is greyed out.

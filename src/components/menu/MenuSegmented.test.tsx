@@ -92,7 +92,7 @@ describe('MenuSegmented', () => {
     expect(style.height).toBeUndefined();
     // Outer corner less the border and padding is 7 pt, which reads too square under the 2 pt accent border: optically rounder.
     expect(style.borderRadius).toBe(SEGMENTED_HIGHLIGHT_RADIUS);
-    expect(SEGMENTED_HIGHLIGHT_RADIUS).toBe(SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 2);
+    expect(SEGMENTED_HIGHLIGHT_RADIUS).toBe(SEGMENTED_RADIUS - SEGMENTED_BORDER - SEGMENTED_PAD + 1);
     expect(flat(screen.getByTestId('segmented-control').props.style)).toMatchObject({ borderRadius: SEGMENTED_RADIUS, borderWidth: SEGMENTED_BORDER, padding: SEGMENTED_PAD });
   });
 });
