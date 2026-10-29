@@ -5,9 +5,9 @@ import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { Icon } from '@/components/ui/Icon';
 import { OutlinedText } from '@/components/ui/OutlinedText';
 import { formatLength } from '@/features/location/gps-format';
-import type { LatLon } from '@/lib/geo/types';
+import type { AngleUnit, LatLon } from '@/lib/geo/types';
 import { useInteraction } from '@/stores/interaction';
-import { useSettings } from '@/stores/settings';
+import { type AltitudeUnit, useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { describeReadout, formatCoordinate } from '../interaction/readout';
@@ -91,6 +91,29 @@ function Grid({ testID, color, outline = false, small = false, children }: { tes
   );
 }
 
+/**
+ * Inline, the card is as wide as its content, so a value that gets longer (987 m → 1.24 km) would widen it. The details
+ * are monospaced: an invisible `template` as long as the longest value the detail shows keeps its width fixed.
+ */
+function Reserve({ inline, template, children }: { inline: boolean; template: string; children: ReactNode }) {
+  if (!inline) return children;
+  return (
+    <View className="items-end">
+      {children}
+      <Text testID="detail-reserve" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ height: 0 }} className="font-mono text-xs opacity-0">
+        {template}
+      </Text>
+    </View>
+  );
+}
+
+/** The longest distance the CTR row shows, short of the other side of the world. */
+const DISTANCE_TEMPLATE = '0000 km';
+const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 mils' };
+/** The longest altitude and accuracy (to 9,999 m / 99,999 ft). */
+const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: '0000 m', ft: '00000 ft' };
+const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
+
 function SelfRow(props: SelfProps & { inline: boolean }) {
   const op = useOpPosition();
   return op ? <OpRow inline={props.inline} at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
@@ -143,9 +166,11 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
-            <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
-              {formatLength(shown.altitudeM, unit)}
-            </OutlinedText>
+            <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
+              <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
+                {formatLength(shown.altitudeM, unit)}
+              </OutlinedText>
+            </Reserve>
           ) : null
         }
         bottom={
@@ -158,9 +183,11 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
               Tap to set your location
             </OutlinedText>
           ) : shown ? (
-            <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
-              {`±${formatLength(shown.accuracyM, unit)}`}
-            </OutlinedText>
+            <Reserve inline={inline} template={ACCURACY_TEMPLATE[unit]}>
+              <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
+                {`±${formatLength(shown.accuracyM, unit)}`}
+              </OutlinedText>
+            </Reserve>
           ) : null
         }>
         {shown ? (
@@ -199,15 +226,19 @@ function CenterRow({ inline }: { inline: boolean }) {
               FROM OP
             </OutlinedText>
           ) : null}
-          <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">
-            {r.distance}
-          </OutlinedText>
+          <Reserve inline={inline} template={DISTANCE_TEMPLATE}>
+            <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">
+              {r.distance}
+            </OutlinedText>
+          </Reserve>
         </>
       }
       bottom={
-        <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors.text} style={halo} className="font-mono text-xs">
-          {r.bearing}
-        </OutlinedText>
+        <Reserve inline={inline} template={BEARING_TEMPLATE[angleUnit]}>
+          <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors.text} style={halo} className="font-mono text-xs">
+            {r.bearing}
+          </OutlinedText>
+        </Reserve>
       }>
       <Grid testID="readout-coordinate" outline small={inline}>
         {r.coordinate}

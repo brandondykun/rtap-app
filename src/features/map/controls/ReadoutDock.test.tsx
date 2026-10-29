@@ -86,6 +86,21 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('dock-center').props.className).toContain('min-h-12');
   });
 
+  it('inline keeps a fixed width: each live detail reserves room for its longest value', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
+    const reserves = () => screen.getAllByTestId('detail-reserve', HIDDEN).map((r) => r.props.children);
+    expect(reserves()).toEqual(['0000 km', '000°', '0000 m', '±0000 m']);
+    await screen.unmount();
+    await act(async () => useSettings.setState({ altitudeUnit: 'ft', angleUnit: 'mil' }));
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
+    expect(reserves()).toEqual(['0000 km', '0000 mils', '00000 ft', '±00000 ft']);
+    await screen.unmount();
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.queryAllByTestId('detail-reserve', HIDDEN)).toHaveLength(0);
+  });
+
   it('stacks each row\'s details in portrait', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
