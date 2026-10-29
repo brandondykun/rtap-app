@@ -13,6 +13,10 @@ import { err, ok, type Result } from '@/lib/result';
 import { isValidLatLon, lineGeometry, pointGeometry, polygonGeometry } from './geometry';
 import { circleRing } from './polygon-measure';
 import { findItem, findItemViewState } from './repository';
+import { isValidRange, normalizeRanges, rangeFieldsForSidc, ringRadiusM, type RangeField, type UnitRanges } from './unit-ranges';
+
+const RANGE_FIELDS: readonly RangeField[] = ['threatRangeM', 'horizontalRangeM', 'verticalRangeFt'];
+const allValid = (r: UnitRanges) => RANGE_FIELDS.every((f) => isValidRange(f, r[f]));
 
 export type PlacePointInput = {
   missionId: string;
@@ -22,16 +26,20 @@ export type PlacePointInput = {
   notes?: string | null;
   /** Ground elevation in meters; omitted or null when unknown. */
   elevationM?: number | null;
+  /** Ranges that do not apply to the symbol's unit type are dropped. */
+  ranges?: Partial<UnitRanges>;
 };
 
 export async function placePoint(
   ctx: CommandContext,
   input: PlacePointInput,
-): Promise<Result<{ id: string }, 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'write_failed'>> {
+): Promise<Result<{ id: string }, 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'invalid_range' | 'write_failed'>> {
   if (!isValidLatLon(input.coord)) return err('invalid_coordinate', 'Coordinate is out of range');
   if (!isKnownSidc(input.sidc)) return err('invalid_symbol', `Unknown symbol ${input.sidc}`);
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Name is required');
+  const ranges = normalizeRanges(rangeFieldsForSidc(input.sidc), input.ranges ?? {});
+  if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
   try {
     const item = await ctx.db.write(() =>
       ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
@@ -43,6 +51,9 @@ export async function placePoint(
         i.notes = input.notes ?? null;
         i.style = null;
         i.elevationM = input.elevationM ?? null;
+        i.threatRangeM = ranges.threatRangeM;
+        i.horizontalRangeM = ranges.horizontalRangeM;
+        i.verticalRangeFt = ranges.verticalRangeFt;
         i.createdBy = ctx.actorId();
         i.updatedBy = ctx.actorId();
       }),
@@ -53,30 +64,61 @@ export async function placePoint(
   }
 }
 
-/** `elevationM` replaces the stored elevation (null: unknown); left out, the stored one stays. */
-export type UpdateItemPatch = { name?: string; notes?: string | null; sidc?: string; coord?: LatLon; elevationM?: number | null };
+/**
+ * `elevationM` replaces the stored elevation (null: unknown); left out, the stored one stays.
+ * `ranges` merges field by field over the stored ranges (null clears one), then drops those the final symbol does not use.
+ */
+export type UpdateItemPatch = {
+  name?: string;
+  notes?: string | null;
+  sidc?: string;
+  coord?: LatLon;
+  elevationM?: number | null;
+  ranges?: Partial<UnitRanges>;
+};
 
 export async function updateItem(
   ctx: CommandContext,
   id: string,
   patch: UpdateItemPatch,
-): Promise<Result<void, 'not_found' | 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'write_failed'>> {
+): Promise<Result<void, 'not_found' | 'invalid_coordinate' | 'invalid_name' | 'invalid_symbol' | 'invalid_range' | 'write_failed'>> {
   if (patch.coord && !isValidLatLon(patch.coord)) return err('invalid_coordinate', 'Coordinate is out of range');
   if (patch.sidc !== undefined && !isKnownSidc(patch.sidc)) return err('invalid_symbol', `Unknown symbol ${patch.sidc}`);
   if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
   const item = await findItem(ctx.db, id);
   if (!item) return err('not_found', `No item ${id}`);
+  const sidc = patch.sidc ?? item.sidc;
+  const stored: UnitRanges = { threatRangeM: item.threatRangeM ?? null, horizontalRangeM: item.horizontalRangeM ?? null, verticalRangeFt: item.verticalRangeFt ?? null };
+  const merged = { ...stored };
+  for (const f of RANGE_FIELDS) {
+    const v = patch.ranges?.[f];
+    if (v !== undefined) merged[f] = v;
+  }
+  const ranges = normalizeRanges(rangeFieldsForSidc(sidc), merged);
+  if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
   try {
-    await ctx.db.write(() =>
-      item.update((i) => {
+    await ctx.db.write(async () => {
+      await item.update((i) => {
         if (patch.name !== undefined) i.name = patch.name.trim();
         if (patch.notes !== undefined) i.notes = patch.notes;
         if (patch.sidc !== undefined) i.sidc = patch.sidc;
         if (patch.coord) i.geometry = pointGeometry(patch.coord);
         if (patch.elevationM !== undefined) i.elevationM = patch.elevationM;
+        i.threatRangeM = ranges.threatRangeM;
+        i.horizontalRangeM = ranges.horizontalRangeM;
+        i.verticalRangeFt = ranges.verticalRangeFt;
         i.updatedBy = ctx.actorId();
-      }),
-    );
+      });
+      // A ring with no distance cannot be drawn, so it goes back to off.
+      if (ringRadiusM({ sidc, ...ranges }) === null) {
+        const view = await findItemViewState(ctx.db, id);
+        if (view?.showRing === true) {
+          await view.update((s) => {
+            s.showRing = false;
+          });
+        }
+      }
+    });
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -164,6 +206,47 @@ export async function setItemsHidden(ctx: CommandContext, ids: readonly string[]
 /** Sets per-device visibility (local-only view state). Showing an item with no view state is a no-op. */
 export async function setItemHidden(ctx: CommandContext, id: string, hidden: boolean): Promise<Result<void, 'write_failed'>> {
   return setItemsHidden(ctx, [id], hidden);
+}
+
+/** Sets whether this device shows items' range rings, in one write; idempotent. Turning a ring off with no view state is a no-op. */
+export async function setItemsShowRing(ctx: CommandContext, ids: readonly string[], show: boolean): Promise<Result<void, 'write_failed'>> {
+  if (ids.length === 0) return ok(undefined);
+  try {
+    await ctx.db.write(async () => {
+      const collection = ctx.db.get<ItemViewState>(Tables.itemViewState);
+      const existing = await collection.query(Q.where('map_item_id', Q.oneOf([...ids]))).fetch();
+      const byItem = new Map(existing.map((v) => [v.mapItemId, v]));
+      const writes: ItemViewState[] = [];
+      for (const id of new Set(ids)) {
+        const view = byItem.get(id);
+        if (view) {
+          if (view.showRing !== show) {
+            writes.push(
+              view.prepareUpdate((s) => {
+                s.showRing = show;
+              }),
+            );
+          }
+        } else if (show) {
+          writes.push(
+            collection.prepareCreate((s) => {
+              s.mapItemId = id;
+              s.hidden = false;
+              s.showRing = true;
+            }),
+          );
+        }
+      }
+      if (writes.length > 0) await ctx.db.batch(writes);
+    });
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
+}
+
+export async function setItemShowRing(ctx: CommandContext, id: string, show: boolean): Promise<Result<void, 'write_failed'>> {
+  return setItemsShowRing(ctx, [id], show);
 }
 
 export type PlaceLineInput = { missionId: string; points: LatLon[]; lineType: LineType; name: string; notes?: string | null };

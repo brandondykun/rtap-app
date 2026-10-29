@@ -1,5 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 
+import { composeSidc } from '@/features/symbology/presets';
 import type { MapItem } from '@/lib/db/models/MapItem';
 import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
@@ -10,7 +11,9 @@ import {
   placePoint,
   placePolygon,
   setItemHidden,
+  setItemShowRing,
   setItemsHidden,
+  setItemsShowRing,
   toggleItemVisibility,
   updateItem,
   updateLine,
@@ -24,6 +27,7 @@ import {
   observeItem,
   observeMissionItems,
   observeMissionSidcs,
+  observeRingItemIds,
   suggestName,
 } from './repository';
 
@@ -357,5 +361,103 @@ describe('observeMissionSidcs', () => {
     expect(emitted.at(-1)).toEqual([FRIEND_ARMOR_SIDC, HOSTILE_INF].sort());
     expect(emitted).toHaveLength(2);
     sub.unsubscribe();
+  });
+});
+
+describe('unit ranges and range rings', () => {
+  const ARTY = composeSidc('hostile', 'artillery');
+  const AD = composeSidc('hostile', 'air-defense');
+  const INF = composeSidc('hostile', 'infantry');
+  const rings = (ctx: ReturnType<typeof makeTestContext>) => firstValueFrom(observeRingItemIds(ctx.db));
+
+  async function place(ctx: ReturnType<typeof makeTestContext>, sidc: string, ranges = {}) {
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc, name: 'U', ranges });
+    if (!r.ok) throw new Error(r.error);
+    return r.value.id;
+  }
+  const snap = async (ctx: ReturnType<typeof makeTestContext>, id: string) => (await firstValueFrom(observeItem(ctx.db, id)))!;
+
+  it('places an artillery unit with a threat ring and drops ranges that do not apply', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, ARTY, { threatRangeM: 18000, verticalRangeFt: 9 });
+    expect(await snap(ctx, id)).toMatchObject({ threatRangeM: 18000, horizontalRangeM: null, verticalRangeFt: null });
+  });
+
+  it('rejects an out-of-range value', async () => {
+    const ctx = makeTestContext();
+    expect(await placePoint(ctx, { missionId: 'm1', coord: at, sidc: ARTY, name: 'U', ranges: { threatRangeM: 500_001 } })).toMatchObject({ ok: false, error: 'invalid_range' });
+    expect(await placePoint(ctx, { missionId: 'm1', coord: at, sidc: AD, name: 'U', ranges: { verticalRangeFt: 100_001 } })).toMatchObject({ ok: false, error: 'invalid_range' });
+  });
+
+  it('ring visibility is off by default and set per item and in bulk', async () => {
+    const ctx = makeTestContext();
+    const a = await place(ctx, ARTY, { threatRangeM: 1000 });
+    const b = await place(ctx, ARTY, { threatRangeM: 2000 });
+    expect(await rings(ctx)).toEqual([]);
+    await setItemShowRing(ctx, a, true);
+    expect(await rings(ctx)).toEqual([a]);
+    await setItemsShowRing(ctx, [a, b], false);
+    expect(await rings(ctx)).toEqual([]);
+    await setItemsShowRing(ctx, [a, b], true);
+    await setItemsHidden(ctx, [a, b], true);
+    expect((await rings(ctx)).sort()).toEqual([a, b].sort());
+    expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a, b].sort());
+    await setItemsHidden(ctx, [a, b], false);
+    expect((await rings(ctx)).sort()).toEqual([a, b].sort());
+  });
+
+  it('hiding a ring with no view state row is a no-op', async () => {
+    const ctx = makeTestContext();
+    const a = await place(ctx, ARTY, { threatRangeM: 1000 });
+    await setItemShowRing(ctx, a, false);
+    expect(await ctx.db.get(Tables.itemViewState).query().fetchCount()).toBe(0);
+  });
+
+  it('changing type away from artillery clears the range and turns the ring off', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, ARTY, { threatRangeM: 18000 });
+    await setItemShowRing(ctx, id, true);
+    expect(await rings(ctx)).toEqual([id]);
+    expect(await updateItem(ctx, id, { sidc: INF })).toEqual({ ok: true, value: undefined });
+    expect((await snap(ctx, id)).threatRangeM).toBeNull();
+    expect(await rings(ctx)).toEqual([]);
+    await updateItem(ctx, id, { sidc: ARTY, ranges: { threatRangeM: 100 } });
+    expect((await snap(ctx, id)).threatRangeM).toBe(100);
+    expect(await rings(ctx)).toEqual([]);
+  });
+
+  it('artillery to air defense without a horizontal range turns the ring off', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, ARTY, { threatRangeM: 18000 });
+    await setItemShowRing(ctx, id, true);
+    await updateItem(ctx, id, { sidc: AD });
+    expect(await rings(ctx)).toEqual([]);
+  });
+
+  it('emptying the threat ring turns the ring off', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, ARTY, { threatRangeM: 18000 });
+    await setItemShowRing(ctx, id, true);
+    await updateItem(ctx, id, { ranges: { threatRangeM: null } });
+    expect((await snap(ctx, id)).threatRangeM).toBeNull();
+    expect(await rings(ctx)).toEqual([]);
+  });
+
+  it('merges a partial ranges patch over the stored ranges and keeps the ring on', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, AD, { horizontalRangeM: 5000, verticalRangeFt: 20000 });
+    await setItemShowRing(ctx, id, true);
+    await updateItem(ctx, id, { ranges: { verticalRangeFt: 30000 } });
+    expect(await snap(ctx, id)).toMatchObject({ horizontalRangeM: 5000, verticalRangeFt: 30000 });
+    expect(await rings(ctx)).toEqual([id]);
+    expect(await updateItem(ctx, id, { ranges: { horizontalRangeM: 0 } })).toMatchObject({ ok: false, error: 'invalid_range' });
+  });
+
+  it('deleting a unit with its ring on leaves no ring id', async () => {
+    const ctx = makeTestContext();
+    const id = await place(ctx, ARTY, { threatRangeM: 18000 });
+    await setItemShowRing(ctx, id, true);
+    await deleteItem(ctx, id);
+    expect(await rings(ctx)).toEqual([]);
   });
 });

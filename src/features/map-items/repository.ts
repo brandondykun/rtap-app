@@ -84,6 +84,14 @@ export function observeHiddenItemIds(db: Database): Observable<string[]> {
     .pipe(map((rows) => rows.map((r) => r.mapItemId)));
 }
 
+export function observeRingItemIds(db: Database): Observable<string[]> {
+  return db
+    .get<ItemViewState>(Tables.itemViewState)
+    .query(Q.where('show_ring', true))
+    .observeWithColumns(['show_ring'])
+    .pipe(map((rows) => rows.map((r) => r.mapItemId)));
+}
+
 export async function getMissionItemNames(db: Database, missionId: string): Promise<string[]> {
   return (await missionQuery(db, missionId).fetch()).map((i) => i.name);
 }
