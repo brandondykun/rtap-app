@@ -50,7 +50,8 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 /**
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
  * - portrait: zoom (shown per Settings) on the right, over the full-width dock (CTR over ME; tap ME to recenter);
- * - landscape: zoom over the same dock bottom right, as wide as its content, each row's details on one line.
+ * - landscape: zoom over the same dock bottom right, as wide as its content, each row's details on one line (or none,
+ *   with the Minimal grids in landscape setting).
  * An action bar takes the dock's place while it is up (centered in portrait; in landscape under the CTR row, which stays);
  * in portrait it can float centered over the dock instead.
  */
@@ -59,6 +60,7 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
   const right = insets.right + EDGE;
   const { width, height } = useWindowDimensions();
   const showZoom = useSettings((s) => s.showZoomButtons);
+  const minimal = useSettings((s) => s.minimalLandscapeGrids);
   const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
@@ -115,13 +117,13 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
   const card = bar ? (
     <SelfCardSlot>
       <View pointerEvents="box-none" className="items-end gap-3">
-        {showCenter ? <ReadoutDock inline showCenter showSelf={false} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
+        {showCenter ? <ReadoutDock inline minimal={minimal} showCenter showSelf={false} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
         {bar}
       </View>
     </SelfCardSlot>
   ) : room < dockSize ? null : (
     <SelfCardSlot onHeight={setDockHeight}>
-      <ReadoutDock inline showCenter={showCenter} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
+      <ReadoutDock inline minimal={minimal} showCenter={showCenter} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
     </SelfCardSlot>
   );
   const below = card ? dockSize + STACK_GAP : 0;

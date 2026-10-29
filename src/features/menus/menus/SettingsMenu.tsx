@@ -128,6 +128,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
+  const minimalLandscapeGrids = useSettings((s) => s.minimalLandscapeGrids);
+  const setMinimalLandscapeGrids = useSettings((s) => s.setMinimalLandscapeGrids);
   const showToolbarText = useSettings((s) => s.showToolbarText);
   const setShowToolbarText = useSettings((s) => s.setShowToolbarText);
   const showMgrsGrid = useSettings((s) => s.showMgrsGrid);
@@ -301,6 +303,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuSection label="On screen">
           <MenuToggle label="Show zoom buttons" value={showZoomButtons} onValueChange={setShowZoomButtons} />
           <MenuToggle label="Show center grid" value={showCenterGrid} onValueChange={setShowCenterGrid} />
+          <MenuToggle label="Minimal grids in landscape" value={minimalLandscapeGrids} onValueChange={setMinimalLandscapeGrids} />
           <MenuToggle label="Show toolbar text" value={showToolbarText} onValueChange={setShowToolbarText} />
         </MenuSection>
         <MenuSection label="Panel background">

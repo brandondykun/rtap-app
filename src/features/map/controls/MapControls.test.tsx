@@ -190,6 +190,17 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
   });
 
+  it('with Minimal grids in landscape, drops the details in landscape only', async () => {
+    useSettings.setState({ minimalLandscapeGrids: true });
+    useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 0 });
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape showCenter />);
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
+    expect(screen.queryByTestId('dock-center-details')).toBeNull();
+    await screen.unmount();
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} showCenter />);
+    expect(screen.getByTestId('dock-center-details')).toBeTruthy();
+  });
+
   it('shows an action bar in place of the dock in portrait', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} showCenter />);
     expect(screen.queryByTestId('readout-dock')).toBeNull();

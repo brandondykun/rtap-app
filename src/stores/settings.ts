@@ -32,6 +32,8 @@ type SettingsValues = {
   showZoomButtons: boolean;
   /** The crosshair (map center) readout card. */
   showCenterGrid: boolean;
+  /** Landscape: the readout shows only the center grid and yours, no distance, bearing, altitude or accuracy. */
+  minimalLandscapeGrids: boolean;
   /** Labels under the toolbar icons; off leaves icons only. */
   showToolbarText: boolean;
   /** MGRS grid lines over the map. */
@@ -64,6 +66,7 @@ type SettingsActions = {
   setShowLineDistances: (show: boolean) => void;
   setShowZoomButtons: (show: boolean) => void;
   setShowCenterGrid: (show: boolean) => void;
+  setMinimalLandscapeGrids: (on: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
   setShowMgrsGrid: (show: boolean) => void;
   setShowGridLabels: (show: boolean) => void;
@@ -95,6 +98,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showLineDistances: true,
   showZoomButtons: true,
   showCenterGrid: true,
+  minimalLandscapeGrids: false,
   showToolbarText: true,
   showMgrsGrid: false,
   showGridLabels: true,
@@ -141,6 +145,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
     showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
+    minimalLandscapeGrids: typeof p.minimalLandscapeGrids === 'boolean' ? p.minimalLandscapeGrids : current.minimalLandscapeGrids,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
     showMgrsGrid: typeof p.showMgrsGrid === 'boolean' ? p.showMgrsGrid : current.showMgrsGrid,
     showGridLabels: typeof p.showGridLabels === 'boolean' ? p.showGridLabels : current.showGridLabels,
@@ -168,6 +173,7 @@ export const useSettings = create<SettingsState>()(
       setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
       setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
+      setMinimalLandscapeGrids: (minimalLandscapeGrids) => set({ minimalLandscapeGrids }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
       setShowMgrsGrid: (showMgrsGrid) => set({ showMgrsGrid }),
       setShowGridLabels: (showGridLabels) => set({ showGridLabels }),
@@ -196,7 +202,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -206,6 +212,7 @@ export const useSettings = create<SettingsState>()(
         showLineDistances,
         showZoomButtons,
         showCenterGrid,
+        minimalLandscapeGrids,
         showToolbarText,
         showMgrsGrid,
         showGridLabels,

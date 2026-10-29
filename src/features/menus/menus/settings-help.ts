@@ -48,6 +48,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   },
   { name: 'Show zoom buttons', help: 'The + and − buttons. Pinch to zoom works either way.' },
   { name: 'Show center grid', help: 'The CTR readout of the grid under the crosshair.' },
+  { name: 'Minimal grids in landscape', help: 'In landscape, the readout shows only the CTR grid and yours, without distance, bearing, altitude or accuracy.' },
   { name: 'Show toolbar text', help: 'The names under the toolbar icons.' },
   {
     name: 'Panel background',

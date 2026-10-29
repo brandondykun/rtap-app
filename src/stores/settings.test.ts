@@ -79,6 +79,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
   });
 
+  it('sets and persists minimal landscape grids (off by default)', () => {
+    expect(useSettings.getState().minimalLandscapeGrids).toBe(false);
+    useSettings.getState().setMinimalLandscapeGrids(true);
+    expect(useSettings.getState().minimalLandscapeGrids).toBe(true);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ minimalLandscapeGrids: true });
+  });
+
   it('sets and persists the center grid (shown by default)', () => {
     expect(useSettings.getState().showCenterGrid).toBe(true);
     useSettings.getState().setShowCenterGrid(false);

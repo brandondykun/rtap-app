@@ -210,6 +210,14 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Show zoom buttons').props.value).toBe(false);
   });
 
+  it('turns minimal landscape grids on and off (off by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Minimal grids in landscape').props.value).toBe(false);
+    await fireEvent(screen.getByLabelText('Minimal grids in landscape'), 'valueChange', true);
+    expect(useSettings.getState().minimalLandscapeGrids).toBe(true);
+    expect(screen.getByLabelText('Minimal grids in landscape').props.value).toBe(true);
+  });
+
   it('shows or hides the center grid (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show center grid').props.value).toBe(true);

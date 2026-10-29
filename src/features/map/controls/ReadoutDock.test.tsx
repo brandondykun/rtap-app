@@ -101,6 +101,17 @@ describe('ReadoutDock', () => {
     expect(screen.queryAllByTestId('detail-reserve', HIDDEN)).toHaveLength(0);
   });
 
+  it('minimal shows only each row\'s lead and grid', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline minimal />);
+    expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
+    expect(screen.getByTestId('gps-position')).toHaveTextContent(/^18S UJ \d{5} \d{5}$/);
+    for (const id of ['dock-center-details', 'dock-self-row-details', 'readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
+  });
+
   it('stacks each row\'s details in portrait', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);

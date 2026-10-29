@@ -22,24 +22,26 @@ import { glassHalo } from '@/components/ui/glass';
  * on you). The CTR row follows `showCenter`; `showSelf` false leaves only CTR (landscape, over an action bar). In OP mode
  * the ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
  * - portrait: docked full width at the bottom, each row's details stacked on the right;
- * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid.
+ * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid;
+ *   `minimal` drops the details, leaving only each row's lead and grid.
  */
 export function ReadoutDock({
   showCenter,
   showSelf = true,
   inline = false,
+  minimal = false,
   maxWidth,
   following,
   disabled,
   onRecenter,
   onSetLocation,
-}: { showCenter: boolean; showSelf?: boolean; inline?: boolean; maxWidth?: number } & SelfProps) {
+}: { showCenter: boolean; showSelf?: boolean; inline?: boolean; minimal?: boolean; maxWidth?: number } & SelfProps) {
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
     <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={inline ? 'rounded-xl bg-surface-glass px-2' : 'mx-2 rounded-2xl bg-surface-glass px-3'}>
-      {showCenter ? <CenterRow inline={inline} /> : null}
+      {showCenter ? <CenterRow inline={inline} minimal={minimal} /> : null}
       {showCenter && showSelf ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
-      {showSelf ? <SelfRow inline={inline} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
+      {showSelf ? <SelfRow inline={inline} minimal={minimal} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
     </View>
   );
 }
@@ -53,19 +55,19 @@ type SelfProps = {
   onSetLocation: () => void;
 };
 
-type RowProps = { testID: string; inline: boolean; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
+type RowProps = { testID: string; inline: boolean; minimal?: boolean; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
 
 /**
  * Lead, grid, then the details on the right: two small lines, or one line when `inline`. The lead has a fixed width so
  * both grids line up; inline, the grid grows to the widest row so the details line up too, and everything is tighter
  * to take as little of the map as it can.
  */
-function Row({ testID, inline, lead, children, top, bottom }: RowProps) {
+function Row({ testID, inline, minimal = false, lead, children, top, bottom }: RowProps) {
   return (
     <View testID={testID} className={inline ? 'flex-row items-center gap-1.5 py-1' : 'min-h-12 flex-row items-center gap-2 py-1.5'}>
       <View className={inline ? 'w-10' : 'w-12'}>{lead}</View>
       <View className={inline ? 'shrink grow' : 'flex-1'}>{children}</View>
-      {top || bottom ? (
+      {!minimal && (top || bottom) ? (
         <View testID={`${testID}-details`} className={inline ? 'ml-1 flex-row items-center gap-1.5' : 'items-end'}>
           {top}
           {bottom}
@@ -114,12 +116,12 @@ const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 m
 const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: '0000 m', ft: '00000 ft' };
 const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
 
-function SelfRow(props: SelfProps & { inline: boolean }) {
+function SelfRow(props: SelfProps & { inline: boolean; minimal: boolean }) {
   const op = useOpPosition();
-  return op ? <OpRow inline={props.inline} at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
+  return op ? <OpRow inline={props.inline} minimal={props.minimal} at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
 }
 
-function OpRow({ inline, at, elevationM }: { inline: boolean; at: LatLon; elevationM: number | null }) {
+function OpRow({ inline, minimal, at, elevationM }: { inline: boolean; minimal: boolean; at: LatLon; elevationM: number | null }) {
   const { colors } = useTheme();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
@@ -128,6 +130,7 @@ function OpRow({ inline, at, elevationM }: { inline: boolean; at: LatLon; elevat
       <Row
         testID="dock-self-row"
         inline={inline}
+        minimal={minimal}
         lead={<CardLead icon={<Icon name="binoculars" size={inline ? 12 : 14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
           <OutlinedText testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} color={colors.text} style={glassHalo(colors)} className="font-mono text-xs">
@@ -142,7 +145,7 @@ function OpRow({ inline, at, elevationM }: { inline: boolean; at: LatLon; elevat
   );
 }
 
-function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfProps & { inline: boolean }) {
+function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation }: SelfProps & { inline: boolean; minimal: boolean }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
   const me = useMeState();
@@ -163,6 +166,7 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
       <Row
         testID="dock-self-row"
         inline={inline}
+        minimal={minimal}
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
@@ -202,7 +206,7 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
   );
 }
 
-function CenterRow({ inline }: { inline: boolean }) {
+function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
   const center = useInteraction((s) => s.cameraCenter);
   const { from, isOp, isManual } = useReadoutOrigin();
   const who = isOp ? 'the OP' : isManual ? 'you (manual position)' : 'you';
@@ -218,6 +222,7 @@ function CenterRow({ inline }: { inline: boolean }) {
     <Row
       testID="dock-center"
       inline={inline}
+      minimal={minimal}
       lead={<CardLead icon={<CrosshairGlyph size={inline ? 12 : 14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
       top={
         <>
