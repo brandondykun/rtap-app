@@ -34,7 +34,7 @@ export function MenuTileButton({
       accessibilityState={{ selected: active, disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`active:opacity-60 flex-1 items-center justify-center gap-1 rounded-xl border px-2 py-3 ${surface} ${disabled ? 'opacity-40' : ''}`}>
+      className={`active:opacity-60 flex-1 items-center justify-center gap-0.5 rounded-xl border px-2 py-1.5 ${surface} ${disabled ? 'opacity-40' : ''}`}>
       <Icon name={icon} size={22} color={iconColor} />
       <Text numberOfLines={1} className={`text-sm font-semibold ${textClass}`}>{label}</Text>
     </Pressable>
