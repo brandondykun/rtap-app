@@ -79,7 +79,7 @@ function Row({ testID, inline, lead, children, top, bottom }: RowProps) {
 function Grid({ testID, color, outline = false, small = false, children }: { testID: string; color?: string; outline?: boolean; small?: boolean; children: string }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
-  const size = small ? 'text-sm' : 'text-lg';
+  const size = small ? 'text-base' : 'text-lg';
   return outline ? (
     <OutlinedText testID={testID} color={color ?? colors.text} style={halo} className={`font-mono-bold ${size} text-text`} adjustsFontSizeToFit numberOfLines={1}>
       {children}

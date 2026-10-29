@@ -77,8 +77,8 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-dock').props.className).toContain('px-2');
     expect(screen.getByTestId('dock-center').props.className).toContain('py-1');
     expect(screen.getByTestId('dock-center').props.className).not.toContain('min-h-12');
-    expect(screen.getByTestId('readout-coordinate').props.className).toContain('text-sm');
-    expect(screen.getByTestId('gps-position').props.className).toContain('text-sm');
+    expect(screen.getByTestId('readout-coordinate').props.className).toContain('text-base');
+    expect(screen.getByTestId('gps-position').props.className).toContain('text-base');
     expect(screen.getByTestId('me-icon')).toHaveStyle({ fontSize: 12 });
     await screen.unmount();
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
