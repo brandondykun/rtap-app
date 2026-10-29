@@ -11,10 +11,8 @@ import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
-import { MapBottomLeft } from './MapBottomLeft';
 import { MapButton } from './MapButton';
 import { ReadoutDock } from './ReadoutDock';
-import { SelfCard } from './SelfCard';
 
 type Props = {
   following: boolean;
@@ -31,7 +29,7 @@ type Props = {
   bar?: ReactNode;
   /** In portrait, float the bar centered over the dock instead of in its place (placing a unit or point). */
   barOverDock?: boolean;
-  /** The center grid: the dock's CTR row in portrait, the center card bottom left in landscape. */
+  /** The center grid: the dock's CTR row (over ME). */
   showCenter?: boolean;
   /** False hides north-up even while the map is rotated (OP mode, where it cannot move the camera). */
   showNorthUp?: boolean;
@@ -39,9 +37,7 @@ type Props = {
   side?: ReactNode;
 };
 
-/** Height of your card before it is first laid out (two lines). */
-const SELF_CARD_HEIGHT = 56;
-/** Height of the portrait dock before it is first laid out: one row, or two with the divider. */
+/** Height of the dock before it is first laid out: one row, or two with the divider. */
 const DOCK_ROW_HEIGHT = 50;
 const DOCK_HEIGHT = 2 * DOCK_ROW_HEIGHT + 1;
 /** Height of a tap-mode bar before it is first laid out (compact buttons plus padding). */
@@ -54,18 +50,18 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
 /**
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
  * - portrait: zoom (shown per Settings) on the right, over the full-width dock (CTR over ME; tap ME to recenter);
- * - landscape: zoom over your card (ME grid over ALT · ACC; tap to recenter) bottom right, the center card bottom left.
- * An action bar takes the dock's or your card's place while it is up (centered in portrait); in portrait it can float centered over the dock instead.
+ * - landscape: zoom over the same dock bottom right, as wide as its content, each row's details on one line.
+ * An action bar takes the dock's place while it is up (centered in portrait; in landscape under the CTR row, which stays);
+ * in portrait it can float centered over the dock instead.
  */
 export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const showZoom = useSettings((s) => s.showZoomButtons);
   const toolbar = useToolbarHeight();
   const bottom = (panel?.side === 'bottom' ? panel.size : insets.bottom) + EDGE;
   // The last measured height, kept while hidden so the room check below cannot flip back and forth.
-  const [cardHeight, setCardHeight] = useState(SELF_CARD_HEIGHT);
   const [dockHeight, setDockHeight] = useState<number | null>(null);
   const [barHeight, setBarHeight] = useState(BAR_HEIGHT);
   // A tall bottom sheet can leave too little room below north-up: the buttons give way first, then the cards.
@@ -112,15 +108,23 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
     );
   }
 
-  // The action bar always shows: it is how the user finishes the mode.
+  // The action bar always shows: it is how the user finishes the mode. The CTR row stays over it (placing needs the grid).
+  // The dock keeps clear of a drawer; past that its grids shrink to fit.
+  const maxWidth = width - right - Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) - EDGE;
+  const dockSize = dockHeight ?? (showCenter ? DOCK_HEIGHT : DOCK_ROW_HEIGHT);
   const card = bar ? (
-    <SelfCardSlot>{bar}</SelfCardSlot>
-  ) : room < cardHeight ? null : (
-    <SelfCardSlot onHeight={setCardHeight}>
-      <SelfCard following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
+    <SelfCardSlot>
+      <View pointerEvents="box-none" className="items-end gap-3">
+        {showCenter ? <ReadoutDock inline showCenter showSelf={false} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
+        {bar}
+      </View>
+    </SelfCardSlot>
+  ) : room < dockSize ? null : (
+    <SelfCardSlot onHeight={setDockHeight}>
+      <ReadoutDock inline showCenter={showCenter} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
     </SelfCardSlot>
   );
-  const below = card ? cardHeight + STACK_GAP : 0;
+  const below = card ? dockSize + STACK_GAP : 0;
   return (
     <>
       {showNorthUp ? <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} /> : null}
@@ -132,7 +136,6 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
         {side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom)}
         {card}
       </View>
-      {showCenter ? <MapBottomLeft panel={panel} /> : null}
     </>
   );
 }

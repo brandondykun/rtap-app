@@ -56,6 +56,35 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-bearing')).toHaveTextContent(/^\d{3}°$/);
   });
 
+  it('inline (landscape): sized to its content, each row\'s details on one line after its grid', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline maxWidth={300} />);
+    const dock = screen.getByTestId('readout-dock');
+    expect(dock.props.className).not.toContain('mx-2');
+    expect(dock).toHaveStyle({ maxWidth: 300 });
+    for (const row of ['dock-center', 'dock-self-row']) {
+      expect(screen.getByTestId(`${row}-details`).props.className).toContain('flex-row');
+    }
+    for (const id of ['readout-range', 'readout-bearing']) expect(screen.getByTestId('dock-center-details')).toContainElement(screen.getByTestId(id));
+    for (const id of ['gps-altitude', 'gps-accuracy']) expect(screen.getByTestId('dock-self-row-details')).toContainElement(screen.getByTestId(id));
+  });
+
+  it('stacks each row\'s details in portrait', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('dock-center-details').props.className).toContain('items-end');
+    expect(screen.getByTestId('dock-center-details').props.className).not.toContain('flex-row');
+  });
+
+  it('can leave the ME row out, keeping only CTR (over an action bar)', async () => {
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter showSelf={false} inline />);
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
+    expect(screen.queryByTestId('dock-self')).toBeNull();
+    expect(screen.queryByTestId('dock-divider')).toBeNull();
+  });
+
   it('gives all the CTR and ME text, and their icons, a crisp dark edge, so they read over snow', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);

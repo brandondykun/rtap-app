@@ -23,7 +23,7 @@ export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean;
   const temp = useQuickPlot((s) => s.temp);
   const clearance = selfCardClearance(useMapChrome((s) => s.selfCard), landscape);
   if (!temp) return null;
-  // Landscape: flush bottom left in the center card's spot (right of a drawer, like MapBottomLeft), beside your card.
+  // Landscape: flush bottom left (right of a drawer), beside the readout dock.
   // Portrait: centered on the screen above your card, as far in from the left as the zoom column keeps it from the right.
   const right = insets.right + EDGE + clearance.right;
   const left = landscape ? Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) + EDGE : insets.left + EDGE + clearance.right;

@@ -116,12 +116,17 @@ describe('MapControls', () => {
     expect(screen.queryByLabelText('Zoom in')).toBeNull();
   });
 
-  it('puts your card bottom right under zoom in landscape, with no GPS toggle', async () => {
+  it('puts the inline dock bottom right under zoom in landscape, with no GPS toggle', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape />);
     expect(screen.queryByLabelText('GPS')).toBeNull();
-    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('gps-readout'));
-    expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: EDGE, right: EDGE });
-    expect(screen.queryByTestId('center-card')).toBeNull();
+    const bottom = screen.getByTestId('map-controls-bottom');
+    expect(bottom).toHaveStyle({ bottom: EDGE, right: EDGE });
+    const [buttons, slot] = bottom.children as { props: { testID?: string } }[];
+    expect(buttons).toContainElement(screen.getByLabelText('Zoom in'));
+    expect(slot.props.testID).toBe('self-card-slot');
+    expect(slot).toContainElement(screen.getByTestId('dock-self'));
+    expect(screen.getByTestId('readout-dock').props.className).not.toContain('mx-2');
+    expect(screen.queryByTestId('dock-center')).toBeNull();
   });
 
   it('keeps the dock while a panel is open, above a bottom sheet', async () => {
@@ -130,7 +135,7 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
     await screen.unmount();
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape />);
-    expect(screen.getByTestId('gps-readout')).toBeTruthy();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
   });
 
   it('docks CTR over ME full width in portrait, under zoom on the right', async () => {
@@ -142,20 +147,21 @@ describe('MapControls', () => {
     expect(slot.props.testID).toBe('self-card-slot');
     expect(slot).toContainElement(screen.getByTestId('dock-self'));
     expect(slot).toContainElement(screen.getByTestId('dock-center'));
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
-    expect(screen.queryByTestId('center-card')).toBeNull();
-    expect(screen.queryByTestId('map-bottom-left')).toBeNull();
+    expect(screen.getByTestId('readout-dock').props.className).toContain('mx-2');
   });
 
-  it('keeps the center card bottom left in landscape', async () => {
-    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape showCenter />);
-    expect(screen.getByTestId('map-controls-bottom')).not.toContainElement(screen.getByTestId('center-card'));
-    expect(screen.getByTestId('map-bottom-left')).toContainElement(screen.getByTestId('center-card'));
+  it('stacks CTR over ME in the bottom right in landscape, kept clear of a drawer', async () => {
+    const { width } = Dimensions.get('window');
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'left', size: 360 }} landscape showCenter />);
+    const dock = screen.getByTestId('readout-dock');
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(dock);
+    expect((dock.children as { props: { testID?: string } }[]).map((c) => c.props.testID)).toEqual(['dock-center', 'dock-divider', 'dock-self']);
+    expect(dock).toHaveStyle({ maxWidth: width - 360 - 2 * EDGE });
   });
 
   it.each([[true], [false]])('leaves the center grid out when it is not shown (landscape=%s)', async (landscape) => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} />);
-    expect(screen.queryByTestId('center-card')).toBeNull();
+    expect(screen.queryByTestId('dock-center')).toBeNull();
     expect(screen.queryByTestId('dock-center')).toBeNull();
   });
 
@@ -184,11 +190,20 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toHaveStyle({ bottom: 320 + EDGE });
   });
 
-  it.each([[true], [false]])('shows an action bar in place of your card or the dock (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} bar={<View testID="bar" />} showCenter />);
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
+  it('shows an action bar in place of the dock in portrait', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} showCenter />);
     expect(screen.queryByTestId('readout-dock')).toBeNull();
     expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+  });
+
+  it('in landscape shows an action bar in place of the ME row, keeping the CTR row over it', async () => {
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} showCenter />);
+    expect(screen.queryByTestId('dock-self')).toBeNull();
+    expect(screen.getByTestId('dock-center')).toBeTruthy();
+    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+    await screen.unmount();
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} />);
+    expect(screen.queryByTestId('readout-dock')).toBeNull();
   });
 
   it('centers a bar that takes the dock place in portrait', async () => {
@@ -207,7 +222,7 @@ describe('MapControls', () => {
     await screen.unmount();
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} barOverDock />);
     expect(screen.queryByTestId('bar-over-dock')).toBeNull();
-    expect(screen.queryByTestId('gps-readout')).toBeNull();
+    expect(screen.queryByTestId('dock-self')).toBeNull();
     expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
   });
 

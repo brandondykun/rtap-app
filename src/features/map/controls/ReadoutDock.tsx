@@ -18,17 +18,28 @@ import { SET_LOCATION_MESSAGE, useMeState } from './use-me-state';
 import { glassHalo } from '@/components/ui/glass';
 
 /**
- * Portrait only, docked full width at the bottom: CTR (the crosshair's grid, distance over bearing from you) over ME
- * (your grid, altitude over accuracy; tap it to recenter on you). The CTR row follows `showCenter`. In OP mode the
- * ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
+ * CTR (the crosshair's grid, distance and bearing from you) over ME (your grid, altitude and accuracy; tap it to recenter
+ * on you). The CTR row follows `showCenter`; `showSelf` false leaves only CTR (landscape, over an action bar). In OP mode
+ * the ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
+ * - portrait: docked full width at the bottom, each row's details stacked on the right;
+ * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid.
  */
-export function ReadoutDock({ showCenter, following, disabled, onRecenter, onSetLocation }: { showCenter: boolean } & SelfProps) {
+export function ReadoutDock({
+  showCenter,
+  showSelf = true,
+  inline = false,
+  maxWidth,
+  following,
+  disabled,
+  onRecenter,
+  onSetLocation,
+}: { showCenter: boolean; showSelf?: boolean; inline?: boolean; maxWidth?: number } & SelfProps) {
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
-    <View testID="readout-dock" className="mx-2 rounded-2xl bg-surface-glass px-3">
-      {showCenter ? <CenterRow /> : null}
-      {showCenter ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
-      <SelfRow following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} />
+    <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={`rounded-2xl bg-surface-glass px-3 ${inline ? '' : 'mx-2'}`}>
+      {showCenter ? <CenterRow inline={inline} /> : null}
+      {showCenter && showSelf ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
+      {showSelf ? <SelfRow inline={inline} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
     </View>
   );
 }
@@ -42,16 +53,19 @@ type SelfProps = {
   onSetLocation: () => void;
 };
 
-type RowProps = { testID: string; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
+type RowProps = { testID: string; inline: boolean; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
 
-/** Lead, grid, then two small lines on the right; the lead has a fixed width so both grids line up. */
-function Row({ testID, lead, children, top, bottom }: RowProps) {
+/**
+ * Lead, grid, then the details on the right: two small lines, or one line when `inline`. The lead has a fixed width so
+ * both grids line up; inline, the grid grows to the widest row so the details line up too.
+ */
+function Row({ testID, inline, lead, children, top, bottom }: RowProps) {
   return (
     <View testID={testID} className="min-h-12 flex-row items-center gap-2 py-1.5">
       <View className="w-12">{lead}</View>
-      <View className="flex-1">{children}</View>
+      <View className={inline ? 'shrink grow' : 'flex-1'}>{children}</View>
       {top || bottom ? (
-        <View className="items-end">
+        <View testID={`${testID}-details`} className={inline ? 'ml-1 flex-row items-center gap-2' : 'items-end'}>
           {top}
           {bottom}
         </View>
@@ -75,12 +89,12 @@ function Grid({ testID, color, outline = false, children }: { testID: string; co
   );
 }
 
-function SelfRow(props: SelfProps) {
+function SelfRow(props: SelfProps & { inline: boolean }) {
   const op = useOpPosition();
-  return op ? <OpRow at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
+  return op ? <OpRow inline={props.inline} at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
 }
 
-function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
+function OpRow({ inline, at, elevationM }: { inline: boolean; at: LatLon; elevationM: number | null }) {
   const { colors } = useTheme();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
@@ -88,6 +102,7 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
     <View testID="dock-self" accessibilityLabel="OP position">
       <Row
         testID="dock-self-row"
+        inline={inline}
         lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
           <OutlinedText testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} color={colors.text} style={glassHalo(colors)} className="font-mono text-xs">
@@ -102,7 +117,7 @@ function OpRow({ at, elevationM }: { at: LatLon; elevationM: number | null }) {
   );
 }
 
-function MeRow({ following, disabled, onRecenter, onSetLocation }: SelfProps) {
+function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfProps & { inline: boolean }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
   const me = useMeState();
@@ -122,6 +137,7 @@ function MeRow({ following, disabled, onRecenter, onSetLocation }: SelfProps) {
       className="active:opacity-60">
       <Row
         testID="dock-self-row"
+        inline={inline}
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
@@ -157,7 +173,7 @@ function MeRow({ following, disabled, onRecenter, onSetLocation }: SelfProps) {
   );
 }
 
-function CenterRow() {
+function CenterRow({ inline }: { inline: boolean }) {
   const center = useInteraction((s) => s.cameraCenter);
   const { from, isOp, isManual } = useReadoutOrigin();
   const who = isOp ? 'the OP' : isManual ? 'you (manual position)' : 'you';
@@ -172,6 +188,7 @@ function CenterRow() {
   return (
     <Row
       testID="dock-center"
+      inline={inline}
       lead={<CardLead icon={<CrosshairGlyph size={14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
       top={
         <>

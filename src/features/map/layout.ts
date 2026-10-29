@@ -124,7 +124,7 @@ export function selfCardClearance(card: { width: number; height: number }, besid
 
 /**
  * In landscape with a drawer open (drawing a line or polygon) there is no room for both an action bar and
- * the center card: the center card hides while the bar is up.
+ * the dock's CTR row: the row hides while the bar is up.
  */
 export function barTakesReadoutSpot(landscape: boolean, panel: PanelFrame | null, hasBar: boolean): boolean {
   return landscape && panel !== null && hasBar;
