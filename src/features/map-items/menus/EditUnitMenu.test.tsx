@@ -15,7 +15,7 @@ import { renderWithProviders } from '@/test-utils/render';
 
 import { deleteItem, placePoint } from '../commands';
 import { pointCoord } from '../geometry';
-import { findItem, observeHiddenItemIds } from '../repository';
+import { findItem, observeHiddenItemIds, observeRingItemIds } from '../repository';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
@@ -50,7 +50,7 @@ describe('EditUnitMenu', () => {
     expect(screen.getByLabelText('Northing').props.editable).toBe(false);
     expect(screen.getByLabelText('Hostile')).toBeDisabled();
     expect(screen.getByLabelText('Center')).toBeDisabled();
-    expect(screen.getByLabelText('Hidden on map')).toBeDisabled();
+    expect(screen.getByLabelText('Hidden on map')).toBeEnabled();
     expect(screen.getByLabelText('Delete unit')).toBeDisabled();
     expect(useDraft.getState().locked).toBe(true);
   });
@@ -148,6 +148,41 @@ describe('EditUnitMenu', () => {
     await fireEvent(screen.getByLabelText('Hidden on map'), 'valueChange', true);
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([id]));
     expect(screen.getByTestId('menu-panel')).toBeTruthy();
+  });
+
+  it('hides the item while the form is still locked', async () => {
+    const { ctx, id } = await openEditor();
+    expect(useDraft.getState().locked).toBe(true);
+    await fireEvent(screen.getByLabelText('Hidden on map'), 'valueChange', true);
+    await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([id]));
+  });
+
+  it('shows a ring switch for a unit with a range, and it works while locked', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 12000 } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('HOS-3');
+    expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('12000');
+    expect(screen.getByLabelText('Threat ring').props.editable).toBe(false);
+    const toggle = await screen.findByLabelText('Show ring on map');
+    expect(toggle.props.value).toBe(false);
+    expect(useDraft.getState().locked).toBe(true);
+    await fireEvent(toggle, 'valueChange', true);
+    await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toEqual([r.value.id]));
+    await waitFor(() => expect(screen.getByLabelText('Show ring on map').props.value).toBe(true));
+  });
+
+  it('shows no ring switch for a unit without a range', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('HOS-3');
+    expect(screen.getByLabelText('Threat ring')).toBeTruthy();
+    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
   });
 
   it('deletes after a second tap, without a "missing" message', async () => {

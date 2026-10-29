@@ -42,6 +42,36 @@ async function open(ctx = makeTestContext()) {
 const items = (ctx: ReturnType<typeof makeTestContext>) => firstValueFrom(observeMissionItems(ctx.db, 'm1'));
 
 describe('AddUnitMenu', () => {
+  it('shows range fields by unit type', async () => {
+    await open();
+    expect(screen.queryByLabelText('Threat ring')).toBeNull();
+    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    await fireEvent.press(screen.getByText('Artillery'));
+    expect(screen.getByLabelText('Threat ring')).toBeTruthy();
+    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
+    expect(screen.queryByLabelText('Vertical range')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
+    await fireEvent.press(screen.getByText('Air defense'));
+    expect(screen.queryByLabelText('Threat ring')).toBeNull();
+    expect(screen.getByLabelText('Horizontal range')).toBeTruthy();
+    expect(screen.getByLabelText('Vertical range')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Unit type: Air defense'));
+    await fireEvent.press(screen.getByText('Infantry'));
+    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
+    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
+  });
+
+  it('disables Add for an out-of-bounds range', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    await fireEvent.press(screen.getByText('Artillery'));
+    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '500001');
+    expect(screen.getByLabelText('Add')).toBeDisabled();
+    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '500000');
+    expect(screen.getByLabelText('Add')).toBeEnabled();
+  });
+
   it('starts at the crosshair with an auto name', async () => {
     await open();
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(mgrsFieldsFor(CENTER).northing);

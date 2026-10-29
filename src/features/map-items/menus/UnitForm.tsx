@@ -11,6 +11,7 @@ import { useDraft, type DraftMode } from '@/stores/draft';
 import { NAME_PREFIX } from '../naming';
 import { LocationSection } from './form/LocationSection';
 import { NotesSection } from './form/NotesSection';
+import { UnitRangesSection } from './form/UnitRangesSection';
 import { useAutoName } from './form/use-auto-name';
 
 const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
@@ -56,6 +57,7 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
       <MenuSection label="Echelon">
         <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
       </MenuSection>
+      <UnitRangesSection mode={mode} />
       <NotesSection />
     </View>
   );

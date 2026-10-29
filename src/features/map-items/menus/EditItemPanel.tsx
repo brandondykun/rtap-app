@@ -145,7 +145,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
         <>
           {form}
           <MenuSection>
-            <MenuToggle label="Hidden on map" value={hiddenIds.includes(itemId)} onValueChange={setHidden} disabled={locked} />
+            <MenuToggle label="Hidden on map" value={hiddenIds.includes(itemId)} onValueChange={setHidden} />
           </MenuSection>
           <MenuActions disabled={locked} destructive={{ label: `Delete ${noun}`, confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
         </>
