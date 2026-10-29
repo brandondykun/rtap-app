@@ -1,15 +1,17 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MenuActions } from './MenuActions';
 import { MenuButton } from './MenuButton';
+import { MenuColumns } from './MenuColumns';
 import { MenuCountButton } from './MenuCountButton';
 import { MenuHeader } from './MenuHeader';
 import { MenuListItem } from './MenuListItem';
 import { MenuRow } from './MenuRow';
 import { MenuSection } from './MenuSection';
+import { MenuTileButton } from './MenuTileButton';
 import { MenuToggle } from './MenuToggle';
 import { MenuVertexRow } from './MenuVertexRow';
 
@@ -199,5 +201,48 @@ describe('menu primitives', () => {
     expect(screen.queryByText('Undo')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Undo'));
     expect(onPress).toHaveBeenCalled();
+  });
+
+  it('MenuHeader with a summary draws it in place of the title, keeping the title as the header name', async () => {
+    const onPress = jest.fn();
+    const edit = jest.fn();
+    await renderWithProviders(
+      <MenuHeader title="HOS-4" summary={<Text>SUMMARY</Text>} leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress }} trailing={{ label: 'Edit', icon: 'pencil', onPress: edit }} />,
+    );
+    expect(screen.getByText('SUMMARY')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'HOS-4' })).toBeTruthy();
+    expect(screen.queryByText('Close')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Close'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('MenuTileButton is a labelled button with active and disabled states', async () => {
+    const onPress = jest.fn();
+    const first = await renderWithProviders(<MenuTileButton label="Ring" icon="radar" onPress={onPress} active />);
+    expect(screen.getByRole('button', { name: 'Ring' })).toBeSelected();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ring' }));
+    expect(onPress).toHaveBeenCalledTimes(1);
+    await first.unmount();
+    await renderWithProviders(<MenuTileButton label="Ring" icon="radar" onPress={onPress} disabled />);
+    expect(screen.getByRole('button', { name: 'Ring' })).toBeDisabled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Ring' }));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('MenuTileButton danger tone fills while active', async () => {
+    await renderWithProviders(<MenuTileButton label="Delete" icon="trash-can-outline" tone="danger" active onPress={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Delete' }).props.className).toContain('bg-danger');
+  });
+
+  it('MenuColumns puts each child in an equal column', async () => {
+    await renderWithProviders(
+      <MenuColumns>
+        <View testID="a" />
+        <View testID="b" />
+      </MenuColumns>,
+    );
+    expect(screen.getByTestId('a').parent?.props.className).toContain('flex-1');
+    expect(screen.getByTestId('b').parent?.props.className).toContain('flex-1');
+    expect(screen.getByTestId('a').parent).not.toBe(screen.getByTestId('b').parent);
   });
 });

@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect } from 'react';
+import { useContext, useLayoutEffect, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -11,13 +11,19 @@ export type MenuHeaderAction = {
   onPress: () => void;
   disabled?: boolean;
   icon?: IconName;
-  /** Trailing only: an outlined icon button (no text, `label` is its screen-reader name) instead of the amber primary. */
+  /** An outlined icon button (no text, `label` is its screen-reader name) instead of the amber primary. */
   iconOnly?: boolean;
   /** With `iconOnly`: an "on" state (amber icon on an amber-subtle fill), e.g. while search is open. */
   active?: boolean;
 };
 
-export type MenuHeaderProps = { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction };
+export type MenuHeaderProps = {
+  title: string;
+  /** Drawn left-aligned and growing in place of the centered title; `title` stays the accessible header name. */
+  summary?: ReactNode;
+  leading?: MenuHeaderAction;
+  trailing?: MenuHeaderAction;
+};
 
 /**
  * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button (or an
@@ -36,12 +42,23 @@ export function MenuHeader(props: MenuHeaderProps) {
 }
 
 /** The header row itself (in a portrait Panel it is also the sheet's drag area). */
-export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
+export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderProps) {
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center px-4 py-2">
       <View className="min-w-20 items-start">
-        {leading ? (
+        {leading?.iconOnly && leading.icon ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={leading.label}
+            accessibilityState={{ disabled: !!leading.disabled }}
+            disabled={leading.disabled}
+            onPress={leading.onPress}
+            hitSlop={8}
+            className={`active:opacity-60 h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-raised ${leading.disabled ? 'opacity-40' : ''}`}>
+            <Icon name={leading.icon} size={22} color={colors.text} />
+          </Pressable>
+        ) : leading ? (
           <Pressable
             accessibilityRole="button"
             onPress={leading.onPress}
@@ -52,9 +69,15 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
           </Pressable>
         ) : null}
       </View>
-      <Text accessibilityRole="header" numberOfLines={1} className="flex-1 text-center text-base font-bold uppercase tracking-widest text-text">
-        {title}
-      </Text>
+      {summary ? (
+        <View accessible accessibilityRole="header" accessibilityLabel={title} className="mx-2 flex-1">
+          {summary}
+        </View>
+      ) : (
+        <Text accessibilityRole="header" numberOfLines={1} className="flex-1 text-center text-base font-bold uppercase tracking-widest text-text">
+          {title}
+        </Text>
+      )}
       <View className="min-w-20 items-end">
         {trailing?.iconOnly && trailing.icon ? (
           <Pressable
