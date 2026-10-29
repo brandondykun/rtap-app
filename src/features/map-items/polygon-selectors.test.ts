@@ -13,6 +13,9 @@ function poly(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     name: '1',
     notes: null,
     elevationM: null,
+    threatRangeM: null,
+    horizontalRangeM: null,
+    verticalRangeFt: null,
     updatedAt,
     ...overrides,
   };

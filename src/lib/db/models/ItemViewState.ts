@@ -9,5 +9,7 @@ export class ItemViewState extends Model {
 
   @field('map_item_id') mapItemId!: string;
   @field('hidden') hidden!: boolean;
+  /** Whether this device shows the item's range ring; null = not chosen. */
+  @field('show_ring') showRing!: boolean | null;
   @readonly @date('updated_at') updatedAt!: Date;
 }

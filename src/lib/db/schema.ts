@@ -8,7 +8,7 @@ export const Tables = {
 } as const;
 
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: Tables.missions,
@@ -30,6 +30,9 @@ export const schema = appSchema({
         { name: 'notes', type: 'string', isOptional: true },
         { name: 'style', type: 'string', isOptional: true },
         { name: 'elevation_m', type: 'number', isOptional: true },
+        { name: 'threat_range_m', type: 'number', isOptional: true },
+        { name: 'horizontal_range_m', type: 'number', isOptional: true },
+        { name: 'vertical_range_ft', type: 'number', isOptional: true },
         { name: 'created_by', type: 'string' },
         { name: 'updated_by', type: 'string' },
         { name: 'created_at', type: 'number' },
@@ -41,6 +44,7 @@ export const schema = appSchema({
       columns: [
         { name: 'map_item_id', type: 'string', isIndexed: true },
         { name: 'hidden', type: 'boolean' },
+        { name: 'show_ring', type: 'boolean', isOptional: true },
         { name: 'updated_at', type: 'number' },
       ],
     }),

@@ -28,11 +28,25 @@ describe('database', () => {
   });
 
   it('stores an optional ground elevation on map items, added by migration 3', () => {
-    expect(schema.version).toBe(3);
-    expect(migrations.maxVersion).toBe(3);
     expect(schema.tables[Tables.mapItems].columns.elevation_m).toEqual({ name: 'elevation_m', type: 'number', isOptional: true });
     expect(migrations.sortedMigrations.find((m) => m.toVersion === 3)?.steps).toEqual([
       { type: 'add_columns', table: Tables.mapItems, columns: [{ name: 'elevation_m', type: 'number', isOptional: true }] },
+    ]);
+  });
+
+  it('adds unit ranges to map items and show_ring to view state, in migration 4', () => {
+    expect(schema.version).toBe(4);
+    expect(migrations.maxVersion).toBe(4);
+    const cols = schema.tables[Tables.mapItems].columns;
+    for (const name of ['threat_range_m', 'horizontal_range_m', 'vertical_range_ft']) expect(cols[name]).toEqual({ name, type: 'number', isOptional: true });
+    expect(schema.tables[Tables.itemViewState].columns.show_ring).toEqual({ name: 'show_ring', type: 'boolean', isOptional: true });
+    expect(migrations.sortedMigrations.find((m) => m.toVersion === 4)?.steps).toEqual([
+      { type: 'add_columns', table: Tables.mapItems, columns: [
+        { name: 'threat_range_m', type: 'number', isOptional: true },
+        { name: 'horizontal_range_m', type: 'number', isOptional: true },
+        { name: 'vertical_range_ft', type: 'number', isOptional: true },
+      ] },
+      { type: 'add_columns', table: Tables.itemViewState, columns: [{ name: 'show_ring', type: 'boolean', isOptional: true }] },
     ]);
   });
 

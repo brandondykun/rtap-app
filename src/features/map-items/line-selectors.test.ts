@@ -11,6 +11,9 @@ function line(id: string, updatedAt: number, overrides: Partial<MapItemSnapshot>
     name: 'RED',
     notes: null,
     elevationM: null,
+    threatRangeM: null,
+    horizontalRangeM: null,
+    verticalRangeFt: null,
     updatedAt,
     ...overrides,
   };

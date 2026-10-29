@@ -18,6 +18,9 @@ export type MapItemSnapshot = {
   name: string;
   notes: string | null;
   elevationM: number | null;
+  threatRangeM: number | null;
+  horizontalRangeM: number | null;
+  verticalRangeFt: number | null;
   updatedAt: number;
 };
 
@@ -31,6 +34,9 @@ function snapshot(item: MapItem): MapItemSnapshot {
     name: item.name,
     notes: item.notes ?? null,
     elevationM: item.elevationM ?? null,
+    threatRangeM: item.threatRangeM ?? null,
+    horizontalRangeM: item.horizontalRangeM ?? null,
+    verticalRangeFt: item.verticalRangeFt ?? null,
     updatedAt: item.updatedAt.getTime(),
   };
 }
@@ -45,7 +51,7 @@ const knownKind = Q.where('kind', Q.oneOf([...MAP_ITEM_KINDS]));
 export function observeMissionItems(db: Database, missionId: string): Observable<MapItemSnapshot[]> {
   return missionQuery(db, missionId)
     .extend(knownKind)
-    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'elevation_m', 'updated_at'])
+    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'elevation_m', 'threat_range_m', 'horizontal_range_m', 'vertical_range_ft', 'updated_at'])
     .pipe(map((items) => items.map(snapshot)));
 }
 
@@ -66,7 +72,7 @@ export function observeItem(db: Database, id: string): Observable<MapItemSnapsho
   return db
     .get<MapItem>(Tables.mapItems)
     .query(Q.where('id', id), knownKind)
-    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'updated_at'])
+    .observeWithColumns(['geometry', 'sidc', 'style', 'name', 'notes', 'elevation_m', 'threat_range_m', 'horizontal_range_m', 'vertical_range_ft', 'updated_at'])
     .pipe(map((items) => (items[0] ? snapshot(items[0]) : null)));
 }
 

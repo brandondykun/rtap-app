@@ -21,6 +21,12 @@ export class MapItem extends Model {
   @field('style') style!: string | null;
   /** Ground elevation in meters above sea level where a unit was placed; null when unknown or not a unit. */
   @field('elevation_m') elevationM!: number | null;
+  /** Artillery threat range in meters; null when not set. */
+  @field('threat_range_m') threatRangeM!: number | null;
+  /** Air defense horizontal range in meters; null when not set. */
+  @field('horizontal_range_m') horizontalRangeM!: number | null;
+  /** Air defense vertical range (ceiling) in feet; null when not set. */
+  @field('vertical_range_ft') verticalRangeFt!: number | null;
   @field('created_by') createdBy!: string;
   @field('updated_by') updatedBy!: string;
   @readonly @date('created_at') createdAt!: Date;
