@@ -47,6 +47,18 @@ describe('LocationSection', () => {
     expect(screen.getByTestId('location-status').props.className).toContain('text-danger');
   });
 
+  it('keeps a one-line status row when the fields are empty, and clamps invalid messages to one line', async () => {
+    await renderWithProviders(<LocationSection />);
+    expect(screen.getByTestId('location-status-line').props.className).toContain('min-h-5');
+    expect(screen.queryByTestId('location-status')).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText('MGRS zone'), '99Z');
+    await fireEvent.changeText(screen.getByLabelText('100 km square'), 'UJ');
+    await fireEvent.changeText(screen.getByLabelText('Easting'), '12345');
+    await fireEvent.changeText(screen.getByLabelText('Northing'), '12345');
+    expect(screen.getByTestId('location-status')).toHaveProp('numberOfLines', 1);
+    expect(screen.getByTestId('location-status')).toHaveProp('adjustsFontSizeToFit', true);
+  });
+
   it('has CTR and Map buttons, and no elevation line for polygon centers', async () => {
     await act(async () => useDraft.setState({ category: 'polygon' }));
     await renderWithProviders(<LocationSection />);

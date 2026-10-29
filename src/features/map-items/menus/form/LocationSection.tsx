@@ -66,15 +66,17 @@ export function LocationSection() {
       <MgrsInput value={parts} onChange={onPartsChange} status={status} disabled={locked} showStatus={false} />
       <View className="flex-row items-center gap-2">
         <View className="flex-1 gap-0.5">
-          {status.status === 'valid' || status.status === 'invalid' ? (
-            <View className="flex-row items-center gap-1">
-              <Icon name={status.status === 'valid' ? 'check' : 'alert-circle-outline'} size={16} color={status.status === 'valid' ? colors.success : colors.danger} />
-              <Text testID="location-status" numberOfLines={status.status === 'valid' ? 1 : undefined} adjustsFontSizeToFit={status.status === 'valid'} className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
-                {status.status === 'valid' ? detail ?? 'Valid' : status.message}
-              </Text>
-            </View>
-          ) : null}
-          {noun === 'center' ? null : <ElevationRow inline />}
+          <View testID="location-status-line" className="min-h-5 flex-row items-center gap-1">
+            {status.status === 'valid' || status.status === 'invalid' ? (
+              <>
+                <Icon name={status.status === 'valid' ? 'check' : 'alert-circle-outline'} size={16} color={status.status === 'valid' ? colors.success : colors.danger} />
+                <Text testID="location-status" numberOfLines={1} adjustsFontSizeToFit className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
+                  {status.status === 'valid' ? detail ?? 'Valid' : status.message}
+                </Text>
+              </>
+            ) : null}
+          </View>
+          {noun === 'center' ? null : <ElevationRow />}
         </View>
         <CenterButton compact label="Center" onPress={toCrosshair} disabled={locked} />
         <MenuButton compact label="Map" icon="gesture-tap" onPress={() => setPicking(!picking)} active={picking} disabled={locked} />

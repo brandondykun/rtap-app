@@ -6,10 +6,11 @@ export function NotesPreview({ notes, onEdit }: { notes: string | null; onEdit: 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={has ? 'Notes' : 'Add notes'}
+      accessibilityLabel={has ? `Notes: ${notes}` : 'Add notes'}
+      accessibilityHint="Opens the editor"
       onPress={onEdit}
       className={`active:opacity-60 rounded-xl px-3 py-3 ${has ? 'bg-surface-raised' : 'border border-dashed border-border'}`}>
-      <Text className={has ? 'text-base text-text' : 'text-base text-text-muted'}>{has ? notes : 'No notes — tap to add'}</Text>
+      <Text numberOfLines={6} className={has ? 'text-base text-text' : 'text-base text-text-muted'}>{has ? notes : 'No notes — tap to add'}</Text>
     </Pressable>
   );
 }

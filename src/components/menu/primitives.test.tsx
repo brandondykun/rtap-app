@@ -234,6 +234,18 @@ describe('menu primitives', () => {
     expect(screen.getByRole('button', { name: 'Delete' }).props.className).toContain('bg-danger');
   });
 
+  it('MenuColumns inset pads once; flush MenuSections add no side padding of their own', async () => {
+    await renderWithProviders(
+      <MenuColumns inset>
+        <MenuSection flush label="A"><View /></MenuSection>
+        <MenuSection label="B"><View /></MenuSection>
+      </MenuColumns>,
+    );
+    expect(screen.getByTestId('menu-section-A').props.className).not.toContain('px-4');
+    expect(screen.getByTestId('menu-section-B').props.className).toContain('px-4');
+    expect(screen.getByTestId('menu-section-A').parent?.parent?.props.className).toContain('px-4');
+  });
+
   it('MenuColumns puts each child in an equal column', async () => {
     await renderWithProviders(
       <MenuColumns>

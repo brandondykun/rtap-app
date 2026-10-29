@@ -43,7 +43,7 @@ async function openEditor() {
 describe('EditUnitMenu', () => {
   it('opens to the condensed view with Close and Edit, not the form', async () => {
     await openEditor();
-    expect(screen.getByRole('header')).toHaveAccessibleName('FRD-2');
+    expect(screen.getByRole('header')).toHaveAccessibleName(/^FRD-2, Friendly · /);
     expect(screen.getByLabelText('Close')).toBeEnabled();
     expect(screen.getByLabelText('Edit')).toBeEnabled();
     expect(screen.queryByLabelText('Name')).toBeNull();
@@ -104,7 +104,7 @@ describe('EditUnitMenu', () => {
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveAccessibleName('OBJ IRON'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveAccessibleName(/^OBJ IRON, /));
     expect(useMenu.getState().stack).toHaveLength(1);
     expect(screen.queryByLabelText('Name')).toBeNull();
     expect(screen.getByLabelText('Edit')).toBeTruthy();
@@ -152,7 +152,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     await fireEvent.press(screen.getByText('Cancel'));
-    expect(screen.getByRole('header')).toHaveAccessibleName('FRD-2');
+    expect(screen.getByRole('header')).toHaveAccessibleName(/^FRD-2, Friendly · /);
     expect(screen.queryByLabelText('Name')).toBeNull();
     expect((await findItem(ctx.db, id))?.name).toBe('FRD-2');
     expect(useMenu.getState().stack).toHaveLength(1);
@@ -245,7 +245,7 @@ describe('EditUnitMenu', () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Delete'));
     expect(await findItem(ctx.db, id)).not.toBeNull();
-    await fireEvent.press(screen.getByLabelText('Tap again'));
+    await fireEvent.press(screen.getByLabelText('Tap again to delete'));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
     expect(await findItem(ctx.db, id)).toBeNull();
     expect(useToast.getState().toast).toBeNull();

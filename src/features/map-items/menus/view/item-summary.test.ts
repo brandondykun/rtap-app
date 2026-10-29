@@ -1,7 +1,7 @@
 import { composeSidc } from '@/features/symbology/presets';
 
 import type { MapItemSnapshot } from '../../repository';
-import { pointSubtitle, ringSummary, unitSubtitle } from './item-summary';
+import { itemAccessibleTitle, pointSubtitle, ringSummary, unitSubtitle } from './item-summary';
 
 function unit(sidc: string, o: Partial<MapItemSnapshot> = {}): MapItemSnapshot {
   return { id: 'i1', kind: 'point', geometry: '', sidc, style: null, name: 'N', notes: null, elevationM: null, threatRangeM: null, horizontalRangeM: null, verticalRangeFt: null, updatedAt: 0, ...o };
@@ -30,4 +30,12 @@ describe('ringSummary', () => {
   it('air defense vertical only', () => expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { verticalRangeFt: 900 }))).toBe('↕ 900 ft ceiling'));
   it('nothing set', () => expect(ringSummary(unit(composeSidc('hostile', 'artillery')))).toBe('No range set — Edit to add'));
   it('null for non-ring units', () => expect(ringSummary(unit(composeSidc('friend', 'recon'), { threatRangeM: 5 }))).toBeNull());
+});
+
+describe('itemAccessibleTitle', () => {
+  it('names a unit with its subtitle and hidden state', () => {
+    const u = unit(composeSidc('hostile', 'armor', 'platoon'), { name: 'OBJ' });
+    expect(itemAccessibleTitle('unit', u, false)).toBe('OBJ, Hostile · Armor · Platoon');
+    expect(itemAccessibleTitle('unit', u, true)).toBe('OBJ, Hostile · Armor · Platoon, hidden');
+  });
 });

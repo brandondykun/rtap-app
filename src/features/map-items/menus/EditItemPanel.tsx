@@ -17,6 +17,7 @@ import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repo
 import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
+import { itemAccessibleTitle } from './view/item-summary';
 import { ItemTitle } from './view/ItemTitle';
 import { ItemView } from './view/ItemView';
 
@@ -140,7 +141,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
       <View>
         {locked ? (
           <MenuHeader
-            title={item ? item.name : title}
+            title={item ? itemAccessibleTitle(category, item, hidden) : title}
             summary={item ? <ItemTitle category={category} item={item} hidden={hidden} /> : undefined}
             leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}
             trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}

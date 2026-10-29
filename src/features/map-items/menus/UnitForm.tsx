@@ -35,11 +35,11 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
 
   return (
     <View>
-      <MenuColumns>
-        <MenuSection label="Name">
+      <MenuColumns inset>
+        <MenuSection flush label="Name">
           <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
         </MenuSection>
-        <MenuSection label="Affiliation">
+        <MenuSection flush label="Affiliation">
           <MenuSegmented<Affiliation>
             options={AFFILIATIONS.map((a) => ({
               value: a,
@@ -53,11 +53,11 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
         </MenuSection>
       </MenuColumns>
       <LocationSection />
-      <MenuColumns>
-        <MenuSection label="Unit type">
+      <MenuColumns inset>
+        <MenuSection flush label="Unit type">
           <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
         </MenuSection>
-        <MenuSection label="Echelon">
+        <MenuSection flush label="Echelon">
           <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
         </MenuSection>
       </MenuColumns>

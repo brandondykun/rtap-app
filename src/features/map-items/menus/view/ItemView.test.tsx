@@ -102,7 +102,7 @@ describe('ItemView', () => {
     await fireEvent.press(screen.getByLabelText('Delete'));
     expect(onDelete).not.toHaveBeenCalled();
     expect(screen.getByText('Tap again')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Tap again'));
+    await fireEvent.press(screen.getByLabelText('Tap again to delete'));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
@@ -122,7 +122,9 @@ describe('ItemView', () => {
   it('shows the notes text', async () => {
     await open(composeSidc('friend', 'armor'), { notes: 'hull down' });
     expect(screen.getByText('hull down')).toBeTruthy();
-    expect(screen.getByLabelText('Notes')).toBeTruthy();
+    const notes = screen.getByLabelText('Notes: hull down');
+    expect(notes.props.accessibilityHint).toBe('Opens the editor');
+    expect(screen.getByText('hull down')).toHaveProp('numberOfLines', 6);
   });
 });
 

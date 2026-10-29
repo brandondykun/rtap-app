@@ -6,6 +6,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 /** Square-ish action tile: icon above the label. `active` marks an "on" state (or, in the danger tone, the armed second tap). */
 export function MenuTileButton({
   label,
+  accessibilityLabel,
   icon,
   onPress,
   tone = 'default',
@@ -13,6 +14,8 @@ export function MenuTileButton({
   disabled = false,
 }: {
   label: string;
+  /** Screen-reader name when it should say more than the visible `label`. */
+  accessibilityLabel?: string;
   icon: IconName;
   onPress: () => void;
   tone?: 'default' | 'danger';
@@ -27,7 +30,7 @@ export function MenuTileButton({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected: active, disabled }}
       disabled={disabled}
       onPress={onPress}

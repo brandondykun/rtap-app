@@ -26,7 +26,8 @@ export type MenuHeaderProps = {
 };
 
 /**
- * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button (or an
+ * Leading outlined action (Cancel / Close / Back), centered uppercase title (or a left-aligned `summary` node, with
+ * `title` as its accessible name), trailing amber primary button (or an
  * outlined icon button for a non-primary tool, like Layers' search). Inside a
  * Panel it is drawn pinned above the scrolling content, so Close and the primary action never scroll away.
  */

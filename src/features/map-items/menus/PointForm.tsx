@@ -30,11 +30,11 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
 
   return (
     <View>
-      <MenuColumns>
-        <MenuSection label="Name">
+      <MenuColumns inset>
+        <MenuSection flush label="Name">
           <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
         </MenuSection>
-        <MenuSection label="Point type">
+        <MenuSection flush label="Point type">
           <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
         </MenuSection>
       </MenuColumns>

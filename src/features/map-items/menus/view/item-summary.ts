@@ -1,4 +1,4 @@
-import { typeLabel } from '@/features/symbology/categories';
+import { typeLabel, type ItemCategory } from '@/features/symbology/categories';
 import { AFFILIATION_LABELS, decomposeSidc, ECHELONS, UNIT_TYPES, type Affiliation } from '@/features/symbology/presets';
 
 import type { MapItemSnapshot } from '../../repository';
@@ -17,6 +17,12 @@ export function unitSubtitle(sidc: string | null): { affiliation: Affiliation | 
 
 export function pointSubtitle(sidc: string | null): string {
   return typeLabel(sidc) ?? UNKNOWN;
+}
+
+/** The header's screen-reader name: "FRD-2, Friendly · Armor · Platoon, hidden". */
+export function itemAccessibleTitle(category: ItemCategory, item: Pick<MapItemSnapshot, 'name' | 'sidc'>, hidden: boolean): string {
+  const subtitle = category === 'unit' ? unitSubtitle(item.sidc).text : pointSubtitle(item.sidc);
+  return `${item.name}, ${subtitle}${hidden ? ', hidden' : ''}`;
 }
 
 /** The ring's ranges as text; null for units that cannot have a ring. */

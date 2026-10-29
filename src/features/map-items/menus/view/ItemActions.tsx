@@ -41,6 +41,7 @@ export function ItemActions({ item, hidden, onDelete }: { item: MapItemSnapshot;
       <MenuTileButton
         label={armed ? 'Tap again' : 'Delete'}
         icon="trash-can-outline"
+        accessibilityLabel={armed ? 'Tap again to delete' : undefined}
         tone="danger"
         active={armed}
         onPress={() => {
