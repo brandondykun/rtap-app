@@ -17,6 +17,8 @@ import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repo
 import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
+import { ItemTitle } from './view/ItemTitle';
+import { ItemView } from './view/ItemView';
 
 const NO_IDS: string[] = [];
 
@@ -129,6 +131,32 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     });
   };
 
+  // Units and points open as a condensed summary; lines and polygons keep the locked form.
+  const condensed = category === 'unit' || category === 'point';
+  const hidden = hiddenIds.includes(itemId);
+
+  if (condensed) {
+    return (
+      <View>
+        {locked ? (
+          <MenuHeader
+            title={item ? item.name : title}
+            summary={item ? <ItemTitle category={category} item={item} hidden={hidden} /> : undefined}
+            leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}
+            trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
+          />
+        ) : (
+          <MenuHeader
+            title={`Edit ${noun}`}
+            leading={{ label: 'Cancel', onPress: cancelEdit }}
+            trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
+          />
+        )}
+        {ready ? locked ? item ? <ItemView item={item} hidden={hidden} onEdit={() => useDraft.getState().setLocked(false)} onDelete={() => void remove()} /> : null : form : null}
+      </View>
+    );
+  }
+
   return (
     <View>
       {locked ? (
@@ -148,7 +176,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
         <>
           {form}
           <MenuSection>
-            <MenuToggle label="Hidden on map" value={hiddenIds.includes(itemId)} onValueChange={setHidden} />
+            <MenuToggle label="Hidden on map" value={hidden} onValueChange={setHidden} />
           </MenuSection>
           <MenuActions disabled={locked} destructive={{ label: `Delete ${noun}`, confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
         </>

@@ -14,7 +14,7 @@ import { rangeFieldsForSidc, ringRadiusM } from '../../unit-ranges';
 const NO_IDS: string[] = [];
 
 /** Center / Hide / Ring / Delete tiles. Delete asks for a second tap, then hands off to `onDelete`. */
-export function ItemActions({ item, hidden, noun, onDelete }: { item: MapItemSnapshot; hidden: boolean; noun: string; onDelete: () => void }) {
+export function ItemActions({ item, hidden, onDelete }: { item: MapItemSnapshot; hidden: boolean; onDelete: () => void }) {
   const ctx = useCommandContext();
   const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
   const { armed, arm, disarm } = useArmed();

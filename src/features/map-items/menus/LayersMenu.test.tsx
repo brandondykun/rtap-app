@@ -171,7 +171,7 @@ describe('LayersMenu', () => {
     await openLayers(ctx);
     await fireEvent.press(await screen.findByLabelText('HOS-1'));
     expect(topMenu(useMenu.getState())).toEqual({ id: 'unit.edit', params: { itemId: a.value.id } });
-    expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+    expect(await screen.findByLabelText('Edit')).toBeTruthy();
   });
 
 
@@ -233,21 +233,21 @@ describe('LayersMenu', () => {
       await fireEvent.changeText(await openSearch(), 'HOS');
       await fireEvent.scroll(screen.getByTestId('menu-panel-scroll'), { nativeEvent: { contentOffset: { x: 0, y: 180 } } });
       await fireEvent.press(await screen.findByLabelText('HOS-1'));
-      await screen.findByDisplayValue('HOS-1');
+      await screen.findByLabelText('Edit');
       return { ctx, id: a.value.id };
     }
 
     it('opens the item over Layers, with Back instead of Close', async () => {
       await drillIn();
       expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['layers', 'unit.edit']);
-      expect(screen.getByText('Back')).toBeTruthy();
-      expect(screen.queryByText('Close')).toBeNull();
+      expect(screen.getByLabelText('Back')).toBeTruthy();
+      expect(screen.queryByLabelText('Close')).toBeNull();
     });
 
     it('goes Back to Layers as it was left: same tab, search text and scroll position', async () => {
       jest.mocked(ScrollView.prototype.scrollTo).mockClear();
       await drillIn();
-      await fireEvent.press(screen.getByText('Back'));
+      await fireEvent.press(screen.getByLabelText('Back'));
       expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['layers']);
       expect(await screen.findByDisplayValue('HOS')).toBeTruthy();
       expect(screen.getByLabelText('Units')).toBeSelected();
@@ -274,10 +274,10 @@ describe('LayersMenu', () => {
       await openLayers(ctx);
       // What a map tap does.
       await act(async () => openItemMenu(a.value.id, { kind: 'point', sidc: HOS }));
-      await screen.findByDisplayValue('HOS-1');
+      await screen.findByLabelText('Edit');
       expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['unit.edit']);
-      expect(screen.getByText('Close')).toBeTruthy();
-      expect(screen.queryByText('Back')).toBeNull();
+      expect(screen.getByLabelText('Close')).toBeTruthy();
+      expect(screen.queryByLabelText('Back')).toBeNull();
     });
   });
 

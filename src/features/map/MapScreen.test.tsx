@@ -257,7 +257,7 @@ describe('MapScreen', () => {
     await fireEvent.press(screen.getByLabelText('Add at center'));
     await screen.findByDisplayValue('HOS-1');
     await fireEvent.press(screen.getByLabelText('Add'));
-    expect(await screen.findByRole('header')).toHaveTextContent('Unit');
+    expect(await screen.findByLabelText('Edit')).toBeTruthy();
     const itemId = useDraft.getState().itemId;
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', locked: true });
     await waitFor(() => expect(mapboxMock().__props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([itemId!])));
@@ -328,7 +328,7 @@ describe('MapScreen', () => {
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await fireEvent.press(await screen.findByLabelText('LAYERS'));
     await fireEvent.press(await screen.findByLabelText('HOS-1'));
-    await screen.findByDisplayValue('HOS-1');
+    await screen.findByLabelText('Edit');
     expect(screen.getByLabelText('LAYERS')).toBeSelected();
     await fireEvent.press(screen.getByLabelText('LAYERS'));
     expect(useMenu.getState().stack).toEqual([]);
@@ -433,7 +433,7 @@ describe('MapScreen', () => {
         point: {},
       }),
     );
-    expect(await screen.findByRole('header')).toHaveTextContent('Point');
+    expect(await screen.findByLabelText('Edit')).toBeTruthy();
     expect(useMenu.getState().stack).toEqual([{ id: 'point.edit', params: { itemId: p.value.id } }]);
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
@@ -546,9 +546,9 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    expect(await screen.findByRole('header')).toHaveTextContent('Unit');
-    expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
-    expect(screen.getByLabelText('Name').props.editable).toBe(false);
+    expect(await screen.findByRole('header')).toHaveAccessibleName('HOS-1');
+    expect(await screen.findByLabelText('Edit')).toBeTruthy();
+    expect(screen.queryByLabelText('Name')).toBeNull();
   });
 
   it('a tap on a blank spot clears the selection, but never while editing or with another menu open', async () => {
@@ -569,10 +569,10 @@ describe('MapScreen', () => {
       );
 
     await tapItem();
-    await screen.findByDisplayValue('HOS-1');
+    await screen.findByLabelText('Edit');
     // Mapbox delivers a symbol tap only to its source; a blank tap right after it is the same touch on some builds.
     await tapBlank();
-    expect(screen.getByDisplayValue('HOS-1')).toBeTruthy();
+    expect(screen.getByLabelText('Edit')).toBeTruthy();
     jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 1000);
     await tapBlank();
     expect(useMenu.getState().stack).toEqual([]);
@@ -606,7 +606,7 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    await screen.findByDisplayValue('HOS-1');
+    await screen.findByLabelText('Edit');
     await act(async () =>
       (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
     );
@@ -882,7 +882,7 @@ describe('MapScreen', () => {
       await act(async () =>
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
       );
-      expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+      expect(await screen.findByLabelText('Edit')).toBeTruthy();
       // The sheet opens (and pads the camera) once its content is measured.
       await waitFor(() => expect(calls().at(-1)?.centerCoordinate).toEqual([-77, 38.9]));
       await waitFor(() => expect(fullyPadded(calls().at(-1) as Stop)).toBe(true));
@@ -1055,7 +1055,7 @@ describe('MapScreen', () => {
       await act(async () =>
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9, longitude: -77 }, point: {} }),
       );
-      expect(await screen.findByDisplayValue('HOS-1')).toBeTruthy();
+      expect(await screen.findByLabelText('Edit')).toBeTruthy();
       expect(useOp.getState().phase).toBe('on');
       expect(mapboxMock().__camera.setCamera).not.toHaveBeenCalled();
     });

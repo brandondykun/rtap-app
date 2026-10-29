@@ -34,7 +34,7 @@ async function open(sidc: string, extra: { ranges?: Partial<UnitRanges>; notes?:
   useDraft.setState({ coord: AT, locked: true });
   const onEdit = jest.fn();
   const onDelete = jest.fn();
-  await renderWithProviders(<ItemView category="unit" item={item} hidden={props.hidden ?? false} onEdit={onEdit} onDelete={onDelete} />, ctx);
+  await renderWithProviders(<ItemView item={item} hidden={props.hidden ?? false} onEdit={onEdit} onDelete={onDelete} />, ctx);
   return { ctx, id: r.value.id, onEdit, onDelete };
 }
 
@@ -134,5 +134,9 @@ describe('ItemTitle', () => {
     expect(screen.getByText('N'.repeat(40)).props.numberOfLines).toBe(1);
     expect(screen.getByTestId('item-subtitle').props.numberOfLines).toBe(1);
     expect(screen.getByTestId('hidden-tag')).toBeTruthy();
+    expect(screen.getByTestId('item-subtitle')).toBeTruthy();
+    // The tag sits beside the subtitle, not the name.
+    expect(screen.getByTestId('hidden-tag').parent!.parent).toBe(screen.getByTestId('item-subtitle').parent!.parent);
+    expect(screen.getByText('N'.repeat(40)).parent).not.toBe(screen.getByTestId('hidden-tag').parent);
   });
 });

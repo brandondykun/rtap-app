@@ -36,23 +36,36 @@ async function openEditor() {
   if (!r.ok) throw new Error('setup');
   await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
   await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-  await screen.findByDisplayValue('FRD-2');
+  await screen.findByLabelText('Edit');
   return { ctx, id: r.value.id };
 }
 
 describe('EditUnitMenu', () => {
-  it('opens the selected point read-only with Close and Edit', async () => {
+  it('opens to the condensed view with Close and Edit, not the form', async () => {
     await openEditor();
-    expect(screen.getByRole('header')).toHaveTextContent('Unit');
-    expect(screen.getByText('Close')).toBeTruthy();
+    expect(screen.getByRole('header')).toHaveAccessibleName('FRD-2');
+    expect(screen.getByLabelText('Close')).toBeEnabled();
     expect(screen.getByLabelText('Edit')).toBeEnabled();
-    expect(screen.getByLabelText('Name').props.editable).toBe(false);
-    expect(screen.getByLabelText('Northing').props.editable).toBe(false);
-    expect(screen.getByLabelText('Hostile')).toBeDisabled();
-    expect(screen.getByLabelText('Center')).toBeDisabled();
-    expect(screen.getByLabelText('Hidden on map')).toBeEnabled();
-    expect(screen.getByLabelText('Delete unit')).toBeDisabled();
+    expect(screen.queryByLabelText('Name')).toBeNull();
+    expect(screen.queryByLabelText('Hidden on map')).toBeNull();
+    expect(screen.queryByLabelText('Delete unit')).toBeNull();
+    expect(screen.getByLabelText('Center')).toBeEnabled();
+    expect(screen.getByText('hull down')).toBeTruthy();
     expect(useDraft.getState().locked).toBe(true);
+  });
+
+  it('shows Back instead of Close when drilled in from Layers', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('layers', {}));
+    await act(async () => useMenu.getState().pushMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByLabelText('Edit');
+    expect(screen.getByLabelText('Back')).toBeTruthy();
+    expect(screen.queryByLabelText('Close')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Back'));
+    expect(useMenu.getState().stack).toHaveLength(1);
   });
 
   it('ignores long-press moves while read-only', async () => {
@@ -63,6 +76,7 @@ describe('EditUnitMenu', () => {
 
   it('opens prefilled from the item', async () => {
     await openEditor();
+    await fireEvent.press(screen.getByLabelText('Edit'));
     expect(screen.getByLabelText('Friendly')).toBeSelected();
     expect(screen.getByLabelText('Unit type: Armor')).toBeTruthy();
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(mgrsFieldsFor(AT).northing);
@@ -75,7 +89,7 @@ describe('EditUnitMenu', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('HOS-4');
+    await fireEvent.press(await screen.findByLabelText('Edit'));
     expect(screen.getByLabelText('Echelon: Battalion')).toBeTruthy();
   });
 
@@ -84,14 +98,16 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     expect(screen.getByRole('header')).toHaveTextContent('Edit unit');
     expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.queryByLabelText('Hidden on map')).toBeNull();
+    expect(screen.queryByLabelText('Delete unit')).toBeNull();
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveAccessibleName('OBJ IRON'));
     expect(useMenu.getState().stack).toHaveLength(1);
-    expect(screen.getByLabelText('Name').props.editable).toBe(false);
-    expect(screen.getByDisplayValue('OBJ IRON')).toBeTruthy();
+    expect(screen.queryByLabelText('Name')).toBeNull();
+    expect(screen.getByLabelText('Edit')).toBeTruthy();
     const item = await findItem(ctx.db, id);
     expect(item?.name).toBe('OBJ IRON');
     expect(pointCoord(item!.geometry)?.lat).toBeCloseTo(OTHER.lat, 3);
@@ -105,12 +121,12 @@ describe('EditUnitMenu', () => {
     setElevationSource(query);
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('FRD-2');
-    expect(screen.getByLabelText('Elevation 88 m')).toBeTruthy();
+    await screen.findByLabelText('Edit');
+    expect(screen.getByText('88 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
     expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(88);
     expect(query).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText('Edit'));
@@ -118,7 +134,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(async () => expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(40));
-    expect(screen.getByLabelText('Elevation 40 m')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('40 m')).toBeTruthy());
   });
 
   it('Save stores the new echelon in the symbol', async () => {
@@ -127,7 +143,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Echelon: Unspecified'));
     await fireEvent.press(screen.getByText('Company'));
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
     expect((await findItem(ctx.db, id))?.sidc).toBe(composeSidc('friend', 'armor', 'company'));
   });
 
@@ -136,97 +152,88 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OBJ IRON');
     await fireEvent.press(screen.getByText('Cancel'));
-    expect(screen.getByRole('header')).toHaveTextContent('Unit');
-    expect(screen.getByDisplayValue('FRD-2')).toBeTruthy();
+    expect(screen.getByRole('header')).toHaveAccessibleName('FRD-2');
+    expect(screen.queryByLabelText('Name')).toBeNull();
     expect((await findItem(ctx.db, id))?.name).toBe('FRD-2');
     expect(useMenu.getState().stack).toHaveLength(1);
   });
 
-  it('hides the item without closing', async () => {
+  it('hides the item from the view without closing, and the header tags it', async () => {
     const { ctx, id } = await openEditor();
-    await fireEvent.press(screen.getByLabelText('Edit'));
-    await fireEvent(screen.getByLabelText('Hidden on map'), 'valueChange', true);
+    expect(screen.queryByTestId('hidden-tag')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Hide'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([id]));
+    await waitFor(() => expect(screen.getByTestId('hidden-tag')).toBeTruthy());
+    expect(screen.getByLabelText('Show')).toBeSelected();
     expect(screen.getByTestId('menu-panel')).toBeTruthy();
   });
 
-  it('hides the item while the form is still locked', async () => {
-    const { ctx, id } = await openEditor();
-    expect(useDraft.getState().locked).toBe(true);
-    await fireEvent(screen.getByLabelText('Hidden on map'), 'valueChange', true);
-    await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([id]));
-  });
-
-  it('shows a ring switch for a unit with a range, and it works while locked', async () => {
+  it('shows the ring row and a Ring button for a unit with a range, and the button works', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 12000 } });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('HOS-3');
-    expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('12000');
-    expect(screen.getByLabelText('Threat ring').props.editable).toBe(false);
-    const toggle = await screen.findByLabelText('Show ring on map');
-    expect(toggle.props.value).toBe(false);
+    const ring = await screen.findByLabelText('Ring');
+    expect(ring).not.toBeSelected();
+    expect(screen.getByTestId('ring-row')).toBeTruthy();
     expect(useDraft.getState().locked).toBe(true);
-    await fireEvent(toggle, 'valueChange', true);
+    await fireEvent.press(ring);
     await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toEqual([r.value.id]));
-    await waitFor(() => expect(screen.getByLabelText('Show ring on map').props.value).toBe(true));
+    await waitFor(() => expect(screen.getByLabelText('Ring')).toBeSelected());
   });
 
-  it('shows no ring switch for a unit without a range', async () => {
+  it('shows no Ring button or ring row for a unit type without a ring', async () => {
     const ctx = makeTestContext();
-    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3' });
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-3' });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('HOS-3');
-    expect(screen.getByLabelText('Threat ring')).toBeTruthy();
-    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
+    await screen.findByLabelText('Edit');
+    expect(screen.queryByLabelText('Ring')).toBeNull();
+    expect(screen.queryByTestId('ring-row')).toBeNull();
   });
 
-  it('shows what was stored after Save: a type change clears the old range, a decimal shows rounded', async () => {
+  it('shows what was stored after Save: a decimal shows rounded in the ring row, a type change clears the old range', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 18000 } });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('HOS-3');
-    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.press(await screen.findByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Threat ring'), '12,6');
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('13'));
+    await waitFor(() => expect(screen.getByTestId('ring-row')).toHaveTextContent(/13 m/));
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
     await fireEvent.press(screen.getByText('Infantry'));
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
+    expect(screen.queryByTestId('ring-row')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Infantry'));
     await fireEvent.press(screen.getByText('Artillery'));
     expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('');
   });
 
-  it('hides the ring switch when the draft unit type has no ring distance', async () => {
+  it('the form hides the ring switch when the draft unit type has no ring distance', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 12000 } });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('HOS-3');
+    await fireEvent.press(await screen.findByLabelText('Edit'));
     await screen.findByLabelText('Show ring on map');
-    await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
     await fireEvent.press(screen.getByText('Infantry'));
     expect(screen.queryByLabelText('Show ring on map')).toBeNull();
   });
 
-  it('deletes after a second tap, without a "missing" message', async () => {
+  it('deletes from the view after a second tap, without a "missing" message', async () => {
     const { ctx, id } = await openEditor();
-    await fireEvent.press(screen.getByLabelText('Edit'));
-    await fireEvent.press(screen.getByText('Delete unit'));
+    await fireEvent.press(screen.getByLabelText('Delete'));
     expect(await findItem(ctx.db, id)).not.toBeNull();
-    await fireEvent.press(screen.getByText('Tap again to delete'));
+    await fireEvent.press(screen.getByLabelText('Tap again'));
     await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
     expect(await findItem(ctx.db, id)).toBeNull();
     expect(useToast.getState().toast).toBeNull();
@@ -275,7 +282,7 @@ describe('EditUnitMenu', () => {
     const b = await placePoint(ctx, { missionId: 'm1', coord: OTHER, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-9' });
     if (!b.ok) throw new Error('setup');
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: b.value.id }));
-    await screen.findByDisplayValue('HOS-9');
+    await screen.findByText('HOS-9');
     expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: b.value.id });
   });
 

@@ -18,14 +18,14 @@ export function ItemTitle({ category, item, hidden }: { category: ItemCategory; 
     <View className="flex-row items-center gap-3">
       {item.sidc ? <SymbolImage sidc={item.sidc} width={32} height={32} /> : null}
       <View className="shrink gap-0.5">
+        <Text numberOfLines={1} className="font-mono-bold text-base text-text">{item.name}</Text>
         <View className="flex-row items-center gap-2">
-          <Text numberOfLines={1} className="shrink font-mono-bold text-base text-text">{item.name}</Text>
+          <Text testID="item-subtitle" numberOfLines={1} className="shrink text-sm text-text-muted">
+            {first ? <Text style={{ color }}>{first}</Text> : null}
+            {first ? subtitle.slice(first.length) : subtitle}
+          </Text>
           {hidden ? <Text testID="hidden-tag" className="rounded border border-border px-1 text-xs font-semibold uppercase text-text-muted">Hidden</Text> : null}
         </View>
-        <Text testID="item-subtitle" numberOfLines={1} className="text-sm text-text-muted">
-          {first ? <Text style={{ color }}>{first}</Text> : null}
-          {first ? subtitle.slice(first.length) : subtitle}
-        </Text>
       </View>
     </View>
   );
