@@ -8,6 +8,7 @@ import { parseLineGeometry, parsePolygonGeometry, pointCoord } from './geometry'
 import { totalLength } from './line-measure';
 import { areaM2 } from './polygon-measure';
 import type { MapItemSnapshot } from './repository';
+import { ringRadiusM } from './unit-ranges';
 
 /** The Layers list shows at most this many rows; search narrows the rest. */
 export const LAYER_ROW_LIMIT = 100;
@@ -31,6 +32,8 @@ export type LayerRow = {
   polygonType: PolygonType | null;
   areaM2: number | null;
   radiusM: number | null;
+  /** Units with a ring distance: whether the ring shows on the map. Others: null. */
+  ring: boolean | null;
 };
 
 export type LayerRows = {
@@ -47,6 +50,10 @@ export type LayerRows = {
   hiddenIds: string[];
   /** Shown items in the chosen category (all categories when none is chosen). Like hiddenIds, search does not narrow it. */
   visibleIds: string[];
+  /** Items in the chosen category that have a ring distance. Search does not narrow it. */
+  ringableIds: string[];
+  /** The ringable items whose ring is on. Search does not narrow it. */
+  ringOnIds: string[];
 };
 
 /**
@@ -60,8 +67,11 @@ export function layerRows(
   query: string,
   limit = LAYER_ROW_LIMIT,
   category: ItemCategory | null = null,
+  ringIds: readonly string[] = [],
 ): LayerRows {
   const hidden = new Set(hiddenIds);
+  const ringOn = new Set(ringIds);
+  const ringable = (i: MapItemSnapshot) => ringRadiusM(i) !== null;
   const inTab = category ? items.filter((i) => itemCategory(i) === category) : items;
   const q = query.trim().toLowerCase();
   const label = (i: MapItemSnapshot) =>
@@ -96,6 +106,7 @@ export function layerRows(
         polygonType: pstyle ? pstyle.polygonType : null,
         areaM2: ring ? areaM2(ring) : null,
         radiusM: pstyle && pstyle.shape.kind === 'circle' ? pstyle.shape.radiusM : null,
+        ring: ringable(i) ? ringOn.has(i.id) : null,
       };
     }),
     matched: matches.length,
@@ -106,5 +117,7 @@ export function layerRows(
     polygons: counts.polygon,
     hiddenIds: inTab.filter((i) => hidden.has(i.id)).map((i) => i.id),
     visibleIds: inTab.filter((i) => !hidden.has(i.id)).map((i) => i.id),
+    ringableIds: inTab.filter(ringable).map((i) => i.id),
+    ringOnIds: inTab.filter((i) => ringable(i) && ringOn.has(i.id)).map((i) => i.id),
   };
 }

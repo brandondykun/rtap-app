@@ -93,4 +93,24 @@ describe('layerRows', () => {
     expect(r).toMatchObject({ total: 1, matched: 1, hiddenIds: ['l'], visibleIds: [], units: 1, points: 1, lines: 1, polygons: 0 });
     expect(layerRows(all, [], 'hos', LAYER_ROW_LIMIT, 'point').rows).toEqual([]);
   });
+
+  describe('rings', () => {
+    const arty = (id: string, name: string, threatRangeM: number | null = 9000): MapItemSnapshot => ({ ...item(id, name, composeSidc('hostile', 'artillery')), threatRangeM });
+
+    it('marks ringable units with their ring state and others null', () => {
+      const inf = item('i', 'INF', composeSidc('hostile', 'infantry'));
+      const rows = layerRows([arty('a', 'ART-1'), inf], [], '', undefined, null, []).rows;
+      expect(rows.find((r) => r.id === 'a')?.ring).toBe(false);
+      expect(rows.find((r) => r.id === 'i')?.ring).toBeNull();
+      expect(layerRows([arty('a', 'ART-1')], [], '', undefined, null, ['a']).rows[0].ring).toBe(true);
+      expect(layerRows([arty('n', 'ART-N', null)], [], '').rows[0].ring).toBeNull();
+    });
+
+    it('ringableIds and ringOnIds are not narrowed by search', () => {
+      const r = layerRows([arty('a', 'ART-1'), arty('b', 'GUN-2')], [], 'art-1', undefined, null, ['b', 'elsewhere']);
+      expect(r.rows.map((x) => x.id)).toEqual(['a']);
+      expect(r.ringableIds.sort()).toEqual(['a', 'b']);
+      expect(r.ringOnIds).toEqual(['b']);
+    });
+  });
 });

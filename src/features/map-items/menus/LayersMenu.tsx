@@ -22,10 +22,10 @@ import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
 import { useSettings } from '@/stores/settings';
 
-import { setItemHidden, setItemsHidden } from '../commands';
+import { setItemHidden, setItemShowRing, setItemsHidden, setItemsShowRing } from '../commands';
 import { layerRows } from '../layer-rows';
 import { formatArea } from '../polygon-measure';
-import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '../repository';
+import { observeHiddenItemIds, observeMissionItems, observeRingItemIds, type MapItemSnapshot } from '../repository';
 import { openItemMenu } from './item-menus';
 import { LineSample } from './LineSample';
 import { PolygonSample } from './PolygonSample';
@@ -48,6 +48,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
+  const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
   // Kept for an item drilled into and back out of.
   const [query, setQuery] = useMenuEntryState('query', '');
   const chosenTab = useLayersView((s) => s.tab);
@@ -56,7 +57,10 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   // The tab chosen last; until then the first tab that has items.
   const tab = chosenTab ?? TABS.find((t) => byTab[t.id] > 0)?.id ?? 'unit';
   const tabInfo = TABS.find((t) => t.id === tab)!;
-  const { rows, matched, total, hiddenIds, visibleIds } = useMemo(() => layerRows(items, hidden, query, undefined, tab), [items, hidden, query, tab]);
+  const { rows, matched, total, hiddenIds, visibleIds, ringableIds, ringOnIds } = useMemo(
+    () => layerRows(items, hidden, query, undefined, tab, ringIds),
+    [items, hidden, query, tab, ringIds],
+  );
   const tabOptions = TABS.map((t) => ({
     value: t.id,
     label: t.label,
@@ -81,6 +85,22 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const showAll = () => {
     void setItemsHidden(ctx, hiddenIds, false).then((r) => {
       if (!r.ok) notifyError('Could not show the hidden items.');
+    });
+  };
+
+  const toggleRing = (id: string, show: boolean) => {
+    void setItemShowRing(ctx, id, show).then((r) => {
+      if (!r.ok) notifyError('Could not change the range ring.');
+    });
+  };
+  const showAllRings = () => {
+    void setItemsShowRing(ctx, ringableIds, true).then((r) => {
+      if (!r.ok) notifyError('Could not show the range rings.');
+    });
+  };
+  const hideAllRings = () => {
+    void setItemsShowRing(ctx, ringOnIds, false).then((r) => {
+      if (!r.ok) notifyError('Could not hide the range rings.');
     });
   };
 
@@ -112,6 +132,12 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           <MenuButton label="Hide all" icon="eye-off-outline" onPress={hideAll} disabled={visibleIds.length === 0} />
           <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
         </View>
+        {tab === 'unit' ? (
+          <View className="flex-row items-center justify-end gap-2">
+            <MenuButton label="Hide all rings" icon="radius-outline" onPress={hideAllRings} disabled={ringOnIds.length === 0} />
+            <MenuButton label="Show all rings" icon="radius" onPress={showAllRings} disabled={ringOnIds.length >= ringableIds.length} />
+          </View>
+        ) : null}
         {total === 0 ? <Text className="text-sm text-text-muted">{tabInfo.empty}</Text> : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
         {rows.map((row) => (
@@ -147,6 +173,15 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
               Keyboard.dismiss();
               openItemMenu(row.id, { kind: row.kind, sidc: row.sidc }, { drill: true });
             }}
+            secondary={
+              row.ring === null
+                ? undefined
+                : {
+                    icon: row.ring ? 'radius' : 'radius-outline',
+                    label: row.ring ? `Hide ring for ${row.name}` : `Show ring for ${row.name}`,
+                    onPress: () => toggleRing(row.id, !row.ring),
+                  }
+            }
             trailing={{
               icon: row.hidden ? 'eye-off-outline' : 'eye-outline',
               label: row.hidden ? `Show ${row.name}` : `Hide ${row.name}`,

@@ -10,8 +10,9 @@ import { INITIAL_MENU, topMenu, useMenu } from '@/stores/menu';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
+import { composeSidc } from '@/features/symbology/presets';
 import { deleteItem, placeLine, placePoint, placePolygon, setItemHidden } from '../commands';
-import { observeHiddenItemIds } from '../repository';
+import { observeHiddenItemIds, observeRingItemIds } from '../repository';
 import { openItemMenu } from './item-menus';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
@@ -216,6 +217,45 @@ describe('LayersMenu', () => {
       expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['unit.edit']);
       expect(screen.getByText('Close')).toBeTruthy();
       expect(screen.queryByText('Back')).toBeNull();
+    });
+  });
+
+  describe('range rings', () => {
+    async function twoGuns() {
+      const ctx = makeTestContext();
+      const sidc = composeSidc('hostile', 'artillery');
+      const a = await placePoint(ctx, { missionId: 'm1', coord: at, sidc, name: 'ART-1', ranges: { threatRangeM: 9000 } });
+      const b = await placePoint(ctx, { missionId: 'm1', coord: at, sidc, name: 'GUN-2', ranges: { threatRangeM: 9000 } });
+      if (!a.ok || !b.ok) throw new Error('setup');
+      await openLayers(ctx);
+      await screen.findByText('ART-1');
+      return { ctx, ids: [a.value.id, b.value.id].sort() };
+    }
+
+    it('Show all rings turns on both rings while a search is typed, Hide all rings turns them off', async () => {
+      const { ctx, ids } = await twoGuns();
+      expect(screen.getByLabelText('Hide all rings')).toBeDisabled();
+      await fireEvent.changeText(screen.getByLabelText('Search'), 'art');
+      await fireEvent.press(screen.getByLabelText('Show all rings'));
+      await waitFor(async () => expect((await firstValueFrom(observeRingItemIds(ctx.db))).sort()).toEqual(ids));
+      await waitFor(() => expect(screen.getByLabelText('Show all rings')).toBeDisabled());
+      await fireEvent.press(screen.getByLabelText('Hide all rings'));
+      await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toEqual([]));
+    });
+
+    it('the row button toggles one ring', async () => {
+      const { ctx } = await twoGuns();
+      await fireEvent.press(screen.getByLabelText('Show ring for ART-1'));
+      await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toHaveLength(1));
+      expect(await screen.findByLabelText('Hide ring for ART-1')).toBeTruthy();
+      expect(screen.getByLabelText('Show ring for GUN-2')).toBeTruthy();
+    });
+
+    it('has no ring buttons on the Points tab', async () => {
+      await twoGuns();
+      await fireEvent.press(screen.getByLabelText('Points'));
+      expect(screen.queryByLabelText('Show all rings')).toBeNull();
+      expect(screen.queryByLabelText('Hide all rings')).toBeNull();
     });
   });
 });

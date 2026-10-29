@@ -6,8 +6,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 type Trailing = { icon: IconName; label: string; onPress: () => void };
 
-/** A list row: leading visual, title, subtitle; the row and an optional trailing icon button are separate tap targets. */
-export function MenuListItem({ title, subtitle, leading, onPress, trailing, dimmed = false }: { title: string; subtitle?: string; leading?: ReactNode; onPress: () => void; trailing?: Trailing; dimmed?: boolean }) {
+/** A list row: leading visual, title, subtitle; the row and an optional secondary and trailing icon buttons are separate tap targets. */
+export function MenuListItem({ title, subtitle, leading, onPress, secondary, trailing, dimmed = false }: { title: string; subtitle?: string; leading?: ReactNode; onPress: () => void; secondary?: Trailing; trailing?: Trailing; dimmed?: boolean }) {
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center gap-2 rounded-xl border border-border bg-surface-raised pr-1">
@@ -24,6 +24,11 @@ export function MenuListItem({ title, subtitle, leading, onPress, trailing, dimm
           ) : null}
         </View>
       </Pressable>
+      {secondary ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={secondary.label} onPress={secondary.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
+          <Icon name={secondary.icon} size={22} color={colors.text} />
+        </Pressable>
+      ) : null}
       {trailing ? (
         <Pressable accessibilityRole="button" accessibilityLabel={trailing.label} onPress={trailing.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
           <Icon name={trailing.icon} size={22} color={colors.text} />
