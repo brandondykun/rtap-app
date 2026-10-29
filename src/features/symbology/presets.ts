@@ -1,5 +1,6 @@
 export type Affiliation = 'friend' | 'hostile' | 'neutral' | 'unknown';
 export const AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'neutral', 'unknown'];
+export const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
 
 export type UnitType = 'unspecified' | 'infantry' | 'armor' | 'recon' | 'medical' | 'engineer' | 'artillery' | 'air-defense';
 

@@ -4,7 +4,7 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
-import { AFFILIATIONS, composeSidc, ECHELONS, UNIT_TYPES, type Affiliation, type Echelon, type UnitType } from '@/features/symbology/presets';
+import { AFFILIATION_LABELS, AFFILIATIONS, composeSidc, ECHELONS, UNIT_TYPES, type Affiliation, type Echelon, type UnitType } from '@/features/symbology/presets';
 import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useDraft, type DraftMode } from '@/stores/draft';
 
@@ -14,7 +14,6 @@ import { NotesSection } from './form/NotesSection';
 import { UnitRangesSection } from './form/UnitRangesSection';
 import { useAutoName } from './form/use-auto-name';
 
-const AFFILIATION_LABELS: Record<Affiliation, string> = { friend: 'Friendly', hostile: 'Hostile', neutral: 'Neutral', unknown: 'Unknown' };
 // Listed alphabetically in the dropdown.
 const UNIT_OPTIONS = UNIT_TYPES.map((t) => ({ value: t.id, label: t.label })).sort((a, b) => a.label.localeCompare(b.label));
 // Kept in size order (team up to division), not alphabetical.
