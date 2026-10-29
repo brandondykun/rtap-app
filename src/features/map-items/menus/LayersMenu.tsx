@@ -33,6 +33,8 @@ import { PolygonSample } from './PolygonSample';
 const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 const count = (n: number) => n.toLocaleString('en-US');
+/** Tab counts stop at 99+ so all four tabs fit on one line. */
+const tabCount = (n: number) => (n > 99 ? '99+' : String(n));
 
 // `label` is the screen-reader name; `short` is what the tab shows, so all four fit on one line.
 const TABS: { id: ItemCategory; label: string; short: string; one: string; noun: string; empty: string }[] = [
@@ -69,7 +71,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
     icon: (
       <View testID={`layers-tab-${t.id}`} className="flex-row items-baseline gap-1.5">
         <Text className={`text-sm font-semibold ${t.id === tab ? 'text-accent' : 'text-text'}`}>{t.short}</Text>
-        <Text className={`font-mono text-xs ${t.id === tab ? 'text-accent' : 'text-text-muted'}`}>{count(byTab[t.id])}</Text>
+        <Text className={`font-mono text-xs ${t.id === tab ? 'text-accent' : 'text-text-muted'}`}>{tabCount(byTab[t.id])}</Text>
       </View>
     ),
   }));

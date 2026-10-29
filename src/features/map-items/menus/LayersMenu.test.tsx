@@ -61,6 +61,15 @@ describe('LayersMenu', () => {
     expect(screen.getByTestId('layers-tab-polygon')).toHaveTextContent(/^Polys0$/);
   });
 
+  it('caps a tab count at 99+', async () => {
+    const ctx = makeTestContext();
+    for (let i = 1; i <= 99; i++) await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: `P-${i}` });
+    await openLayers(ctx);
+    await waitFor(() => expect(screen.getByTestId('layers-tab-unit')).toHaveTextContent(/^Units99$/));
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'P-100' });
+    await waitFor(() => expect(screen.getByTestId('layers-tab-unit')).toHaveTextContent(/^Units99\+$/));
+  });
+
   it('counts the items in the list, and the matches while searching', async () => {
     const ctx = makeTestContext();
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
