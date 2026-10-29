@@ -39,7 +39,7 @@ async function openEditor() {
 describe('EditPointMenu', () => {
   it('opens to the condensed view, then edits the type and saves', async () => {
     const { ctx, id } = await openEditor();
-    expect(screen.getByRole('header')).toHaveAccessibleName(/^OP-1, /);
+    expect(screen.getByTestId('item-title')).toHaveAccessibleName(/^OP-1, /);
     expect(screen.getByLabelText('Close')).toBeTruthy();
     expect(screen.queryByLabelText('Name')).toBeNull();
     expect(screen.queryByLabelText('Hidden on map')).toBeNull();
@@ -66,7 +66,7 @@ describe('EditPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OP RIDGE');
     await fireEvent.press(screen.getByLabelText('Save'));
-    await waitFor(() => expect(screen.getByRole('header')).toHaveAccessibleName(/^OP RIDGE, /));
+    await waitFor(() => expect(screen.getByTestId('item-title')).toHaveAccessibleName(/^OP RIDGE, /));
     expect((await findItem(ctx.db, r.value.id))?.elevationM).toBe(88);
     expect(query).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText('Edit'));
@@ -82,7 +82,7 @@ describe('EditPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Name'), 'OP RIDGE');
     await fireEvent.press(screen.getByText('Cancel'));
-    expect(screen.getByRole('header')).toHaveAccessibleName(/^OP-1, /);
+    expect(screen.getByTestId('item-title')).toHaveAccessibleName(/^OP-1, /);
     expect(screen.queryByLabelText('Name')).toBeNull();
   });
 

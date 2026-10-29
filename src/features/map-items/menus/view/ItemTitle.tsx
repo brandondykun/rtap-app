@@ -5,9 +5,9 @@ import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import type { MapItemSnapshot } from '../../repository';
-import { pointSubtitle, unitSubtitle } from './item-summary';
+import { itemAccessibleTitle, pointSubtitle, unitSubtitle } from './item-summary';
 
-/** Header summary: symbol, name and a one-line type subtitle (the affiliation word in its map color). */
+/** Top of the view: symbol, name and a one-line type subtitle (the affiliation word in its map color). Read out as one line. */
 export function ItemTitle({ category, item, hidden }: { category: ItemCategory; item: Pick<MapItemSnapshot, 'name' | 'sidc'>; hidden: boolean }) {
   const { colors } = useTheme();
   const unit = category === 'unit' ? unitSubtitle(item.sidc) : null;
@@ -15,7 +15,7 @@ export function ItemTitle({ category, item, hidden }: { category: ItemCategory; 
   const first = unit?.affiliation ? subtitle.split(' · ')[0] : null;
   const color = unit?.affiliation ? { friend: colors.friendly, hostile: colors.danger, neutral: colors.neutral, unknown: colors.unknown }[unit.affiliation] : undefined;
   return (
-    <View className="flex-row items-center gap-3">
+    <View testID="item-title" accessible accessibilityLabel={itemAccessibleTitle(category, item, hidden)} className="flex-row items-center gap-3">
       {item.sidc ? <SymbolImage sidc={item.sidc} width={40} height={40} /> : null}
       <View className="shrink gap-0.5">
         <Text numberOfLines={1} className="font-mono-bold text-xl text-text">{item.name}</Text>

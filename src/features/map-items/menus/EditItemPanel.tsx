@@ -17,8 +17,6 @@ import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repo
 import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
-import { itemAccessibleTitle } from './view/item-summary';
-import { ItemTitle } from './view/ItemTitle';
 import { ItemView } from './view/ItemView';
 
 const NO_IDS: string[] = [];
@@ -141,8 +139,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
       <View>
         {locked ? (
           <MenuHeader
-            title={item ? itemAccessibleTitle(category, item, hidden) : title}
-            summary={item ? <ItemTitle category={category} item={item} hidden={hidden} /> : undefined}
+            title={title}
             leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}
             trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
           />
@@ -153,7 +150,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
             trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
           />
         )}
-        {ready ? locked ? item ? <ItemView item={item} hidden={hidden} onEdit={() => useDraft.getState().setLocked(false)} onDelete={() => void remove()} /> : null : form : null}
+        {ready ? locked ? item ? <ItemView category={category} item={item} hidden={hidden} onEdit={() => useDraft.getState().setLocked(false)} onDelete={() => void remove()} /> : null : form : null}
       </View>
     );
   }

@@ -69,10 +69,12 @@ describe('AddUnitMenu', () => {
     expect(screen.queryByLabelText('Show on map')).toBeNull();
   });
 
-  it('pairs Name and Affiliation in one row', async () => {
+  it('gives Affiliation its own row, not beside Name', async () => {
     await open();
-    const row = rowOf(screen.getByLabelText('Name'));
-    expect(within(row).getByLabelText('Hostile')).toBeTruthy();
+    // Name sits in no side-by-side row at all (rowOf finds none), so nothing shares its line.
+    const row = rowOf(screen.getByLabelText('Name')) as ReturnType<typeof rowOf> | null;
+    expect(row === null || within(row).queryByLabelText('Hostile') === null).toBe(true);
+    expect(screen.getByLabelText('Hostile')).toBeTruthy();
   });
 
   it('says there is no threat ring for a Reconnaissance draft', async () => {

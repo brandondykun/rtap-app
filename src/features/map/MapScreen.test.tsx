@@ -546,7 +546,8 @@ describe('MapScreen', () => {
     await act(async () =>
       (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
     );
-    expect(await screen.findByRole('header')).toHaveAccessibleName(/^HOS-1, Hostile/);
+    expect(await screen.findByTestId('item-title')).toHaveAccessibleName(/^HOS-1, Hostile/);
+    expect(screen.getByRole('header')).toHaveTextContent('Unit');
     expect(await screen.findByLabelText('Edit')).toBeTruthy();
     expect(screen.queryByLabelText('Name')).toBeNull();
   });

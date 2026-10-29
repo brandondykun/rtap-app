@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, type ReactNode } from 'react';
+import { useContext, useLayoutEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -19,15 +19,12 @@ export type MenuHeaderAction = {
 
 export type MenuHeaderProps = {
   title: string;
-  /** Drawn left-aligned and growing in place of the centered title; `title` stays the accessible header name. */
-  summary?: ReactNode;
   leading?: MenuHeaderAction;
   trailing?: MenuHeaderAction;
 };
 
 /**
- * Leading outlined action (Cancel / Close / Back), centered uppercase title (or a left-aligned `summary` node, with
- * `title` as its accessible name), trailing amber primary button (or an
+ * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button (or an
  * outlined icon button for a non-primary tool, like Layers' search). Inside a
  * Panel it is drawn pinned above the scrolling content, so Close and the primary action never scroll away.
  */
@@ -43,11 +40,11 @@ export function MenuHeader(props: MenuHeaderProps) {
 }
 
 /** The header row itself (in a portrait Panel it is also the sheet's drag area). */
-export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderProps) {
+export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
   const { colors } = useTheme();
   return (
-    <View className={`flex-row items-center px-4 py-2 ${summary ? 'gap-3' : ''}`}>
-      <View className={summary ? 'items-start' : 'min-w-20 items-start'}>
+    <View className="flex-row items-center px-4 py-2">
+      <View className="min-w-20 items-start">
         {leading?.iconOnly && leading.icon ? (
           <Pressable
             accessibilityRole="button"
@@ -70,16 +67,10 @@ export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderP
           </Pressable>
         ) : null}
       </View>
-      {summary ? (
-        <View accessible accessibilityRole="header" accessibilityLabel={title} className="flex-1">
-          {summary}
-        </View>
-      ) : (
-        <Text accessibilityRole="header" numberOfLines={1} className="flex-1 text-center text-base font-bold uppercase tracking-widest text-text">
-          {title}
-        </Text>
-      )}
-      <View className={summary ? 'items-end' : 'min-w-20 items-end'}>
+      <Text accessibilityRole="header" numberOfLines={1} className="flex-1 text-center text-base font-bold uppercase tracking-widest text-text">
+        {title}
+      </Text>
+      <View className="min-w-20 items-end">
         {trailing?.iconOnly && trailing.icon ? (
           <Pressable
             accessibilityRole="button"

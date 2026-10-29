@@ -203,14 +203,10 @@ describe('menu primitives', () => {
     expect(onPress).toHaveBeenCalled();
   });
 
-  it('MenuHeader with a summary draws it in place of the title, keeping the title as the header name', async () => {
+  it('MenuHeader can show an icon-only leading button, labelled for screen readers', async () => {
     const onPress = jest.fn();
-    const edit = jest.fn();
-    await renderWithProviders(
-      <MenuHeader title="HOS-4" summary={<Text>SUMMARY</Text>} leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress }} trailing={{ label: 'Edit', icon: 'pencil', onPress: edit }} />,
-    );
-    expect(screen.getByText('SUMMARY')).toBeTruthy();
-    expect(screen.getByRole('header', { name: 'HOS-4' })).toBeTruthy();
+    await renderWithProviders(<MenuHeader title="Unit" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress }} />);
+    expect(screen.getByRole('header')).toHaveTextContent('Unit');
     expect(screen.queryByText('Close')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Close'));
     expect(onPress).toHaveBeenCalledTimes(1);

@@ -35,23 +35,22 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
 
   return (
     <View>
-      <MenuColumns inset>
-        <MenuSection flush label="Name">
-          <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
-        </MenuSection>
-        <MenuSection flush label="Affiliation">
-          <MenuSegmented<Affiliation>
-            options={AFFILIATIONS.map((a) => ({
-              value: a,
-              label: AFFILIATION_LABELS[a],
-              icon: <SymbolImage sidc={composeSidc(a, 'unspecified')} width={30} height={22} />,
-            }))}
-            value={affiliation}
-            onChange={setAffiliation}
-            disabled={locked}
-          />
-        </MenuSection>
-      </MenuColumns>
+      <MenuSection label="Name">
+        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+      </MenuSection>
+      {/* Its own row: beside Name the four symbols were squeezed. */}
+      <MenuSection label="Affiliation">
+        <MenuSegmented<Affiliation>
+          options={AFFILIATIONS.map((a) => ({
+            value: a,
+            label: AFFILIATION_LABELS[a],
+            icon: <SymbolImage sidc={composeSidc(a, 'unspecified')} width={30} height={22} />,
+          }))}
+          value={affiliation}
+          onChange={setAffiliation}
+          disabled={locked}
+        />
+      </MenuSection>
       <LocationSection />
       <MenuColumns inset>
         <MenuSection flush label="Unit type">
