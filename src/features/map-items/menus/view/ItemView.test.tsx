@@ -65,6 +65,16 @@ describe('ItemView', () => {
     expect(screen.getByText(v.distanceLabel)).toBeTruthy();
   });
 
+  it('puts the north reference in the DIR label, leaving the direction and its unit below', async () => {
+    useOp.setState({ phase: 'on', at: OP_AT });
+    await open(composeSidc('friend', 'armor'));
+    const s = useSettings.getState();
+    const v = describeVector(OP_AT, AT, { date: new Date(), declinationOverrideDeg: s.declinationOverrideDeg, unit: s.angleUnit, ref: s.northRef });
+    expect(screen.getByText(`DIR (${v.refLabel})`)).toBeTruthy();
+    expect(screen.getByText(v.bearingLabel)).toBeTruthy();
+    expect(screen.queryByText(new RegExp(`${v.bearingLabel}.*${v.refLabel}`))).toBeNull();
+  });
+
   it('air defense with only a ceiling: Ring disabled, ring row shows the ceiling', async () => {
     await open(composeSidc('hostile', 'air-defense'), { ranges: { verticalRangeFt: 900 } });
     expect(screen.getByLabelText('Ring')).toBeDisabled();

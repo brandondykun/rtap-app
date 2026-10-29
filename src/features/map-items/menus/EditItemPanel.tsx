@@ -1,10 +1,11 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { MenuActions } from '@/components/menu/MenuActions';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuToggle } from '@/components/menu/MenuToggle';
+import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
@@ -72,6 +73,16 @@ export function EditItemPanel({ category, itemId, form }: Props) {
   }, [item, close, back, drilled, category, GONE, adapter]);
 
   useEffect(() => () => useDraft.getState().clear(), []);
+
+  // Saving or cancelling swaps the long form for the short view: start it at the top, not part-way down.
+  const panelScroll = useContext(PanelScrollContext);
+  // Only once the item is loaded: loading it locks the draft too, and that must not move the menu.
+  const wasLocked = useRef(true);
+  useEffect(() => {
+    if (!ready) return;
+    if (locked && !wasLocked.current) panelScroll?.scrollToTop();
+    wasLocked.current = locked;
+  }, [ready, locked, panelScroll]);
 
   const canSave = ready && !locked && valid;
 

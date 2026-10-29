@@ -19,15 +19,14 @@ function splitUnit(text: string): [string, string] {
 }
 
 /** One cell of the card's bottom row: label over a large number and its small unit. `last` drops the divider on its right. */
-function Cell({ label, value, unit, accent = false, last = false }: { label: string; value: string; unit?: string; accent?: boolean; last?: boolean }) {
-  const [number, own] = splitUnit(value);
-  const suffix = [own, unit].filter(Boolean).join(' ');
+function Cell({ label, value, accent = false, last = false }: { label: string; value: string; accent?: boolean; last?: boolean }) {
+  const [number, unit] = splitUnit(value);
   return (
     <View className={`flex-1 gap-0.5 px-3 py-2 ${last ? '' : 'border-r border-border'}`}>
       <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{label}</Text>
       <Text numberOfLines={1} adjustsFontSizeToFit className="font-mono-bold text-lg">
         <Text className={value === NO_VALUE ? 'text-text-muted' : accent ? 'text-accent' : 'text-text'}>{number}</Text>
-        {suffix ? <Text className="font-mono text-xs text-text-muted">{` ${suffix}`}</Text> : null}
+        {unit ? <Text className="font-mono text-xs text-text-muted">{` ${unit}`}</Text> : null}
       </Text>
     </View>
   );
@@ -53,7 +52,7 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
       </View>
       <View className="flex-row">
         <Cell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
-        <Cell label="DIR" value={vector?.bearingLabel ?? NO_VALUE} unit={vector?.refLabel} accent />
+        <Cell label={vector ? `DIR (${vector.refLabel})` : 'DIR'} value={vector?.bearingLabel ?? NO_VALUE} accent />
         <Cell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} last />
       </View>
       {ring ? (

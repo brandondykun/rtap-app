@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { firstValueFrom } from 'rxjs';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { setElevationSource } from '@/features/map/terrain/elevation';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { composeSidc } from '@/features/symbology/presets';
@@ -16,6 +17,7 @@ import { renderWithProviders } from '@/test-utils/render';
 
 import { deleteItem, placePoint } from '../commands';
 import { pointCoord } from '../geometry';
+import { EditUnitMenu } from './EditUnitMenu';
 import { findItem, observeHiddenItemIds, observeRingItemIds } from '../repository';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
@@ -160,6 +162,27 @@ describe('EditUnitMenu', () => {
     } finally {
       focus.mockRestore();
     }
+  });
+
+  it('jumps back to the top of the menu when Save or Cancel closes the form', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    const scrollToTop = jest.fn();
+    await renderWithProviders(
+      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop, scrollAsKeyboardShows: false }}>
+        <EditUnitMenu params={{ itemId: r.value.id }} missionId="m1" />
+      </PanelScrollContext.Provider>,
+      ctx,
+    );
+    await fireEvent.press(await screen.findByLabelText('Edit'));
+    expect(scrollToTop).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Cancel'));
+    expect(scrollToTop).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Notes'), 'dug in');
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(scrollToTop).toHaveBeenCalledTimes(2));
   });
 
   it('Cancel drops unsaved changes and returns to the read-only view', async () => {

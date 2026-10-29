@@ -125,8 +125,9 @@ export function Panel({
 
   const scroller = useRef<ScrollView>(null);
   const scrollToEnd = useCallback(() => scroller.current?.scrollToEnd({ animated: true }), []);
+  const scrollToTop = useCallback(() => scroller.current?.scrollTo({ y: 0, animated: false }), []);
   // In portrait the sheet grows to full when the keyboard shows, so a field must scroll itself into view after.
-  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollAsKeyboardShows: landscape && Platform.OS === 'ios' }), [scrollToEnd, landscape]);
+  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, scrollAsKeyboardShows: landscape && Platform.OS === 'ios' }), [scrollToEnd, scrollToTop, landscape]);
   const viewportHeight = useRef(0);
   /** A remembered position not yet reached (the content is still loading). */
   const pendingY = useRef<number | null>(null);

@@ -8,6 +8,8 @@ export const PanelHeaderSlot = createContext<((header: MenuHeaderProps | null) =
 export type PanelScroll = {
   /** Scrolls the content to the end (a field at the bottom of a menu bringing itself into view). */
   scrollToEnd: () => void;
+  /** Jumps back to the top (a menu swapping a long form for a short view). */
+  scrollToTop: () => void;
   /**
    * The panel keeps its size while the keyboard opens (iOS, the landscape drawer), and iOS starts its own small scroll to
    * the cursor as it opens. A field revealing itself then scrolls as the keyboard starts to show, so the two run together

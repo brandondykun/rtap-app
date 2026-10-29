@@ -39,7 +39,7 @@ describe('NotesSection', () => {
     const scrollToEnd = jest.fn();
     await act(async () => useDraft.getState().editNotes());
     await renderWithProviders(
-      <PanelScrollContext.Provider value={{ scrollToEnd, scrollAsKeyboardShows }}>
+      <PanelScrollContext.Provider value={{ scrollToEnd, scrollToTop: jest.fn(), scrollAsKeyboardShows }}>
         <NotesSection />
       </PanelScrollContext.Provider>,
     );
