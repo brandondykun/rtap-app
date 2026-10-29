@@ -125,7 +125,20 @@ export function Panel({
 
   const scroller = useRef<ScrollView>(null);
   const scrollToEnd = useCallback(() => scroller.current?.scrollToEnd({ animated: true }), []);
-  const scrollToTop = useCallback(() => scroller.current?.scrollTo({ y: 0, animated: false }), []);
+  const scrollToTop = useCallback(() => {
+    // A jump sends no scroll event, so the hairline under the header is cleared here too.
+    const top = () => {
+      scroller.current?.scrollTo({ y: 0, animated: false });
+      setScrolled(false);
+    };
+    top();
+    // Closing the keyboard (it is often still up, from the form) resizes the content's inset and can move it again.
+    if (!Keyboard.isVisible()) return;
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      hidden.remove();
+      top();
+    });
+  }, []);
   // In portrait the sheet grows to full when the keyboard shows, so a field must scroll itself into view after.
   const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, scrollAsKeyboardShows: landscape && Platform.OS === 'ios' }), [scrollToEnd, scrollToTop, landscape]);
   const viewportHeight = useRef(0);
@@ -265,7 +278,7 @@ export function Panel({
             <View testID="menu-panel-header" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)} style={{ paddingTop: landscape ? 4 : 0 }}>
               <MenuHeaderRow {...header} />
               {/* A hairline once content scrolls under the header. */}
-              <View className={`h-px bg-border-subtle ${scrolled ? '' : 'opacity-0'}`} />
+              <View testID="menu-panel-hairline" className={`h-px bg-border-subtle ${scrolled ? '' : 'opacity-0'}`} />
             </View>
           </GestureDetector>
         ) : null}

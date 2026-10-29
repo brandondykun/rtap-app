@@ -1,5 +1,5 @@
 import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react-native';
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { Dimensions, Keyboard, ScrollView, StyleSheet, Text } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 
 import { MenuHeader } from './MenuHeader';
 import { Panel } from './Panel';
+import { PanelScrollContext } from './panel-header-slot';
 import { detentHeights, drawerWidth, MINIMIZED_BAR_HEIGHT, minimizedBarSize, SHEET_CHROME_HEIGHT, SHEET_EDGE_HEIGHT } from './panel-geometry';
 
 const Theme = ({ children }: { children: ReactNode }) => <ThemeProvider theme="dark">{children}</ThemeProvider>;
@@ -484,6 +485,38 @@ describe('Panel', () => {
       await render(panel({}, undefined, onScrollY));
       await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
       expect(onScrollY).toHaveBeenLastCalledWith(300);
+    });
+
+    it('scrollToTop jumps to the top, clears the header hairline, and again once a still-open keyboard closes', async () => {
+      function Top() {
+        const scroll = useContext(PanelScrollContext);
+        return <Text onPress={() => scroll?.scrollToTop()}>top</Text>;
+      }
+      let hideKeyboard = () => {};
+      jest.spyOn(Keyboard, 'isVisible').mockReturnValue(true);
+      const listen = jest.spyOn(Keyboard, 'addListener').mockImplementation((name, cb) => {
+        if (name === 'keyboardDidHide') hideKeyboard = () => (cb as (e: unknown) => void)({});
+        return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
+      });
+      try {
+        await render(
+          <Panel landscape detents={['full']} initialDetent="full" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+            <MenuHeader title="Unit" />
+            <Top />
+          </Panel>,
+        );
+        await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
+        expect(screen.getByTestId('menu-panel-hairline').props.className).not.toContain('opacity-0');
+        await fireEvent.press(screen.getByText('top'));
+        expect(scrollTo()).toHaveBeenLastCalledWith({ y: 0, animated: false });
+        expect(screen.getByTestId('menu-panel-hairline').props.className).toContain('opacity-0');
+        scrollTo().mockClear();
+        await act(async () => hideKeyboard());
+        expect(scrollTo()).toHaveBeenCalledWith({ y: 0, animated: false });
+      } finally {
+        listen.mockRestore();
+        jest.mocked(Keyboard.isVisible).mockRestore();
+      }
     });
 
     it('starts new content at the top', async () => {
