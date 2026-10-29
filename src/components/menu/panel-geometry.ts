@@ -20,9 +20,9 @@ export const PEEK_HEIGHT = 88;
 export const MIN_HALF_HEIGHT = 300;
 export const HALF_FRACTION = 0.42;
 /** Narrow enough to leave map beside it, wide enough for a full MGRS row (see the geometry test). */
-export const DRAWER_MIN_WIDTH = 326;
-export const DRAWER_MAX_WIDTH = 400;
-export const DRAWER_FRACTION = 0.38;
+export const DRAWER_MIN_WIDTH = 350;
+export const DRAWER_MAX_WIDTH = 424;
+export const DRAWER_FRACTION = 0.41;
 /** The rail that hides the open panel (the drawer's right edge, the sheet's top edge); the menu content gives up this much. */
 export const RAIL_WIDTH = 16;
 /** The sheet's own drag grip row under the rail, for content without a menu header (a header row is the drag area). */
