@@ -57,6 +57,7 @@ import { MeasureLayer } from './layers/MeasureLayer';
 import { QuickPlotLayer } from './layers/QuickPlotLayer';
 import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
+import { RingsLayer } from './layers/RingsLayer';
 import { SelfLayer } from './layers/SelfLayer';
 import { barTakesReadoutSpot, cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
 import { useElevationSource } from './terrain/elevation';
@@ -536,6 +537,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onUserGesture={onUserGesture}>
         <GridLayer />
         <PolygonsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
+        <RingsLayer missionId={missionId} />
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}

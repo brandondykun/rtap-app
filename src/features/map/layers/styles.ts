@@ -246,6 +246,25 @@ export function makePolygonFillStyle(colors: Record<SemanticToken, string>): Fil
   };
 }
 
+/** Tint inside a unit's range ring; light enough that the imagery reads through it. */
+export const RING_FILL_OPACITY = 0.12;
+
+function ringColor(colors: Record<SemanticToken, string>): unknown {
+  return ['match', ['get', 'affiliation'], 'friendly', colors.friendly, 'hostile', colors.hostile, 'neutral', colors.neutral, colors.unknown];
+}
+
+export function makeRingFillStyle(colors: Record<SemanticToken, string>): FillLayerStyle {
+  return { fillColor: ringColor(colors) as FillLayerStyle['fillColor'], fillOpacity: RING_FILL_OPACITY };
+}
+
+export function makeRingHaloStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { lineColor: colors['point-symbol-halo'], lineWidth: 4 };
+}
+
+export function makeRingLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { lineColor: ringColor(colors) as LineLayerStyle['lineColor'], lineWidth: 2 };
+}
+
 /** Polygon outlines: drawn like lines, in the polygon's color. */
 export function makePolygonOutlineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
   return { ...makeLineStyle(colors), lineColor: polygonColor(colors) as LineLayerStyle['lineColor'] };

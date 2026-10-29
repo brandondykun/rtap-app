@@ -21,6 +21,10 @@ import {
   makePolygonLabelStyle,
   makePolygonOutlineDashedStyle,
   makePolygonOutlineStyle,
+  makeRingFillStyle,
+  makeRingHaloStyle,
+  makeRingLineStyle,
+  RING_FILL_OPACITY,
   MARKER_ICON_SIZE,
   POINT_ICON_SIZE,
   POINT_SYMBOL_STYLE,
@@ -280,5 +284,19 @@ describe('MGRS grid label styles', () => {
   it('keeps the grid line numbers at 11 pt', () => {
     expect(makeGridLineLabelStyle(colors).textSize).toBe(11);
     expect(makeGridLineLabelStyle(colors, false).textSize).toBe(11);
+  });
+});
+
+describe('range ring styles', () => {
+  const colors = themeColors('dark');
+  it('tints with the affiliation color at the ring opacity', () => {
+    const fill = makeRingFillStyle(colors);
+    expect(fill.fillOpacity).toBe(RING_FILL_OPACITY);
+    expect(RING_FILL_OPACITY).toBe(0.12);
+    expect(fill.fillColor).toEqual(['match', ['get', 'affiliation'], 'friendly', colors.friendly, 'hostile', colors.hostile, 'neutral', colors.neutral, colors.unknown]);
+  });
+  it('outlines with a halo and the affiliation color', () => {
+    expect(makeRingHaloStyle(colors)).toMatchObject({ lineColor: colors['point-symbol-halo'], lineWidth: 4 });
+    expect(makeRingLineStyle(colors)).toMatchObject({ lineWidth: 2 });
   });
 });
