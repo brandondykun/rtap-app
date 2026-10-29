@@ -304,3 +304,20 @@ describe('unit ranges in the draft', () => {
     expect(useDraft.getState().rangeText).toEqual({ threatRangeM: '', horizontalRangeM: '8000', verticalRangeFt: '' });
   });
 });
+
+describe('focusItem', () => {
+  it('re-centers on the draft coord while locked, without changing the coord', () => {
+    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: '' });
+    expect(useDraft.getState().locked).toBe(true);
+    const rev = useDraft.getState().coordRev;
+    useDraft.getState().focusItem();
+    expect(useDraft.getState()).toMatchObject({ coord: A, coordSource: 'item', coordRev: rev + 1 });
+  });
+
+  it('does nothing without a coord', () => {
+    useDraft.getState().startAdd({ coord: null, source: 'crosshair', category: 'unit' });
+    const before = useDraft.getState();
+    useDraft.getState().focusItem();
+    expect(useDraft.getState()).toMatchObject({ coord: null, coordRev: before.coordRev, coordSource: before.coordSource });
+  });
+});

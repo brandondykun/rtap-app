@@ -84,6 +84,8 @@ type DraftActions = {
     ranges?: UnitRanges;
   }) => void;
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;
+  /** Re-centers the map on the draft's coord (the Center button); works while locked and does nothing without a coord. */
+  focusItem: () => void;
   setCoordInputValid: (valid: boolean) => void;
   setAffiliation: (affiliation: Affiliation) => void;
   setUnitType: (unitType: UnitType) => void;
@@ -250,6 +252,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setCoord: (coord, source) =>
     // Any move ends a pending map pick (the pick itself arrives through here too).
     set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1, picking: false } : {})),
+  focusItem: () => set((s) => (s.coord ? { coordRev: s.coordRev + 1, coordSource: 'item' } : {})),
   setCoordInputValid: (coordInputValid) => set({ coordInputValid }),
   setAffiliation: (affiliation) =>
     set((s) => ({
