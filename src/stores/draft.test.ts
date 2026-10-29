@@ -305,6 +305,16 @@ describe('unit ranges in the draft', () => {
   });
 });
 
+describe('editNotes', () => {
+  it('unlocks the form and leaves a one-time request for the notes field', () => {
+    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: '' });
+    useDraft.getState().editNotes();
+    expect(useDraft.getState()).toMatchObject({ locked: false, focusNotes: true });
+    expect(useDraft.getState().takeNotesFocus()).toBe(true);
+    expect(useDraft.getState().takeNotesFocus()).toBe(false);
+  });
+});
+
 describe('focusItem', () => {
   it('re-centers on the draft coord while locked, without changing the coord', () => {
     useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: '' });

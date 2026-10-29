@@ -1,3 +1,4 @@
+import { TextInput } from 'react-native';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
@@ -145,6 +146,20 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
     expect((await findItem(ctx.db, id))?.sidc).toBe(composeSidc('friend', 'armor', 'company'));
+  });
+
+  it('tapping the notes in the view opens the form with the notes field focused', async () => {
+    const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
+    try {
+      await openEditor();
+      // The unit has notes, so the preview reads them out ("Notes: …"); with none it's "Add notes".
+      await fireEvent.press(screen.getByLabelText(/^(Add notes|Notes: )/));
+      expect(screen.getByRole('header')).toHaveTextContent('Edit unit');
+      expect(screen.getByLabelText('Notes')).toHaveProp('editable', true);
+      expect(focus).toHaveBeenCalledTimes(1);
+    } finally {
+      focus.mockRestore();
+    }
   });
 
   it('Cancel drops unsaved changes and returns to the read-only view', async () => {

@@ -35,7 +35,7 @@ async function open(sidc: string, extra: { ranges?: Partial<UnitRanges>; notes?:
   useDraft.setState({ coord: AT, locked: true });
   const onEdit = jest.fn();
   const onDelete = jest.fn();
-  await renderWithProviders(<ItemView category={itemCategory({ kind: 'point', sidc })} item={item} hidden={props.hidden ?? false} onEdit={onEdit} onDelete={onDelete} />, ctx);
+  await renderWithProviders(<ItemView category={itemCategory({ kind: 'point', sidc })} item={item} hidden={props.hidden ?? false} onEditNotes={onEdit} onDelete={onDelete} />, ctx);
   return { ctx, id: r.value.id, onEdit, onDelete };
 }
 

@@ -44,6 +44,8 @@ export type DraftValues = {
   rangeText: Record<RangeField, string>;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
+  /** Set by tapping the notes in the view: the form's notes field focuses itself (and scrolls into view) once it appears. */
+  focusNotes: boolean;
   /** Waiting for the user to tap the map where the point should go (the Map button). */
   picking: boolean;
   /** Line drafts (category 'line'): the points, the selected point, and where the next one goes. */
@@ -86,6 +88,10 @@ type DraftActions = {
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;
   /** Re-centers the map on the draft's coord (the Center button); works while locked and does nothing without a coord. */
   focusItem: () => void;
+  /** Unlocks the form and asks its notes field to take focus (tapping the notes in the view). */
+  editNotes: () => void;
+  /** True once after `editNotes`: the notes field calls this when it mounts and focuses itself if it gets true. */
+  takeNotesFocus: () => boolean;
   setCoordInputValid: (valid: boolean) => void;
   setAffiliation: (affiliation: Affiliation) => void;
   setUnitType: (unitType: UnitType) => void;
@@ -144,6 +150,7 @@ export const INITIAL_DRAFT: DraftValues = {
   elevation: null,
   rangeText: { threatRangeM: '', horizontalRangeM: '', verticalRangeFt: '' },
   locked: false,
+  focusNotes: false,
   picking: false,
   vertices: [],
   selectedVertex: null,
@@ -253,6 +260,12 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     // Any move ends a pending map pick (the pick itself arrives through here too).
     set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1, picking: false } : {})),
   focusItem: () => set((s) => (s.coord ? { coordRev: s.coordRev + 1, coordSource: 'item' } : {})),
+  editNotes: () => set({ locked: false, focusNotes: true }),
+  takeNotesFocus: () => {
+    if (!useDraft.getState().focusNotes) return false;
+    set({ focusNotes: false });
+    return true;
+  },
   setCoordInputValid: (coordInputValid) => set({ coordInputValid }),
   setAffiliation: (affiliation) =>
     set((s) => ({

@@ -150,7 +150,7 @@ export function EditItemPanel({ category, itemId, form }: Props) {
             trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
           />
         )}
-        {ready ? locked ? item ? <ItemView category={category} item={item} hidden={hidden} onEdit={() => useDraft.getState().setLocked(false)} onDelete={() => void remove()} /> : null : form : null}
+        {ready ? locked ? item ? <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} /> : null : form : null}
       </View>
     );
   }
