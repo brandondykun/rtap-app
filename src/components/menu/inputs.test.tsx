@@ -82,4 +82,17 @@ describe('menu inputs', () => {
     await renderWithProviders(<TextField accessibilityLabel="Field" value="" onChangeText={jest.fn()} />);
     expect(screen.getByLabelText('Field')).toHaveProp('disableFullscreenUI', true);
   });
+
+  it('draws a 1 pt border on fields and selects, focused or not (only the colour changes)', async () => {
+    const first = await renderWithProviders(<TextField accessibilityLabel="Field" value="" onChangeText={jest.fn()} />);
+    const cls = () => String(screen.getByLabelText('Field').props.className);
+    expect(cls()).toMatch(/(^| )border( |$)/);
+    expect(cls()).not.toContain('border-2');
+    await fireEvent(screen.getByLabelText('Field'), 'focus');
+    expect(cls()).toContain('border-accent');
+    expect(cls()).not.toContain('border-2');
+    await first.unmount();
+    await renderWithProviders(<MenuSelect label="Unit type" options={[{ value: 'a', label: 'Alpha' }]} value="a" onChange={jest.fn()} />);
+    expect(String(screen.getByLabelText('Unit type: Alpha').props.className)).not.toContain('border-2');
+  });
 });

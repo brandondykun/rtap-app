@@ -57,7 +57,7 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
         <Animated.View
           testID="segmented-highlight"
           pointerEvents="none"
-          className="absolute left-0 border-2 border-accent bg-accent-subtle"
+          className="absolute left-0 border border-accent bg-accent-subtle"
           style={[{ top: SEGMENTED_PAD, bottom: SEGMENTED_PAD, borderRadius: SEGMENTED_HIGHLIGHT_RADIUS }, highlight]}
         />
       ) : null}
@@ -79,7 +79,7 @@ export function MenuSegmented<T extends string>({ options, value, onChange, disa
               const l = e.nativeEvent.layout;
               setLayouts((prev) => ({ ...prev, [option.value]: l }));
             }}
-            className={`active:opacity-60 flex-1 items-center justify-center rounded-lg border-2 border-transparent py-2 ${option.disabled ? 'opacity-40' : ''}`}>
+            className={`active:opacity-60 flex-1 items-center justify-center rounded-lg border border-transparent py-2 ${option.disabled ? 'opacity-40' : ''}`}>
             {option.icon ?? (
               <Animated.Text
                 className="text-sm font-semibold"

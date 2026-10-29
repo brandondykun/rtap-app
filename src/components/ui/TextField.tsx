@@ -58,7 +58,7 @@ export function TextField({ invalid = false, mono = false, dense = false, nested
       // A fixed height and no line-height keep single-line text vertically centred on iOS
       // (Tailwind's text-lg adds a 28 pt line-height that pushes TextInput text down).
       style={multiline ? undefined : { textAlignVertical: 'center' }}
-      className={`${nested ? 'rounded-lg' : 'rounded-xl'} border-2 bg-surface-input ${dense ? 'px-2' : 'px-3'} ${showIcon ? 'pl-11' : ''} ${clearable ? 'pr-11' : ''} text-[18px] text-text ${multiline ? 'min-h-24 py-3' : 'h-12 py-0'} ${mono ? 'font-mono' : ''} ${border}`}
+      className={`${nested ? 'rounded-lg' : 'rounded-xl'} border bg-surface-input ${dense ? 'px-2' : 'px-3'} ${showIcon ? 'pl-11' : ''} ${clearable ? 'pr-11' : ''} text-[18px] text-text ${multiline ? 'min-h-24 py-3' : 'h-12 py-0'} ${mono ? 'font-mono' : ''} ${border}`}
       {...rest}
     />
   );
