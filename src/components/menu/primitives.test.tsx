@@ -5,6 +5,7 @@ import { renderWithProviders } from '@/test-utils/render';
 
 import { MenuActions } from './MenuActions';
 import { MenuButton } from './MenuButton';
+import { MenuCountButton } from './MenuCountButton';
 import { MenuHeader } from './MenuHeader';
 import { MenuListItem } from './MenuListItem';
 import { MenuRow } from './MenuRow';
@@ -129,6 +130,23 @@ describe('menu primitives', () => {
     await fireEvent.press(screen.getByLabelText('HOS-1'));
     expect(onPress).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText('HOS-1').props.accessibilityHint).toBe('Hidden · 18S UJ 1 2');
+  });
+
+  it('MenuListItem keeps an empty column when its secondary is null, so columns line up', async () => {
+    const eye = { icon: 'eye-outline' as const, label: 'Hide HOS-1', onPress: jest.fn() };
+    const first = await renderWithProviders(<MenuListItem title="HOS-1" onPress={jest.fn()} secondary={null} trailing={eye} />);
+    expect(screen.getByTestId('list-column-empty')).toBeTruthy();
+    await first.unmount();
+    await renderWithProviders(<MenuListItem title="HOS-1" onPress={jest.fn()} trailing={eye} />);
+    expect(screen.queryByTestId('list-column-empty')).toBeNull();
+  });
+
+  it('MenuCountButton shows its icon and text and is pressable by its label', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<MenuCountButton icon="eye-outline" text="8/9" label="Show all" onPress={onPress} />);
+    expect(screen.getByLabelText('Show all')).toHaveTextContent(/8\/9/);
+    await fireEvent.press(screen.getByLabelText('Show all'));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it('MenuVertexRow: row, remove and insert are separate targets; remove can be disabled', async () => {

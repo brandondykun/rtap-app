@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
-import { MenuButton } from '@/components/menu/MenuButton';
+import { MenuCountButton } from '@/components/menu/MenuCountButton';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuListItem } from '@/components/menu/MenuListItem';
 import { MenuSection } from '@/components/menu/MenuSection';
@@ -34,12 +34,14 @@ const NO_ITEMS: MapItemSnapshot[] = [];
 const NO_IDS: string[] = [];
 const count = (n: number) => n.toLocaleString('en-US');
 
-const TABS: { id: ItemCategory; label: string; noun: string; empty: string }[] = [
-  { id: 'unit', label: 'Units', noun: 'units', empty: 'No units yet. Use UNIT or long-press the map.' },
-  { id: 'point', label: 'Points', noun: 'points', empty: 'No points yet. Use POINT to add one.' },
-  { id: 'line', label: 'Lines', noun: 'lines', empty: 'No lines yet. Use LINE to draw one.' },
-  { id: 'polygon', label: 'Polygons', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
+// `label` is the screen-reader name; `short` is what the tab shows, so all four fit on one line.
+const TABS: { id: ItemCategory; label: string; short: string; one: string; noun: string; empty: string }[] = [
+  { id: 'unit', label: 'Units', short: 'Units', one: 'unit', noun: 'units', empty: 'No units yet. Use UNIT or long-press the map.' },
+  { id: 'point', label: 'Points', short: 'Points', one: 'point', noun: 'points', empty: 'No points yet. Use POINT to add one.' },
+  { id: 'line', label: 'Lines', short: 'Lines', one: 'line', noun: 'lines', empty: 'No lines yet. Use LINE to draw one.' },
+  { id: 'polygon', label: 'Polygons', short: 'Polys', one: 'polygon', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
 ];
+const RING_ICON = 'record-circle-outline';
 
 /** The mission's items in one tab per category: search, show/hide, tap to open. */
 export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
@@ -65,12 +67,17 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
     value: t.id,
     label: t.label,
     icon: (
-      <View testID={`layers-tab-${t.id}`} className="items-center">
-        <Text className={`text-sm font-semibold ${t.id === tab ? 'text-accent' : 'text-text'}`}>{t.label}</Text>
-        <Text className="font-mono text-xs text-text-muted">{count(byTab[t.id])}</Text>
+      <View testID={`layers-tab-${t.id}`} className="flex-row items-baseline gap-1.5">
+        <Text className={`text-sm font-semibold ${t.id === tab ? 'text-accent' : 'text-text'}`}>{t.short}</Text>
+        <Text className={`font-mono text-xs ${t.id === tab ? 'text-accent' : 'text-text-muted'}`}>{count(byTab[t.id])}</Text>
       </View>
     ),
   }));
+
+  // The ring column shows on the Units tab once any unit there has a ring distance.
+  const ringColumn = tab === 'unit' && ringableIds.length > 0;
+  const noun = total === 1 ? tabInfo.one : tabInfo.noun;
+  const listCount = query.trim() ? `${count(matched)} of ${count(total)} ${noun}` : `${count(total)} ${noun}`;
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -107,7 +114,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   return (
     <View>
       <MenuHeader title="Layers" leading={{ label: 'Close', onPress: close }} />
-      <MenuSection label="Map items">
+      <MenuSection>
         <MenuSegmented<ItemCategory>
           options={tabOptions}
           value={tab}
@@ -118,78 +125,99 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         />
         {total > 0 ? (
           <TextField
+            icon="magnify"
+            clearable
             accessibilityLabel="Search"
             value={query}
             onChangeText={setQuery}
-            placeholder={`Search ${tabInfo.noun}…`}
+            placeholder={`Search ${tabInfo.noun}`}
             autoCapitalize="characters"
             autoCorrect={false}
           />
         ) : null}
-        {/* Hidden count, Hide all and Show all cover this tab only (not narrowed by search). */}
-        <View className="flex-row items-center gap-2">
-          <Text testID="layers-hidden" className="mr-auto text-sm text-text-muted">{`${count(hiddenIds.length)} hidden`}</Text>
-          <MenuButton label="Hide all" icon="eye-off-outline" onPress={hideAll} disabled={visibleIds.length === 0} />
-          <MenuButton label="Show all" icon="eye-outline" onPress={showAll} disabled={hiddenIds.length === 0} />
-        </View>
-        {tab === 'unit' ? (
-          <View className="flex-row items-center justify-end gap-2">
-            <MenuButton label="Hide all rings" icon="radius-outline" onPress={hideAllRings} disabled={ringOnIds.length === 0} />
-            <MenuButton label="Show all rings" icon="radius" onPress={showAllRings} disabled={ringOnIds.length >= ringableIds.length} />
+        {/*
+          Column headers act on the whole tab (not narrowed by search), like a "select all" box: while anything is off,
+          a tap turns everything on; once everything is on, a tap turns everything off.
+        */}
+        {total > 0 ? (
+          <View className="flex-row items-center gap-1 pt-1">
+            <Text testID="layers-count" className="mr-auto text-xs font-semibold uppercase tracking-widest text-text-muted">
+              {listCount}
+            </Text>
+            {ringColumn ? (
+              <MenuCountButton
+                icon={RING_ICON}
+                accent
+                text={`${count(ringOnIds.length)}/${count(ringableIds.length)}`}
+                label={ringOnIds.length < ringableIds.length ? 'Show all rings' : 'Hide all rings'}
+                onPress={ringOnIds.length < ringableIds.length ? showAllRings : hideAllRings}
+              />
+            ) : null}
+            <MenuCountButton
+              icon="eye-outline"
+              text={`${count(visibleIds.length)}/${count(total)}`}
+              label={hiddenIds.length > 0 ? 'Show all' : 'Hide all'}
+              onPress={hiddenIds.length > 0 ? showAll : hideAll}
+            />
           </View>
         ) : null}
         {total === 0 ? <Text className="text-sm text-text-muted">{tabInfo.empty}</Text> : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
-        {rows.map((row) => (
-          <MenuListItem
-            key={row.id}
-            title={row.name}
-            subtitle={`${row.hidden ? 'Hidden · ' : ''}${
-              row.lineType
-                ? `${lineTypeInfo(row.lineType).label} · ${formatDistance(row.length ?? 0)}`
-                : row.polygonType
-                  ? `${polygonTypeInfo(row.polygonType).label} · ${
-                      row.radiusM !== null ? `r ${formatDistance(row.radiusM)}` : row.areaM2 !== null ? formatArea(row.areaM2) : '—'
-                    }`
-                  : row.coord
-                    ? formatCoordinate(row.coord, coordinateFormat)
-                    : '—'
-            }`}
-            dimmed={row.hidden}
-            leading={
-              row.polygonType ? (
-                <View style={{ width: 28, height: 20, justifyContent: 'center', alignItems: 'center' }}>
-                  <PolygonSample polygonType={row.polygonType} />
-                </View>
-              ) : row.lineType ? (
-                <View style={{ width: 28, height: 20, justifyContent: 'center' }}>
-                  <LineSample lineType={row.lineType} />
-                </View>
-              ) : (
-                <SymbolImage sidc={row.sidc} width={28} height={20} />
-              )
-            }
-            onPress={() => {
-              Keyboard.dismiss();
-              openItemMenu(row.id, { kind: row.kind, sidc: row.sidc }, { drill: true });
-            }}
-            secondary={
-              row.ring === null
-                ? undefined
-                : {
-                    icon: row.ring ? 'radius' : 'radius-outline',
-                    active: row.ring,
-                    label: row.ring ? `Hide ring for ${row.name}` : `Show ring for ${row.name}`,
-                    onPress: () => toggleRing(row.id, !row.ring),
-                  }
-            }
-            trailing={{
-              icon: row.hidden ? 'eye-off-outline' : 'eye-outline',
-              label: row.hidden ? `Show ${row.name}` : `Hide ${row.name}`,
-              onPress: () => toggle(row.id, !row.hidden),
-            }}
-          />
-        ))}
+        {/* One gapless list: rows are split by their own top line. */}
+        <View>
+          {rows.map((row) => (
+            <MenuListItem
+              key={row.id}
+              title={row.name}
+              subtitle={`${
+                row.lineType
+                  ? `${lineTypeInfo(row.lineType).label} · ${formatDistance(row.length ?? 0)}`
+                  : row.polygonType
+                    ? `${polygonTypeInfo(row.polygonType).label} · ${
+                        row.radiusM !== null ? `r ${formatDistance(row.radiusM)}` : row.areaM2 !== null ? formatArea(row.areaM2) : '—'
+                      }`
+                    : row.coord
+                      ? formatCoordinate(row.coord, coordinateFormat)
+                      : '—'
+              }`}
+              dimmed={row.hidden}
+              leading={
+                row.polygonType ? (
+                  <View style={{ width: 28, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                    <PolygonSample polygonType={row.polygonType} />
+                  </View>
+                ) : row.lineType ? (
+                  <View style={{ width: 28, height: 20, justifyContent: 'center' }}>
+                    <LineSample lineType={row.lineType} />
+                  </View>
+                ) : (
+                  <SymbolImage sidc={row.sidc} width={28} height={20} />
+                )
+              }
+              onPress={() => {
+                Keyboard.dismiss();
+                openItemMenu(row.id, { kind: row.kind, sidc: row.sidc }, { drill: true });
+              }}
+              secondary={
+                !ringColumn
+                  ? undefined
+                  : row.ring === null
+                    ? null
+                    : {
+                        icon: RING_ICON,
+                        active: row.ring,
+                        label: row.ring ? `Hide ring for ${row.name}` : `Show ring for ${row.name}`,
+                        onPress: () => toggleRing(row.id, !row.ring),
+                      }
+              }
+              trailing={{
+                icon: row.hidden ? 'eye-off-outline' : 'eye-outline',
+                label: row.hidden ? `Show ${row.name}` : `Hide ${row.name}`,
+                onPress: () => toggle(row.id, !row.hidden),
+              }}
+            />
+          ))}
+        </View>
         {matched > rows.length ? (
           <Text testID="layers-more" className="text-sm text-text-muted">
             {`Showing ${count(rows.length)} of ${count(matched)} — refine your search`}

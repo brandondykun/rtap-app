@@ -51,8 +51,26 @@ describe('LayersMenu', () => {
     expect(screen.getByText('No lines yet. Use LINE to draw one.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Polygons'));
     expect(screen.getByText('No polygons yet. Use POLYGON to draw one.')).toBeTruthy();
-    expect(screen.getByLabelText('Show all')).toBeDisabled();
-    expect(screen.getByLabelText('Hide all')).toBeDisabled();
+    expect(screen.queryByLabelText('Show all')).toBeNull();
+    expect(screen.queryByLabelText('Hide all')).toBeNull();
+  });
+
+  it('puts each tab on one line, with Polygons shortened to Polys', async () => {
+    await openLayers();
+    expect(screen.getByTestId('layers-tab-unit')).toHaveTextContent(/^Units0$/);
+    expect(screen.getByTestId('layers-tab-polygon')).toHaveTextContent(/^Polys0$/);
+  });
+
+  it('counts the items in the list, and the matches while searching', async () => {
+    const ctx = makeTestContext();
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
+    await openLayers(ctx);
+    expect(await screen.findByTestId('layers-count')).toHaveTextContent('2 units');
+    await fireEvent.changeText(screen.getByLabelText('Search'), 'HOS-1');
+    expect(screen.getByTestId('layers-count')).toHaveTextContent('1 of 2 units');
+    await fireEvent.press(screen.getByLabelText('Clear Search'));
+    expect(screen.getByTestId('layers-count')).toHaveTextContent('2 units');
   });
 
   it('hides all items in the open tab only', async () => {
@@ -63,12 +81,14 @@ describe('LayersMenu', () => {
     if (!a.ok || !b.ok || !l.ok) throw new Error('setup');
     await openLayers(ctx);
     expect(await screen.findByText('HOS-1')).toBeTruthy();
-    expect(screen.getByLabelText('Show all')).toBeDisabled();
+    // Everything showing: the eye header hides everything.
+    expect(screen.queryByLabelText('Show all')).toBeNull();
+    expect(screen.getByLabelText('Hide all')).toHaveTextContent(/2\/2/);
     await fireEvent.press(screen.getByLabelText('Hide all'));
     await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
-    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('2 hidden'));
-    expect(screen.getByLabelText('Hide all')).toBeDisabled();
-    expect(screen.getByLabelText('Show all')).toBeEnabled();
+    // Now something is hidden: the same header shows everything.
+    await waitFor(() => expect(screen.getByLabelText('Show all')).toHaveTextContent(/0\/2/));
+    expect(screen.queryByLabelText('Hide all')).toBeNull();
   });
 
   it('lists points, hides and shows them, and shows all', async () => {
@@ -80,16 +100,17 @@ describe('LayersMenu', () => {
     await setItemHidden(ctx, b.value.id, true);
     await openLayers(ctx);
 
-    expect(await screen.findByTestId('layers-hidden')).toHaveTextContent('1 hidden');
+    // One of two hidden: the header counts what is visible, and a tap shows everything.
+    expect(await screen.findByLabelText('Show all')).toHaveTextContent(/1\/2/);
     expect(screen.getByTestId('layers-tab-unit')).toHaveTextContent(/^Units2$/);
     expect(screen.queryByText('ELSEWHERE')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Hide HOS-1'));
     await waitFor(async () => expect((await firstValueFrom(observeHiddenItemIds(ctx.db))).sort()).toEqual([a.value.id, b.value.id].sort()));
-    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('2 hidden'));
+    await waitFor(() => expect(screen.getByLabelText('Show all')).toHaveTextContent(/0\/2/));
 
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([]));
-    await waitFor(() => expect(screen.getByTestId('layers-hidden')).toHaveTextContent('0 hidden'));
+    await waitFor(() => expect(screen.getByLabelText('Hide all')).toHaveTextContent(/2\/2/));
   });
 
   it('searches and caps long lists', async () => {
@@ -155,7 +176,7 @@ describe('LayersMenu', () => {
     await fireEvent.press(screen.getByLabelText('Lines'));
     expect(screen.getByText('RED')).toBeTruthy();
     expect(screen.queryByText('HOS-1')).toBeNull();
-    expect(screen.getByLabelText('Search')).toHaveProp('placeholder', 'Search lines…');
+    expect(screen.getByLabelText('Search')).toHaveProp('placeholder', 'Search lines');
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([u.value.id]));
     await act(async () => useMenu.getState().closeMenu());
@@ -234,15 +255,36 @@ describe('LayersMenu', () => {
       return { ctx, ids: [a.value.id, b.value.id].sort() };
     }
 
-    it('Show all rings turns on both rings while a search is typed, Hide all rings turns them off', async () => {
+    it('the ring header shows every ring while any is off (even while searching), then hides them all', async () => {
       const { ctx, ids } = await twoGuns();
-      expect(screen.getByLabelText('Hide all rings')).toBeDisabled();
-      await fireEvent.changeText(screen.getByLabelText('Search'), 'art');
+      expect(screen.queryByLabelText('Hide all rings')).toBeNull();
+      expect(screen.getByLabelText('Show all rings')).toHaveTextContent(/0\/2/);
+      await fireEvent.press(screen.getByLabelText('Show ring for ART-1'));
+      await waitFor(() => expect(screen.getByLabelText('Show all rings')).toHaveTextContent(/1\/2/));
+      await fireEvent.changeText(screen.getByLabelText('Search'), 'art-1');
       await fireEvent.press(screen.getByLabelText('Show all rings'));
       await waitFor(async () => expect((await firstValueFrom(observeRingItemIds(ctx.db))).sort()).toEqual(ids));
-      await waitFor(() => expect(screen.getByLabelText('Show all rings')).toBeDisabled());
+      await waitFor(() => expect(screen.getByLabelText('Hide all rings')).toHaveTextContent(/2\/2/));
       await fireEvent.press(screen.getByLabelText('Hide all rings'));
       await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toEqual([]));
+    });
+
+    it('keeps the ring column aligned: units without a ring get an empty slot', async () => {
+      const ctx = makeTestContext();
+      await placePoint(ctx, { missionId: 'm1', coord: at, sidc: composeSidc('hostile', 'artillery'), name: 'ART-1', ranges: { threatRangeM: 9000 } });
+      await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+      await openLayers(ctx);
+      await screen.findByText('HOS-1');
+      expect(screen.getAllByTestId('list-column-empty')).toHaveLength(1);
+    });
+
+    it('has no ring column when no unit has a ring distance', async () => {
+      const ctx = makeTestContext();
+      await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+      await openLayers(ctx);
+      await screen.findByText('HOS-1');
+      expect(screen.queryByLabelText('Show all rings')).toBeNull();
+      expect(screen.queryByTestId('list-column-empty')).toBeNull();
     });
 
     it('the row button toggles one ring', async () => {
@@ -256,7 +298,7 @@ describe('LayersMenu', () => {
     it('draws the ring button in the accent color only while the ring is on', async () => {
       await twoGuns();
       const icon = (label: string) => within(screen.getByLabelText(label)).getByText(/./);
-      expect(icon('Show ring for ART-1')).toHaveStyle({ color: colors.text });
+      expect(icon('Show ring for ART-1')).toHaveStyle({ color: colors['text-muted'] });
       await fireEvent.press(screen.getByLabelText('Show ring for ART-1'));
       await screen.findByLabelText('Hide ring for ART-1');
       expect(icon('Hide ring for ART-1')).toHaveStyle({ color: colors.accent });

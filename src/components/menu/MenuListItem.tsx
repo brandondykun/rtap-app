@@ -4,14 +4,35 @@ import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 
-type Trailing = { icon: IconName; label: string; onPress: () => void; /** Draws the icon in the accent color (an "on" state). */ active?: boolean };
+/** Width of each icon column at a row's right edge; column headers (MenuCountButton) line up over it. */
+export const LIST_COLUMN_WIDTH = 52;
 
-/** A list row: leading visual, title, subtitle; the row and an optional secondary and trailing icon buttons are separate tap targets. */
-export function MenuListItem({ title, subtitle, leading, onPress, secondary, trailing, dimmed = false }: { title: string; subtitle?: string; leading?: ReactNode; onPress: () => void; secondary?: Trailing; trailing?: Trailing; dimmed?: boolean }) {
-  const { colors } = useTheme();
+type Column = { icon: IconName; label: string; onPress: () => void; /** An "on" state: accent icon on an accent-subtle tile. */ active?: boolean };
+
+/**
+ * A list row with a thin line above it: leading visual, title, subtitle, then up to two icon columns. The row and each
+ * column are separate tap targets. A `secondary` of null keeps its column empty, so the columns line up down the list.
+ */
+export function MenuListItem({
+  title,
+  subtitle,
+  leading,
+  onPress,
+  secondary,
+  trailing,
+  dimmed = false,
+}: {
+  title: string;
+  subtitle?: string;
+  leading?: ReactNode;
+  onPress: () => void;
+  secondary?: Column | null;
+  trailing?: Column;
+  dimmed?: boolean;
+}) {
   return (
-    <View className="flex-row items-center gap-2 rounded-xl border border-border bg-surface-raised pr-1">
-      <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityHint={subtitle} onPress={onPress} className={`active:opacity-60 flex-1 flex-row items-center gap-3 py-2 pl-3 ${dimmed ? 'opacity-50' : ''}`}>
+    <View className="flex-row items-center border-t border-border">
+      <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityHint={subtitle} onPress={onPress} className={`active:opacity-60 flex-1 flex-row items-center gap-3 py-2.5 ${dimmed ? 'opacity-50' : ''}`}>
         {leading}
         <View className="flex-1">
           <Text numberOfLines={1} className="font-mono text-base text-text">
@@ -24,16 +45,25 @@ export function MenuListItem({ title, subtitle, leading, onPress, secondary, tra
           ) : null}
         </View>
       </Pressable>
-      {secondary ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={secondary.label} onPress={secondary.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
-          <Icon name={secondary.icon} size={22} color={secondary.active ? colors.accent : colors.text} />
-        </Pressable>
-      ) : null}
-      {trailing ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={trailing.label} onPress={trailing.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
-          <Icon name={trailing.icon} size={22} color={colors.text} />
-        </Pressable>
-      ) : null}
+      {secondary === null ? <View testID="list-column-empty" style={{ width: LIST_COLUMN_WIDTH }} /> : secondary ? <ColumnButton column={secondary} /> : null}
+      {trailing ? <ColumnButton column={trailing} muted={dimmed} /> : null}
+    </View>
+  );
+}
+
+function ColumnButton({ column, muted = false }: { column: Column; muted?: boolean }) {
+  const { colors } = useTheme();
+  const color = column.active ? colors.accent : muted || column.active === false ? colors['text-muted'] : colors.text;
+  return (
+    <View style={{ width: LIST_COLUMN_WIDTH }} className="items-center">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={column.label}
+        onPress={column.onPress}
+        hitSlop={4}
+        className={`active:opacity-60 h-11 w-11 items-center justify-center rounded-lg ${column.active ? 'bg-accent-subtle' : ''}`}>
+        <Icon name={column.icon} size={22} color={color} />
+      </Pressable>
     </View>
   );
 }

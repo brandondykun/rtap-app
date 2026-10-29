@@ -29,6 +29,12 @@ describe('menu inputs', () => {
     expect(screen.queryByLabelText('Clear Name')).toBeNull();
   });
 
+  it('a TextField with an icon draws it at the left', async () => {
+    await renderWithProviders(<TextField icon="magnify" accessibilityLabel="Search" value="" onChangeText={jest.fn()} />);
+    expect(screen.getByTestId('text-field-icon')).toBeTruthy();
+    expect(screen.getByLabelText('Search')).toBeTruthy();
+  });
+
   it('MenuSegmented selects one option', async () => {
     const onChange = jest.fn();
     const options = [
