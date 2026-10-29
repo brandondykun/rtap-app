@@ -66,18 +66,15 @@ describe('AddPointMenu', () => {
     expect((await items(ctx))[0].elevationM).toBe(312.4);
   });
 
-  it('makes the elevation stand out: a small label, then the value in bold, muted while unknown', async () => {
+  it('shows elevation as an ELEV line, muted while unknown', async () => {
     let answer: ((m: number) => void) | null = null;
     setElevationSource(() => new Promise((resolve) => (answer = resolve)));
     await open();
     await waitFor(() => expect(answer).not.toBeNull());
-    const row = screen.getByLabelText('Elevation unknown');
-    expect(within(row).getByText('Elevation').props.className).toContain('uppercase');
-    expect(within(row).getByText('—').props.className).toContain('text-text-muted');
+    expect(screen.getByLabelText('Elevation unknown')).toHaveTextContent('ELEV —');
     await act(async () => answer!(312.4));
-    const value = within(await screen.findByLabelText('Elevation 312 m')).getByText('312 m');
-    expect(value.props.className).toContain('font-mono-bold');
-    expect(value.props.className).toMatch(/(^| )text-text( |$)/);
+    expect(await screen.findByLabelText('Elevation 312 m')).toHaveTextContent('ELEV 312 m');
+    expect(screen.getByTestId('location-elevation')).toHaveTextContent('ELEV 312 m');
   });
 
   it('shows elevation in feet with the Altitude setting', async () => {

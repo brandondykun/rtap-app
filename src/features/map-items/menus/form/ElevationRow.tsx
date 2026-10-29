@@ -13,7 +13,7 @@ const LOOKUP_DELAY_MS = 250;
  * A unit's or point's ground elevation, in the Altitude unit. While adding or moving it follows the item (what Add/Save
  * will store); while viewing it shows the stored value. A dash while unknown or still being looked up.
  */
-export function ElevationRow() {
+export function ElevationRow({ inline = false }: { /** One compact `ELEV <value>` text line, for under the location status. */ inline?: boolean }) {
   const coord = useDraft((s) => s.coord);
   const locked = useDraft((s) => s.locked);
   const elevation = useDraft((s) => s.elevation);
@@ -29,6 +29,13 @@ export function ElevationRow() {
 
   const m = elevation && sameCoord(elevation.at, coord) ? elevation.m : null;
   const value = formatLength(m, unit);
+  if (inline) {
+    return (
+      <Text testID="location-elevation" accessibilityLabel={`Elevation ${m === null ? 'unknown' : value}`} className="text-sm text-text-muted">
+        {`ELEV ${value}`}
+      </Text>
+    );
+  }
   // Stands out by size and weight alone, like the G-M angle: no border or fill, which would make it look editable.
   return (
     <View accessible accessibilityLabel={`Elevation ${m === null ? 'unknown' : value}`} className="flex-row items-baseline gap-3">

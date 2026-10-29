@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { Icon } from '@/components/ui/Icon';
 import { CenterButton } from '@/components/menu/CenterButton';
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
@@ -8,6 +9,7 @@ import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { describeVector } from '@/lib/geo/vector';
+import { useTheme } from '@/theme/ThemeProvider';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { usePresence } from '@/stores/presence';
@@ -17,6 +19,7 @@ import { ElevationRow } from './ElevationRow';
 
 /** The draft's location: MGRS fields, Center (crosshair) and Map (tap to place), and its elevation. Shared by units and points. */
 export function LocationSection() {
+  const { colors } = useTheme();
   const coord = useDraft((s) => s.coord);
   const coordRev = useDraft((s) => s.coordRev);
   const coordSource = useDraft((s) => s.coordSource);
@@ -51,7 +54,7 @@ export function LocationSection() {
   };
 
   const v = self && coord ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
-  const validDetail = v ? `${v.distanceLabel} @ ${v.bearingLabel} ${v.refLabel}` : undefined;
+  const detail = v ? `${v.distanceLabel} · ${v.bearingLabel} ${v.refLabel}` : undefined;
 
   const toCrosshair = () => {
     const center = useInteraction.getState().cameraCenter;
@@ -60,15 +63,21 @@ export function LocationSection() {
 
   return (
     <MenuSection label="MGRS · Zone / 100K / Easting / Northing">
-      <MgrsInput value={parts} onChange={onPartsChange} status={status} validDetail={validDetail} disabled={locked} />
-      {noun === 'center' ? null : <ElevationRow />}
-      <View className="flex-row gap-2">
-        <View className="flex-1">
-          <CenterButton label="Center" onPress={toCrosshair} disabled={locked} />
+      <MgrsInput value={parts} onChange={onPartsChange} status={status} disabled={locked} showStatus={false} />
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1 gap-0.5">
+          {status.status === 'valid' || status.status === 'invalid' ? (
+            <View className="flex-row items-center gap-1">
+              <Icon name={status.status === 'valid' ? 'check' : 'alert-circle-outline'} size={16} color={status.status === 'valid' ? colors.success : colors.danger} />
+              <Text testID="location-status" className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
+                {status.status === 'valid' ? detail ?? 'Valid' : status.message}
+              </Text>
+            </View>
+          ) : null}
+          {noun === 'center' ? null : <ElevationRow inline />}
         </View>
-        <View className="flex-1">
-          <MenuButton label="Map" icon="gesture-tap" onPress={() => setPicking(!picking)} active={picking} disabled={locked} />
-        </View>
+        <CenterButton compact label="Center" onPress={toCrosshair} disabled={locked} />
+        <MenuButton compact label="Map" icon="gesture-tap" onPress={() => setPicking(!picking)} active={picking} disabled={locked} />
       </View>
       {picking ? <Text className="text-sm text-accent">{`Tap the map where the ${noun} should go`}</Text> : null}
     </MenuSection>

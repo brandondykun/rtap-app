@@ -22,6 +22,8 @@ type Props = {
   autoFocus?: 'zone' | 'easting';
   /** Smaller field corners, to nest inside a card with 8 pt padding (quick plot). */
   nested?: boolean;
+  /** Show the validation line under the fields (default). Off when the caller renders its own status. */
+  showStatus?: boolean;
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
@@ -37,7 +39,7 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false, showStatus = true }: Props) {
   const { colors } = useTheme();
   const zone = useRef<TextInput>(null);
   const square = useRef<TextInput>(null);
@@ -112,7 +114,7 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
           <TextField nested={nested} editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
         </View>
       </View>
-      {status.status === 'valid' || status.status === 'invalid' ? (
+      {showStatus && (status.status === 'valid' || status.status === 'invalid') ? (
         <View className="flex-row items-center gap-1">
           {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
           {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}

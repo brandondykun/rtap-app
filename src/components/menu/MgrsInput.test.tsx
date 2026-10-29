@@ -25,6 +25,13 @@ describe('MgrsInput', () => {
     expect(screen.getByTestId('mgrs-status').props.className).not.toContain('text-text-muted');
   });
 
+  it('hides its status line with showStatus={false}', async () => {
+    const parts = mgrsFieldsFor(DC);
+    await renderWithProviders(<MgrsInput value={parts} onChange={jest.fn()} status={evaluateMgrsFields(parts)} showStatus={false} />);
+    expect(screen.queryByTestId('mgrs-status')).toBeNull();
+    expect(screen.getByLabelText('Easting')).toBeTruthy();
+  });
+
   it('uppercases letters and strips non-digits', async () => {
     const onChange = jest.fn();
     await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={onChange} status={{ status: 'empty' }} />);
