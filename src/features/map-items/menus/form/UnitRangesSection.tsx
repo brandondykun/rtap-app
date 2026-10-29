@@ -10,7 +10,7 @@ import { useDraft, type DraftMode } from '@/stores/draft';
 
 import { setItemShowRing } from '../../commands';
 import { observeItem, observeRingItemIds, type MapItemSnapshot } from '../../repository';
-import { rangeFieldsFor, ringRadiusM, type RangeField } from '../../unit-ranges';
+import { rangeFieldsFor, rangeFieldsForSidc, ringRadiusM, type RangeField } from '../../unit-ranges';
 
 const NO_IDS: string[] = [];
 const LABELS: Record<RangeField, string> = { threatRangeM: 'Threat ring', horizontalRangeM: 'Horizontal range', verticalRangeFt: 'Vertical range' };
@@ -41,18 +41,21 @@ export function UnitRangesSection({ mode }: { mode: DraftMode }) {
           </View>
         </MenuSection>
       ))}
-      {mode === 'edit' ? <RingSwitch /> : null}
+      {mode === 'edit' ? <RingSwitch fields={fields} /> : null}
     </>
   );
 }
 
 /** Shown only once the saved item has a ring distance; works while the form is locked. */
-function RingSwitch() {
+function RingSwitch({ fields }: { fields: readonly RangeField[] }) {
   const ctx = useCommandContext();
   const itemId = useDraft((s) => s.itemId);
   const item = useObservable<MapItemSnapshot | null>(() => observeItem(ctx.db, itemId ?? ''), null, [ctx, itemId]);
   const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
   if (!itemId || !item || ringRadiusM(item) === null) return null;
+  // The draft's unit type may no longer have the field that gives the saved item its ring.
+  const savedField = rangeFieldsForSidc(item.sidc).find((f) => f !== 'verticalRangeFt');
+  if (!savedField || !fields.includes(savedField)) return null;
   const setShow = (show: boolean) => {
     void setItemShowRing(ctx, itemId, show).then((result) => {
       if (!result.ok) notifyError('Could not change the ring.');

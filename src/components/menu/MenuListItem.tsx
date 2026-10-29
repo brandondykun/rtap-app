@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
 
-type Trailing = { icon: IconName; label: string; onPress: () => void };
+type Trailing = { icon: IconName; label: string; onPress: () => void; /** Draws the icon in the accent color (an "on" state). */ active?: boolean };
 
 /** A list row: leading visual, title, subtitle; the row and an optional secondary and trailing icon buttons are separate tap targets. */
 export function MenuListItem({ title, subtitle, leading, onPress, secondary, trailing, dimmed = false }: { title: string; subtitle?: string; leading?: ReactNode; onPress: () => void; secondary?: Trailing; trailing?: Trailing; dimmed?: boolean }) {
@@ -26,7 +26,7 @@ export function MenuListItem({ title, subtitle, leading, onPress, secondary, tra
       </Pressable>
       {secondary ? (
         <Pressable accessibilityRole="button" accessibilityLabel={secondary.label} onPress={secondary.onPress} hitSlop={6} className="active:opacity-60 h-11 w-11 items-center justify-center">
-          <Icon name={secondary.icon} size={22} color={colors.text} />
+          <Icon name={secondary.icon} size={22} color={secondary.active ? colors.accent : colors.text} />
         </Pressable>
       ) : null}
       {trailing ? (

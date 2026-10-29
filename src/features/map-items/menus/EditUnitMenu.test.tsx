@@ -185,6 +185,42 @@ describe('EditUnitMenu', () => {
     expect(screen.queryByLabelText('Show ring on map')).toBeNull();
   });
 
+  it('shows what was stored after Save: a type change clears the old range, a decimal shows rounded', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 18000 } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('HOS-3');
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '12,6');
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('13'));
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
+    await fireEvent.press(screen.getByText('Infantry'));
+    await fireEvent.press(screen.getByLabelText('Save'));
+    await waitFor(() => expect(screen.getByRole('header')).toHaveTextContent('Unit'));
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.press(screen.getByLabelText('Unit type: Infantry'));
+    await fireEvent.press(screen.getByText('Artillery'));
+    expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('');
+  });
+
+  it('hides the ring switch when the draft unit type has no ring distance', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 12000 } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('HOS-3');
+    await screen.findByLabelText('Show ring on map');
+    await fireEvent.press(screen.getByLabelText('Edit'));
+    await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
+    await fireEvent.press(screen.getByText('Infantry'));
+    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
+  });
+
   it('deletes after a second tap, without a "missing" message', async () => {
     const { ctx, id } = await openEditor();
     await fireEvent.press(screen.getByLabelText('Edit'));

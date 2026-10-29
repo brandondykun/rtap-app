@@ -9,11 +9,12 @@ import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
-import { useDraft } from '@/stores/draft';
+import { draftRanges, useDraft } from '@/stores/draft';
 import { useMenu } from '@/stores/menu';
 
 import { deleteItem, setItemHidden } from '../commands';
 import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repository';
+import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
 
@@ -85,7 +86,9 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     }
     if (result.ok) {
       notifySuccess();
-      // Back to the view-only item; the draft already holds what was saved.
+      // Back to the view-only item. The range fields show what was stored (rounded, or cleared by a type change), not what was typed.
+      const saved = draftRanges(d);
+      for (const f of RANGE_FIELDS) useDraft.getState().setRangeText(f, formatRangeText(saved?.[f] ?? null));
       useDraft.getState().setLocked(true);
     } else if (result.error === 'not_found') {
       leaving.current = true;

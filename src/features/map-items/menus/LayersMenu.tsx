@@ -178,6 +178,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
                 ? undefined
                 : {
                     icon: row.ring ? 'radius' : 'radius-outline',
+                    active: row.ring,
                     label: row.ring ? `Hide ring for ${row.name}` : `Show ring for ${row.name}`,
                     onPress: () => toggleRing(row.id, !row.ring),
                   }

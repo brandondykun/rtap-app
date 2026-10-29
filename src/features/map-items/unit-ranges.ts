@@ -8,6 +8,8 @@ export type UnitRanges = Record<RangeField, number | null>;
 export const NO_RANGES: UnitRanges = { threatRangeM: null, horizontalRangeM: null, verticalRangeFt: null };
 export const MAX_VERTICAL_RANGE_FT = 100_000;
 
+export const RANGE_FIELDS: readonly RangeField[] = ['threatRangeM', 'horizontalRangeM', 'verticalRangeFt'];
+
 export function rangeFieldsFor(unitType: UnitType): readonly RangeField[] {
   if (unitType === 'artillery') return ['threatRangeM'];
   if (unitType === 'air-defense') return ['horizontalRangeM', 'verticalRangeFt'];
