@@ -22,17 +22,19 @@ export function NotesSection() {
   useEffect(() => {
     if (useDraft.getState().locked || !useDraft.getState().takeNotesFocus()) return;
     input.current?.focus();
-    // Scroll once the keyboard is up, so the field ends up above it (or after a wait, if none shows). Where the keyboard
-    // already scrolls the focused field into view, scrolling again would move the content twice: leave it to the keyboard.
+    // Scroll to the bottom, where the field sits, so all of it ends up above the keyboard (after a wait, if none shows).
+    // Where the panel keeps its size, scroll as the keyboard starts to open (one movement with iOS's own); in the portrait
+    // sheet, once it is up and the sheet has grown.
     let done = false;
-    const scroll = (keyboard: boolean) => {
+    const scroll = () => {
       if (done) return;
       done = true;
       shown.remove();
-      if (!(keyboard && panel?.keyboardRevealsFocus)) panel?.scrollToEnd();
+      // A frame later, so the scroll view has taken the keyboard's inset and the end is above the keyboard.
+      requestAnimationFrame(() => panel?.scrollToEnd());
     };
-    const shown = Keyboard.addListener('keyboardDidShow', () => scroll(true));
-    const timer = setTimeout(() => scroll(false), KEYBOARD_WAIT_MS);
+    const shown = Keyboard.addListener(panel?.scrollAsKeyboardShows ? 'keyboardWillShow' : 'keyboardDidShow', scroll);
+    const timer = setTimeout(scroll, KEYBOARD_WAIT_MS);
     return () => {
       shown.remove();
       clearTimeout(timer);

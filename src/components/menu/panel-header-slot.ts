@@ -9,10 +9,11 @@ export type PanelScroll = {
   /** Scrolls the content to the end (a field at the bottom of a menu bringing itself into view). */
   scrollToEnd: () => void;
   /**
-   * The keyboard itself scrolls a focused field into view (iOS, in the landscape drawer, which keeps its size). A field
-   * revealing itself then leaves it to the keyboard, or the content would move twice.
+   * The panel keeps its size while the keyboard opens (iOS, the landscape drawer), and iOS starts its own small scroll to
+   * the cursor as it opens. A field revealing itself then scrolls as the keyboard starts to show, so the two run together
+   * as one movement, instead of after it is up (a second movement).
    */
-  keyboardRevealsFocus: boolean;
+  scrollAsKeyboardShows: boolean;
 };
 
 /** Set by the Panel. Null outside a Panel. */

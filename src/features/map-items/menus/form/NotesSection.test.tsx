@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Keyboard, TextInput } from 'react-native';
 
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
@@ -9,6 +9,7 @@ import { renderWithProviders } from '@/test-utils/render';
 import { NotesSection } from './NotesSection';
 
 beforeEach(() => useDraft.setState(INITIAL_DRAFT));
+afterEach(() => jest.restoreAllMocks());
 
 describe('NotesSection', () => {
   it('always shows the notes field under a Notes label, inviting notes while empty', async () => {
@@ -28,21 +29,21 @@ describe('NotesSection', () => {
   });
 
   /** Renders the field opened from the view's notes, in a panel; returns the panel's scroll and a way to show the keyboard. */
-  async function openFromView(keyboardRevealsFocus: boolean) {
+  async function openFromView(scrollAsKeyboardShows: boolean, event: 'keyboardDidShow' | 'keyboardWillShow' = 'keyboardDidShow') {
     const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
     let showKeyboard = () => {};
-    const listen = jest.spyOn(Keyboard, 'addListener').mockImplementation((event, cb) => {
-      if (event === 'keyboardDidShow') showKeyboard = () => (cb as (e: unknown) => void)({});
+    jest.spyOn(Keyboard, 'addListener').mockImplementation((name, cb) => {
+      if (name === event) showKeyboard = () => (cb as (e: unknown) => void)({});
       return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
     });
     const scrollToEnd = jest.fn();
     await act(async () => useDraft.getState().editNotes());
     await renderWithProviders(
-      <PanelScrollContext.Provider value={{ scrollToEnd, keyboardRevealsFocus }}>
+      <PanelScrollContext.Provider value={{ scrollToEnd, scrollAsKeyboardShows }}>
         <NotesSection />
       </PanelScrollContext.Provider>,
     );
-    return { focus, scrollToEnd, showKeyboard: () => showKeyboard(), restore: () => (focus.mockRestore(), listen.mockRestore()) };
+    return { focus, scrollToEnd, showKeyboard: () => showKeyboard() };
   }
 
   it('opened from the view, focuses itself and scrolls the menu to it once the keyboard is up', async () => {
@@ -52,24 +53,22 @@ describe('NotesSection', () => {
     expect(useDraft.getState().focusNotes).toBe(false);
     expect(f.scrollToEnd).not.toHaveBeenCalled();
     await act(async () => f.showKeyboard());
-    expect(f.scrollToEnd).toHaveBeenCalledTimes(1);
-    f.restore();
+    await waitFor(() => expect(f.scrollToEnd).toHaveBeenCalledTimes(1));
   });
 
-  it('leaves the scroll to the keyboard where it reveals the focused field itself (landscape drawer), so the content moves once', async () => {
-    const f = await openFromView(true);
+  it('where the panel keeps its size (landscape drawer), scrolls as the keyboard starts to open, so it is one movement', async () => {
+    const f = await openFromView(true, 'keyboardWillShow');
     await act(async () => f.showKeyboard());
-    expect(f.scrollToEnd).not.toHaveBeenCalled();
-    f.restore();
+    await waitFor(() => expect(f.scrollToEnd).toHaveBeenCalledTimes(1));
   });
 
-  it('scrolls after a wait when no keyboard shows (a hardware keyboard), even where the keyboard would have', async () => {
+  it('scrolls after a wait when no keyboard shows (a hardware keyboard)', async () => {
     jest.useFakeTimers();
     try {
       const f = await openFromView(true);
-      await act(async () => jest.advanceTimersByTime(1500));
+      // The wait, then the frame the scroll waits for.
+      await act(async () => jest.advanceTimersByTime(1500 + 100));
       expect(f.scrollToEnd).toHaveBeenCalledTimes(1);
-      f.restore();
     } finally {
       jest.useRealTimers();
     }
@@ -77,8 +76,8 @@ describe('NotesSection', () => {
 
   it('does not take focus when opened by Edit', async () => {
     const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
+    focus.mockClear();
     await renderWithProviders(<NotesSection />);
     expect(focus).not.toHaveBeenCalled();
-    focus.mockRestore();
   });
 });
