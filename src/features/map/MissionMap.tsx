@@ -536,6 +536,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onPress={onMapPress}
         onUserGesture={onUserGesture}>
         <GridLayer />
+        {/* Order is draw order, and also tap priority: a tap that touches several layers goes to the topmost one, so a
+            unit or line on a range ring's border is selected, not the ring under it. Keep Points above Rings. */}
         <PolygonsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <RingsLayer missionId={missionId} onItemPress={onItemPress} />
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
