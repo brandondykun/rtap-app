@@ -37,12 +37,30 @@ describe('RingsLayer', () => {
     }
   });
 
-  it('hides hidden units and is not tappable', async () => {
+  it('hides hidden units; the drawn ring (and its inside) is not tappable', async () => {
     const { ctx, id } = await setup();
     await act(async () => void (await setItemHidden(ctx, id, true)));
     await renderWithProviders(<RingsLayer missionId="m1" />, ctx);
     const props = mapboxMock().__props;
     await waitFor(() => expect(JSON.stringify(props.FillLayer['rings-fill'].filter)).toContain(JSON.stringify(hiddenFilter([id]))));
     expect(props.ShapeSource.rings.onPress).toBeUndefined();
+    // The border's tap layer follows the same filter: no tapping a hidden or switched-off ring.
+    expect(props.LineLayer['rings-hit-line'].filter).toEqual(props.FillLayer['rings-fill'].filter);
+  });
+
+  it('a tap on the border selects its unit, at the tapped spot', async () => {
+    const { ctx, id } = await setup();
+    await act(async () => void (await setItemShowRing(ctx, id, true)));
+    const onItemPress = jest.fn();
+    await renderWithProviders(<RingsLayer missionId="m1" onItemPress={onItemPress} />, ctx);
+    const props = mapboxMock().__props;
+    // Outlines only, so a tap inside the ring never lands on it.
+    await waitFor(() => expect((props.ShapeSource['rings-hit'].shape as { features: unknown[] }).features).toHaveLength(1));
+    const outline = (props.ShapeSource['rings-hit'].shape as { features: { geometry: { type: string } }[] }).features[0];
+    expect(outline.geometry.type).toBe('LineString');
+    await act(async () =>
+      (props.ShapeSource['rings-hit'].onPress as (e: unknown) => void)({ features: [{ properties: { id } }], coordinates: { latitude: 39.06, longitude: -77 } }),
+    );
+    expect(onItemPress).toHaveBeenCalledWith(id, { lat: 39.06, lon: -77 }, { kind: 'point', sidc: composeSidc('hostile', 'artillery') }, null);
   });
 });

@@ -537,7 +537,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onUserGesture={onUserGesture}>
         <GridLayer />
         <PolygonsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
-        <RingsLayer missionId={missionId} />
+        <RingsLayer missionId={missionId} onItemPress={onItemPress} />
         <LinesLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         <PointsLayer missionId={missionId} excludeId={editingId} onItemPress={onItemPress} />
         {draftActive ? <DraftLayer /> : null}

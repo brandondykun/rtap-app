@@ -265,6 +265,14 @@ export function makeRingLineStyle(colors: Record<SemanticToken, string>): LineLa
   return { lineColor: ringColor(colors) as LineLayerStyle['lineColor'], lineWidth: 2 };
 }
 
+/**
+ * The tappable copy of a ring's outline: drawn but all but invisible (a fully transparent line may not be hit-tested).
+ * The source's tap box, not this width, sets how close to the border a tap must land.
+ */
+export function makeRingHitStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
+  return { ...makeRingLineStyle(colors), lineOpacity: 0.01 };
+}
+
 /** Polygon outlines: drawn like lines, in the polygon's color. */
 export function makePolygonOutlineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
   return { ...makeLineStyle(colors), lineColor: polygonColor(colors) as LineLayerStyle['lineColor'] };
