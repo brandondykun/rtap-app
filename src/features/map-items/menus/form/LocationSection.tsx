@@ -69,7 +69,7 @@ export function LocationSection() {
           {status.status === 'valid' || status.status === 'invalid' ? (
             <View className="flex-row items-center gap-1">
               <Icon name={status.status === 'valid' ? 'check' : 'alert-circle-outline'} size={16} color={status.status === 'valid' ? colors.success : colors.danger} />
-              <Text testID="location-status" className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
+              <Text testID="location-status" numberOfLines={status.status === 'valid' ? 1 : undefined} adjustsFontSizeToFit={status.status === 'valid'} className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
                 {status.status === 'valid' ? detail ?? 'Valid' : status.message}
               </Text>
             </View>

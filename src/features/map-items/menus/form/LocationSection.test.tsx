@@ -27,6 +27,9 @@ describe('LocationSection', () => {
     expect(screen.getByTestId('location-status')).not.toHaveTextContent('@');
     expect(screen.getByTestId('location-elevation')).toHaveTextContent(/^ELEV 126 m/);
     expect(screen.queryByTestId('mgrs-status')).toBeNull();
+    // Line 1 never wraps, so the block stays exactly two lines beside the buttons.
+    expect(screen.getByTestId('location-status')).toHaveProp('numberOfLines', 1);
+    expect(screen.getByTestId('location-status')).toHaveProp('adjustsFontSizeToFit', true);
   });
 
   it('says Valid when there is no position', async () => {
