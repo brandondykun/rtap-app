@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { MenuColumns } from '@/components/menu/MenuColumns';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
@@ -30,14 +29,13 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
 
   return (
     <View>
-      <MenuColumns inset>
-        <MenuSection flush label="Name">
-          <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
-        </MenuSection>
-        <MenuSection flush label="Point type">
-          <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
-        </MenuSection>
-      </MenuColumns>
+      {/* Each on its own row: side by side they were squeezed. */}
+      <MenuSection label="Name">
+        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+      </MenuSection>
+      <MenuSection label="Point type">
+        <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
+      </MenuSection>
       <LocationSection />
       <NotesSection />
     </View>

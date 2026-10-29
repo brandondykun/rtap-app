@@ -31,7 +31,7 @@ beforeEach(() => {
 
 afterEach(() => setElevationSource(null));
 
-/** The nearest ancestor laying its children out in a row (a MenuColumns). */
+/** The nearest ancestor laying its children out in a row, or null when there is none. */
 function rowOf(el: ReturnType<typeof screen.getByLabelText>) {
   let node = el.parent;
   while (node && !/\bflex-row\b/.test(String(node.props.className ?? ''))) node = node.parent;
@@ -56,10 +56,12 @@ describe('AddPointMenu', () => {
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point', coord: CENTER });
   });
 
-  it('pairs Name and Point type in one row', async () => {
+  it('gives Name and Point type each their own row', async () => {
     await open();
-    const row = rowOf(screen.getByLabelText('Name'));
-    expect(within(row).getByLabelText('Point type: Checkpoint')).toBeTruthy();
+    // Name sits in no side-by-side row at all (rowOf finds none), so nothing shares its line.
+    const row = rowOf(screen.getByLabelText('Name')) as ReturnType<typeof rowOf> | null;
+    expect(row === null || within(row).queryByLabelText('Point type: Checkpoint') === null).toBe(true);
+    expect(screen.getByLabelText('Point type: Checkpoint')).toBeTruthy();
   });
 
   it('puts Notes in its own section after the point type, not beside it', async () => {
