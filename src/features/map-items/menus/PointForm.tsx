@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { MenuColumns } from '@/components/menu/MenuColumns';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
 import { TextField } from '@/components/ui/TextField';
@@ -18,7 +19,7 @@ const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
   icon: <SymbolImage sidc={t.sidc} width={32} height={26} />,
 })).sort((a, b) => a.label.localeCompare(b.label));
 
-/** Add/Edit point form: location, point type, name, notes. Edits only the draft store. */
+/** Add/Edit point form: name and point type, location, notes. Edits only the draft store. */
 export function PointForm({ missionId, mode }: { missionId: string; mode: DraftMode }) {
   const pointType = useDraft((s) => s.pointType);
   const name = useDraft((s) => s.name);
@@ -29,13 +30,15 @@ export function PointForm({ missionId, mode }: { missionId: string; mode: DraftM
 
   return (
     <View>
-      <MenuSection label="Name">
-        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
-      </MenuSection>
+      <MenuColumns>
+        <MenuSection label="Name">
+          <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        </MenuSection>
+        <MenuSection label="Point type">
+          <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
+        </MenuSection>
+      </MenuColumns>
       <LocationSection />
-      <MenuSection label="Point type">
-        <MenuSelect<PointType> label="Point type" options={TYPE_OPTIONS} value={pointType} onChange={setPointType} disabled={locked} />
-      </MenuSection>
       <NotesSection />
     </View>
   );

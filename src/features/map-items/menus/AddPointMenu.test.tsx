@@ -31,6 +31,13 @@ beforeEach(() => {
 
 afterEach(() => setElevationSource(null));
 
+/** The nearest ancestor laying its children out in a row (a MenuColumns). */
+function rowOf(el: ReturnType<typeof screen.getByLabelText>) {
+  let node = el.parent;
+  while (node && !/\bflex-row\b/.test(String(node.props.className ?? ''))) node = node.parent;
+  return node!;
+}
+
 async function open(ctx = makeTestContext()) {
   await renderWithProviders(<AddPointMenu params={{}} missionId="m1" />, ctx);
   await screen.findByDisplayValue('CP-1');
@@ -47,6 +54,12 @@ describe('AddPointMenu', () => {
     expect(screen.queryByLabelText('Hostile')).toBeNull();
     expect(screen.queryByLabelText(/^Unit type/)).toBeNull();
     expect(useDraft.getState()).toMatchObject({ mode: 'add', category: 'point', coord: CENTER });
+  });
+
+  it('pairs Name and Point type in one row', async () => {
+    await open();
+    const row = rowOf(screen.getByLabelText('Name'));
+    expect(within(row).getByLabelText('Point type: Checkpoint')).toBeTruthy();
   });
 
   it('puts Notes in its own section after the point type, not beside it', async () => {

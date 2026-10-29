@@ -33,6 +33,13 @@ beforeEach(() => {
 
 afterEach(() => setElevationSource(null));
 
+/** The nearest ancestor laying its children out in a row (a MenuColumns). */
+function rowOf(el: ReturnType<typeof screen.getByLabelText>) {
+  let node = el.parent;
+  while (node && !/\bflex-row\b/.test(String(node.props.className ?? ''))) node = node.parent;
+  return node!;
+}
+
 async function open(ctx = makeTestContext()) {
   await renderWithProviders(<AddUnitMenu params={{}} missionId="m1" />, ctx);
   await screen.findByDisplayValue('HOS-1');
@@ -44,31 +51,57 @@ const items = (ctx: ReturnType<typeof makeTestContext>) => firstValueFrom(observ
 describe('AddUnitMenu', () => {
   it('shows range fields by unit type', async () => {
     await open();
-    expect(screen.queryByLabelText('Threat ring')).toBeNull();
-    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
+    expect(screen.queryByLabelText('Threat range')).toBeNull();
+    expect(screen.queryByLabelText('Horizontal')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
     await fireEvent.press(screen.getByText('Artillery'));
-    expect(screen.getByLabelText('Threat ring')).toBeTruthy();
-    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
-    expect(screen.queryByLabelText('Vertical range')).toBeNull();
+    expect(screen.getByLabelText('Threat range')).toBeTruthy();
+    expect(screen.queryByLabelText('Horizontal')).toBeNull();
+    expect(screen.queryByLabelText('Vertical (ceiling)')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
     await fireEvent.press(screen.getByText('Air defense'));
-    expect(screen.queryByLabelText('Threat ring')).toBeNull();
-    expect(screen.getByLabelText('Horizontal range')).toBeTruthy();
-    expect(screen.getByLabelText('Vertical range')).toBeTruthy();
+    expect(screen.queryByLabelText('Threat range')).toBeNull();
+    expect(screen.getByLabelText('Horizontal')).toBeTruthy();
+    expect(screen.getByLabelText('Vertical (ceiling)')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Unit type: Air defense'));
     await fireEvent.press(screen.getByText('Infantry'));
-    expect(screen.queryByLabelText('Horizontal range')).toBeNull();
-    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
+    expect(screen.queryByLabelText('Horizontal')).toBeNull();
+    expect(screen.queryByLabelText('Show on map')).toBeNull();
+  });
+
+  it('pairs Name and Affiliation in one row', async () => {
+    await open();
+    const row = rowOf(screen.getByLabelText('Name'));
+    expect(within(row).getByLabelText('Hostile')).toBeTruthy();
+  });
+
+  it('says there is no threat ring for a Reconnaissance draft', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    await fireEvent.press(screen.getByText('Reconnaissance'));
+    expect(screen.getByTestId('no-ring')).toHaveTextContent('No threat ring for Reconnaissance units');
+    expect(screen.queryByTestId('ring-box')).toBeNull();
+  });
+
+  it('puts both air defense ranges in the ring box, with no switch in Add', async () => {
+    await open();
+    await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
+    await fireEvent.press(screen.getByText('Air defense'));
+    const box = screen.getByTestId('ring-box');
+    expect(within(box).getByText('THREAT RING')).toBeTruthy();
+    expect(within(box).getByLabelText('Horizontal')).toBeTruthy();
+    expect(within(box).getByLabelText('Vertical (ceiling)')).toBeTruthy();
+    expect(within(box).queryByLabelText('Show on map')).toBeNull();
+    expect(screen.queryByTestId('no-ring')).toBeNull();
   });
 
   it('disables Add for an out-of-bounds range', async () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
     await fireEvent.press(screen.getByText('Artillery'));
-    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '500001');
+    await fireEvent.changeText(screen.getByLabelText('Threat range'), '500001');
     expect(screen.getByLabelText('Add')).toBeDisabled();
-    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '500000');
+    await fireEvent.changeText(screen.getByLabelText('Threat range'), '500000');
     expect(screen.getByLabelText('Add')).toBeEnabled();
   });
 

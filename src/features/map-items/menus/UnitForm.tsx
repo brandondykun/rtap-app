@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 
+import { MenuColumns } from '@/components/menu/MenuColumns';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
@@ -34,28 +35,32 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
 
   return (
     <View>
-      <MenuSection label="Name">
-        <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
-      </MenuSection>
+      <MenuColumns>
+        <MenuSection label="Name">
+          <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
+        </MenuSection>
+        <MenuSection label="Affiliation">
+          <MenuSegmented<Affiliation>
+            options={AFFILIATIONS.map((a) => ({
+              value: a,
+              label: AFFILIATION_LABELS[a],
+              icon: <SymbolImage sidc={composeSidc(a, 'unspecified')} width={30} height={22} />,
+            }))}
+            value={affiliation}
+            onChange={setAffiliation}
+            disabled={locked}
+          />
+        </MenuSection>
+      </MenuColumns>
       <LocationSection />
-      <MenuSection label="Affiliation">
-        <MenuSegmented<Affiliation>
-          options={AFFILIATIONS.map((a) => ({
-            value: a,
-            label: AFFILIATION_LABELS[a],
-            icon: <SymbolImage sidc={composeSidc(a, 'unspecified')} width={30} height={22} />,
-          }))}
-          value={affiliation}
-          onChange={setAffiliation}
-          disabled={locked}
-        />
-      </MenuSection>
-      <MenuSection label="Unit type">
-        <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
-      </MenuSection>
-      <MenuSection label="Echelon">
-        <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
-      </MenuSection>
+      <MenuColumns>
+        <MenuSection label="Unit type">
+          <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
+        </MenuSection>
+        <MenuSection label="Echelon">
+          <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
+        </MenuSection>
+      </MenuColumns>
       <UnitRangesSection mode={mode} />
       <NotesSection />
     </View>

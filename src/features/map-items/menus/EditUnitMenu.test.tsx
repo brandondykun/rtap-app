@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
@@ -183,6 +183,18 @@ describe('EditUnitMenu', () => {
     await waitFor(() => expect(screen.getByLabelText('Ring')).toBeSelected());
   });
 
+  it('shows Show on map in the ring box while editing, and toggling updates the ring at once', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'artillery'), name: 'HOS-3', ranges: { threatRangeM: 12000 } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+    await fireEvent.press(await screen.findByLabelText('Edit'));
+    const toggle = await within(screen.getByTestId('ring-box')).findByLabelText('Show on map');
+    await fireEvent(toggle, 'valueChange', true);
+    await waitFor(async () => expect(await firstValueFrom(observeRingItemIds(ctx.db))).toEqual([r.value.id]));
+  });
+
   it('shows no Ring button or ring row for a unit type without a ring', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-3' });
@@ -201,7 +213,7 @@ describe('EditUnitMenu', () => {
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
     await fireEvent.press(await screen.findByLabelText('Edit'));
-    await fireEvent.changeText(screen.getByLabelText('Threat ring'), '12,6');
+    await fireEvent.changeText(screen.getByLabelText('Threat range'), '12,6');
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(() => expect(screen.getByTestId('ring-row')).toHaveTextContent(/13 m/));
     await fireEvent.press(screen.getByLabelText('Edit'));
@@ -213,7 +225,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Infantry'));
     await fireEvent.press(screen.getByText('Artillery'));
-    expect(screen.getByLabelText('Threat ring')).toHaveDisplayValue('');
+    expect(screen.getByLabelText('Threat range')).toHaveDisplayValue('');
   });
 
   it('the form hides the ring switch when the draft unit type has no ring distance', async () => {
@@ -223,10 +235,10 @@ describe('EditUnitMenu', () => {
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
     await fireEvent.press(await screen.findByLabelText('Edit'));
-    await screen.findByLabelText('Show ring on map');
+    await screen.findByLabelText('Show on map');
     await fireEvent.press(screen.getByLabelText('Unit type: Artillery'));
     await fireEvent.press(screen.getByText('Infantry'));
-    expect(screen.queryByLabelText('Show ring on map')).toBeNull();
+    expect(screen.queryByLabelText('Show on map')).toBeNull();
   });
 
   it('deletes from the view after a second tap, without a "missing" message', async () => {
