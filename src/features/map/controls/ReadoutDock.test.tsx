@@ -70,6 +70,22 @@ describe('ReadoutDock', () => {
     for (const id of ['gps-altitude', 'gps-accuracy']) expect(screen.getByTestId('dock-self-row-details')).toContainElement(screen.getByTestId(id));
   });
 
+  it('inline is tighter than the portrait dock: less padding, smaller grids, smaller icons', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
+    expect(screen.getByTestId('readout-dock').props.className).toContain('px-2');
+    expect(screen.getByTestId('dock-center').props.className).toContain('py-1');
+    expect(screen.getByTestId('dock-center').props.className).not.toContain('min-h-12');
+    expect(screen.getByTestId('readout-coordinate').props.className).toContain('text-sm');
+    expect(screen.getByTestId('gps-position').props.className).toContain('text-sm');
+    expect(screen.getByTestId('me-icon')).toHaveStyle({ fontSize: 12 });
+    await screen.unmount();
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('readout-coordinate').props.className).toContain('text-lg');
+    expect(screen.getByTestId('dock-center').props.className).toContain('min-h-12');
+  });
+
   it('stacks each row\'s details in portrait', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);

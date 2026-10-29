@@ -36,7 +36,7 @@ export function ReadoutDock({
 }: { showCenter: boolean; showSelf?: boolean; inline?: boolean; maxWidth?: number } & SelfProps) {
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
-    <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={`rounded-2xl bg-surface-glass px-3 ${inline ? '' : 'mx-2'}`}>
+    <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={inline ? 'rounded-xl bg-surface-glass px-2' : 'mx-2 rounded-2xl bg-surface-glass px-3'}>
       {showCenter ? <CenterRow inline={inline} /> : null}
       {showCenter && showSelf ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
       {showSelf ? <SelfRow inline={inline} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
@@ -57,15 +57,16 @@ type RowProps = { testID: string; inline: boolean; lead: ReactNode; children: Re
 
 /**
  * Lead, grid, then the details on the right: two small lines, or one line when `inline`. The lead has a fixed width so
- * both grids line up; inline, the grid grows to the widest row so the details line up too.
+ * both grids line up; inline, the grid grows to the widest row so the details line up too, and everything is tighter
+ * to take as little of the map as it can.
  */
 function Row({ testID, inline, lead, children, top, bottom }: RowProps) {
   return (
-    <View testID={testID} className="min-h-12 flex-row items-center gap-2 py-1.5">
-      <View className="w-12">{lead}</View>
+    <View testID={testID} className={inline ? 'flex-row items-center gap-1.5 py-1' : 'min-h-12 flex-row items-center gap-2 py-1.5'}>
+      <View className={inline ? 'w-10' : 'w-12'}>{lead}</View>
       <View className={inline ? 'shrink grow' : 'flex-1'}>{children}</View>
       {top || bottom ? (
-        <View testID={`${testID}-details`} className={inline ? 'ml-1 flex-row items-center gap-2' : 'items-end'}>
+        <View testID={`${testID}-details`} className={inline ? 'ml-1 flex-row items-center gap-1.5' : 'items-end'}>
           {top}
           {bottom}
         </View>
@@ -74,16 +75,17 @@ function Row({ testID, inline, lead, children, top, bottom }: RowProps) {
   );
 }
 
-/** `outline` adds a crisp dark edge to the soft one, so the grid reads over snow (CTR and yours). */
-function Grid({ testID, color, outline = false, children }: { testID: string; color?: string; outline?: boolean; children: string }) {
+/** `outline` adds a crisp dark edge to the soft one, so the grid reads over snow (CTR and yours). `small` for the inline dock. */
+function Grid({ testID, color, outline = false, small = false, children }: { testID: string; color?: string; outline?: boolean; small?: boolean; children: string }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
+  const size = small ? 'text-sm' : 'text-lg';
   return outline ? (
-    <OutlinedText testID={testID} color={color ?? colors.text} style={halo} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+    <OutlinedText testID={testID} color={color ?? colors.text} style={halo} className={`font-mono-bold ${size} text-text`} adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </OutlinedText>
   ) : (
-    <Text testID={testID} style={[halo, color ? { color } : undefined]} className="font-mono-bold text-lg text-text" adjustsFontSizeToFit numberOfLines={1}>
+    <Text testID={testID} style={[halo, color ? { color } : undefined]} className={`font-mono-bold ${size} text-text`} adjustsFontSizeToFit numberOfLines={1}>
       {children}
     </Text>
   );
@@ -103,13 +105,13 @@ function OpRow({ inline, at, elevationM }: { inline: boolean; at: LatLon; elevat
       <Row
         testID="dock-self-row"
         inline={inline}
-        lead={<CardLead icon={<Icon name="binoculars" size={14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
+        lead={<CardLead icon={<Icon name="binoculars" size={inline ? 12 : 14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
           <OutlinedText testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} color={colors.text} style={glassHalo(colors)} className="font-mono text-xs">
             {`ELV ${formatLength(elevationM, unit)}`}
           </OutlinedText>
         }>
-        <Grid testID="op-position" outline>
+        <Grid testID="op-position" outline small={inline}>
           {formatCoordinate(at, coordinateFormat)}
         </Grid>
       </Row>
@@ -138,7 +140,7 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
       <Row
         testID="dock-self-row"
         inline={inline}
-        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
+        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
             <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
@@ -162,7 +164,7 @@ function MeRow({ inline, following, disabled, onRecenter, onSetLocation }: SelfP
           ) : null
         }>
         {shown ? (
-          <Grid testID="gps-position" color={colors.friendly} outline>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
+          <Grid testID="gps-position" color={colors.friendly} outline small={inline}>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
           <OutlinedText color={colors.friendly} style={halo} className="text-xs">
             {me.kind === 'set' ? SET_LOCATION_MESSAGE[me.reason] : 'Waiting for GPS…'}
@@ -189,7 +191,7 @@ function CenterRow({ inline }: { inline: boolean }) {
     <Row
       testID="dock-center"
       inline={inline}
-      lead={<CardLead icon={<CrosshairGlyph size={14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
+      lead={<CardLead icon={<CrosshairGlyph size={inline ? 12 : 14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
       top={
         <>
           {isOp ? (
@@ -207,7 +209,7 @@ function CenterRow({ inline }: { inline: boolean }) {
           {r.bearing}
         </OutlinedText>
       }>
-      <Grid testID="readout-coordinate" outline>
+      <Grid testID="readout-coordinate" outline small={inline}>
         {r.coordinate}
       </Grid>
     </Row>
