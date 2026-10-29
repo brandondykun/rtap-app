@@ -46,8 +46,8 @@ export function MenuHeader(props: MenuHeaderProps) {
 export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderProps) {
   const { colors } = useTheme();
   return (
-    <View className="flex-row items-center px-4 py-2">
-      <View className="min-w-20 items-start">
+    <View className={`flex-row items-center px-4 py-2 ${summary ? 'gap-3' : ''}`}>
+      <View className={summary ? 'items-start' : 'min-w-20 items-start'}>
         {leading?.iconOnly && leading.icon ? (
           <Pressable
             accessibilityRole="button"
@@ -56,8 +56,8 @@ export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderP
             disabled={leading.disabled}
             onPress={leading.onPress}
             hitSlop={8}
-            className={`active:opacity-60 h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-raised ${leading.disabled ? 'opacity-40' : ''}`}>
-            <Icon name={leading.icon} size={22} color={colors.text} />
+            className={`active:opacity-60 rounded-xl border border-border bg-surface-raised px-3 py-1.5 ${leading.disabled ? 'opacity-40' : ''}`}>
+            <Icon name={leading.icon} size={20} color={colors.text} />
           </Pressable>
         ) : leading ? (
           <Pressable
@@ -71,7 +71,7 @@ export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderP
         ) : null}
       </View>
       {summary ? (
-        <View accessible accessibilityRole="header" accessibilityLabel={title} className="mx-2 flex-1">
+        <View accessible accessibilityRole="header" accessibilityLabel={title} className="flex-1">
           {summary}
         </View>
       ) : (
@@ -79,7 +79,7 @@ export function MenuHeaderRow({ title, summary, leading, trailing }: MenuHeaderP
           {title}
         </Text>
       )}
-      <View className="min-w-20 items-end">
+      <View className={summary ? 'items-end' : 'min-w-20 items-end'}>
         {trailing?.iconOnly && trailing.icon ? (
           <Pressable
             accessibilityRole="button"

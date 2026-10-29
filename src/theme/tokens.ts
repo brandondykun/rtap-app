@@ -17,6 +17,7 @@ export const palette = {
   'green-400': '#4ade80',
   'red-400': '#f87171',
   'red-500': '#ef4444',
+  'red-950': '#450a0a',
   'sky-300': '#7dd3fc',
   'sky-400': '#38bdf8',
   'yellow-300': '#fde047',
@@ -46,6 +47,8 @@ const dark = {
   'on-accent': 'neutral-950',
   success: 'green-400',
   danger: 'red-500',
+  /** Fill behind a destructive action (Delete), as accent-subtle is to accent. */
+  'danger-subtle': 'red-950',
   friendly: 'sky-300',
   hostile: 'red-400',
   neutral: 'green-300',

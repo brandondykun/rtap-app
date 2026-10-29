@@ -24,7 +24,7 @@ export function MenuTileButton({
 }) {
   const { colors } = useTheme();
   const danger = tone === 'danger';
-  const surface = danger ? (active ? 'border-danger bg-danger' : 'border-danger bg-surface-raised') : active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised';
+  const surface = danger ? (active ? 'border-danger bg-danger' : 'border-danger bg-danger-subtle') : active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised';
   const textClass = danger ? (active ? 'text-on-accent' : 'text-danger') : active ? 'text-accent' : 'text-text';
   const iconColor = danger ? (active ? colors['on-accent'] : colors.danger) : active ? colors.accent : colors.text;
   return (

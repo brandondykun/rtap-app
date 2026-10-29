@@ -16,11 +16,11 @@ export function ItemTitle({ category, item, hidden }: { category: ItemCategory; 
   const color = unit?.affiliation ? { friend: colors.friendly, hostile: colors.danger, neutral: colors.neutral, unknown: colors.unknown }[unit.affiliation] : undefined;
   return (
     <View className="flex-row items-center gap-3">
-      {item.sidc ? <SymbolImage sidc={item.sidc} width={32} height={32} /> : null}
+      {item.sidc ? <SymbolImage sidc={item.sidc} width={40} height={40} /> : null}
       <View className="shrink gap-0.5">
-        <Text numberOfLines={1} className="font-mono-bold text-base text-text">{item.name}</Text>
+        <Text numberOfLines={1} className="font-mono-bold text-xl text-text">{item.name}</Text>
         <View className="flex-row items-center gap-2">
-          <Text testID="item-subtitle" numberOfLines={1} className="shrink text-sm text-text-muted">
+          <Text testID="item-subtitle" numberOfLines={1} className="shrink text-base text-text-muted">
             {first ? <Text style={{ color }}>{first}</Text> : null}
             {first ? subtitle.slice(first.length) : subtitle}
           </Text>

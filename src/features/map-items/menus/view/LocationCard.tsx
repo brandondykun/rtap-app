@@ -12,12 +12,23 @@ import { ringSummary } from './item-summary';
 
 const NO_VALUE = '—';
 
-function Cell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+/** "1.46 km" → ["1.46", "km"]; a value with no unit ("045°", "—") keeps it all as the number. */
+function splitUnit(text: string): [string, string] {
+  const i = text.lastIndexOf(' ');
+  return i < 0 ? [text, ''] : [text.slice(0, i), text.slice(i + 1)];
+}
+
+/** One cell of the card's bottom row: label over a large number and its small unit. `last` drops the divider on its right. */
+function Cell({ label, value, unit, accent = false, last = false }: { label: string; value: string; unit?: string; accent?: boolean; last?: boolean }) {
+  const [number, own] = splitUnit(value);
+  const suffix = [own, unit].filter(Boolean).join(' ');
   return (
-    <View className="flex-1 gap-0.5">
-      <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">{label}</Text>
-      <Text numberOfLines={1} className="font-mono text-base text-text">{value}</Text>
-      {sub ? <Text className="text-xs text-text-muted">{sub}</Text> : null}
+    <View className={`flex-1 gap-0.5 px-3 py-2 ${last ? '' : 'border-r border-border'}`}>
+      <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{label}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit className="font-mono-bold text-lg">
+        <Text className={value === NO_VALUE ? 'text-text-muted' : accent ? 'text-accent' : 'text-text'}>{number}</Text>
+        {suffix ? <Text className="font-mono text-xs text-text-muted">{` ${suffix}`}</Text> : null}
+      </Text>
     </View>
   );
 }
@@ -34,19 +45,20 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
   const vector = coord && from ? describeVector(from, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
   const ring = ringSummary(item);
   return (
-    <View className="gap-3 rounded-xl border border-border bg-surface-raised p-3">
-      <View className="gap-0.5">
-        <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">{coordinateFormat === 'mgrs' ? 'MGRS' : 'LAT/LON'}</Text>
-        <Text selectable className="font-mono-bold text-lg text-text">{coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}</Text>
+    // Black like the inputs, with thin lines between its parts (the mockup's grid card).
+    <View className="overflow-hidden rounded-xl border border-border bg-surface-input">
+      <View className="flex-row items-center gap-3 border-b border-border px-3 py-2.5">
+        <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{coordinateFormat === 'mgrs' ? 'MGRS' : 'LAT/LON'}</Text>
+        <Text selectable numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono-bold text-xl text-text">{coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}</Text>
       </View>
-      <View className="flex-row gap-3">
-        <Cell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} />
-        <Cell label="DIR" value={vector?.bearingLabel ?? NO_VALUE} sub={vector ? vector.refLabel : undefined} />
-        <Cell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} />
+      <View className="flex-row">
+        <Cell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
+        <Cell label="DIR" value={vector?.bearingLabel ?? NO_VALUE} unit={vector?.refLabel} accent />
+        <Cell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} last />
       </View>
       {ring ? (
-        <View testID="ring-row" className="flex-row items-baseline justify-between gap-3 border-t border-border pt-3">
-          <Text className="text-xs font-semibold uppercase tracking-widest text-text-muted">RING</Text>
+        <View testID="ring-row" className="flex-row items-baseline gap-3 border-t border-border px-3 py-2">
+          <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">RING</Text>
           <Text className="shrink font-mono text-sm text-text">{ring}</Text>
         </View>
       ) : null}
