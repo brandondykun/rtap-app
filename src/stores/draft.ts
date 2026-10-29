@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import * as lineDraft from '@/features/map-items/line-draft';
 import type { LineEdit } from '@/features/map-items/line-draft';
+import { formatRangeText, isValidRange, NO_RANGES, parseRangeText, rangeFieldsFor, type RangeField, type UnitRanges } from '@/features/map-items/unit-ranges';
 import type { ItemCategory } from '@/features/symbology/categories';
 import type { LineType } from '@/features/symbology/line-types';
 import { DEFAULT_POLYGON_FILL, MAX_RADIUS_M, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
@@ -39,6 +40,8 @@ export type DraftValues = {
   notes: string;
   /** A unit's or point's ground elevation (m; null unknown) and the coordinate it belongs to; null before any lookup. */
   elevation: { at: LatLon; m: number | null } | null;
+  /** What the user typed for each range; parsed at save by `draftRanges` (only the fields the unit type uses count). */
+  rangeText: Record<RangeField, string>;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
   /** Waiting for the user to tap the map where the point should go (the Map button). */
@@ -77,6 +80,8 @@ type DraftActions = {
     notes: string;
     /** The unit's or point's stored elevation. */
     elevationM?: number | null;
+    /** The unit's stored ranges. */
+    ranges?: UnitRanges;
   }) => void;
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;
   setCoordInputValid: (valid: boolean) => void;
@@ -89,6 +94,7 @@ type DraftActions = {
   setNotes: (notes: string) => void;
   /** Kept only while `at` is still the draft's coordinate (a late answer for an old spot is dropped). */
   setElevation: (at: LatLon, m: number | null) => void;
+  setRangeText: (field: RangeField, text: string) => void;
   setLocked: (locked: boolean) => void;
   setPicking: (picking: boolean) => void;
   startAddLine: () => void;
@@ -134,6 +140,7 @@ export const INITIAL_DRAFT: DraftValues = {
   nameEdited: false,
   notes: '',
   elevation: null,
+  rangeText: { threatRangeM: '', horizontalRangeM: '', verticalRangeFt: '' },
   locked: false,
   picking: false,
   vertices: [],
@@ -151,6 +158,20 @@ export const INITIAL_DRAFT: DraftValues = {
 };
 
 export const HISTORY_LIMIT = 50;
+
+/**
+ * The draft's ranges: only the fields the unit type uses are parsed, the rest are null. Null when a used field is invalid.
+ * Typed text survives a unit type change; it is dropped here, at save.
+ */
+export function draftRanges(d: Pick<DraftValues, 'unitType' | 'rangeText'>): UnitRanges | null {
+  const out: UnitRanges = { ...NO_RANGES };
+  for (const f of rangeFieldsFor(d.unitType)) {
+    const v = parseRangeText(d.rangeText[f]);
+    if (v === undefined || !isValidRange(f, v)) return null;
+    out[f] = v;
+  }
+  return out;
+}
 
 function isValid(p: LatLon | null): p is LatLon {
   return !!p && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
@@ -199,7 +220,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev + 1,
       focusRev: s.focusRev,
     })),
-  startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes, elevationM }) =>
+  startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes, elevationM, ranges }) =>
     set((s) => ({
       ...INITIAL_DRAFT,
       remembered: s.remembered,
@@ -218,6 +239,11 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       nameEdited: true,
       notes,
       elevation: isValid(coord) ? { at: coord, m: elevationM ?? null } : null,
+      rangeText: {
+        threatRangeM: formatRangeText(ranges?.threatRangeM ?? null),
+        horizontalRangeM: formatRangeText(ranges?.horizontalRangeM ?? null),
+        verticalRangeFt: formatRangeText(ranges?.verticalRangeFt ?? null),
+      },
       // Selecting a point shows it read-only; the menu unlocks it on Edit.
       locked: true,
     })),
@@ -244,6 +270,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setAutoName: (name) => set((s) => (s.nameEdited ? {} : { name })),
   setNotes: (notes) => set({ notes }),
   setElevation: (at, m) => set((s) => (!s.locked && sameCoord(s.coord, at) ? { elevation: { at, m } } : {})),
+  setRangeText: (field, text) => set((s) => (s.locked ? {} : { rangeText: { ...s.rangeText, [field]: text } })),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
   startAddLine: () =>

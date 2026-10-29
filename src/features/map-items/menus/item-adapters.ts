@@ -6,7 +6,7 @@ import { MAX_RADIUS_M, polygonStyleOf } from '@/features/symbology/polygon-types
 import { decomposeSidc } from '@/features/symbology/presets';
 import { elevationAt } from '@/features/map/terrain/elevation';
 import type { Result } from '@/lib/result';
-import { sameCoord, useDraft } from '@/stores/draft';
+import { draftRanges, sameCoord, useDraft } from '@/stores/draft';
 
 import { placeLine, placePoint, placePolygon, updateItem, updateLine, updatePolygon, type PolygonShapeInput } from '../commands';
 import { draftSidc } from '../draft-sidc';
@@ -40,11 +40,11 @@ async function savedElevation(d: DraftState): Promise<number | null | undefined>
 }
 
 const symbolAdapter: ItemAdapter = {
-  canSave: (d) => d.coord !== null && d.coordInputValid && d.name.trim() !== '',
+  canSave: (d) => d.coord !== null && d.coordInputValid && d.name.trim() !== '' && draftRanges(d) !== null,
   place: async (ctx, missionId, d) =>
-    placePoint(ctx, { missionId, coord: d.coord!, sidc: draftSidc(d), name: d.name, notes: notes(d), elevationM: await savedElevation(d) }),
+    placePoint(ctx, { missionId, coord: d.coord!, sidc: draftSidc(d), name: d.name, notes: notes(d), elevationM: await savedElevation(d), ranges: draftRanges(d)! }),
   update: async (ctx, id, d) =>
-    updateItem(ctx, id, { coord: d.coord!, name: d.name, notes: notes(d), sidc: draftSidc(d), elevationM: await savedElevation(d) }),
+    updateItem(ctx, id, { coord: d.coord!, name: d.name, notes: notes(d), sidc: draftSidc(d), elevationM: await savedElevation(d), ranges: draftRanges(d)! }),
   select: (item) => {
     const at = pointCoord(item.geometry);
     if (!at) return false;
@@ -60,6 +60,7 @@ const symbolAdapter: ItemAdapter = {
       name: item.name,
       notes: item.notes ?? '',
       elevationM: item.elevationM,
+      ranges: { threatRangeM: item.threatRangeM, horizontalRangeM: item.horizontalRangeM, verticalRangeFt: item.verticalRangeFt },
     });
     return true;
   },

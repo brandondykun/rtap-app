@@ -1,4 +1,4 @@
-import { ENEMY_UNIT, INITIAL_DRAFT, useDraft } from './draft';
+import { ENEMY_UNIT, INITIAL_DRAFT, draftRanges, useDraft } from './draft';
 
 const A = { lat: 38.9, lon: -77 };
 const B = { lat: 38.95, lon: -77.05 };
@@ -258,5 +258,49 @@ describe('polygon drafts', () => {
     expect(useDraft.getState().echelon).toBe('unspecified');
     useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', affiliation: 'friend', unitType: 'armor', echelon: 'battalion', pointType: 'checkpoint', name: 'A', notes: '' });
     expect(useDraft.getState().echelon).toBe('battalion');
+  });
+});
+
+describe('unit ranges in the draft', () => {
+  const empty = { threatRangeM: '', horizontalRangeM: '', verticalRangeFt: '' };
+
+  it('parses only the fields that apply to the unit type', () => {
+    expect(draftRanges({ unitType: 'artillery', rangeText: { ...empty, threatRangeM: '18000' } })).toEqual({
+      threatRangeM: 18000,
+      horizontalRangeM: null,
+      verticalRangeFt: null,
+    });
+    expect(draftRanges({ unitType: 'artillery', rangeText: { ...empty, threatRangeM: '0' } })).toBeNull();
+    expect(draftRanges({ unitType: 'artillery', rangeText: { ...empty, verticalRangeFt: 'abc' } })).toEqual({
+      threatRangeM: null,
+      horizontalRangeM: null,
+      verticalRangeFt: null,
+    });
+    expect(draftRanges({ unitType: 'air-defense', rangeText: { ...empty, horizontalRangeM: '8000', verticalRangeFt: '15000' } })).toEqual({
+      threatRangeM: null,
+      horizontalRangeM: 8000,
+      verticalRangeFt: 15000,
+    });
+  });
+
+  it('starts empty and ignores typing while locked', () => {
+    useDraft.getState().startAdd({ coord: A, source: 'crosshair', category: 'unit' });
+    expect(useDraft.getState().rangeText).toEqual(empty);
+    useDraft.getState().setRangeText('threatRangeM', '500');
+    expect(useDraft.getState().rangeText.threatRangeM).toBe('500');
+    useDraft.getState().clear();
+    expect(useDraft.getState().rangeText).toEqual(empty);
+    useDraft.getState().setLocked(true);
+    useDraft.getState().setRangeText('threatRangeM', '900');
+    expect(useDraft.getState().rangeText.threatRangeM).toBe('');
+  });
+
+  it('fills the text from the stored ranges on edit', () => {
+    useDraft.getState().startEdit({
+      itemId: 'i1', coord: A, category: 'unit', affiliation: 'hostile', unitType: 'air-defense', echelon: 'unspecified',
+      pointType: 'checkpoint', name: 'AD', notes: '',
+      ranges: { threatRangeM: null, horizontalRangeM: 8000, verticalRangeFt: null },
+    });
+    expect(useDraft.getState().rangeText).toEqual({ threatRangeM: '', horizontalRangeM: '8000', verticalRangeFt: '' });
   });
 });
