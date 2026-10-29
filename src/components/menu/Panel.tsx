@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -25,7 +25,7 @@ import {
   type PanelFrame,
 } from './panel-geometry';
 import { MenuHeaderRow, type MenuHeaderProps } from './MenuHeader';
-import { PanelHeaderSlot, PanelScrollToEnd } from './panel-header-slot';
+import { PanelHeaderSlot, PanelScrollContext, type PanelScroll } from './panel-header-slot';
 
 type Props = {
   landscape: boolean;
@@ -125,6 +125,8 @@ export function Panel({
 
   const scroller = useRef<ScrollView>(null);
   const scrollToEnd = useCallback(() => scroller.current?.scrollToEnd({ animated: true }), []);
+  // In portrait the sheet grows to full when the keyboard shows, so a field must scroll itself into view after.
+  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, keyboardRevealsFocus: landscape && Platform.OS === 'ios' }), [scrollToEnd, landscape]);
   const viewportHeight = useRef(0);
   /** A remembered position not yet reached (the content is still loading). */
   const pendingY = useRef<number | null>(null);
@@ -283,7 +285,7 @@ export function Panel({
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={{ paddingBottom: insets.bottom + 16, paddingTop: landscape && header === null ? 12 : 0 }}>
           <PanelHeaderSlot.Provider value={setHeader}>
-            <PanelScrollToEnd.Provider value={scrollToEnd}>{children}</PanelScrollToEnd.Provider>
+            <PanelScrollContext.Provider value={panelScroll}>{children}</PanelScrollContext.Provider>
           </PanelHeaderSlot.Provider>
         </ScrollView>
       </View>

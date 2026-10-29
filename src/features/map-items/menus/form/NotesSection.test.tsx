@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { TextInput } from 'react-native';
+import { Keyboard, TextInput } from 'react-native';
 
-import { PanelScrollToEnd } from '@/components/menu/panel-header-slot';
+import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { renderWithProviders } from '@/test-utils/render';
@@ -27,24 +27,49 @@ describe('NotesSection', () => {
     expect(screen.getByLabelText('Notes')).toHaveProp('placeholder', 'No notes');
   });
 
-  it('opened from the view, focuses itself and scrolls the menu to it', async () => {
+  /** Renders the field opened from the view's notes, in a panel; returns the panel's scroll and a way to show the keyboard. */
+  async function openFromView(keyboardRevealsFocus: boolean) {
+    const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
+    let showKeyboard = () => {};
+    const listen = jest.spyOn(Keyboard, 'addListener').mockImplementation((event, cb) => {
+      if (event === 'keyboardDidShow') showKeyboard = () => (cb as (e: unknown) => void)({});
+      return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
+    });
+    const scrollToEnd = jest.fn();
+    await act(async () => useDraft.getState().editNotes());
+    await renderWithProviders(
+      <PanelScrollContext.Provider value={{ scrollToEnd, keyboardRevealsFocus }}>
+        <NotesSection />
+      </PanelScrollContext.Provider>,
+    );
+    return { focus, scrollToEnd, showKeyboard: () => showKeyboard(), restore: () => (focus.mockRestore(), listen.mockRestore()) };
+  }
+
+  it('opened from the view, focuses itself and scrolls the menu to it once the keyboard is up', async () => {
+    const f = await openFromView(false);
+    expect(f.focus).toHaveBeenCalledTimes(1);
+    // The request is taken: a later form doesn't grab focus again.
+    expect(useDraft.getState().focusNotes).toBe(false);
+    expect(f.scrollToEnd).not.toHaveBeenCalled();
+    await act(async () => f.showKeyboard());
+    expect(f.scrollToEnd).toHaveBeenCalledTimes(1);
+    f.restore();
+  });
+
+  it('leaves the scroll to the keyboard where it reveals the focused field itself (landscape drawer), so the content moves once', async () => {
+    const f = await openFromView(true);
+    await act(async () => f.showKeyboard());
+    expect(f.scrollToEnd).not.toHaveBeenCalled();
+    f.restore();
+  });
+
+  it('scrolls after a wait when no keyboard shows (a hardware keyboard), even where the keyboard would have', async () => {
     jest.useFakeTimers();
     try {
-      const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
-      const scrollToEnd = jest.fn();
-      await act(async () => useDraft.getState().editNotes());
-      await renderWithProviders(
-        <PanelScrollToEnd.Provider value={scrollToEnd}>
-          <NotesSection />
-        </PanelScrollToEnd.Provider>,
-      );
-      expect(focus).toHaveBeenCalledTimes(1);
-      // The request is taken: a later form doesn't grab focus again.
-      expect(useDraft.getState().focusNotes).toBe(false);
-      // No keyboard shows in tests, so it scrolls after the wait.
+      const f = await openFromView(true);
       await act(async () => jest.advanceTimersByTime(1500));
-      expect(scrollToEnd).toHaveBeenCalledTimes(1);
-      focus.mockRestore();
+      expect(f.scrollToEnd).toHaveBeenCalledTimes(1);
+      f.restore();
     } finally {
       jest.useRealTimers();
     }

@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { Keyboard, type TextInput } from 'react-native';
 
 import { MenuSection } from '@/components/menu/MenuSection';
-import { PanelScrollToEnd } from '@/components/menu/panel-header-slot';
+import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { TextField } from '@/components/ui/TextField';
 import { useDraft } from '@/stores/draft';
 
@@ -17,21 +17,22 @@ export function NotesSection() {
   const notes = useDraft((s) => s.notes);
   const locked = useDraft((s) => s.locked);
   const input = useRef<TextInput>(null);
-  const scrollToEnd = useContext(PanelScrollToEnd);
+  const panel = useContext(PanelScrollContext);
 
   useEffect(() => {
     if (useDraft.getState().locked || !useDraft.getState().takeNotesFocus()) return;
     input.current?.focus();
-    // The keyboard shrinks the panel; scroll once it is up, so the field ends up above it (or after a wait, if none shows).
+    // Scroll once the keyboard is up, so the field ends up above it (or after a wait, if none shows). Where the keyboard
+    // already scrolls the focused field into view, scrolling again would move the content twice: leave it to the keyboard.
     let done = false;
-    const scroll = () => {
+    const scroll = (keyboard: boolean) => {
       if (done) return;
       done = true;
       shown.remove();
-      scrollToEnd?.();
+      if (!(keyboard && panel?.keyboardRevealsFocus)) panel?.scrollToEnd();
     };
-    const shown = Keyboard.addListener('keyboardDidShow', scroll);
-    const timer = setTimeout(scroll, KEYBOARD_WAIT_MS);
+    const shown = Keyboard.addListener('keyboardDidShow', () => scroll(true));
+    const timer = setTimeout(() => scroll(false), KEYBOARD_WAIT_MS);
     return () => {
       shown.remove();
       clearTimeout(timer);
