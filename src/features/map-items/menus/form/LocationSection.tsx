@@ -8,12 +8,9 @@ import { MenuSection } from '@/components/menu/MenuSection';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import type { MgrsParts } from '@/lib/geo/coords/mgrs';
-import { describeVector } from '@/lib/geo/vector';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
-import { usePresence } from '@/stores/presence';
-import { useSettings } from '@/stores/settings';
 
 import { ElevationRow } from './ElevationRow';
 
@@ -29,10 +26,6 @@ export function LocationSection() {
   const setPicking = useDraft((s) => s.setPicking);
   const setCoord = useDraft((s) => s.setCoord);
   const setCoordInputValid = useDraft((s) => s.setCoordInputValid);
-  const self = usePresence((s) => s.selfPosition?.position ?? null);
-  const angleUnit = useSettings((s) => s.angleUnit);
-  const northRef = useSettings((s) => s.northRef);
-  const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
 
   const [parts, setParts] = useState<MgrsParts>(() => (coord ? mgrsFieldsFor(coord) : EMPTY_MGRS));
 
@@ -53,8 +46,6 @@ export function LocationSection() {
     if (result.status === 'valid') setCoord(result.coord, 'typed');
   };
 
-  const v = self && coord ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
-  const detail = v ? `${v.distanceLabel} · ${v.bearingLabel} ${v.refLabel}` : undefined;
 
   const toCrosshair = () => {
     const center = useInteraction.getState().cameraCenter;
@@ -71,7 +62,7 @@ export function LocationSection() {
               <>
                 <Icon name={status.status === 'valid' ? 'check' : 'alert-circle-outline'} size={16} color={status.status === 'valid' ? colors.success : colors.danger} />
                 <Text testID="location-status" numberOfLines={1} adjustsFontSizeToFit className={`shrink text-sm ${status.status === 'valid' ? 'text-success' : 'text-danger'}`}>
-                  {status.status === 'valid' ? detail ?? 'Valid' : status.message}
+                  {status.status === 'valid' ? 'Valid' : status.message}
                 </Text>
               </>
             ) : null}
