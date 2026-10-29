@@ -25,7 +25,7 @@ type Props = {
   onRecenter: () => void;
   panel: PanelFrame | null;
   landscape: boolean;
-  /** A tap-mode action bar (placing, drawing) shown in place of your card while it is up. */
+  /** A tap-mode action bar (placing, drawing, measuring): in portrait in the dock's place or over it, in landscape over the dock. */
   bar?: ReactNode;
   /** In portrait, float the bar centered over the dock instead of in its place (placing a unit or point). */
   barOverDock?: boolean;
@@ -52,8 +52,8 @@ const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
  * - portrait: zoom (shown per Settings) on the right, over the full-width dock (CTR over ME; tap ME to recenter);
  * - landscape: zoom over the same dock bottom right, as wide as its content, each row's details on one line (or none,
  *   with the Minimal grids in landscape setting).
- * An action bar takes the dock's place while it is up (centered in portrait; in landscape under the CTR row, which stays);
- * in portrait it can float centered over the dock instead.
+ * An action bar is always shown. In portrait it takes the dock's place (centered) or floats centered over it. In landscape
+ * both grids stay: the bar sits over the dock, left of the zoom buttons when they show, else flush right.
  */
 export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
   const insets = useSafeAreaInsets();
@@ -110,23 +110,28 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
     );
   }
 
-  // The action bar always shows: it is how the user finishes the mode. The CTR row stays over it (placing needs the grid).
   // The dock keeps clear of a drawer; past that its grids shrink to fit.
   const maxWidth = width - right - Math.max(insets.left, panel?.side === 'left' ? panel.size : 0) - EDGE;
   const dockSize = dockHeight ?? (showCenter ? DOCK_HEIGHT : DOCK_ROW_HEIGHT);
-  const card = bar ? (
-    <SelfCardSlot>
-      <View pointerEvents="box-none" className="items-end gap-3">
-        {showCenter ? <ReadoutDock inline minimal={minimal} showCenter showSelf={false} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
+  const card =
+    room < dockSize ? null : (
+      <SelfCardSlot onHeight={setDockHeight}>
+        <ReadoutDock inline minimal={minimal} showCenter={showCenter} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
+      </SelfCardSlot>
+    );
+  const below = card ? dockSize + STACK_GAP : 0;
+  const buttons = side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom);
+  // The action bar always shows: it is how the user finishes the mode. Over the dock, so both grids stay in view.
+  const top = bar ? (
+    <View testID="bar-over-dock" pointerEvents="box-none" className="flex-row items-end gap-3" style={{ maxWidth }}>
+      <View pointerEvents="box-none" className="shrink">
         {bar}
       </View>
-    </SelfCardSlot>
-  ) : room < dockSize ? null : (
-    <SelfCardSlot onHeight={setDockHeight}>
-      <ReadoutDock inline minimal={minimal} showCenter={showCenter} maxWidth={maxWidth} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
-    </SelfCardSlot>
+      {buttons}
+    </View>
+  ) : (
+    buttons
   );
-  const below = card ? dockSize + STACK_GAP : 0;
   return (
     <>
       {showNorthUp ? <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} /> : null}
@@ -135,7 +140,7 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
         pointerEvents="box-none"
         className="absolute items-end gap-3"
         style={{ bottom, right }}>
-        {side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom)}
+        {top}
         {card}
       </View>
     </>

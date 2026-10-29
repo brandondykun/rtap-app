@@ -207,14 +207,27 @@ describe('MapControls', () => {
     expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
   });
 
-  it('in landscape shows an action bar in place of the ME row, keeping the CTR row over it', async () => {
+  it('in landscape keeps both grids under an action bar, the bar left of the zoom buttons', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} showCenter />);
-    expect(screen.queryByTestId('dock-self')).toBeNull();
     expect(screen.getByTestId('dock-center')).toBeTruthy();
-    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
-    await screen.unmount();
-    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} />);
-    expect(screen.queryByTestId('readout-dock')).toBeNull();
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
+    const [top, slot] = screen.getByTestId('map-controls-bottom').children as { props: { testID?: string } }[];
+    expect(top.props.testID).toBe('bar-over-dock');
+    expect(slot).toContainElement(screen.getByTestId('readout-dock'));
+    expect(screen.getByTestId('bar-over-dock').props.className).toContain('flex-row');
+    const [barSide, zoomSide] = screen.getByTestId('bar-over-dock').children as unknown[];
+    expect(barSide).toContainElement(screen.getByTestId('bar'));
+    expect(zoomSide).toBe(screen.getByTestId('zoom-group'));
+  });
+
+  it('in landscape with the zoom buttons hidden, puts the action bar flush right over the dock', async () => {
+    useSettings.setState({ showZoomButtons: false });
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} showCenter />);
+    expect(screen.queryByTestId('zoom-group')).toBeNull();
+    expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('bar'));
+    // The column is right-aligned (items-end), so the bar sits at the right edge.
+    expect(screen.getByTestId('map-controls-bottom').props.className).toContain('items-end');
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
   });
 
   it('centers a bar that takes the dock place in portrait', async () => {
@@ -223,7 +236,7 @@ describe('MapControls', () => {
     expect(screen.getByTestId('bar-in-dock').props.className).toContain('items-center');
   });
 
-  it('floats a bar over the dock, centered, in portrait when asked, and keeps it in your card spot in landscape', async () => {
+  it('floats a bar over the dock, centered, in portrait when asked; landscape always keeps it over the dock', async () => {
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={false} bar={<View testID="bar" />} barOverDock showCenter />);
     const [, over, slot] = screen.getByTestId('map-controls-bottom').children as { props: { testID?: string } }[];
     expect(over.props.testID).toBe('bar-over-dock');
@@ -232,9 +245,8 @@ describe('MapControls', () => {
     expect(slot).toContainElement(screen.getByTestId('readout-dock'));
     await screen.unmount();
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} barOverDock />);
-    expect(screen.queryByTestId('bar-over-dock')).toBeNull();
-    expect(screen.queryByTestId('dock-self')).toBeNull();
-    expect(screen.getByTestId('map-controls-bottom')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('bar'));
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
   });
 
   it('keeps the action bar even when a full sheet leaves no room for your grid card', async () => {

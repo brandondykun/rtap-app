@@ -59,7 +59,7 @@ import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
 import { RingsLayer } from './layers/RingsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { barTakesReadoutSpot, cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
+import { cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
 import { useElevationSource } from './terrain/elevation';
 import { THREE_D_PITCH, THREE_D_TILT_MS } from './terrain/three-d';
 
@@ -593,7 +593,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         }
         landscape={landscape}
         // In landscape the temp card sits beside the dock, which drops its CTR row to leave it room; in portrait the dock keeps it, under the card.
-        showCenter={showCenterGrid && !(landscape && plotTemp) && !barTakesReadoutSpot(landscape, panel, !!(lineDrawing || placing || opPicking || manualChoosing || measuring))}
+        showCenter={showCenterGrid && !(landscape && plotTemp)}
         barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing)}
         bar={
           lineDrawing ? (

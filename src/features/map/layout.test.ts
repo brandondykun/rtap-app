@@ -2,7 +2,6 @@ import {
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
   bannerTop,
-  barTakesReadoutSpot,
   cameraPaddingFor,
   CONTROL_SIZE,
   EDGE,
@@ -77,14 +76,6 @@ describe('map layout', () => {
     expect(roomAboveSheet(800, { side: 'bottom', size: 300 }, 20, TOOLBAR_HEIGHT)).toBe(800 - 300 - 20 - below);
     expect(roomAboveSheet(800, { side: 'left', size: 300 }, 20, TOOLBAR_HEIGHT)).toBe(Infinity);
     expect(roomAboveSheet(800, null, 20, TOOLBAR_HEIGHT)).toBe(Infinity);
-  });
-
-  it('gives the readout spot to an action bar only in landscape with a drawer open', () => {
-    const drawer = { side: 'left', size: 360 } as const;
-    expect(barTakesReadoutSpot(true, drawer, true)).toBe(true);
-    expect(barTakesReadoutSpot(true, drawer, false)).toBe(false);
-    expect(barTakesReadoutSpot(true, null, true)).toBe(false);
-    expect(barTakesReadoutSpot(false, { side: 'bottom', size: 300 }, true)).toBe(false);
   });
 
   it('keeps bottom bars beside or above your card (bottom right), and only clear of the zoom column while it is hidden', () => {

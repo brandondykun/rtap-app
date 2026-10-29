@@ -19,15 +19,14 @@ import { glassHalo } from '@/components/ui/glass';
 
 /**
  * CTR (the crosshair's grid, distance and bearing from you) over ME (your grid, altitude and accuracy; tap it to recenter
- * on you). The CTR row follows `showCenter`; `showSelf` false leaves only CTR (landscape, over an action bar). In OP mode
- * the ME row shows the OP instead (its grid and ground elevation) and does nothing when tapped.
+ * on you). The CTR row follows `showCenter`. In OP mode the ME row shows the OP instead (its grid and ground elevation)
+ * and does nothing when tapped.
  * - portrait: docked full width at the bottom, each row's details stacked on the right;
  * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid;
  *   `minimal` drops the details, leaving only each row's lead and grid.
  */
 export function ReadoutDock({
   showCenter,
-  showSelf = true,
   inline = false,
   minimal = false,
   maxWidth,
@@ -35,13 +34,13 @@ export function ReadoutDock({
   disabled,
   onRecenter,
   onSetLocation,
-}: { showCenter: boolean; showSelf?: boolean; inline?: boolean; minimal?: boolean; maxWidth?: number } & SelfProps) {
+}: { showCenter: boolean; inline?: boolean; minimal?: boolean; maxWidth?: number } & SelfProps) {
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
   return (
     <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={inline ? 'rounded-xl bg-surface-glass px-2' : 'mx-2 rounded-2xl bg-surface-glass px-3'}>
       {showCenter ? <CenterRow inline={inline} minimal={minimal} /> : null}
-      {showCenter && showSelf ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
-      {showSelf ? <SelfRow inline={inline} minimal={minimal} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} /> : null}
+      {showCenter ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
+      <SelfRow inline={inline} minimal={minimal} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} />
     </View>
   );
 }

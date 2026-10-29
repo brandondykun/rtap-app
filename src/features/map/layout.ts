@@ -121,11 +121,3 @@ export function selfCardClearance(card: { width: number; height: number }, besid
   if (card.height === 0) return { lift: 0, right: CONTROL_SIZE + GAP };
   return beside ? { lift: 0, right: Math.max(CONTROL_SIZE, card.width) + GAP } : { lift: card.height + GAP, right: CONTROL_SIZE + GAP };
 }
-
-/**
- * In landscape with a drawer open (drawing a line or polygon) there is no room for both an action bar and
- * the dock's CTR row: the row hides while the bar is up.
- */
-export function barTakesReadoutSpot(landscape: boolean, panel: PanelFrame | null, hasBar: boolean): boolean {
-  return landscape && panel !== null && hasBar;
-}

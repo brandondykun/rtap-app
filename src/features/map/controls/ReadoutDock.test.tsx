@@ -120,13 +120,6 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('dock-center-details').props.className).not.toContain('flex-row');
   });
 
-  it('can leave the ME row out, keeping only CTR (over an action bar)', async () => {
-    await renderWithProviders(<ReadoutDock {...PROPS} showCenter showSelf={false} inline />);
-    expect(screen.getByTestId('dock-center')).toBeTruthy();
-    expect(screen.queryByTestId('dock-self')).toBeNull();
-    expect(screen.queryByTestId('dock-divider')).toBeNull();
-  });
-
   it('gives all the CTR and ME text, and their icons, a crisp dark edge, so they read over snow', async () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
