@@ -36,6 +36,11 @@ async function openLayers(ctx = makeTestContext()) {
   return ctx;
 }
 
+async function openSearch() {
+  await fireEvent.press(screen.getByLabelText('Open search'));
+  return screen.getByLabelText('Search');
+}
+
 describe('LayersMenu', () => {
   it('has no basemap choice (it is in Settings)', async () => {
     await openLayers();
@@ -61,6 +66,29 @@ describe('LayersMenu', () => {
     expect(screen.getByTestId('layers-tab-polygon')).toHaveTextContent(/^Polys0$/);
   });
 
+  it('hides search until the header button opens it, focused; the button again clears and hides it', async () => {
+    const ctx = makeTestContext();
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
+    await openLayers(ctx);
+    await screen.findByText('HOS-1');
+    expect(screen.queryByLabelText('Search')).toBeNull();
+    const field = await openSearch();
+    expect(field).toHaveProp('autoFocus', true);
+    await fireEvent.changeText(field, 'HOS-1');
+    expect(screen.queryByText('HOS-2')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Close search'));
+    expect(screen.queryByLabelText('Search')).toBeNull();
+    expect(screen.getByText('HOS-2')).toBeTruthy();
+    // Opening it again starts empty.
+    expect(await openSearch()).toHaveProp('value', '');
+  });
+
+  it('has no search button while the tab is empty', async () => {
+    await openLayers();
+    expect(screen.queryByLabelText('Open search')).toBeNull();
+  });
+
   it('caps a tab count at 99+', async () => {
     const ctx = makeTestContext();
     for (let i = 1; i <= 99; i++) await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: `P-${i}` });
@@ -76,7 +104,7 @@ describe('LayersMenu', () => {
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
     await openLayers(ctx);
     expect(await screen.findByTestId('layers-count')).toHaveTextContent('2 units');
-    await fireEvent.changeText(screen.getByLabelText('Search'), 'HOS-1');
+    await fireEvent.changeText(await openSearch(), 'HOS-1');
     expect(screen.getByTestId('layers-count')).toHaveTextContent('1 of 2 units');
     await fireEvent.press(screen.getByLabelText('Clear Search'));
     expect(screen.getByTestId('layers-count')).toHaveTextContent('2 units');
@@ -128,7 +156,7 @@ describe('LayersMenu', () => {
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'OBJ IRON' });
     await openLayers(ctx);
     expect(await screen.findByTestId('layers-more')).toHaveTextContent('Showing 100 of 106 — refine your search');
-    await fireEvent.changeText(screen.getByLabelText('Search'), 'iron');
+    await fireEvent.changeText(await openSearch(), 'iron');
     expect(await screen.findByText('OBJ IRON')).toBeTruthy();
     expect(screen.queryByTestId('layers-more')).toBeNull();
     await fireEvent.changeText(screen.getByLabelText('Search'), 'zzz');
@@ -185,7 +213,7 @@ describe('LayersMenu', () => {
     await fireEvent.press(screen.getByLabelText('Lines'));
     expect(screen.getByText('RED')).toBeTruthy();
     expect(screen.queryByText('HOS-1')).toBeNull();
-    expect(screen.getByLabelText('Search')).toHaveProp('placeholder', 'Search lines');
+    expect(await openSearch()).toHaveProp('placeholder', 'Search lines');
     await fireEvent.press(screen.getByLabelText('Show all'));
     await waitFor(async () => expect(await firstValueFrom(observeHiddenItemIds(ctx.db))).toEqual([u.value.id]));
     await act(async () => useMenu.getState().closeMenu());
@@ -201,7 +229,8 @@ describe('LayersMenu', () => {
       const b = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
       if (!a.ok || !b.ok) throw new Error('setup');
       await openLayers(ctx);
-      await fireEvent.changeText(await screen.findByLabelText('Search'), 'HOS');
+      await screen.findByText('HOS-1');
+      await fireEvent.changeText(await openSearch(), 'HOS');
       await fireEvent.scroll(screen.getByTestId('menu-panel-scroll'), { nativeEvent: { contentOffset: { x: 0, y: 180 } } });
       await fireEvent.press(await screen.findByLabelText('HOS-1'));
       await screen.findByDisplayValue('HOS-1');
@@ -270,7 +299,7 @@ describe('LayersMenu', () => {
       expect(screen.getByLabelText('Show all rings')).toHaveTextContent(/0\/2/);
       await fireEvent.press(screen.getByLabelText('Show ring for ART-1'));
       await waitFor(() => expect(screen.getByLabelText('Show all rings')).toHaveTextContent(/1\/2/));
-      await fireEvent.changeText(screen.getByLabelText('Search'), 'art-1');
+      await fireEvent.changeText(await openSearch(), 'art-1');
       await fireEvent.press(screen.getByLabelText('Show all rings'));
       await waitFor(async () => expect((await firstValueFrom(observeRingItemIds(ctx.db))).sort()).toEqual(ids));
       await waitFor(() => expect(screen.getByLabelText('Hide all rings')).toHaveTextContent(/2\/2/));

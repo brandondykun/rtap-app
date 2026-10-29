@@ -27,6 +27,14 @@ describe('menu primitives', () => {
     expect(add).toHaveBeenCalled();
   });
 
+  it('MenuHeader can show an icon-only trailing button, labelled for screen readers', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(<MenuHeader title="Layers" trailing={{ label: 'Open search', icon: 'magnify', iconOnly: true, onPress }} />);
+    expect(screen.queryByText('Open search')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Open search'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it('MenuHeader disables the primary action', async () => {
     const add = jest.fn();
     await renderWithProviders(<MenuHeader title="Add point" trailing={{ label: 'Add', onPress: add, disabled: true }} />);

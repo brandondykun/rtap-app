@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Keyboard, Text, View } from 'react-native';
 
 import { MenuCountButton } from '@/components/menu/MenuCountButton';
@@ -55,6 +55,9 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
   // Kept for an item drilled into and back out of.
   const [query, setQuery] = useMenuEntryState('query', '');
+  const [searchOpen, setSearchOpen] = useMenuEntryState('searchOpen', false);
+  // Focus only when the user opens search, not when coming Back to Layers with it still open.
+  const [focusSearch, setFocusSearch] = useState(false);
   const chosenTab = useLayersView((s) => s.tab);
   const counts = useMemo(() => layerRows(items, hidden, '', 0), [items, hidden]);
   const byTab: Record<ItemCategory, number> = { unit: counts.units, point: counts.points, line: counts.lines, polygon: counts.polygons };
@@ -80,6 +83,17 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ringColumn = tab === 'unit' && ringableIds.length > 0;
   const noun = total === 1 ? tabInfo.one : tabInfo.noun;
   const listCount = query.trim() ? `${count(matched)} of ${count(total)} ${noun}` : `${count(total)} ${noun}`;
+
+  const toggleSearch = () => {
+    if (searchOpen) {
+      setQuery('');
+      setSearchOpen(false);
+      Keyboard.dismiss();
+    } else {
+      setFocusSearch(true);
+      setSearchOpen(true);
+    }
+  };
 
   const toggle = (id: string, hide: boolean) => {
     void setItemHidden(ctx, id, hide).then((r) => {
@@ -115,7 +129,15 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
 
   return (
     <View>
-      <MenuHeader title="Layers" leading={{ label: 'Close', onPress: close }} />
+      <MenuHeader
+        title="Layers"
+        leading={{ label: 'Close', onPress: close }}
+        trailing={
+          total > 0 || searchOpen
+            ? { label: searchOpen ? 'Close search' : 'Open search', icon: 'magnify', iconOnly: true, active: searchOpen, onPress: toggleSearch }
+            : undefined
+        }
+      />
       <MenuSection>
         <MenuSegmented<ItemCategory>
           options={tabOptions}
@@ -125,10 +147,11 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             setQuery('');
           }}
         />
-        {total > 0 ? (
+        {searchOpen && total > 0 ? (
           <TextField
             icon="magnify"
             clearable
+            autoFocus={focusSearch}
             accessibilityLabel="Search"
             value={query}
             onChangeText={setQuery}

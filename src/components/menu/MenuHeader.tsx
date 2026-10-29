@@ -6,12 +6,22 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { PanelHeaderSlot } from './panel-header-slot';
 
-export type MenuHeaderAction = { label: string; onPress: () => void; disabled?: boolean; icon?: IconName };
+export type MenuHeaderAction = {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  icon?: IconName;
+  /** Trailing only: an outlined icon button (no text, `label` is its screen-reader name) instead of the amber primary. */
+  iconOnly?: boolean;
+  /** With `iconOnly`: an "on" state (amber icon on an amber-subtle fill), e.g. while search is open. */
+  active?: boolean;
+};
 
 export type MenuHeaderProps = { title: string; leading?: MenuHeaderAction; trailing?: MenuHeaderAction };
 
 /**
- * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button. Inside a
+ * Leading outlined action (Cancel / Close / Back), centered uppercase title, trailing amber primary button (or an
+ * outlined icon button for a non-primary tool, like Layers' search). Inside a
  * Panel it is drawn pinned above the scrolling content, so Close and the primary action never scroll away.
  */
 export function MenuHeader(props: MenuHeaderProps) {
@@ -46,7 +56,18 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
         {title}
       </Text>
       <View className="min-w-20 items-end">
-        {trailing ? (
+        {trailing?.iconOnly && trailing.icon ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={trailing.label}
+            accessibilityState={{ disabled: !!trailing.disabled, selected: !!trailing.active }}
+            disabled={trailing.disabled}
+            onPress={trailing.onPress}
+            hitSlop={8}
+            className={`active:opacity-60 rounded-xl border px-3 py-1.5 ${trailing.active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'} ${trailing.disabled ? 'opacity-40' : ''}`}>
+            <Icon name={trailing.icon} size={20} color={trailing.active ? colors.accent : colors.text} />
+          </Pressable>
+        ) : trailing ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={trailing.label}
