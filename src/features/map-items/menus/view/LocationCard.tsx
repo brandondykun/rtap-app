@@ -57,7 +57,7 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
       </View>
       {ring ? (
         <View testID="ring-row" className="flex-row items-baseline gap-3 border-t border-border px-3 py-2">
-          <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">RING</Text>
+          <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">RANGE RING</Text>
           <Text className="shrink font-mono text-base text-text">{ring}</Text>
         </View>
       ) : null}

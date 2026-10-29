@@ -78,7 +78,7 @@ describe('ItemView', () => {
   it('air defense with only a ceiling: Ring disabled, ring row shows the ceiling', async () => {
     await open(composeSidc('hostile', 'air-defense'), { ranges: { verticalRangeFt: 900 } });
     expect(screen.getByLabelText('Ring')).toBeDisabled();
-    expect(screen.getByTestId('ring-row')).toHaveTextContent('RING↕ 900 ft ceiling');
+    expect(screen.getByTestId('ring-row')).toHaveTextContent('RANGE RING↕ 900 ft ceiling');
   });
 
   it('recon has no Ring button or ring row', async () => {
