@@ -188,7 +188,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   };
 
   return (
-    <View>
+    // A little room between the pinned header and the first row.
+    <View className="pt-3">
       <MenuHeader title="Settings" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: close }} />
       <LocationOffNotice />
       <LocationSettingsGroup />

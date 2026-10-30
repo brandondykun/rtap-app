@@ -20,7 +20,8 @@ export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
     else router.replace('/');
   };
   return (
-    <View>
+    // A little room between the pinned header and the first row.
+    <View className="pt-3">
       <MenuHeader title="Menu" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: close }} />
       <MenuSection>
         <MenuRow icon="swap-horizontal" label="Switch mission" onPress={switchMission} />
