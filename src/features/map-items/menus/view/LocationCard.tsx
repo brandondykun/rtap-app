@@ -8,29 +8,8 @@ import { useDraft } from '@/stores/draft';
 import { useSettings } from '@/stores/settings';
 
 import type { MapItemSnapshot } from '../../repository';
+import { DataCell, NO_VALUE } from './DataCell';
 import { ringSummary } from './item-summary';
-
-const NO_VALUE = '—';
-
-/** "1.46 km" → ["1.46", "km"]; a value with no unit ("045°", "—") keeps it all as the number. */
-function splitUnit(text: string): [string, string] {
-  const i = text.lastIndexOf(' ');
-  return i < 0 ? [text, ''] : [text.slice(0, i), text.slice(i + 1)];
-}
-
-/** One cell of the card's bottom row: label over a large number and its small unit. `last` drops the divider on its right. */
-function Cell({ label, value, accent = false, last = false }: { label: string; value: string; accent?: boolean; last?: boolean }) {
-  const [number, unit] = splitUnit(value);
-  return (
-    <View className={`flex-1 gap-0.5 px-3 py-2 ${last ? '' : 'border-r border-border'}`}>
-      <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{label}</Text>
-      <Text numberOfLines={1} adjustsFontSizeToFit className="font-mono-bold text-lg">
-        <Text className={value === NO_VALUE ? 'text-text-muted' : accent ? 'text-accent' : 'text-text'}>{number}</Text>
-        {unit ? <Text className="font-mono text-xs text-text-muted">{` ${unit}`}</Text> : null}
-      </Text>
-    </View>
-  );
-}
 
 /** Where the item is: coordinate, range and bearing from the OP / you, elevation, and its ring. */
 export function LocationCard({ item }: { item: MapItemSnapshot }) {
@@ -51,9 +30,9 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
         <Text selectable numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono-bold text-xl text-text">{coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}</Text>
       </View>
       <View className="flex-row">
-        <Cell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
-        <Cell label={vector ? `DIR (${vector.refLabel})` : 'DIR'} value={vector?.bearingLabel ?? NO_VALUE} accent />
-        <Cell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} last />
+        <DataCell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
+        <DataCell label={vector ? `DIR (${vector.refLabel})` : 'DIR'} value={vector?.bearingLabel ?? NO_VALUE} accent />
+        <DataCell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} last />
       </View>
       {ring ? (
         <View testID="ring-row" className="flex-row items-baseline gap-3 border-t border-border px-3 py-2">

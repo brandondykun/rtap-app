@@ -1,10 +1,9 @@
-import { Text, View } from 'react-native';
-
 import type { ItemCategory } from '@/features/symbology/categories';
 import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import type { MapItemSnapshot } from '../../repository';
+import { IdentityBlock } from './IdentityBlock';
 import { itemAccessibleTitle, pointSubtitle, unitSubtitle } from './item-summary';
 
 /** Top of the view: symbol, name and a one-line type subtitle (the affiliation word in its map color). Read out as one line. */
@@ -15,18 +14,15 @@ export function ItemTitle({ category, item, hidden }: { category: ItemCategory; 
   const first = unit?.affiliation ? subtitle.split(' · ')[0] : null;
   const color = unit?.affiliation ? { friend: colors.friendly, hostile: colors.danger, neutral: colors.neutral, unknown: colors.unknown }[unit.affiliation] : undefined;
   return (
-    <View testID="item-title" accessible accessibilityLabel={itemAccessibleTitle(category, item, hidden)} className="flex-row items-center gap-3">
-      {item.sidc ? <SymbolImage sidc={item.sidc} width={40} height={40} /> : null}
-      <View className="shrink gap-0.5">
-        <Text numberOfLines={1} className="font-mono-bold text-xl text-text">{item.name}</Text>
-        <View className="flex-row items-center gap-2">
-          <Text testID="item-subtitle" numberOfLines={1} className="shrink text-base text-text-muted">
-            {first ? <Text style={{ color }}>{first}</Text> : null}
-            {first ? subtitle.slice(first.length) : subtitle}
-          </Text>
-          {hidden ? <Text testID="hidden-tag" className="rounded border border-border px-1 text-xs font-semibold uppercase text-text-muted">Hidden</Text> : null}
-        </View>
-      </View>
-    </View>
+    <IdentityBlock
+      testID="item-title"
+      accessibilityLabel={itemAccessibleTitle(category, item, hidden)}
+      icon={item.sidc ? <SymbolImage sidc={item.sidc} width={40} height={40} /> : null}
+      name={item.name}
+      lead={first}
+      leadColor={color}
+      rest={first ? subtitle.slice(first.length) : subtitle}
+      hidden={hidden}
+    />
   );
 }
