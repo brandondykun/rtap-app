@@ -131,7 +131,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
     <View>
       <MenuHeader
         title="Layers"
-        leading={{ label: 'Close', onPress: close }}
+        leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: close }}
         trailing={
           total > 0 || searchOpen
             ? { label: searchOpen ? 'Close search' : 'Open search', icon: 'magnify', iconOnly: true, active: searchOpen, onPress: toggleSearch }
