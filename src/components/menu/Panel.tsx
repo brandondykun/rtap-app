@@ -118,10 +118,12 @@ export function Panel({
   const detentRef = useRef(detent);
   const restore = useRef<Detent | null>(null);
   const onFrameRef = useRef(onFrameChange);
-  const size = useSharedValue(0);
+  // The drawer is laid out at its full width from the first frame and slides in from the left (transform only, on the
+  // UI thread): growing its width instead would re-lay out the menu every frame, its content reflowing as it widens.
+  const size = useSharedValue(landscape ? target : 0);
   const dragStart = useSharedValue(0);
-  /** Drawer slide: 0 open, -width minimized. */
-  const offset = useSharedValue(0);
+  /** Drawer slide: 0 open, -width minimized (and where a new drawer starts, off to the left). */
+  const offset = useSharedValue(landscape ? -target : 0);
 
   const scroller = useRef<ScrollView>(null);
   const scrollToEnd = useCallback(() => scroller.current?.scrollToEnd({ animated: true }), []);
@@ -172,8 +174,9 @@ export function Panel({
 
   useEffect(() => {
     if (waiting) return;
-    // Ease out: the panel starts moving at once and settles, which reads as quick.
-    size.set(withTiming(target, { duration: 220, easing: Easing.out(Easing.cubic) }));
+    // Ease out: the sheet starts moving at once and settles, which reads as quick. The drawer's width is never animated
+    // (see `size`): it takes a new width at once, on rotation or a window resize.
+    size.set(landscape ? target : withTiming(target, { duration: 220, easing: Easing.out(Easing.cubic) }));
     if (!hidden) onFrameRef.current({ side: landscape ? 'left' : 'bottom', size: target });
     // Minimized in portrait the reopen bar runs along the bottom, under the grid readouts.
     else onFrameRef.current(landscape ? null : { side: 'bottom', size: minimizedBarSize(insets.bottom) });

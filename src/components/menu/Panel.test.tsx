@@ -58,6 +58,17 @@ describe('Panel', () => {
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'left', size: drawerWidth(metrics()) });
   });
 
+  it('lays the landscape drawer out at its full width at once and slides it in, never growing its width', async () => {
+    await render(
+      <Panel landscape detents={['half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+        <Text>content</Text>
+      </Panel>,
+    );
+    const style = StyleSheet.flatten(screen.getByTestId('menu-panel').props.style);
+    expect(style.width).toBe(drawerWidth(metrics()));
+    expect(style.transform).toContainEqual({ translateX: expect.any(Number) });
+  });
+
   it('falls back to the new initial detent when the menu changes to one without the current detent', async () => {
     const onFrameChange = jest.fn();
     const ui = (detents: ('peek' | 'half' | 'full')[], initialDetent: 'peek' | 'half') => (
