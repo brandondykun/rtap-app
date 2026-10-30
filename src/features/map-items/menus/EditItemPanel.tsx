@@ -19,6 +19,7 @@ import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
 import { ItemView } from './view/ItemView';
+import { PolygonView } from './view/PolygonView';
 
 const NO_IDS: string[] = [];
 
@@ -141,8 +142,8 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     });
   };
 
-  // Units and points open as a condensed summary; lines and polygons keep the locked form.
-  const condensed = category === 'unit' || category === 'point';
+  // Units, points and polygons open as a condensed summary; lines keep the locked form.
+  const condensed = category === 'unit' || category === 'point' || category === 'polygon';
   const hidden = hiddenIds.includes(itemId);
 
   if (condensed) {
@@ -161,7 +162,13 @@ export function EditItemPanel({ category, itemId, form }: Props) {
             trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
           />
         )}
-        {ready ? locked ? item ? <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} /> : null : form : null}
+        {ready ? locked ? item ? (
+          category === 'polygon' ? (
+            <PolygonView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+          ) : (
+            <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+          )
+        ) : null : form : null}
       </View>
     );
   }

@@ -22,20 +22,51 @@ beforeEach(() => {
 });
 
 describe('EditPolygonMenu', () => {
-  it('opens a circle read-only with its exact center and radius, and saves a new radius', async () => {
+  it('opens a polygon in the condensed view, not the form', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'P', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await screen.findByTestId('polygon-title');
+    expect(screen.getByRole('header')).toHaveTextContent('Polygon');
+    expect(screen.getByLabelText('Close')).toBeTruthy();
+    expect(screen.getByLabelText('Edit')).toBeTruthy();
+    expect(screen.getByText('PERIMETER')).toBeTruthy();
+    expect(screen.queryByLabelText('Name')).toBeNull();
+  });
+
+  it('opens a circle with its exact center and radius, and saves a new radius back to the view', async () => {
     const ctx = makeTestContext();
     const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'no-fire-area', name: '1', shape: { kind: 'circle', center: C, radiusM: 500 } });
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
-    await screen.findByDisplayValue('1');
-    expect(screen.getByRole('header')).toHaveTextContent('Polygon');
+    await screen.findByTestId('polygon-title');
+    expect(screen.getByText('RADIUS')).toBeTruthy();
+    expect(screen.queryByLabelText('Radius')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Edit'));
     expect(screen.getByLabelText('Radius')).toHaveDisplayValue('500');
     expect(screen.getByLabelText('Northing')).toHaveDisplayValue(mgrsFieldsFor(C).northing);
-    await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.changeText(screen.getByLabelText('Radius'), '750');
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(async () => expect(JSON.parse((await findItem(ctx.db, r.value.id))!.style!).radiusM).toBe(750));
+    await screen.findByTestId('polygon-title');
+    expect(screen.queryByLabelText('Radius')).toBeNull();
+    expect(screen.getByText(/750/)).toBeTruthy();
+  });
+
+  it('Cancel returns to the view', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'P', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await fireEvent.press(await screen.findByLabelText('Edit'));
+    await screen.findByDisplayValue('P');
+    await fireEvent.press(screen.getByText('Cancel'));
+    await screen.findByTestId('polygon-title');
+    expect(screen.queryByDisplayValue('P')).toBeNull();
   });
 
   it('has no Show point distances switch in the polygon form', async () => {
@@ -44,9 +75,23 @@ describe('EditPolygonMenu', () => {
     if (!r.ok) throw new Error('setup');
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await fireEvent.press(await screen.findByLabelText('Edit'));
     await screen.findByDisplayValue('P');
     expect(screen.getByLabelText('Point 1')).toBeTruthy();
     expect(screen.queryByLabelText('Show point distances')).toBeNull();
+  });
+
+  it('deletes from the view with two taps and closes without a "no longer exists" toast', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'P', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await fireEvent.press(await screen.findByLabelText('Delete'));
+    await fireEvent.press(await screen.findByLabelText('Tap again to delete'));
+    await waitFor(() => expect(useMenu.getState().stack).toEqual([]));
+    expect(await findItem(ctx.db, r.value.id)).toBeNull();
+    expect(useToast.getState().toast?.message).not.toBe('That polygon no longer exists.');
   });
 
   it('reports an unreadable polygon and redirects other categories', async () => {
