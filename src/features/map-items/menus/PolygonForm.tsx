@@ -5,7 +5,6 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
-import { MenuToggle } from '@/components/menu/MenuToggle';
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
@@ -61,7 +60,6 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   const radiusM = useDraft((s) => s.circleRadiusM);
   const locked = useDraft((s) => s.locked);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
-  const showDistances = useSettings((s) => s.showLineDistances);
   const [parts, setParts] = useState<MgrsParts>(centerSquare);
   const [unit, setUnit] = useState<'m' | 'km'>(radiusM !== null && radiusM >= 1000 ? 'km' : 'm');
   const [radius, setRadius] = useState(() => radiusText(radiusM, unit));
@@ -121,22 +119,24 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
       {shape === 'points' ? (
         <>
           <MenuSection label={`POINTS · ${vertices.length}`} trailing={pointsTrailing}>
-            {vertices.map((v, i) => (
-              <MenuVertexRow
-                key={i}
-                number={i + 1}
-                title={formatCoordinate(v, coordinateFormat)}
-                detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
-                selected={selected === i}
-                disabled={locked}
-                onPress={() => select(i)}
-                onRemove={() => useDraft.getState().removeVertex(i)}
-                removeDisabled={!canRemove(edit, i, 3)}
-                onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
-                inserting={insertAfter === i}
-                onInsertDone={() => useDraft.getState().selectVertex(null)}
-              />
-            ))}
+            <View>
+              {vertices.map((v, i) => (
+                <MenuVertexRow
+                  key={i}
+                  number={i + 1}
+                  title={formatCoordinate(v, coordinateFormat)}
+                  detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
+                  selected={selected === i}
+                  disabled={locked}
+                  onPress={() => select(i)}
+                  onRemove={() => useDraft.getState().removeVertex(i)}
+                  removeDisabled={!canRemove(edit, i, 3)}
+                  onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
+                  inserting={insertAfter === i}
+                  onInsertDone={() => useDraft.getState().selectVertex(null)}
+                />
+              ))}
+            </View>
             {blocked ? <Text className="text-sm text-text-muted">A polygon needs at least 3 points</Text> : null}
           </MenuSection>
           {locked ? null : (
@@ -167,11 +167,6 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
         </>
       )}
       <NotesSection />
-      {shape === 'points' ? (
-        <MenuSection>
-          <MenuToggle label="Show point distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
-        </MenuSection>
-      ) : null}
     </View>
   );
 }

@@ -75,22 +75,24 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
         <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
       </MenuSection>
       <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? `${formatDistance(totalLength(vertices))} total` : undefined}>
-        {vertices.map((v, i) => (
-          <MenuVertexRow
-            key={i}
-            number={i + 1}
-            title={formatCoordinate(v, coordinateFormat)}
-            detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
-            selected={selected === i}
-            disabled={locked}
-            onPress={() => select(i)}
-            onRemove={() => useDraft.getState().removeVertex(i)}
-            removeDisabled={!canRemove(edit, i)}
-            onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
-            inserting={insertAfter === i}
-            onInsertDone={() => useDraft.getState().selectVertex(null)}
-          />
-        ))}
+        <View>
+          {vertices.map((v, i) => (
+            <MenuVertexRow
+              key={i}
+              number={i + 1}
+              title={formatCoordinate(v, coordinateFormat)}
+              detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
+              selected={selected === i}
+              disabled={locked}
+              onPress={() => select(i)}
+              onRemove={() => useDraft.getState().removeVertex(i)}
+              removeDisabled={!canRemove(edit, i)}
+              onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
+              inserting={insertAfter === i}
+              onInsertDone={() => useDraft.getState().selectVertex(null)}
+            />
+          ))}
+        </View>
         {blocked ? <Text className="text-sm text-text-muted">A line needs at least 2 points</Text> : null}
       </MenuSection>
       {locked ? null : (

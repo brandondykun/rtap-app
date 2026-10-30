@@ -186,6 +186,25 @@ describe('menu primitives', () => {
     expect(onInsertDone).toHaveBeenCalled();
   });
 
+  it('MenuVertexRow is a plain row with a separator and no box', async () => {
+    await renderWithProviders(<MenuVertexRow number={2} title="t" detail="d" onPress={jest.fn()} onRemove={jest.fn()} />);
+    const cls = screen.getByTestId('vertex-row-2').props.className as string;
+    expect(cls).toContain('border-t');
+    expect(cls).not.toContain('rounded-xl');
+  });
+
+  it('MenuVertexRow without onRemove has no remove button', async () => {
+    await renderWithProviders(<MenuVertexRow number={2} title="t" detail="d" onPress={jest.fn()} />);
+    expect(screen.getByLabelText('Point 2')).toBeTruthy();
+    expect(screen.queryByLabelText('Remove point 2')).toBeNull();
+  });
+
+  it('MenuVertexRow selected row keeps a visible background', async () => {
+    await renderWithProviders(<MenuVertexRow number={2} title="t" detail="d" selected onPress={jest.fn()} />);
+    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    expect(screen.getByTestId('vertex-row-2').props.className).toContain('bg-accent-subtle');
+  });
+
   it('MenuSection: shows a trailing note on the label row', async () => {
     await renderWithProviders(
       <MenuSection label="Points · 2" trailing="2.03 km total">

@@ -10,7 +10,8 @@ type Props = {
   selected?: boolean;
   disabled?: boolean;
   onPress: () => void;
-  onRemove: () => void;
+  /** Omit for a read-only list: no remove (×). */
+  onRemove?: () => void;
   removeDisabled?: boolean;
   /** Shown on the selected row: the next added point goes right after this one. */
   onInsertAfter?: () => void;
@@ -23,7 +24,7 @@ type Props = {
 export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter, inserting = false, onInsertDone }: Props) {
   const { colors } = useTheme();
   return (
-    <View className={`rounded-xl border px-3 py-2 ${selected ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'}`}>
+    <View testID={`vertex-row-${number}`} className={`border-t border-border px-3 py-2 ${selected ? 'bg-accent-subtle' : ''}`}>
       <View className="flex-row items-center gap-3">
         <Pressable
           accessibilityRole="button"
@@ -32,24 +33,26 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
           disabled={disabled}
           onPress={onPress}
           className="active:opacity-60 flex-1 flex-row items-center gap-3">
-          <View className={`h-7 w-7 items-center justify-center rounded-full ${selected ? 'bg-accent' : 'bg-text'}`}>
-            <Text className="font-bold text-surface-input">{number}</Text>
+          <View className={`h-6 w-6 items-center justify-center rounded-full ${selected ? 'bg-accent' : 'bg-text'}`}>
+            <Text className="text-sm font-bold text-surface-input">{number}</Text>
           </View>
           <Text numberOfLines={1} className="shrink font-mono text-base text-text">
             {title}
           </Text>
           <Text className={`ml-auto font-mono text-sm ${selected ? 'text-accent' : 'text-text-muted'}`}>{detail}</Text>
         </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Remove point ${number}`}
-          accessibilityState={{ disabled: disabled || removeDisabled }}
-          disabled={disabled || removeDisabled}
-          onPress={onRemove}
-          hitSlop={8}
-          className={`active:opacity-60 ${disabled || removeDisabled ? 'opacity-30' : ''}`}>
-          <Icon name="close" size={20} color={colors['text-muted']} />
-        </Pressable>
+        {onRemove ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Remove point ${number}`}
+            accessibilityState={{ disabled: disabled || removeDisabled }}
+            disabled={disabled || removeDisabled}
+            onPress={onRemove}
+            hitSlop={8}
+            className={`active:opacity-60 ${disabled || removeDisabled ? 'opacity-30' : ''}`}>
+            <Icon name="close" size={20} color={colors['text-muted']} />
+          </Pressable>
+        ) : null}
       </View>
       {selected && inserting && !disabled ? (
         <View className="mt-2 flex-row items-center gap-2">

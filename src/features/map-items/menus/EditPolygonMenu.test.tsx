@@ -38,6 +38,17 @@ describe('EditPolygonMenu', () => {
     await waitFor(async () => expect(JSON.parse((await findItem(ctx.db, r.value.id))!.style!).radiusM).toBe(750));
   });
 
+  it('has no Show point distances switch in the polygon form', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'P', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await screen.findByDisplayValue('P');
+    expect(screen.getByLabelText('Point 1')).toBeTruthy();
+    expect(screen.queryByLabelText('Show point distances')).toBeNull();
+  });
+
   it('reports an unreadable polygon and redirects other categories', async () => {
     const ctx = makeTestContext();
     const bad = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'BAD', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
