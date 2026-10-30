@@ -10,6 +10,7 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { opSize, opTextSize } from './op-symbol-scale';
+import { SYMBOL_HITBOX } from './nearest-feature';
 import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
 import { POINT_SYMBOL_STYLE } from './styles';
 
@@ -88,6 +89,29 @@ describe('PointsLayer', () => {
     // `at` is the finger; the last argument is the symbol's stored coordinate (for snapping), not the
     // tile-quantized rendered geometry.
     expect(onItemPress).toHaveBeenCalledWith(a.value.id, { lat: 38.9001, lon: -77.0001 }, { kind: 'point', sidc: HOSTILE_INF }, at);
+  });
+
+  it('uses a tight tap box and, of the units it touches, picks the one nearest the finger', async () => {
+    const ctx = makeTestContext();
+    const near = { lat: at.lat, lon: at.lon + 0.0002 };
+    const a = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    const b = await placePoint(ctx, { missionId: 'm1', coord: near, sidc: HOSTILE_INF, name: 'HOS-2' });
+    if (!a.ok || !b.ok) throw new Error('setup');
+    const onItemPress = jest.fn();
+    await renderWithProviders(<PointsLayer missionId="m1" onItemPress={onItemPress} />, ctx);
+    const props = mapboxMock().__props;
+    await waitFor(() => expect((props.ShapeSource.points.shape as Shape).features).toHaveLength(2));
+    expect(props.ShapeSource.points.hitbox).toEqual(SYMBOL_HITBOX);
+    const feature = (id: string, p: { lat: number; lon: number }) => ({ properties: { id, sidc: HOSTILE_INF }, geometry: { type: 'Point', coordinates: [p.lon, p.lat] } });
+    await act(async () =>
+      (props.ShapeSource.points.onPress as (e: unknown) => void)({
+        // Mapbox lists the farther unit first.
+        features: [feature(a.value.id, at), feature(b.value.id, near)],
+        coordinates: { latitude: at.lat, longitude: at.lon + 0.00015 },
+        point: {},
+      }),
+    );
+    expect(onItemPress).toHaveBeenCalledWith(b.value.id, expect.anything(), expect.anything(), near);
   });
 
   it('hides its labels (only) while map labels are off', async () => {

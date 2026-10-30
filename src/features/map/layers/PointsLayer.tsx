@@ -11,6 +11,7 @@ import type { LatLon } from '@/lib/geo/types';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
+import { nearestFeature, SYMBOL_HITBOX } from './nearest-feature';
 import { useOpSymbolStyle } from './op-symbol-scale';
 import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
@@ -55,15 +56,19 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
     <ShapeSource
       id="points"
       shape={shape}
+      // A tight tap box, and of the symbols it touches the one nearest the finger: close units stay pickable.
+      hitbox={SYMBOL_HITBOX}
       onPress={(e) => {
-        const props = e.features[0]?.properties;
+        const at = { lat: e.coordinates.latitude, lon: e.coordinates.longitude };
+        const feature = nearestFeature(e.features, at);
+        const props = feature?.properties;
         const id = props?.id;
         const sidc = typeof props?.sidc === 'string' ? props.sidc : null;
         // Snap to the stored coordinate: rendered geometry is quantized to the tile at the current zoom.
         const stored = typeof id === 'string' ? items.find((i) => i.id === id) : undefined;
-        const g = e.features[0]?.geometry;
+        const g = feature?.geometry;
         const itemAt = (stored ? pointCoord(stored.geometry) : null) ?? (g?.type === 'Point' ? { lat: g.coordinates[1], lon: g.coordinates[0] } : null);
-        if (typeof id === 'string') onItemPress?.(id, { lat: e.coordinates.latitude, lon: e.coordinates.longitude }, { kind: 'point', sidc }, itemAt);
+        if (typeof id === 'string') onItemPress?.(id, at, { kind: 'point', sidc }, itemAt);
       }}>
       <SymbolLayer id="points-symbols" style={symbolStyle} filter={filter} />
       <SymbolLayer id="points-labels" style={opLabelStyle} filter={filter} minZoomLevel={POINT_LABEL_MIN_ZOOM} />
