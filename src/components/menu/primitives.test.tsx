@@ -37,6 +37,15 @@ describe('menu primitives', () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
+  it('MenuHeader gives every button the same height, icon-only or with text', async () => {
+    await renderWithProviders(
+      <MenuHeader title="Unit" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: jest.fn() }} trailing={{ label: 'Edit', icon: 'pencil', onPress: jest.fn() }} />,
+    );
+    const height = (label: string) => String(screen.getByLabelText(label).props.className).match(/\bh-\d+\b/)?.[0];
+    expect(height('Close')).toBeDefined();
+    expect(height('Close')).toBe(height('Edit'));
+  });
+
   it('MenuHeader disables the primary action', async () => {
     const add = jest.fn();
     await renderWithProviders(<MenuHeader title="Add point" trailing={{ label: 'Add', onPress: add, disabled: true }} />);

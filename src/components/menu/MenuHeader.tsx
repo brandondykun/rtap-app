@@ -17,6 +17,9 @@ export type MenuHeaderAction = {
   active?: boolean;
 };
 
+/** One height for every header button (icon-only or with text, bordered or filled), so they line up exactly. */
+const BUTTON_HEIGHT = 'h-8';
+
 export type MenuHeaderProps = {
   title: string;
   leading?: MenuHeaderAction;
@@ -53,7 +56,7 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
             disabled={leading.disabled}
             onPress={leading.onPress}
             hitSlop={8}
-            className={`active:opacity-60 rounded-xl border border-border bg-surface-raised px-3 py-1.5 ${leading.disabled ? 'opacity-40' : ''}`}>
+            className={`active:opacity-60 ${BUTTON_HEIGHT} items-center justify-center rounded-xl border border-border bg-surface-raised px-3 ${leading.disabled ? 'opacity-40' : ''}`}>
             <Icon name={leading.icon} size={20} color={colors.text} />
           </Pressable>
         ) : leading ? (
@@ -61,7 +64,7 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
             accessibilityRole="button"
             onPress={leading.onPress}
             hitSlop={8}
-            className={`flex-row items-center rounded-xl border border-border bg-surface-raised py-1.5 active:opacity-60 ${leading.icon ? 'pl-2 pr-4' : 'px-4'}`}>
+            className={`${BUTTON_HEIGHT} flex-row items-center rounded-xl border border-border bg-surface-raised active:opacity-60 ${leading.icon ? 'pl-2 pr-4' : 'px-4'}`}>
             {leading.icon ? <Icon name={leading.icon} size={18} color={colors.text} /> : null}
             <Text className="font-semibold text-text">{leading.label}</Text>
           </Pressable>
@@ -79,7 +82,7 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
             disabled={trailing.disabled}
             onPress={trailing.onPress}
             hitSlop={8}
-            className={`active:opacity-60 rounded-xl border px-3 py-1.5 ${trailing.active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'} ${trailing.disabled ? 'opacity-40' : ''}`}>
+            className={`active:opacity-60 ${BUTTON_HEIGHT} items-center justify-center rounded-xl border px-3 ${trailing.active ? 'border-accent bg-accent-subtle' : 'border-border bg-surface-raised'} ${trailing.disabled ? 'opacity-40' : ''}`}>
             <Icon name={trailing.icon} size={20} color={trailing.active ? colors.accent : colors.text} />
           </Pressable>
         ) : trailing ? (
@@ -89,7 +92,7 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
             accessibilityState={{ disabled: !!trailing.disabled }}
             disabled={trailing.disabled}
             onPress={trailing.onPress}
-            className={`active:opacity-60 flex-row items-center gap-1 rounded-xl bg-accent px-4 py-1.5 ${trailing.disabled ? 'opacity-40' : ''}`}>
+            className={`active:opacity-60 ${BUTTON_HEIGHT} flex-row items-center gap-1 rounded-xl bg-accent px-4 ${trailing.disabled ? 'opacity-40' : ''}`}>
             {trailing.icon ? <Icon name={trailing.icon} size={18} color={colors['on-accent']} /> : null}
             <Text className="font-bold text-on-accent">{trailing.label}</Text>
           </Pressable>

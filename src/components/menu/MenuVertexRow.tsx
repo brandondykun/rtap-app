@@ -24,7 +24,7 @@ type Props = {
 export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter, inserting = false, onInsertDone }: Props) {
   const { colors } = useTheme();
   return (
-    <View testID={`vertex-row-${number}`} className={`border-t border-border px-3 py-2 ${selected ? 'bg-accent-subtle' : ''}`}>
+    <View testID={`vertex-row-${number}`} className={`border-t border-border px-3 py-3 ${selected ? 'bg-accent-subtle' : ''}`}>
       <View className="flex-row items-center gap-3">
         <Pressable
           accessibilityRole="button"
