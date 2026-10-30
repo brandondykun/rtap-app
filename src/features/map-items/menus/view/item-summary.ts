@@ -25,14 +25,19 @@ export function itemAccessibleTitle(category: ItemCategory, item: Pick<MapItemSn
   return `${item.name}, ${subtitle}${hidden ? ', hidden' : ''}`;
 }
 
-/** The ring's ranges as text; null for units that cannot have a ring. */
-export function ringSummary(item: Pick<MapItemSnapshot, 'sidc' | 'threatRangeM' | 'horizontalRangeM' | 'verticalRangeFt'>): string | null {
+/**
+ * The unit's ranges as text, under a title that counts them: `RANGE RINGS` once both of an air defense unit's ranges are
+ * set, else `RANGE RING`. Null for units that cannot have a ring.
+ */
+export function ringSummary(
+  item: Pick<MapItemSnapshot, 'sidc' | 'threatRangeM' | 'horizontalRangeM' | 'verticalRangeFt'>,
+): { title: 'RANGE RING' | 'RANGE RINGS'; text: string } | null {
   const fields = rangeFieldsForSidc(item.sidc);
   if (fields.length === 0) return null;
   const radius = ringRadiusM(item);
-  if (fields.length === 1) return radius === null ? NO_RANGE : `${radius} m`;
-  const parts = [radius === null ? null : `↔ ${radius} m`, item.verticalRangeFt === null ? null : `↕ ${item.verticalRangeFt} ft ceiling`].filter(Boolean);
-  return parts.length ? parts.join(' · ') : NO_RANGE;
+  const parts = fields.length === 1 ? [radius === null ? null : `${radius} m`] : [radius === null ? null : `↔ ${radius} m`, item.verticalRangeFt === null ? null : `↕ ${item.verticalRangeFt} ft`];
+  const set = parts.filter((p): p is string => p !== null);
+  return { title: set.length > 1 ? 'RANGE RINGS' : 'RANGE RING', text: set.length ? set.join(' · ') : NO_RANGE };
 }
 
 const NO_RANGE = 'No range set — Edit to add';
