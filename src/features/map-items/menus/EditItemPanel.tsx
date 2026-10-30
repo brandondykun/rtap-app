@@ -1,10 +1,7 @@
 import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
 
-import { MenuActions } from '@/components/menu/MenuActions';
 import { MenuHeader } from '@/components/menu/MenuHeader';
-import { MenuSection } from '@/components/menu/MenuSection';
-import { MenuToggle } from '@/components/menu/MenuToggle';
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
 import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
@@ -13,19 +10,20 @@ import { useCommandContext } from '@/lib/db/command-context-provider';
 import { draftRanges, useDraft } from '@/stores/draft';
 import { useMenu } from '@/stores/menu';
 
-import { deleteItem, setItemHidden } from '../commands';
+import { deleteItem } from '../commands';
 import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repository';
 import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
 import { ItemView } from './view/ItemView';
+import { LineView } from './view/LineView';
 import { PolygonView } from './view/PolygonView';
 
 const NO_IDS: string[] = [];
 
 type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
 
-/** Item view: units, points and polygons open as a condensed view (Edit unlocks the form); lines keep the locked form. Save or Cancel locks it again. */
+/** Item view: every item opens as a condensed view (Edit unlocks the form). Save or Cancel locks it again. */
 export function EditItemPanel({ category, itemId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
   const adapter = ITEM_ADAPTERS[category];
@@ -136,49 +134,14 @@ export function EditItemPanel({ category, itemId, form }: Props) {
     if (item && !adapter.select(item)) close();
   };
 
-  const setHidden = (hidden: boolean) => {
-    void setItemHidden(ctx, itemId, hidden).then((result) => {
-      if (!result.ok) notifyError('Could not change visibility.');
-    });
-  };
-
-  // Units, points and polygons open as a condensed summary; lines keep the locked form.
-  const condensed = category === 'unit' || category === 'point' || category === 'polygon';
   const hidden = hiddenIds.includes(itemId);
-
-  if (condensed) {
-    return (
-      <View>
-        {locked ? (
-          <MenuHeader
-            title={title}
-            leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}
-            trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
-          />
-        ) : (
-          <MenuHeader
-            title={`Edit ${noun}`}
-            leading={{ label: 'Cancel', onPress: cancelEdit }}
-            trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
-          />
-        )}
-        {ready ? locked ? item ? (
-          category === 'polygon' ? (
-            <PolygonView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
-          ) : (
-            <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
-          )
-        ) : null : form : null}
-      </View>
-    );
-  }
 
   return (
     <View>
       {locked ? (
         <MenuHeader
           title={title}
-          leading={drilled ? { label: 'Back', icon: 'chevron-left', onPress: back } : { label: 'Close', onPress: closeMenu }}
+          leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}
           trailing={{ label: 'Edit', icon: 'pencil', onPress: () => useDraft.getState().setLocked(false), disabled: !ready }}
         />
       ) : (
@@ -188,15 +151,15 @@ export function EditItemPanel({ category, itemId, form }: Props) {
           trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
         />
       )}
-      {ready ? (
-        <>
-          {form}
-          <MenuSection>
-            <MenuToggle label="Hidden on map" value={hidden} onValueChange={setHidden} />
-          </MenuSection>
-          <MenuActions disabled={locked} destructive={{ label: `Delete ${noun}`, confirmLabel: 'Tap again to delete', onConfirm: () => void remove() }} />
-        </>
-      ) : null}
+      {ready ? locked ? item ? (
+        category === 'line' ? (
+          <LineView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+        ) : category === 'polygon' ? (
+          <PolygonView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+        ) : (
+          <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+        )
+      ) : null : form : null}
     </View>
   );
 }

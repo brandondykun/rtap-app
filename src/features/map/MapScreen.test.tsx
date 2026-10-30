@@ -840,7 +840,7 @@ describe('MapScreen', () => {
       await act(async () =>
         (mapboxMock().__props.ShapeSource.lines.onPress as (e: unknown) => void)({ features: [{ properties: { id: l.value.id } }], coordinates: { latitude: 38.92, longitude: -76.98 }, point: {} }),
       );
-      expect(await screen.findByDisplayValue('RED')).toBeTruthy();
+      expect(await screen.findByTestId('line-title')).toBeTruthy();
       type FitStop = { bounds?: unknown; centerCoordinate?: [number, number]; zoomLevel?: number; padding?: { paddingBottom: number } };
       const all = () => mapboxMock().__camera.setCamera.mock.calls.map((c) => c[0] as FitStop);
       const isFit = (s: FitStop | undefined) => !!s?.zoomLevel && !!s.centerCoordinate && Math.abs(s.centerCoordinate[0] + 76.975) < 1e-6;

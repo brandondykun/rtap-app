@@ -5,11 +5,11 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import type { MapItemSnapshot } from '../../repository';
 import { IdentityBlock } from './IdentityBlock';
+import { ItemPoints } from './ItemPoints';
 import { NotesPreview } from './NotesPreview';
-import { PolygonActions } from './PolygonActions';
 import { PolygonCard } from './PolygonCard';
-import { PolygonPoints } from './PolygonPoints';
 import { polygonSummary } from './polygon-summary';
+import { ShapeActions } from './ShapeActions';
 import { PolygonSample } from '../PolygonSample';
 
 /** The condensed read-only view of a polygon: what it is, where, actions, its points, notes. */
@@ -31,8 +31,8 @@ export function PolygonView({ item, hidden, onEditNotes, onDelete }: { item: Map
         hidden={hidden}
       />
       <PolygonCard summary={summary} />
-      <PolygonActions id={item.id} circle={circle} hidden={hidden} onDelete={onDelete} />
-      {circle ? null : <PolygonPoints points={summary.points} />}
+      <ShapeActions id={item.id} lengths={!circle} hidden={hidden} onDelete={onDelete} />
+      {circle ? null : <ItemPoints points={summary.points} />}
       <NotesPreview notes={item.notes} onEdit={onEditNotes} />
     </View>
   );

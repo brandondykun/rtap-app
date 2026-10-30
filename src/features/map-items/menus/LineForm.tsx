@@ -4,7 +4,6 @@ import { Text, View } from 'react-native';
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSelect } from '@/components/menu/MenuSelect';
-import { MenuToggle } from '@/components/menu/MenuToggle';
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
@@ -39,7 +38,6 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
   const insertAfter = useDraft((s) => s.insertAfter);
   const locked = useDraft((s) => s.locked);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
-  const showDistances = useSettings((s) => s.showLineDistances);
   const [parts, setParts] = useState<MgrsParts>(centerSquare);
   const status = evaluateMgrsFields(parts);
   const segs = segmentLengths(vertices);
@@ -111,10 +109,6 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
         </MenuSection>
       )}
       <NotesSection />
-      {/* A display preference, not part of the line: it works while viewing too. */}
-      <MenuSection>
-        <MenuToggle label="Show point distances" value={showDistances} onValueChange={(v) => useSettings.getState().setShowLineDistances(v)} />
-      </MenuSection>
     </View>
   );
 }

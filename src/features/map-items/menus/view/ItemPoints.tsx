@@ -12,8 +12,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { segmentLengths } from '../../line-measure';
 
-/** A collapsed "Points · n" row that opens the read-only list of the polygon's points; pressing one centers the map on it. */
-export function PolygonPoints({ points }: { points: LatLon[] }) {
+/** A collapsed "Points · n" row that opens the read-only list of a line or polygon's points; pressing one centers the map on it. */
+export function ItemPoints({ points }: { points: LatLon[] }) {
   const { colors } = useTheme();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const [open, setOpen] = useState(false);
