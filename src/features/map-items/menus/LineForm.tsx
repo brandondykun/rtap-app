@@ -9,6 +9,7 @@ import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
+import { notifyRemoved } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { LINE_TYPES, lineNamePrefix, type LineType } from '@/features/symbology/line-types';
 import { formatDistance } from '@/lib/geo/format/measure';
@@ -85,7 +86,10 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
               selected={selected === i}
               disabled={locked}
               onPress={() => select(i)}
-              onRemove={() => useDraft.getState().removeVertex(i)}
+              onRemove={() => {
+                notifyRemoved();
+                useDraft.getState().removeVertex(i);
+              }}
               removeDisabled={!canRemove(edit, i)}
               onInsertAfter={() => useDraft.getState().startInsertAfter(i)}
               inserting={insertAfter === i}

@@ -12,6 +12,11 @@ export function notifyPlaced(): void {
   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 }
 
+/** A point was removed from a line or polygon being edited: the same firm tap as placing one, so the two pair up. */
+export function notifyRemoved(): void {
+  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+}
+
 /** A tap selected a point on the map: a light tap, since the panel takes a moment to open. */
 export function notifySelected(): void {
   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

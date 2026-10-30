@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
 
 import { MenuHost } from '@/features/menus/MenuHost';
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
@@ -79,6 +80,24 @@ describe('EditPolygonMenu', () => {
     await screen.findByDisplayValue('P');
     expect(screen.getByLabelText(/^Point 1,/)).toBeTruthy();
     expect(screen.queryByLabelText('Show point distances')).toBeNull();
+  });
+
+  it('removing a point in the form gives a firm haptic tap', async () => {
+    const ctx = makeTestContext();
+    const r = await placePolygon(ctx, {
+      missionId: 'm1',
+      polygonType: 'objective',
+      name: 'P',
+      shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.91, lon: -76.99 }, { lat: 38.9, lon: -76.99 }] },
+    });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+    await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
+    await fireEvent.press(await screen.findByLabelText('Edit'));
+    jest.mocked(Haptics.impactAsync).mockClear();
+    await fireEvent.press(screen.getByLabelText('Remove point 4'));
+    expect(useDraft.getState().vertices).toHaveLength(3);
+    expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
   });
 
   it('deletes from the view with two taps and closes without a "no longer exists" toast', async () => {
