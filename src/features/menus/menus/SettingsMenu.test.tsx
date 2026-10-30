@@ -335,7 +335,7 @@ describe('SettingsMenu', () => {
   it('closes', async () => {
     useMenu.getState().openMenu('settings', {});
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
-    await fireEvent.press(screen.getByText('Close'));
+    await fireEvent.press(screen.getByLabelText('Close'));
     expect(useMenu.getState().stack).toEqual([]);
   });
 });

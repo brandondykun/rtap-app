@@ -189,7 +189,7 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
 
   return (
     <View>
-      <MenuHeader title="Settings" leading={{ label: 'Close', onPress: close }} />
+      <MenuHeader title="Settings" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: close }} />
       <LocationOffNotice />
       <LocationSettingsGroup />
       <MenuGroup title="Profile" icon="account-outline">

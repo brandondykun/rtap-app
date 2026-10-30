@@ -21,7 +21,7 @@ export function AppRootMenu(_props: MenuComponentProps<'app.root'>) {
   };
   return (
     <View>
-      <MenuHeader title="Menu" leading={{ label: 'Close', onPress: close }} />
+      <MenuHeader title="Menu" leading={{ label: 'Close', icon: 'close', iconOnly: true, onPress: close }} />
       <MenuSection>
         <MenuRow icon="swap-horizontal" label="Switch mission" onPress={switchMission} />
         <MenuRow icon="cog-outline" label="Settings" onPress={() => openMenu('settings', {})} />
