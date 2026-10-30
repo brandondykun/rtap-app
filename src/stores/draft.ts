@@ -63,6 +63,9 @@ export type DraftValues = {
   /** Bounds to fit the camera to (a saved line opened); `focusRev` increments with each new request. */
   focusBounds: { sw: LatLon; ne: LatLon } | null;
   focusRev: number;
+  /** A point the map was asked to center on (tapping a point in the polygon view); `lookRev` increments with each request. */
+  lookTarget: LatLon | null;
+  lookRev: number;
   /** Last affiliation and types used for adding (rapid entry, and the next time Add opens). */
   remembered: { affiliation: Affiliation; unitType: UnitType; pointType: PointType; lineType: LineType; polygonType: PolygonType };
 };
@@ -88,6 +91,10 @@ type DraftActions = {
   setCoord: (coord: LatLon, source: DraftCoordSource) => void;
   /** Re-centers the map on the draft's coord (the Center button); works while locked and does nothing without a coord. */
   focusItem: () => void;
+  /** Re-fits the map to the open polygon or line (the Fit button); works while locked and does nothing without focus bounds. */
+  refocus: () => void;
+  /** Centers the map on a point (tapping one in the polygon view), keeping the zoom. */
+  lookAt: (at: LatLon) => void;
   /** Unlocks the form and asks its notes field to take focus (tapping the notes in the view). */
   editNotes: () => void;
   /** True once after `editNotes`: the notes field calls this when it mounts and focuses itself if it gets true. */
@@ -163,6 +170,8 @@ export const INITIAL_DRAFT: DraftValues = {
   circleRadiusM: null,
   focusBounds: null,
   focusRev: 0,
+  lookTarget: null,
+  lookRev: 0,
   remembered: { affiliation: 'hostile', unitType: 'unspecified', pointType: 'checkpoint', lineType: 'phase-line', polygonType: 'objective' },
 };
 
@@ -228,6 +237,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordSource: source,
       coordRev: s.coordRev + 1,
       focusRev: s.focusRev,
+      lookRev: s.lookRev,
     })),
   startEdit: ({ itemId, coord, category, affiliation, unitType, echelon, pointType, name, notes, elevationM, ranges }) =>
     set((s) => ({
@@ -241,6 +251,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordSource: 'item',
       coordRev: s.coordRev + 1,
       focusRev: s.focusRev,
+      lookRev: s.lookRev,
       affiliation,
       unitType,
       echelon,
@@ -287,6 +298,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setNotes: (notes) => set({ notes }),
   setElevation: (at, m) => set((s) => (!s.locked && sameCoord(s.coord, at) ? { elevation: { at, m } } : {})),
   setRangeText: (field, text) => set((s) => (s.locked ? {} : { rangeText: { ...s.rangeText, [field]: text } })),
+  refocus: () => set((s) => (s.focusBounds ? { focusRev: s.focusRev + 1 } : {})),
+  lookAt: (at) => set((s) => ({ lookTarget: at, lookRev: s.lookRev + 1 })),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
   startAddLine: () =>
@@ -298,6 +311,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       lineType: s.remembered.lineType,
       coordRev: s.coordRev,
       focusRev: s.focusRev,
+      lookRev: s.lookRev,
     })),
   startEditLine: ({ itemId, points, lineType, name, notes }) =>
     set((s) => ({
@@ -315,6 +329,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev,
       focusBounds: boundsAround(points),
       focusRev: s.focusRev + 1,
+      lookRev: s.lookRev,
     })),
   addVertex: (p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.addVertex(edit(s), p)))),
   moveVertex: (i, p) => set((s) => (s.locked || !isValid(p) ? {} : record(s, lineDraft.moveVertex(edit(s), i, p)))),
@@ -335,6 +350,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       polygonType: s.remembered.polygonType,
       coordRev: s.coordRev,
       focusRev: s.focusRev,
+      lookRev: s.lookRev,
     })),
   startEditPolygon: ({ itemId, polygonType, fill, shape, ring, name, notes }) =>
     set((s) => ({
@@ -358,6 +374,7 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       coordRev: s.coordRev,
       focusBounds: boundsAround(ring),
       focusRev: s.focusRev + 1,
+      lookRev: s.lookRev,
     })),
   setPolygonType: (polygonType) =>
     set((s) => ({
@@ -386,5 +403,6 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       pointType: s.remembered.pointType,
       coordRev: s.coordRev,
       focusRev: s.focusRev,
+      lookRev: s.lookRev,
     })),
 }));

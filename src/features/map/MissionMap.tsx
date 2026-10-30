@@ -224,6 +224,20 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     [markMoved, setFollowMode, moveCamera],
   );
 
+  // Looking at a point (tapping one in the polygon view) centers the map on it, keeping the zoom.
+  useEffect(
+    () =>
+      useDraft.subscribe((state, prev) => {
+        if (state.lookRev === prev.lookRev || !state.lookTarget) return;
+        markMoved();
+        if (useInteraction.getState().followMode) setFollowMode(false);
+        followTarget.current = state.lookTarget;
+        fitTarget.current = null;
+        moveCamera({ centerCoordinate: [state.lookTarget.lon, state.lookTarget.lat], ...EASE, animationDuration: 400 });
+      }),
+    [markMoved, setFollowMode, moveCamera],
+  );
+
   // Opening a saved line fits the camera to it.
   useEffect(
     () =>

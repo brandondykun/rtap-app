@@ -231,6 +231,28 @@ describe('polygon drafts', () => {
     expect(d().focusRev).toBe(rev + 1);
   });
 
+  it('refocus bumps focusRev each call while a polygon is open, and does nothing without bounds', () => {
+    d().refocus();
+    const idle = d().focusRev;
+    expect(idle).toBe(useDraft.getInitialState().focusRev);
+    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    const { focusBounds, focusRev } = d();
+    d().refocus();
+    d().refocus();
+    expect(d().focusRev).toBe(focusRev + 2);
+    expect(d().focusBounds).toEqual(focusBounds);
+  });
+
+  it('lookAt sets the target and bumps lookRev, kept across opening items', () => {
+    const rev = d().lookRev;
+    d().lookAt(p(3));
+    d().lookAt(p(3));
+    expect(d()).toMatchObject({ lookRev: rev + 2 });
+    expect(d().lookTarget).toEqual(p(3));
+    d().startAddPolygon();
+    expect(d().lookRev).toBe(rev + 2);
+  });
+
   it('starts new polygons at the light fill and changes the fill only while unlocked', () => {
     d().startAddPolygon();
     expect(d().polygonFill).toBe('light');
