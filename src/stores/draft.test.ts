@@ -1,3 +1,5 @@
+import { circleRing } from '@/features/map-items/polygon-measure';
+
 import { ENEMY_UNIT, INITIAL_DRAFT, draftRanges, useDraft } from './draft';
 
 const A = { lat: 38.9, lon: -77 };
@@ -235,12 +237,29 @@ describe('polygon drafts', () => {
     d().refocus();
     const idle = d().focusRev;
     expect(idle).toBe(useDraft.getInitialState().focusRev);
-    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'points', points: [p(0), p(1), p(2)] }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
     const { focusBounds, focusRev } = d();
     d().refocus();
     d().refocus();
     expect(d().focusRev).toBe(focusRev + 2);
     expect(d().focusBounds).toEqual(focusBounds);
+  });
+
+  it('refocus fits the current shape, not the one opened', () => {
+    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'points', points: [p(0), p(1), p(2)] }, ring: [p(0), p(1), p(2)], name: '1', notes: '' });
+    const opened = d().focusBounds!;
+    useDraft.setState({ vertices: [p(0), p(1), p(2), { lat: 50, lon: 50 }] });
+    d().refocus();
+    expect(d().focusBounds!.ne.lat).toBeGreaterThan(50);
+    expect(d().focusBounds!.ne.lat).toBeGreaterThan(opened.ne.lat);
+  });
+
+  it('refocus fits a resized circle', () => {
+    d().startEditPolygon({ itemId: 'c', polygonType: 'objective', fill: 'none', shape: { kind: 'circle', center: p(1), radiusM: 500 }, ring: circleRing(p(1), 500), name: '1', notes: '' });
+    const opened = d().focusBounds!;
+    useDraft.setState({ circleRadiusM: 50000 });
+    d().refocus();
+    expect(d().focusBounds!.ne.lat - opened.ne.lat).toBeGreaterThan(0.3);
   });
 
   it('lookAt sets the target and bumps lookRev, kept across opening items', () => {

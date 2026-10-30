@@ -17,7 +17,7 @@ export function PolygonActions({ id, circle, hidden, onDelete }: { id: string; c
   return (
     <View className="flex-row gap-3">
       <MenuTileButton label="Fit" icon="fit-to-screen-outline" onPress={() => useDraft.getState().refocus()} />
-      {circle ? null : <MenuTileButton label="Lengths" icon="vector-polyline" active={showLengths} onPress={() => useSettings.getState().setShowLineDistances(!showLengths)} />}
+      {circle ? null : <MenuTileButton label="Lengths" accessibilityLabel="Show point distances" icon="vector-polyline" active={showLengths} onPress={() => useSettings.getState().setShowLineDistances(!showLengths)} />}
       <MenuTileButton
         label={hidden ? 'Show' : 'Hide'}
         icon={hidden ? 'eye-outline' : 'eye-off-outline'}

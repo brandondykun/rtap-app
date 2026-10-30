@@ -71,7 +71,7 @@ describe('AddPolygonMenu', () => {
     await act(async () => {
       for (const n of [0, 1, 2]) useDraft.getState().addVertex(p(n));
     });
-    await fireEvent.press(screen.getByLabelText('Point 2'));
+    await fireEvent.press(screen.getByLabelText(/^Point 2,/));
     expect(screen.queryByText('Inserting points')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Insert after point 2'));
     expect(screen.getByText('Inserting points')).toBeTruthy();
@@ -93,8 +93,8 @@ describe('AddPolygonMenu', () => {
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${g.zoneBand} ${g.square} ${g.easting} ${g.northing}`);
     await fireEvent.press(screen.getByLabelText('Add new point'));
     expect(fields()).toEqual(square(far));
-    await fireEvent.press(screen.getByLabelText('Point 1'));
-    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
     expect(fields()).toEqual(square(C));
   });
 

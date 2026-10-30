@@ -40,23 +40,24 @@ describe('PolygonView', () => {
     expect(title).toHaveTextContent('OBJ-1Objective · 4 points · 15% fill');
     expect(title.props.accessibilityLabel).toBe('OBJ-1, Objective · 4 points · 15% fill');
     for (const t of ['CENTER', 'TO CENTER', 'PERIMETER', 'AREA']) expect(screen.getByText(t)).toBeTruthy();
-    for (const t of ['Fit', 'Lengths', 'Hide', 'Delete']) expect(screen.getByLabelText(t)).toBeTruthy();
+    for (const t of ['Fit', 'Show point distances', 'Hide', 'Delete']) expect(screen.getByLabelText(t)).toBeTruthy();
     expect(screen.getByLabelText('Points, 4')).toBeTruthy();
-    expect(screen.queryByLabelText('Point 1')).toBeNull();
+    expect(screen.queryByLabelText(/^Point 1,/)).toBeNull();
   });
 
   it('expands the points without remove, and pressing one centers the map on it', async () => {
     await open({ kind: 'points', points: SQUARE });
     await fireEvent.press(screen.getByLabelText('Points, 4'));
-    for (const n of [1, 2, 3, 4]) expect(screen.getByLabelText(`Point ${n}`)).toBeTruthy();
+    for (const n of [1, 2, 3, 4]) expect(screen.getByLabelText(new RegExp(`^Point ${n},`))).toBeTruthy();
+    expect(screen.getByLabelText(/^Point 1,/).props.accessibilityHint).toBe('Centers the map on this point');
     expect(screen.queryByLabelText('Remove point 1')).toBeNull();
     expect(screen.getByText('start')).toBeTruthy();
     const rev = useDraft.getState().lookRev;
-    await fireEvent.press(screen.getByLabelText('Point 2'));
+    await fireEvent.press(screen.getByLabelText(/^Point 2,/));
     expect(useDraft.getState().lookRev).toBe(rev + 1);
     expect(useDraft.getState().lookTarget).toEqual(SQUARE[1]);
     await fireEvent.press(screen.getByLabelText('Points, 4'));
-    expect(screen.queryByLabelText('Point 1')).toBeNull();
+    expect(screen.queryByLabelText(/^Point 1,/)).toBeNull();
   });
 
   it('shows RADIUS and no PERIMETER, Lengths or points row for a circle', async () => {
@@ -65,7 +66,7 @@ describe('PolygonView', () => {
     expect(screen.getByText('RADIUS')).toBeTruthy();
     expect(screen.getByText('500')).toBeTruthy();
     expect(screen.queryByText('PERIMETER')).toBeNull();
-    expect(screen.queryByLabelText('Lengths')).toBeNull();
+    expect(screen.queryByLabelText('Show point distances')).toBeNull();
     expect(screen.queryByLabelText(/^Points/)).toBeNull();
   });
 
@@ -80,10 +81,10 @@ describe('PolygonView', () => {
 
   it('Lengths toggles the line distances and shows selected while on', async () => {
     await open({ kind: 'points', points: SQUARE });
-    expect(screen.getByLabelText('Lengths')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Lengths'));
+    expect(screen.getByLabelText('Show point distances')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Show point distances'));
     expect(useSettings.getState().showLineDistances).toBe(false);
-    expect(screen.getByLabelText('Lengths')).not.toBeSelected();
+    expect(screen.getByLabelText('Show point distances')).not.toBeSelected();
   });
 
   it('marks a hidden polygon and offers Show', async () => {

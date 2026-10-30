@@ -25,7 +25,7 @@ const NO_IDS: string[] = [];
 
 type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
 
-/** Unit / Point / Line view: opens read-only; Edit unlocks the form, Save or Cancel locks it again. */
+/** Item view: units, points and polygons open as a condensed view (Edit unlocks the form); lines keep the locked form. Save or Cancel locks it again. */
 export function EditItemPanel({ category, itemId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
   const adapter = ITEM_ADAPTERS[category];

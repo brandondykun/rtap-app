@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import * as lineDraft from '@/features/map-items/line-draft';
 import type { LineEdit } from '@/features/map-items/line-draft';
+import { circleRing } from '@/features/map-items/polygon-measure';
 import { formatRangeText, isValidRange, NO_RANGES, parseRangeText, rangeFieldsFor, type RangeField, type UnitRanges } from '@/features/map-items/unit-ranges';
 import type { ItemCategory } from '@/features/symbology/categories';
 import type { LineType } from '@/features/symbology/line-types';
@@ -298,7 +299,16 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
   setNotes: (notes) => set({ notes }),
   setElevation: (at, m) => set((s) => (!s.locked && sameCoord(s.coord, at) ? { elevation: { at, m } } : {})),
   setRangeText: (field, text) => set((s) => (s.locked ? {} : { rangeText: { ...s.rangeText, [field]: text } })),
-  refocus: () => set((s) => (s.focusBounds ? { focusRev: s.focusRev + 1 } : {})),
+  // Fits the shape as it is now (a saved edit may have moved it), falling back to the bounds it was opened with.
+  refocus: () =>
+    set((s) => {
+      if (!s.focusBounds) return {};
+      const shape =
+        s.category === 'polygon' && s.polygonShape === 'circle'
+          ? s.coord && s.circleRadiusM ? circleRing(s.coord, s.circleRadiusM) : []
+          : s.vertices;
+      return { focusBounds: (shape.length >= 2 ? boundsAround(shape) : null) ?? s.focusBounds, focusRev: s.focusRev + 1 };
+    }),
   lookAt: (at) => set((s) => ({ lookTarget: at, lookRev: s.lookRev + 1 })),
   setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),

@@ -77,7 +77,7 @@ describe('EditPolygonMenu', () => {
     await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: r.value.id }));
     await fireEvent.press(await screen.findByLabelText('Edit'));
     await screen.findByDisplayValue('P');
-    expect(screen.getByLabelText('Point 1')).toBeTruthy();
+    expect(screen.getByLabelText(/^Point 1,/)).toBeTruthy();
     expect(screen.queryByLabelText('Show point distances')).toBeNull();
   });
 

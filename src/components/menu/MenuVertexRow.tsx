@@ -28,7 +28,8 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
       <View className="flex-row items-center gap-3">
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Point ${number}`}
+          accessibilityLabel={`Point ${number}, ${title}, ${detail}`}
+          accessibilityHint={onRemove ? undefined : 'Centers the map on this point'}
           accessibilityState={{ selected, disabled }}
           disabled={disabled}
           onPress={onPress}

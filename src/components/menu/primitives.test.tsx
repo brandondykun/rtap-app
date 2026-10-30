@@ -166,11 +166,11 @@ describe('menu primitives', () => {
     await renderWithProviders(
       <MenuVertexRow number={2} title="18S UJ 24250 07313" detail="+0.75 km" selected onPress={onPress} onRemove={onRemove} onInsertAfter={onInsertAfter} removeDisabled />,
     );
-    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    expect(screen.getByLabelText(/^Point 2,/)).toBeSelected();
     await fireEvent.press(screen.getByLabelText('Insert after point 2'));
     expect(onInsertAfter).toHaveBeenCalled();
     expect(screen.getByLabelText('Remove point 2')).toBeDisabled();
-    await fireEvent.press(screen.getByLabelText('Point 2'));
+    await fireEvent.press(screen.getByLabelText(/^Point 2,/));
     expect(onPress).toHaveBeenCalled();
     expect(onRemove).not.toHaveBeenCalled();
   });
@@ -195,13 +195,13 @@ describe('menu primitives', () => {
 
   it('MenuVertexRow without onRemove has no remove button', async () => {
     await renderWithProviders(<MenuVertexRow number={2} title="t" detail="d" onPress={jest.fn()} />);
-    expect(screen.getByLabelText('Point 2')).toBeTruthy();
+    expect(screen.getByLabelText(/^Point 2,/)).toBeTruthy();
     expect(screen.queryByLabelText('Remove point 2')).toBeNull();
   });
 
   it('MenuVertexRow selected row keeps a visible background', async () => {
     await renderWithProviders(<MenuVertexRow number={2} title="t" detail="d" selected onPress={jest.fn()} />);
-    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    expect(screen.getByLabelText(/^Point 2,/)).toBeSelected();
     expect(screen.getByTestId('vertex-row-2').props.className).toContain('bg-accent-subtle');
   });
 

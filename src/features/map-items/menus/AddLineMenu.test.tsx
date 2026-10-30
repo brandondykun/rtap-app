@@ -79,7 +79,7 @@ describe('AddLineMenu', () => {
     expect(useDraft.getState().vertices).toHaveLength(2);
     await fireEvent.changeText(screen.getByLabelText('Northing'), '07');
     expect(screen.getByLabelText('Add new point')).toBeDisabled();
-    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
     expect(screen.getByLabelText('Move point 1 to typed grid')).toBeTruthy();
     await typeGridAs(p(5), 'Move point 1 to typed grid');
     expect(useDraft.getState().vertices[0].lat).toBeCloseTo(p(5).lat, 3);
@@ -95,8 +95,8 @@ describe('AddLineMenu', () => {
     expect(fields()).toEqual(square(CENTER));
     await typeGrid(FAR);
     expect(fields()).toEqual(square(FAR));
-    await fireEvent.press(screen.getByLabelText('Point 1'));
-    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
     expect(fields()).toEqual(square(CENTER));
   });
 
@@ -115,13 +115,13 @@ describe('AddLineMenu', () => {
     await act(async () => {
       for (const n of [0, 1, 2]) useDraft.getState().addVertex(p(n));
     });
-    await fireEvent.press(screen.getByLabelText('Point 1'));
+    await fireEvent.press(screen.getByLabelText(/^Point 1,/));
     await fireEvent.press(screen.getByLabelText('Insert after point 1'));
     expect(screen.getByText('Inserting points')).toBeTruthy();
     await act(async () => useDraft.getState().addVertex(p(9)));
     expect(useDraft.getState().vertices).toEqual([p(0), p(9), p(1), p(2)]);
     // The indicator follows the new point, and Done goes back to adding at the end.
-    expect(screen.getByLabelText('Point 2')).toBeSelected();
+    expect(screen.getByLabelText(/^Point 2,/)).toBeSelected();
     await fireEvent.press(screen.getByLabelText('Done inserting points'));
     expect(useDraft.getState()).toMatchObject({ selectedVertex: null, insertAfter: null });
     expect(screen.queryByText('Inserting points')).toBeNull();
