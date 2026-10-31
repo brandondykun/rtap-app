@@ -7,9 +7,10 @@ description: Use when adding a new kind of map item (line, polygon, route, range
 
 Points are the reference implementation; follow the same path for each new kind.
 
-1. **Kind and geometry** — add the value to `MapItemKind` (`src/lib/db/models/MapItem.ts`; no
-   schema change: `kind` and `geometry` are strings). Add (de)serializers and validation to
-   `src/features/map-items/geometry.ts` (GeoJSON, WGS84 `[lon, lat]`), with tests.
+1. **Kind and geometry** — add the value to `MapItemKind` and `MAP_ITEM_KINDS`
+   (`src/features/map-items/repository.ts`; no schema change: `kind` and `geometry` are strings).
+   Add (de)serializers and validation to `src/features/map-items/geometry.ts` (GeoJSON, WGS84
+   `[lon, lat]`), with tests.
 2. **Commands** — `placeX` in `src/features/map-items/commands.ts`: validate, stamp
    `createdBy`/`updatedBy`, return a `Result`. Reuse `updateItem`, `deleteItem`,
    `setItemHidden`. Use the `data-layer` skill.

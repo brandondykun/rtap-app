@@ -92,7 +92,7 @@ Do not run Prettier over the repo.
 The data layer is built so team sharing can be added on top later:
 
 - Records get UUIDs on the phone, and every write goes through a command that stamps who made it and when.
-- Deletes keep a tombstone, so they can sync.
+- Deletes are real deletes on the device; tombstones will live on the server.
 - Missions and map items are the synced tables (`src/lib/db/sync-config.ts`). Per-phone state (hidden items, the
   saved camera, mission pictures) stays local.
 - Schema changes only add columns. Item types and style details from a newer app version are ignored or kept, never

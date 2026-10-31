@@ -64,6 +64,11 @@ describe('database', () => {
     }
   });
 
+  it('keeps every table local-only on the device for now', () => {
+    expect(appSchema.tables.length).toBeGreaterThan(0);
+    expect(appSchema.tables.every((t) => t.localOnly)).toBe(true);
+  });
+
   it('keeps view state local', () => {
     expect(LOCAL_ONLY_TABLES).toEqual(expect.arrayContaining([Tables.itemViewState, Tables.missionViewState]));
   });

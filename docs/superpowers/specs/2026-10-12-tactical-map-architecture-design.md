@@ -203,7 +203,7 @@ author, etc.) follows the same pattern.
   mission data, for the same reason as item visibility.
 - MVP mission operations: list, create (name), open, rename, delete. Swiping a mission row left
   shows Edit and Delete. Edit opens the rename sheet (`renameMission`, the same form as New
-  mission). Delete (`deleteMission`) asks for confirmation, tombstones the mission and its items,
+  mission). Delete (`deleteMission`) asks for confirmation, deletes the mission and its items,
   and removes their local-only view state.
 
 ### 5.4a Units and points

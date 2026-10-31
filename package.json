@@ -8,7 +8,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@op-engineering/op-sqlite": "^18.2.5",
     "@powersync/common": "2.4.0",
-    "@powersync/react-native": "^2.3.3",
+    "@powersync/react-native": "2.3.3",
     "@rnmapbox/maps": "^10.3.8",
     "@sentry/react-native": "8.32.0",
     "@shopify/react-native-skia": "2.6.2",
