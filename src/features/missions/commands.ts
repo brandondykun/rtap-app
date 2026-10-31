@@ -30,10 +30,10 @@ export async function renameMission(
 ): Promise<Result<void, 'invalid_name' | 'not_found' | 'write_failed'>> {
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Mission name is required');
-  const mission = await findMission(ctx.db, missionId);
-  if (!mission) return err('not_found', `No mission ${missionId}`);
-  if (mission.name === name) return ok(undefined);
   try {
+    const mission = await findMission(ctx.db, missionId);
+    if (!mission) return err('not_found', `No mission ${missionId}`);
+    if (mission.name === name) return ok(undefined);
     await updateRow(ctx.db, Tables.missions, missionId, { name, updated_at: ctx.now() });
     return ok(undefined);
   } catch (e) {
@@ -106,9 +106,9 @@ export async function recordMissionSnapshot(
  * Deletes a mission, every item in it, and their view state (last opened, camera, item visibility) in one write.
  */
 export async function deleteMission(ctx: CommandContext, missionId: string): Promise<Result<void, 'not_found' | 'write_failed'>> {
-  const mission = await findMission(ctx.db, missionId);
-  if (!mission) return err('not_found', `No mission ${missionId}`);
   try {
+    const mission = await findMission(ctx.db, missionId);
+    if (!mission) return err('not_found', `No mission ${missionId}`);
     await ctx.db.writeTransaction(async (tx) => {
       await tx.execute('DELETE FROM item_view_state WHERE map_item_id IN (SELECT id FROM map_items WHERE mission_id = ?)', [missionId]);
       await tx.execute('DELETE FROM map_items WHERE mission_id = ?', [missionId]);

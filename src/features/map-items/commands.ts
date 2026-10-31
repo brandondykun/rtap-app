@@ -115,18 +115,18 @@ export async function updateItem(
   if (patch.coord && !isValidLatLon(patch.coord)) return err('invalid_coordinate', 'Coordinate is out of range');
   if (patch.sidc !== undefined && !isKnownSidc(patch.sidc)) return err('invalid_symbol', `Unknown symbol ${patch.sidc}`);
   if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
-  const item = await findItem(ctx.db, id);
-  if (!item) return err('not_found', `No item ${id}`);
-  const sidc = patch.sidc ?? item.sidc;
-  const stored: UnitRanges = { threatRangeM: item.threatRangeM ?? null, horizontalRangeM: item.horizontalRangeM ?? null, verticalRangeFt: item.verticalRangeFt ?? null };
-  const merged = { ...stored };
-  for (const f of RANGE_FIELDS) {
-    const v = patch.ranges?.[f];
-    if (v !== undefined) merged[f] = v;
-  }
-  const ranges = normalizeRanges(rangeFieldsForSidc(sidc), merged);
-  if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
   try {
+    const item = await findItem(ctx.db, id);
+    if (!item) return err('not_found', `No item ${id}`);
+    const sidc = patch.sidc ?? item.sidc;
+    const stored: UnitRanges = { threatRangeM: item.threatRangeM ?? null, horizontalRangeM: item.horizontalRangeM ?? null, verticalRangeFt: item.verticalRangeFt ?? null };
+    const merged = { ...stored };
+    for (const f of RANGE_FIELDS) {
+      const v = patch.ranges?.[f];
+      if (v !== undefined) merged[f] = v;
+    }
+    const ranges = normalizeRanges(rangeFieldsForSidc(sidc), merged);
+    if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
     await ctx.db.writeTransaction(async (tx) => {
       const fields: Record<string, SqlValue> = {
         threat_range_m: ranges.threatRangeM,
@@ -154,9 +154,9 @@ export async function updateItem(
 }
 
 export async function deleteItem(ctx: CommandContext, id: string): Promise<Result<void, 'not_found' | 'write_failed'>> {
-  const item = await findItem(ctx.db, id);
-  if (!item) return err('not_found', `No item ${id}`);
   try {
+    const item = await findItem(ctx.db, id);
+    if (!item) return err('not_found', `No item ${id}`);
     await ctx.db.writeTransaction(async (tx) => {
       await tx.execute('DELETE FROM map_items WHERE id = ?', [id]);
       await tx.execute('DELETE FROM item_view_state WHERE map_item_id = ?', [id]);
@@ -288,9 +288,9 @@ export async function updateLine(
     if (bad) return err(bad, bad === 'too_few_points' ? 'A line needs at least 2 points' : 'Coordinate is out of range');
   }
   if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
-  const item = await findItem(ctx.db, id);
-  if (!item || item.kind !== 'line') return err('not_found', `No line ${id}`);
   try {
+    const item = await findItem(ctx.db, id);
+    if (!item || item.kind !== 'line') return err('not_found', `No line ${id}`);
     const fields: Record<string, SqlValue> = {};
     if (patch.points) fields.geometry = lineGeometry(patch.points);
     if (patch.lineType) fields.style = lineStyle(patch.lineType, item.style);
@@ -360,10 +360,10 @@ export async function updatePolygon(
   const parts = patch.shape ? polygonParts(patch.shape) : null;
   if (typeof parts === 'string') return err(parts, SHAPE_MESSAGES[parts]);
   if (patch.name !== undefined && !patch.name.trim()) return err('invalid_name', 'Name is required');
-  const item = await findItem(ctx.db, id);
-  if (!item || item.kind !== 'polygon') return err('not_found', `No polygon ${id}`);
-  const current = polygonStyleOf(item.style ?? null);
   try {
+    const item = await findItem(ctx.db, id);
+    if (!item || item.kind !== 'polygon') return err('not_found', `No polygon ${id}`);
+    const current = polygonStyleOf(item.style ?? null);
     const fields: Record<string, SqlValue> = {
       style: polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, patch.fill ?? current.fill, item.style),
     };

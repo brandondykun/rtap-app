@@ -525,6 +525,16 @@ describe('on SQL', () => {
     subs.forEach((s) => s.unsubscribe());
   });
 
+  it('a database error while looking up the item is write_failed, not a rejection', async () => {
+    const db: AppDb = { ...createTestDatabase(), getOptional: () => Promise.reject(new Error('disk I/O error')) };
+    const ctx = makeTestContext(db);
+    const failed = { ok: false, error: 'write_failed' };
+    await expect(updateItem(ctx, 'i1', { name: 'A' })).resolves.toMatchObject(failed);
+    await expect(deleteItem(ctx, 'i1')).resolves.toMatchObject(failed);
+    await expect(updateLine(ctx, 'i1', { name: 'A' })).resolves.toMatchObject(failed);
+    await expect(updatePolygon(ctx, 'i1', { name: 'A' })).resolves.toMatchObject(failed);
+  });
+
   it('hiding 100 items is one write the hidden-ids list sees once', async () => {
     const ctx = makeTestContext();
     const ids: string[] = [];

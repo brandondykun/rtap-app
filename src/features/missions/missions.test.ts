@@ -3,7 +3,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { placeLine, placePoint, placePolygon, setItemHidden } from '@/features/map-items/commands';
 import { findItemViewState, observeMissionItems } from '@/features/map-items/repository';
-import { makeTestContext } from '@/lib/db/test-database';
+import type { AppDb } from '@/lib/db/app-db';
+import { createTestDatabase, makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, deleteMission, markMissionOpened, renameMission, saveMissionCamera } from './commands';
 import {
@@ -16,6 +17,13 @@ import {
 } from './repository';
 
 describe('missions', () => {
+  it('a database error while looking up the mission is write_failed, not a rejection', async () => {
+    const db: AppDb = { ...createTestDatabase(), getOptional: () => Promise.reject(new Error('disk I/O error')) };
+    const ctx = makeTestContext(db);
+    await expect(renameMission(ctx, 'm1', { name: 'Op Iron' })).resolves.toMatchObject({ ok: false, error: 'write_failed' });
+    await expect(deleteMission(ctx, 'm1')).resolves.toMatchObject({ ok: false, error: 'write_failed' });
+  });
+
   it('creates a mission stamped with the actor', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: ' Op Iron ' });
