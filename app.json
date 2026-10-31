@@ -65,12 +65,6 @@
         }
       ],
       [
-        "@morrowdigital/watermelondb-expo-plugin",
-        {
-          "disableJsi": true
-        }
-      ],
-      [
         "expo-build-properties",
         {
           "android": {

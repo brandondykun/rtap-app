@@ -3,7 +3,7 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 
 const GEO_LIBS_REGEX = '^(mgrs|geographiclib-geodesic|geomagnetism)(/.*)?$';
-const WATERMELON = ['@nozbe/watermelondb', '@nozbe/watermelondb/*'];
+const POWERSYNC = ['@powersync/*', '@op-engineering/op-sqlite', '@op-engineering/op-sqlite/*'];
 const MAPBOX = ['@rnmapbox/maps', '@rnmapbox/maps/*'];
 const REACT = ['react', 'react/*', 'react-native', 'react-native/*'];
 const UPPER_LAYERS = [
@@ -20,7 +20,7 @@ const UPPER_LAYERS = [
 
 const msg = {
   geo: 'Geodesy libraries are wrapped by src/lib/geo. Import from @/lib/geo/... instead.',
-  db: 'Only src/lib/db and feature repository.ts/commands.ts may use WatermelonDB.',
+  db: 'Only src/lib/db and feature repository.ts/commands.ts may use PowerSync (@powersync/*, op-sqlite).',
   mapbox: 'Only src/features/map may import @rnmapbox/maps.',
   upper: 'src/lib must not depend on features, stores, components or routes.',
   react: 'src/lib/geo must stay framework-free (no react / react-native).',
@@ -30,7 +30,7 @@ const msg = {
 function restrict({ geo = true, db = true, mapbox = true, upper = false, react = false }) {
   const patterns = [];
   if (geo) patterns.push({ regex: GEO_LIBS_REGEX, message: msg.geo });
-  if (db) patterns.push({ group: WATERMELON, message: msg.db });
+  if (db) patterns.push({ group: POWERSYNC, message: msg.db });
   if (mapbox) patterns.push({ group: MAPBOX, message: msg.mapbox });
   if (upper) patterns.push({ group: UPPER_LAYERS, message: msg.upper });
   if (react) patterns.push({ group: REACT, message: msg.react });

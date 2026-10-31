@@ -6,8 +6,6 @@
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/ui": "~57.0.26",
     "@expo/vector-icons": "^15.0.2",
-    "@morrowdigital/watermelondb-expo-plugin": "^2.3.3",
-    "@nozbe/watermelondb": "^0.28.0",
     "@op-engineering/op-sqlite": "^18.2.5",
     "@powersync/common": "2.4.0",
     "@powersync/react-native": "^2.3.3",
@@ -87,7 +85,7 @@
       "<rootDir>/jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@nozbe/.*|@powersync/.*|comlink|@rnmapbox/.*|nativewind|react-native-css-interop|geographiclib-geodesic|mgrs|geomagnetism|milsymbol)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@powersync/.*|comlink|@rnmapbox/.*|nativewind|react-native-css-interop|geographiclib-geodesic|mgrs|geomagnetism|milsymbol)"
     ],
     "moduleNameMapper": {
       "^(.*/assets/map/label-chip(?:-accent|-square)?)\\.png$": "$1@3x.png",
@@ -95,11 +93,6 @@
     }
   },
   "expo": {
-    "autolinking": {
-      "exclude": [
-        "@nozbe/simdjson"
-      ]
-    },
     "install": {
       "exclude": [
         "@sentry/react-native"

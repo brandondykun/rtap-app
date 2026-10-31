@@ -22,7 +22,7 @@ training and military-simulation enthusiasts. Not intended for military use.
 - Top toolbar: app menu, POINT tool, settings. Map controls: north-up, zoom in/out,
   recenter. No scale bar (user decision 2026-10-12: too much screen space).
 - Add Point panel (POINT tool or long-press): MGRS entry, Center/Me, affiliation, unit type,
-  name, notes → saved to WatermelonDB → rendered on the map.
+  name, notes → saved to the local database → rendered on the map.
 - Select a point → Edit Point panel (same form plus hide and delete).
 - Toggle visibility of any map item.
 - App menu ("Switch mission", About) and Settings menu (coordinate format, angle unit,
@@ -42,7 +42,7 @@ training and military-simulation enthusiasts. Not intended for military use.
 
 **Platform baseline:** Expo SDK 57, React Native 0.86 (New Architecture), React 19.2,
 React Compiler enabled, Expo Router. Requires a development build (`expo-dev-client`);
-Expo Go is not supported because Mapbox and WatermelonDB ship native code.
+Expo Go is not supported because Mapbox and PowerSync's SQLite engine (op-sqlite) ship native code.
 
 ## 2. Guiding principles
 
@@ -50,19 +50,19 @@ Expo Go is not supported because Mapbox and WatermelonDB ship native code.
    thousands of items. Every architectural choice is checked against map performance.
 2. **Workflow speed.** The common action (drop a point) is one tap and never waits on a form.
 3. **Offline-first, sync-ready.** All data is local; schema and write paths are shaped for a
-   future WatermelonDB sync without migration of existing data.
+   future PowerSync sync without migration of existing data.
 4. **Clear boundaries.** Small units with one purpose; boundaries enforced by lint.
 5. **One source of truth** for geo math, styling tokens, and menus.
 
 ## 3. Chosen approach: reactive geo-layer pipeline
 
 ```
-WatermelonDB ──observe──▶ repository ──▶ selector (memoized GeoJSON FeatureCollection)
+PowerSync SQLite ──watch──▶ repository ──▶ selector (memoized GeoJSON FeatureCollection)
                                                      │
                                                      ▼
                          Mapbox ShapeSource + SymbolLayer (native, GPU rendered)
                                                      ▲
-UI (toolbar, menus, gestures) ──▶ commands ──▶ repository ──▶ WatermelonDB
+UI (toolbar, menus, gestures) ──▶ commands ──▶ repository ──▶ AppDb (PowerSync SQLite)
 ```
 
 - The map never renders one React component per item.
@@ -70,12 +70,12 @@ UI (toolbar, menus, gestures) ──▶ commands ──▶ repository ──▶ 
 - Interaction state (selected symbol, selection, follow mode, menu stack) lives in small
   Zustand stores, separate from the database.
 - Transient high-frequency data (own and future teammate locations) never goes through
-  WatermelonDB.
+  the database.
 
 Rejected alternatives:
 - *Per-item `PointAnnotation`/`MarkerView` components* — degrades at a few hundred items.
-- *Event-sourced op log* — strong for merging but premature and conflicts with
-  WatermelonDB's built-in sync protocol. Can be added beside the current model later.
+- *Event-sourced op log* — strong for merging but premature and overlaps with
+  PowerSync's own sync protocol. Can be added beside the current model later.
 
 ## 4. Module layout and dependency rules
 
@@ -130,8 +130,10 @@ src/
 **Dependency rules (ESLint `no-restricted-imports`):**
 1. `lib/*` never imports `features/`, `stores/`, `components/`, or `app/`.
 2. `lib/geo` imports nothing from `react` or `react-native`.
-3. Only `features/*/repository.ts` and `features/*/commands.ts` import WatermelonDB query/write
-   APIs. UI reads through hooks built on repository observables.
+3. Only `features/*/repository.ts` and `features/*/commands.ts` import `@powersync/*` / op-sqlite and
+   run SQL, through the `AppDb` seam (`lib/db/app-db.ts`: query, watch, execute, transaction),
+   which `lib/db/powersync-db.ts` implements over PowerSync local-only tables. UI reads
+   through hooks built on repository watch subscriptions.
 4. Only `features/map/**` imports `@rnmapbox/maps`.
 5. Only `lib/geo/**` imports `mgrs`, `geographiclib-geodesic`, `geomagnetism`, or other
    geodesy libraries.
@@ -175,9 +177,9 @@ mission_view_state               # LOCAL ONLY — never synced
 ```
 
 ### 5.2 Sync-readiness rules
-- **IDs:** UUIDv4 generated client-side via WatermelonDB `setGenerator` + `expo-crypto`.
-- **Deletes:** `markAsDeleted()` (WatermelonDB sync tombstone). `_status` / `_changed` are
-  managed by WatermelonDB.
+- **IDs:** UUIDv4 generated client-side via `lib/db/new-id.ts` (`expo-crypto`).
+- **Deletes:** hard `DELETE` on the local-only tables. PowerSync tracks changes itself once
+  tables become synced, so no tombstone columns are kept.
 - **Authorship:** every command stamps `created_by` / `updated_by` from `lib/identity`
   (persistent `deviceId` now, `userId` once accounts exist).
 - **Scoping:** every map item belongs to a mission. The user creates or selects a mission on
@@ -234,7 +236,7 @@ state and one temporary point; `QuickPlotEntry` (four MGRS fields under the tool
 `QuickPlotLayer` and `QuickPlotCard` (Discard / Save unit / Save point → the Add menus at that
 spot). See `2026-10-13-quick-plot-design.md`.
 
-### 5.5 Data kept outside WatermelonDB
+### 5.5 Data kept outside the database
 - **Presence** (own location now, teammates later): in-memory Zustand store; later fed by
   a realtime channel. Breadcrumb trails may become a table later.
 - **Settings** (coordinate format, angle unit, north reference, declination
@@ -553,8 +555,8 @@ Elements in the mockups that are out of MVP scope are listed in Section 1.
 - **`lib/geo`:** Jest golden-vector tests — GeographicLib test data, NGA MGRS samples
   (including zone/band edges and Norway/Svalbard exceptions), official WMM test values.
   Highest coverage bar in the repo.
-- **Data layer:** repositories, commands, selectors tested with WatermelonDB's LokiJS
-  in-memory adapter (UUIDs, authorship stamps, mission scoping, visibility, feature cache, mission list ordering and item counts).
+- **Data layer:** repositories, commands, selectors tested against a real in-memory SQLite database via `@powersync/node`
+  (`lib/db/sql-test-db.ts`) (UUIDs, authorship stamps, mission scoping, visibility, feature cache, mission list ordering and item counts).
 - **Menu system:** registry typing, stack operations.
 - **Add Point flow:** auto-naming, SIDC composition, draft store transitions (Center, Me,
   long-press, Add resets, Cancel clears), MGRS field validation.
@@ -567,7 +569,7 @@ Elements in the mockups that are out of MVP scope are listed in Section 1.
 - TypeScript strict; `jest-expo`; ESLint boundary rules (Section 4) and styling rules
   (Section 10).
 - `expo-dev-client`; config plugins for `@rnmapbox/maps`, `expo-location` (usage strings),
-  WatermelonDB; Babel decorators configuration for WatermelonDB models.
+  PowerSync (`@powersync/react-native` with `@op-engineering/op-sqlite`).
 - `app.json`: `orientation: "default"`; web target removed.
 - `zod` for typed menu params.
 - Packages installed with `npx expo install`.
@@ -588,7 +590,7 @@ Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks
 `.agents/rules/repo-overview.mdc` gains a short architecture summary linking to this spec.
 
 ## 16. Risks and verification gates (first plan steps)
-1. **WatermelonDB on RN 0.86 New Architecture** (JSI SQLite adapter) — prove in a throwaway
+1. **PowerSync on RN 0.86 New Architecture** (op-sqlite) — prove in a throwaway
    dev build before building on it. If it fails, revisit Section 5 before continuing.
 2. **NativeWind compatibility** with SDK 57 / RN 0.86 — choose the supported major version;
    if none, fall back to typed tokens + `StyleSheet` with the same semantic names.
