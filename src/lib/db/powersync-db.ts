@@ -3,10 +3,15 @@ import { PowerSyncDatabase } from '@powersync/react-native';
 import { type AppDb, fromPowerSync } from './app-db';
 import { appSchema } from './powersync-schema';
 
+let instance: AppDb | null = null;
+
 /**
- * The app's on-device database (PowerSync over op-sqlite, local-only tables). Created on first call; PowerSync
- * initialises in the background and queries wait for it.
+ * The app's on-device database (PowerSync over op-sqlite, local-only tables). Created on the first call, then the
+ * same instance every time; PowerSync initialises in the background and queries wait for it.
  */
 export function createPowerSyncAppDb(): AppDb {
-  return fromPowerSync(new PowerSyncDatabase({ schema: appSchema, database: { dbFilename: 'rtap.db' } }));
+  if (!instance) {
+    instance = fromPowerSync(new PowerSyncDatabase({ schema: appSchema, database: { dbFilename: 'rtap.db' } }));
+  }
+  return instance;
 }
