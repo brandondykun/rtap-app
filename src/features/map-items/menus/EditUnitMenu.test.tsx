@@ -257,8 +257,7 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByText('Infantry'));
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
-    // The view shows the saved item once the database re-emits it.
-    await waitFor(() => expect(screen.queryByTestId('ring-row')).toBeNull());
+    expect(screen.queryByTestId('ring-row')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Infantry'));
     await fireEvent.press(screen.getByText('Artillery'));

@@ -1,9 +1,10 @@
 /**
  * @jest-environment node
  */
+import type { AbstractPowerSyncDatabase } from '@powersync/common';
 import type { Subscription } from 'rxjs';
 
-import type { AppDb, AppDbTx } from './app-db';
+import { type AppDb, type AppDbTx, fromPowerSync } from './app-db';
 import { newId } from './new-id';
 import { closeSqlTestDbs, createSqlTestDb } from './sql-test-db';
 
@@ -121,6 +122,17 @@ describe('AppDb (PowerSync, SQLite in Node)', () => {
     await sleep(SETTLE_MS);
     expect(seen).toHaveLength(2);
     expect(seen[1]).toHaveLength(100);
+  });
+
+  it('watch re-runs as soon as a write lands, with no throttle delay', () => {
+    // PowerSync's throttle only fires on the trailing edge, so its default would hold back every re-emission.
+    const watch = jest.fn();
+    fromPowerSync({ watch } as unknown as AbstractPowerSyncDatabase)
+      .watch('SELECT id FROM map_items', [], ['map_items'])
+      .subscribe()
+      .unsubscribe();
+    expect(watch).toHaveBeenCalledTimes(1);
+    expect(watch.mock.calls[0][3]).toMatchObject({ tables: ['map_items'], throttleMs: 0 });
   });
 
   it('newId makes UUIDv4s', () => {

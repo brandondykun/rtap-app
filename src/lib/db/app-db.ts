@@ -45,8 +45,10 @@ export function fromPowerSync(db: AbstractPowerSyncDatabase): AppDb {
             onResult: (result) => subscriber.next((result.rows?._array ?? []) as T[]),
             onError: (error) => subscriber.error(error),
           },
-          // Explicit tables: only writes to these re-run the query.
-          { signal: abort.signal, tables: [...tables] },
+          // Explicit tables: only writes to these re-run the query. No throttle: PowerSync's is trailing-only, so its
+          // default 30 ms would delay every re-emission (a saved item would show its old values meanwhile). Changes
+          // are still batched per committed write, so a bulk write re-runs the query once.
+          { signal: abort.signal, tables: [...tables], throttleMs: 0 },
         );
         return () => abort.abort();
       }),
