@@ -1,8 +1,9 @@
 import { waitFor } from '@testing-library/react-native';
-import { firstValueFrom } from 'rxjs';
+import { defer, firstValueFrom, tap } from 'rxjs';
 
 import { composeSidc } from '@/features/symbology/presets';
-import { makeTestContext } from '@/lib/db/test-database';
+import type { AppDb, SqlParams } from '@/lib/db/app-db';
+import { createTestDatabase, makeTestContext } from '@/lib/db/test-database';
 
 import {
   deleteItem,
@@ -28,6 +29,7 @@ import {
   observeMissionSidcs,
   observeRingItemIds,
   suggestName,
+  type MapItemSnapshot,
 } from './repository';
 
 const HOSTILE_INF = 'SHGPUCI--------';
@@ -458,7 +460,71 @@ describe('unit ranges and range rings', () => {
   });
 });
 
+/** A test database that counts the live queries started on it (subscriptions to its watch) and their emissions. */
+function countingDb(): { db: AppDb; counts: { watches: number; runs: number } } {
+  const base = createTestDatabase();
+  const counts = { watches: 0, runs: 0 };
+  const db: AppDb = {
+    ...base,
+    watch: <T>(sql: string, params: SqlParams, tables: readonly string[]) =>
+      defer(() => {
+        counts.watches++;
+        return base.watch<T>(sql, params, tables).pipe(tap(() => counts.runs++));
+      }),
+  };
+  return { db, counts };
+}
+
 describe('on SQL', () => {
+  it('shares one live query among everything watching a mission, and starts a fresh one after all left', async () => {
+    const { db, counts } = countingDb();
+    const ctx = makeTestContext(db);
+    const a: MapItemSnapshot[][] = [];
+    const b: MapItemSnapshot[][] = [];
+    const sidcs: string[][] = [];
+    const subs = [
+      observeMissionItems(db, 'm1').subscribe((items) => a.push(items)),
+      observeMissionItems(db, 'm1').subscribe((items) => b.push(items)),
+      observeMissionSidcs(db, 'm1').subscribe((list) => sidcs.push(list)),
+    ];
+    await waitFor(() => expect([a.length, b.length, sidcs.length]).toEqual([1, 1, 1]));
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    await waitFor(() => expect([a.at(-1)?.length, b.at(-1)?.length, sidcs.at(-1)]).toEqual([1, 1, [HOSTILE_INF]]));
+    // One query, run once at subscribe and once for the write.
+    expect(counts).toEqual({ watches: 1, runs: 2 });
+    subs.forEach((s) => s.unsubscribe());
+
+    // Arriving after everyone left: a new live query, not the stopped one.
+    const c: MapItemSnapshot[][] = [];
+    const sub = observeMissionItems(db, 'm1').subscribe((items) => c.push(items));
+    await waitFor(() => expect(c.at(-1)).toHaveLength(1));
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-2' });
+    await waitFor(() => expect(c.at(-1)).toHaveLength(2));
+    expect(counts.watches).toBe(2);
+    sub.unsubscribe();
+  });
+
+  it('shares one live query per view-state list', async () => {
+    const { db, counts } = countingDb();
+    const ctx = makeTestContext(db);
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!r.ok) throw new Error('setup');
+    const hidden: string[][] = [];
+    const rings: string[][] = [];
+    const subs = [
+      observeHiddenItemIds(db).subscribe((ids) => hidden.push(ids)),
+      observeHiddenItemIds(db).subscribe((ids) => hidden.push(ids)),
+      observeRingItemIds(db).subscribe((ids) => rings.push(ids)),
+      observeRingItemIds(db).subscribe((ids) => rings.push(ids)),
+    ];
+    await waitFor(() => expect([hidden.length, rings.length]).toEqual([2, 2]));
+    await setItemHidden(ctx, r.value.id, true);
+    await waitFor(() => expect(hidden.slice(-2)).toEqual([[r.value.id], [r.value.id]]));
+    // Two lists, two queries: each ran at subscribe and once for the write.
+    expect(counts).toEqual({ watches: 2, runs: 4 });
+    subs.forEach((s) => s.unsubscribe());
+  });
+
   it('hiding 100 items is one write the hidden-ids list sees once', async () => {
     const ctx = makeTestContext();
     const ids: string[] = [];

@@ -1,4 +1,4 @@
-import { distinctUntilChanged, map, type Observable } from 'rxjs';
+import { distinctUntilChanged, map, type Observable, shareReplay } from 'rxjs';
 
 import { isKnownSidc } from '@/features/symbology/categories';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
@@ -129,17 +129,37 @@ const sameItems = (a: MapItemSnapshot[], b: MapItemSnapshot[]) =>
   a.length === b.length && a.every((x, i) => x.id === b[i].id && x.updatedAt === b[i].updatedAt);
 const sameIds = (a: string[], b: string[]) => a.join('|') === b.join('|');
 
+const shared = new WeakMap<AppDb, Map<string, Observable<unknown>>>();
+
+/**
+ * One live query per database and key, however many components subscribe (the map's layers all watch the same
+ * mission). Late subscribers get the latest value at once. When the last one unsubscribes the watch stops, and the
+ * next subscriber starts a fresh one.
+ */
+function sharedWatch<T>(db: AppDb, key: string, make: () => Observable<T>): Observable<T> {
+  let byKey = shared.get(db);
+  if (!byKey) shared.set(db, (byKey = new Map()));
+  let observable = byKey.get(key) as Observable<T> | undefined;
+  if (!observable) {
+    observable = make().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    byKey.set(key, observable);
+  }
+  return observable;
+}
+
 export function observeMissionItems(db: AppDb, missionId: string): Observable<MapItemSnapshot[]> {
-  return db
-    .watch<MapItemRow>(
-      `SELECT ${ITEM_COLUMNS} FROM map_items WHERE mission_id = ? AND ${KNOWN_KIND} ORDER BY created_at, id`,
-      [missionId, ...MAP_ITEM_KINDS],
-      [Tables.mapItems],
-    )
-    .pipe(
-      map((rows) => rows.map(snapshot)),
-      distinctUntilChanged(sameItems),
-    );
+  return sharedWatch(db, `items:${missionId}`, () =>
+    db
+      .watch<MapItemRow>(
+        `SELECT ${ITEM_COLUMNS} FROM map_items WHERE mission_id = ? AND ${KNOWN_KIND} ORDER BY created_at, id`,
+        [missionId, ...MAP_ITEM_KINDS],
+        [Tables.mapItems],
+      )
+      .pipe(
+        map((rows) => rows.map(snapshot)),
+        distinctUntilChanged(sameItems),
+      ),
+  );
 }
 
 /**
@@ -165,12 +185,14 @@ export function observeItem(db: AppDb, id: string): Observable<MapItemSnapshot |
 }
 
 function observeViewStateIds(db: AppDb, column: 'hidden' | 'show_ring'): Observable<string[]> {
-  return db
-    .watch<{ map_item_id: string }>(`SELECT map_item_id FROM item_view_state WHERE ${column} = 1`, [], [Tables.itemViewState])
-    .pipe(
-      map((rows) => rows.map((r) => r.map_item_id)),
-      distinctUntilChanged(sameIds),
-    );
+  return sharedWatch(db, `view-state:${column}`, () =>
+    db
+      .watch<{ map_item_id: string }>(`SELECT map_item_id FROM item_view_state WHERE ${column} = 1`, [], [Tables.itemViewState])
+      .pipe(
+        map((rows) => rows.map((r) => r.map_item_id)),
+        distinctUntilChanged(sameIds),
+      ),
+  );
 }
 
 export function observeHiddenItemIds(db: AppDb): Observable<string[]> {
