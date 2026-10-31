@@ -8,6 +8,9 @@
     "@expo/vector-icons": "^15.0.2",
     "@morrowdigital/watermelondb-expo-plugin": "^2.3.3",
     "@nozbe/watermelondb": "^0.28.0",
+    "@op-engineering/op-sqlite": "^18.2.5",
+    "@powersync/common": "2.4.0",
+    "@powersync/react-native": "^2.3.3",
     "@rnmapbox/maps": "^10.3.8",
     "@sentry/react-native": "8.32.0",
     "@shopify/react-native-skia": "2.6.2",
@@ -51,11 +54,13 @@
     "@babel/plugin-transform-class-properties": "^7.29.7",
     "@babel/plugin-transform-private-methods": "^7.29.7",
     "@babel/plugin-transform-private-property-in-object": "^7.29.7",
+    "@powersync/node": "^1.2.0",
     "@resvg/resvg-js": "^2.6.2",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "29.5.14",
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.2",
+    "better-sqlite3": "^12.11.1",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "jest": "~29.7.0",
@@ -82,10 +87,11 @@
       "<rootDir>/jest.setup.ts"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@nozbe/.*|@rnmapbox/.*|nativewind|react-native-css-interop|geographiclib-geodesic|mgrs|geomagnetism|milsymbol)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@nozbe/.*|@powersync/.*|comlink|@rnmapbox/.*|nativewind|react-native-css-interop|geographiclib-geodesic|mgrs|geomagnetism|milsymbol)"
     ],
     "moduleNameMapper": {
-      "^(.*/assets/map/label-chip(?:-accent|-square)?)\\.png$": "$1@3x.png"
+      "^(.*/assets/map/label-chip(?:-accent|-square)?)\\.png$": "$1@3x.png",
+      "^@powersync/node$": "<rootDir>/node_modules/@powersync/node/lib/index.js"
     }
   },
   "expo": {
