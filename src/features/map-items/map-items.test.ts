@@ -1,8 +1,7 @@
+import { waitFor } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { composeSidc } from '@/features/symbology/presets';
-import type { MapItem } from '@/lib/db/models/MapItem';
-import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
 import {
@@ -125,14 +124,14 @@ describe('map items', () => {
     expect(await deleteItem(ctx, 'nope')).toMatchObject({ ok: false, error: 'not_found' });
   });
 
-  it('deletes with a sync tombstone and drops it from queries', async () => {
+  it('deletes the row outright and drops it from queries', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'A' });
     if (!r.ok) throw new Error('setup failed');
     expect(await deleteItem(ctx, r.value.id)).toEqual({ ok: true, value: undefined });
-    // The raw row must survive as a tombstone (not be destroyed permanently) so it can sync.
-    const raw = await ctx.db.adapter.find('map_items', r.value.id);
-    expect(raw).toMatchObject({ id: r.value.id, _status: 'deleted' });
+    // Local-only tables: a hard delete, no tombstone on the device (the later sync design keeps those on the server).
+    expect(await ctx.db.getAll('SELECT id FROM map_items WHERE id = ?', [r.value.id])).toEqual([]);
+    expect(await findItem(ctx.db, r.value.id)).toBeNull();
     expect(await firstValueFrom(observeMissionItems(ctx.db, 'm1'))).toEqual([]);
     expect(await getMissionItemNames(ctx.db, 'm1')).toEqual([]);
   });
@@ -292,21 +291,18 @@ describe('map items', () => {
 describe('items from a newer version of the app', () => {
   const tri = [at, { lat: at.lat + 0.01, lon: at.lon }, { lat: at.lat, lon: at.lon + 0.01 }];
   // What a sync could bring down from a teammate on a newer version: a kind this app does not know.
-  const placeUnknownKind = (ctx: ReturnType<typeof makeTestContext>) =>
-    ctx.db.write(() =>
-      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
-        i.missionId = 'm1';
-        i.kind = 'text' as MapItem['kind'];
-        i.geometry = pointGeometry(at);
-        i.sidc = null;
-        i.name = 'NOTE';
-        i.createdBy = 'other';
-        i.updatedBy = 'other';
-      }),
+  const placeUnknownKind = async (ctx: ReturnType<typeof makeTestContext>) => {
+    const id = 'unknown-kind-1';
+    await ctx.db.execute(
+      `INSERT INTO map_items (id, mission_id, kind, geometry, sidc, name, created_by, updated_by, created_at, updated_at)
+       VALUES (?, 'm1', 'text', ?, NULL, 'NOTE', 'other', 'other', 1, 1)`,
+      [id, pointGeometry(at)],
     );
+    return { id };
+  };
   const restyle = (ctx: ReturnType<typeof makeTestContext>, id: string, extra: Record<string, unknown>) =>
     findItem(ctx.db, id).then((item) =>
-      ctx.db.write(() => item!.update((i) => void (i.style = JSON.stringify({ ...JSON.parse(i.style!), ...extra })))),
+      ctx.db.execute('UPDATE map_items SET style = ? WHERE id = ?', [JSON.stringify({ ...JSON.parse(item!.style!), ...extra }), id]),
     );
 
   it('ignores items of a kind this app does not know, so they are never drawn as something else', async () => {
@@ -337,7 +333,8 @@ describe('items from a newer version of the app', () => {
 });
 
 const FRIEND_ARMOR_SIDC = 'SFGPUCA--------';
-const settle = () => new Promise((r) => setTimeout(r, 20));
+// Longer than PowerSync's 30 ms watch throttle, so a re-emission that is coming has arrived.
+const settle = () => new Promise((r) => setTimeout(r, 200));
 
 describe('observeMissionSidcs', () => {
   it('emits the sorted, distinct symbols only when the set of symbols changes', async () => {
@@ -346,8 +343,7 @@ describe('observeMissionSidcs', () => {
     if (!placed.ok) throw new Error('place failed');
     const emitted: string[][] = [];
     const sub = observeMissionSidcs(ctx.db, 'm1').subscribe((s) => emitted.push(s));
-    await settle();
-    expect(emitted).toEqual([[HOSTILE_INF]]);
+    await waitFor(() => expect(emitted).toEqual([[HOSTILE_INF]]));
 
     // A rename or a move does not change the symbols: the map must not re-render for it.
     await updateItem(ctx, placed.value.id, { name: 'B' });
@@ -357,8 +353,8 @@ describe('observeMissionSidcs', () => {
     expect(emitted).toHaveLength(1);
 
     await updateItem(ctx, placed.value.id, { sidc: FRIEND_ARMOR_SIDC });
+    await waitFor(() => expect(emitted.at(-1)).toEqual([FRIEND_ARMOR_SIDC, HOSTILE_INF].sort()));
     await settle();
-    expect(emitted.at(-1)).toEqual([FRIEND_ARMOR_SIDC, HOSTILE_INF].sort());
     expect(emitted).toHaveLength(2);
     sub.unsubscribe();
   });
@@ -410,7 +406,7 @@ describe('unit ranges and range rings', () => {
     const ctx = makeTestContext();
     const a = await place(ctx, ARTY, { threatRangeM: 1000 });
     await setItemShowRing(ctx, a, false);
-    expect(await ctx.db.get(Tables.itemViewState).query().fetchCount()).toBe(0);
+    expect(await ctx.db.getOptional('SELECT COUNT(*) AS n FROM item_view_state')).toEqual({ n: 0 });
   });
 
   it('changing type away from artillery clears the range and turns the ring off', async () => {
@@ -459,5 +455,49 @@ describe('unit ranges and range rings', () => {
     await setItemShowRing(ctx, id, true);
     await deleteItem(ctx, id);
     expect(await rings(ctx)).toEqual([]);
+  });
+});
+
+describe('on SQL', () => {
+  it('hiding 100 items is one write the hidden-ids list sees once', async () => {
+    const ctx = makeTestContext();
+    const ids: string[] = [];
+    for (let i = 0; i < 100; i++) {
+      const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: `HOS-${i}` });
+      if (!r.ok) throw new Error('setup');
+      ids.push(r.value.id);
+    }
+    const emitted: string[][] = [];
+    const sub = observeHiddenItemIds(ctx.db).subscribe((list) => emitted.push(list));
+    await waitFor(() => expect(emitted).toHaveLength(1));
+    expect(await setItemsHidden(ctx, ids, true)).toEqual({ ok: true, value: undefined });
+    await waitFor(() => expect(emitted.at(-1)).toHaveLength(100));
+    await new Promise((r) => setTimeout(r, 200));
+    expect(emitted).toHaveLength(2);
+    sub.unsubscribe();
+  });
+
+  it('never returns an item of an unknown kind', async () => {
+    const ctx = makeTestContext();
+    await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    await ctx.db.execute(
+      `INSERT INTO map_items (id, mission_id, kind, geometry, sidc, name, notes, style, elevation_m, threat_range_m,
+        horizontal_range_m, vertical_range_ft, created_by, updated_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NULL, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?, ?, ?)`,
+      ['circle-1', 'm1', 'circle', pointGeometry(at), 'RING', 'other', 'other', 1, 1],
+    );
+    expect((await firstValueFrom(observeMissionItems(ctx.db, 'm1'))).map((i) => i.name)).toEqual(['HOS-1']);
+    expect(await firstValueFrom(observeItem(ctx.db, 'circle-1'))).toBeNull();
+  });
+
+  it('keeps null notes null and quoted names intact', async () => {
+    const ctx = makeTestContext();
+    const name = 'O\'Brien "2"';
+    const r = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOSTILE_INF, name });
+    if (!r.ok) throw new Error('setup');
+    const item = await findItem(ctx.db, r.value.id);
+    expect(item?.notes).toBeNull();
+    expect(item?.sidc).toBe(HOSTILE_INF);
+    expect(item?.name).toBe(name);
   });
 });

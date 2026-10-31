@@ -7,8 +7,6 @@ import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { setElevationSource } from '@/features/map/terrain/elevation';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { composeSidc } from '@/features/symbology/presets';
-import type { MapItem } from '@/lib/db/models/MapItem';
-import { Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
@@ -259,7 +257,8 @@ describe('EditUnitMenu', () => {
     await fireEvent.press(screen.getByText('Infantry'));
     await fireEvent.press(screen.getByLabelText('Save'));
     await waitFor(() => expect(screen.getByLabelText('Edit')).toBeTruthy());
-    expect(screen.queryByTestId('ring-row')).toBeNull();
+    // The view shows the saved item once the database re-emits it.
+    await waitFor(() => expect(screen.queryByTestId('ring-row')).toBeNull());
     await fireEvent.press(screen.getByLabelText('Edit'));
     await fireEvent.press(screen.getByLabelText('Unit type: Infantry'));
     await fireEvent.press(screen.getByText('Artillery'));
@@ -302,12 +301,7 @@ describe('EditUnitMenu', () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
     if (!r.ok) throw new Error('setup');
-    await ctx.db.write(async () => {
-      const record = await ctx.db.get<MapItem>(Tables.mapItems).find(r.value.id);
-      await record.update((m) => {
-        m.geometry = 'not geojson';
-      });
-    });
+    await ctx.db.execute('UPDATE map_items SET geometry = ? WHERE id = ?', ['not geojson', r.value.id]);
     const before = await findItem(ctx.db, r.value.id);
 
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);

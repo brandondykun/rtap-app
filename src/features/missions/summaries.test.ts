@@ -1,8 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 
 import { placePoint } from '@/features/map-items/commands';
-import { migrations } from '@/lib/db/migrations';
-import { schema, Tables } from '@/lib/db/schema';
+import { appSchema, Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, markMissionOpened, saveMissionCamera } from './commands';
@@ -11,12 +10,10 @@ import { observeCountsByMission, observeMissionSummaries, parseCamera, parseSnap
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };
 
-describe('schema v2', () => {
-  it('adds the nullable snapshot column to mission_view_state with a migration', () => {
-    expect(schema.tables[Tables.missionViewState].columns.snapshot).toEqual({ name: 'snapshot', type: 'string', isOptional: true });
-    expect(migrations.sortedMigrations.find((m) => m.toVersion === 2)?.steps).toEqual([
-      { type: 'add_columns', table: Tables.missionViewState, columns: [{ name: 'snapshot', type: 'string', isOptional: true }] },
-    ]);
+describe('schema', () => {
+  it('has a text snapshot column on mission_view_state', () => {
+    const table = appSchema.tables.find((t) => t.name === Tables.missionViewState);
+    expect(table?.columns.find((c) => c.name === 'snapshot')?.type).toBe('TEXT');
   });
 });
 

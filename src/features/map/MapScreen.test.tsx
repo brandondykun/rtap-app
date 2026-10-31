@@ -560,6 +560,8 @@ describe('MapScreen', () => {
     if (!p.ok) throw new Error('setup');
     await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
     await screen.findByTestId('map-view');
+    // The tap handler looks the item up in the loaded items, so wait for them.
+    await waitFor(() => expect((mapboxMock().__props.ShapeSource.points.shape as { features: unknown[] }).features).toHaveLength(1));
     const tapItem = () =>
       act(async () =>
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id } }], coordinates: {}, point: {} }),
@@ -1004,6 +1006,8 @@ describe('MapScreen', () => {
       const l = await placeLine(ctx, { missionId: id, points: [{ lat: 38.9, lon: -77 }, { lat: 38.95, lon: -76.95 }], lineType: 'phase-line', name: 'RED' });
       if (!p.ok || !l.ok) throw new Error('setup');
       await waitFor(() => expect(mapboxMock().__props.ShapeSource.lines).toBeDefined());
+      // A unit tap stakes at the stored coordinate, so wait for the items to load.
+      await waitFor(() => expect((mapboxMock().__props.ShapeSource.points.shape as { features: unknown[] }).features).toHaveLength(1));
       await fireEvent.press(screen.getByLabelText('OP'));
       await act(async () =>
         (mapboxMock().__props.ShapeSource.points.onPress as (e: unknown) => void)({ features: [{ properties: { id: p.value.id, sidc: 'SHGPUCI--------' } }], coordinates: { latitude: 38.9003, longitude: -77.0002 }, point: {} }),

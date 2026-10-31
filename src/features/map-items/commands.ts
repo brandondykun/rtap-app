@@ -1,22 +1,58 @@
-import { Q } from '@nozbe/watermelondb';
-
 import { isKnownSidc } from '@/features/symbology/categories';
 import { lineStyle, type LineType } from '@/features/symbology/line-types';
 import { DEFAULT_POLYGON_FILL, MAX_RADIUS_M, polygonStyle, polygonStyleOf, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
+import type { AppDbTx } from '@/lib/db/app-db';
 import type { CommandContext } from '@/lib/db/command-context';
-import type { ItemViewState } from '@/lib/db/models/ItemViewState';
-import type { MapItem } from '@/lib/db/models/MapItem';
+import { insertRows, updateRow, type SqlValue } from '@/lib/db/insert-rows';
+import { newId } from '@/lib/db/new-id';
 import { Tables } from '@/lib/db/schema';
 import type { LatLon } from '@/lib/geo/types';
 import { err, ok, type Result } from '@/lib/result';
 
 import { isValidLatLon, lineGeometry, pointGeometry, polygonGeometry } from './geometry';
 import { circleRing } from './polygon-measure';
-import { findItem, findItemViewState } from './repository';
+import { findItem, findItemViewState, type MapItemKind } from './repository';
 import { isValidRange, normalizeRanges, rangeFieldsForSidc, ringRadiusM, type RangeField, type UnitRanges } from './unit-ranges';
 
 const RANGE_FIELDS: readonly RangeField[] = ['threatRangeM', 'horizontalRangeM', 'verticalRangeFt'];
 const allValid = (r: UnitRanges) => RANGE_FIELDS.every((f) => isValidRange(f, r[f]));
+
+type NewItem = { missionId: string; kind: MapItemKind; geometry: string; sidc: string | null; name: string; notes: string | null; style: string | null } & Partial<UnitRanges> & { elevationM?: number | null };
+
+/** Inserts one item with every column set; returns its id. */
+async function insertItem(ctx: CommandContext, item: NewItem): Promise<string> {
+  const id = newId();
+  const actor = ctx.actorId();
+  const now = ctx.now();
+  await insertRows(ctx.db, Tables.mapItems, [
+    {
+      id,
+      mission_id: item.missionId,
+      kind: item.kind,
+      geometry: item.geometry,
+      sidc: item.sidc,
+      name: item.name,
+      notes: item.notes,
+      style: item.style,
+      elevation_m: item.elevationM ?? null,
+      threat_range_m: item.threatRangeM ?? null,
+      horizontal_range_m: item.horizontalRangeM ?? null,
+      vertical_range_ft: item.verticalRangeFt ?? null,
+      created_by: actor,
+      updated_by: actor,
+      created_at: now,
+      updated_at: now,
+    },
+  ]);
+  return id;
+}
+
+/** Sets the given columns plus the edit stamp (updated_by / updated_at). */
+function updateItemRow(ctx: CommandContext, db: AppDbTx, id: string, fields: Record<string, SqlValue>): Promise<void> {
+  return updateRow(db, Tables.mapItems, id, { ...fields, updated_by: ctx.actorId(), updated_at: ctx.now() });
+}
+
+const bit = (b: boolean) => (b ? 1 : 0);
 
 export type PlacePointInput = {
   missionId: string;
@@ -41,24 +77,18 @@ export async function placePoint(
   const ranges = normalizeRanges(rangeFieldsForSidc(input.sidc), input.ranges ?? {});
   if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
   try {
-    const item = await ctx.db.write(() =>
-      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
-        i.missionId = input.missionId;
-        i.kind = 'point';
-        i.geometry = pointGeometry(input.coord);
-        i.sidc = input.sidc;
-        i.name = name;
-        i.notes = input.notes ?? null;
-        i.style = null;
-        i.elevationM = input.elevationM ?? null;
-        i.threatRangeM = ranges.threatRangeM;
-        i.horizontalRangeM = ranges.horizontalRangeM;
-        i.verticalRangeFt = ranges.verticalRangeFt;
-        i.createdBy = ctx.actorId();
-        i.updatedBy = ctx.actorId();
-      }),
-    );
-    return ok({ id: item.id });
+    const id = await insertItem(ctx, {
+      missionId: input.missionId,
+      kind: 'point',
+      geometry: pointGeometry(input.coord),
+      sidc: input.sidc,
+      name,
+      notes: input.notes ?? null,
+      style: null,
+      elevationM: input.elevationM ?? null,
+      ...ranges,
+    });
+    return ok({ id });
   } catch (e) {
     return err('write_failed', String(e));
   }
@@ -97,25 +127,23 @@ export async function updateItem(
   const ranges = normalizeRanges(rangeFieldsForSidc(sidc), merged);
   if (!allValid(ranges)) return err('invalid_range', 'Range is out of bounds');
   try {
-    await ctx.db.write(async () => {
-      await item.update((i) => {
-        if (patch.name !== undefined) i.name = patch.name.trim();
-        if (patch.notes !== undefined) i.notes = patch.notes;
-        if (patch.sidc !== undefined) i.sidc = patch.sidc;
-        if (patch.coord) i.geometry = pointGeometry(patch.coord);
-        if (patch.elevationM !== undefined) i.elevationM = patch.elevationM;
-        i.threatRangeM = ranges.threatRangeM;
-        i.horizontalRangeM = ranges.horizontalRangeM;
-        i.verticalRangeFt = ranges.verticalRangeFt;
-        i.updatedBy = ctx.actorId();
-      });
+    await ctx.db.writeTransaction(async (tx) => {
+      const fields: Record<string, SqlValue> = {
+        threat_range_m: ranges.threatRangeM,
+        horizontal_range_m: ranges.horizontalRangeM,
+        vertical_range_ft: ranges.verticalRangeFt,
+      };
+      if (patch.name !== undefined) fields.name = patch.name.trim();
+      if (patch.notes !== undefined) fields.notes = patch.notes;
+      if (patch.sidc !== undefined) fields.sidc = patch.sidc;
+      if (patch.coord) fields.geometry = pointGeometry(patch.coord);
+      if (patch.elevationM !== undefined) fields.elevation_m = patch.elevationM;
+      await updateItemRow(ctx, tx, id, fields);
       // A ring with no distance cannot be drawn, so it goes back to off.
       if (ringRadiusM({ sidc, ...ranges }) === null) {
-        const view = await findItemViewState(ctx.db, id);
+        const view = await findItemViewState(tx, id);
         if (view?.showRing === true) {
-          await view.update((s) => {
-            s.showRing = false;
-          });
+          await updateRow(tx, Tables.itemViewState, view.id, { show_ring: 0, updated_at: ctx.now() });
         }
       }
     });
@@ -129,11 +157,9 @@ export async function deleteItem(ctx: CommandContext, id: string): Promise<Resul
   const item = await findItem(ctx.db, id);
   if (!item) return err('not_found', `No item ${id}`);
   try {
-    await ctx.db.write(async () => {
-      // Tombstone for sync; local-only view state is removed outright.
-      await item.markAsDeleted();
-      const view = await findItemViewState(ctx.db, id);
-      if (view) await view.destroyPermanently();
+    await ctx.db.writeTransaction(async (tx) => {
+      await tx.execute('DELETE FROM map_items WHERE id = ?', [id]);
+      await tx.execute('DELETE FROM item_view_state WHERE map_item_id = ?', [id]);
     });
     return ok(undefined);
   } catch (e) {
@@ -146,19 +172,14 @@ export async function toggleItemVisibility(
   id: string,
 ): Promise<Result<{ hidden: boolean }, 'write_failed'>> {
   try {
-    const hidden = await ctx.db.write(async () => {
-      const existing = await findItemViewState(ctx.db, id);
+    const hidden = await ctx.db.writeTransaction(async (tx) => {
+      const existing = await findItemViewState(tx, id);
       if (existing) {
         const next = !existing.hidden;
-        await existing.update((s) => {
-          s.hidden = next;
-        });
+        await updateRow(tx, Tables.itemViewState, existing.id, { hidden: bit(next), updated_at: ctx.now() });
         return next;
       }
-      await ctx.db.get<ItemViewState>(Tables.itemViewState).create((s) => {
-        s.mapItemId = id;
-        s.hidden = true;
-      });
+      await insertViewStates(ctx, tx, [id], { hidden: true, showRing: null });
       return true;
     });
     return ok({ hidden });
@@ -167,36 +188,37 @@ export async function toggleItemVisibility(
   }
 }
 
+function insertViewStates(ctx: CommandContext, db: AppDbTx, ids: readonly string[], { hidden, showRing }: { hidden: boolean; showRing: boolean | null }): Promise<void> {
+  const now = ctx.now();
+  return insertRows(
+    db,
+    Tables.itemViewState,
+    ids.map((id) => ({ id: newId(), map_item_id: id, hidden: bit(hidden), show_ring: showRing === null ? null : bit(showRing), updated_at: now })),
+  );
+}
+
+/**
+ * Sets `hidden` or `show_ring` on the items' view state, touching only rows that differ. Items with no view state
+ * get a row only when the flag is turned on (no row means visible, ring off).
+ */
+async function setViewStateFlag(ctx: CommandContext, tx: AppDbTx, ids: readonly string[], column: 'hidden' | 'show_ring', on: boolean): Promise<void> {
+  const unique = [...new Set(ids)];
+  // One JSON parameter instead of one per id, so thousands of ids stay a single bound value.
+  const idList = JSON.stringify(unique);
+  const inList = 'map_item_id IN (SELECT value FROM json_each(?))';
+  const existing = await tx.getAll<{ map_item_id: string }>(`SELECT map_item_id FROM item_view_state WHERE ${inList}`, [idList]);
+  await tx.execute(`UPDATE item_view_state SET ${column} = ?, updated_at = ? WHERE ${inList} AND ${column} IS NOT ?`, [bit(on), ctx.now(), idList, bit(on)]);
+  if (!on) return;
+  const have = new Set(existing.map((r) => r.map_item_id));
+  const missing = unique.filter((id) => !have.has(id));
+  await insertViewStates(ctx, tx, missing, column === 'hidden' ? { hidden: true, showRing: null } : { hidden: false, showRing: true });
+}
+
 /** Sets visibility for several items in one write (e.g. Layers → Show all); idempotent. */
 export async function setItemsHidden(ctx: CommandContext, ids: readonly string[], hidden: boolean): Promise<Result<void, 'write_failed'>> {
   if (ids.length === 0) return ok(undefined);
   try {
-    await ctx.db.write(async () => {
-      const collection = ctx.db.get<ItemViewState>(Tables.itemViewState);
-      const existing = await collection.query(Q.where('map_item_id', Q.oneOf([...ids]))).fetch();
-      const byItem = new Map(existing.map((v) => [v.mapItemId, v]));
-      const writes: ItemViewState[] = [];
-      for (const id of new Set(ids)) {
-        const view = byItem.get(id);
-        if (view) {
-          if (view.hidden !== hidden) {
-            writes.push(
-              view.prepareUpdate((s) => {
-                s.hidden = hidden;
-              }),
-            );
-          }
-        } else if (hidden) {
-          writes.push(
-            collection.prepareCreate((s) => {
-              s.mapItemId = id;
-              s.hidden = true;
-            }),
-          );
-        }
-      }
-      if (writes.length > 0) await ctx.db.batch(writes);
-    });
+    await ctx.db.writeTransaction((tx) => setViewStateFlag(ctx, tx, ids, 'hidden', hidden));
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -212,33 +234,7 @@ export async function setItemHidden(ctx: CommandContext, id: string, hidden: boo
 export async function setItemsShowRing(ctx: CommandContext, ids: readonly string[], show: boolean): Promise<Result<void, 'write_failed'>> {
   if (ids.length === 0) return ok(undefined);
   try {
-    await ctx.db.write(async () => {
-      const collection = ctx.db.get<ItemViewState>(Tables.itemViewState);
-      const existing = await collection.query(Q.where('map_item_id', Q.oneOf([...ids]))).fetch();
-      const byItem = new Map(existing.map((v) => [v.mapItemId, v]));
-      const writes: ItemViewState[] = [];
-      for (const id of new Set(ids)) {
-        const view = byItem.get(id);
-        if (view) {
-          if (view.showRing !== show) {
-            writes.push(
-              view.prepareUpdate((s) => {
-                s.showRing = show;
-              }),
-            );
-          }
-        } else if (show) {
-          writes.push(
-            collection.prepareCreate((s) => {
-              s.mapItemId = id;
-              s.hidden = false;
-              s.showRing = true;
-            }),
-          );
-        }
-      }
-      if (writes.length > 0) await ctx.db.batch(writes);
-    });
+    await ctx.db.writeTransaction((tx) => setViewStateFlag(ctx, tx, ids, 'show_ring', show));
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -265,20 +261,16 @@ export async function placeLine(
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Name is required');
   try {
-    const item = await ctx.db.write(() =>
-      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
-        i.missionId = input.missionId;
-        i.kind = 'line';
-        i.geometry = lineGeometry(input.points);
-        i.sidc = null;
-        i.name = name;
-        i.notes = input.notes ?? null;
-        i.style = lineStyle(input.lineType);
-        i.createdBy = ctx.actorId();
-        i.updatedBy = ctx.actorId();
-      }),
-    );
-    return ok({ id: item.id });
+    const id = await insertItem(ctx, {
+      missionId: input.missionId,
+      kind: 'line',
+      geometry: lineGeometry(input.points),
+      sidc: null,
+      name,
+      notes: input.notes ?? null,
+      style: lineStyle(input.lineType),
+    });
+    return ok({ id });
   } catch (e) {
     return err('write_failed', String(e));
   }
@@ -299,15 +291,12 @@ export async function updateLine(
   const item = await findItem(ctx.db, id);
   if (!item || item.kind !== 'line') return err('not_found', `No line ${id}`);
   try {
-    await ctx.db.write(() =>
-      item.update((i) => {
-        if (patch.points) i.geometry = lineGeometry(patch.points);
-        if (patch.lineType) i.style = lineStyle(patch.lineType, i.style);
-        if (patch.name !== undefined) i.name = patch.name.trim();
-        if (patch.notes !== undefined) i.notes = patch.notes;
-        i.updatedBy = ctx.actorId();
-      }),
-    );
+    const fields: Record<string, SqlValue> = {};
+    if (patch.points) fields.geometry = lineGeometry(patch.points);
+    if (patch.lineType) fields.style = lineStyle(patch.lineType, item.style);
+    if (patch.name !== undefined) fields.name = patch.name.trim();
+    if (patch.notes !== undefined) fields.notes = patch.notes;
+    await updateItemRow(ctx, ctx.db, id, fields);
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -346,20 +335,16 @@ export async function placePolygon(
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Name is required');
   try {
-    const item = await ctx.db.write(() =>
-      ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
-        i.missionId = input.missionId;
-        i.kind = 'polygon';
-        i.geometry = parts.geometry;
-        i.sidc = null;
-        i.name = name;
-        i.notes = input.notes ?? null;
-        i.style = polygonStyle(input.polygonType, parts.shape, input.fill ?? DEFAULT_POLYGON_FILL);
-        i.createdBy = ctx.actorId();
-        i.updatedBy = ctx.actorId();
-      }),
-    );
-    return ok({ id: item.id });
+    const id = await insertItem(ctx, {
+      missionId: input.missionId,
+      kind: 'polygon',
+      geometry: parts.geometry,
+      sidc: null,
+      name,
+      notes: input.notes ?? null,
+      style: polygonStyle(input.polygonType, parts.shape, input.fill ?? DEFAULT_POLYGON_FILL),
+    });
+    return ok({ id });
   } catch (e) {
     return err('write_failed', String(e));
   }
@@ -379,15 +364,13 @@ export async function updatePolygon(
   if (!item || item.kind !== 'polygon') return err('not_found', `No polygon ${id}`);
   const current = polygonStyleOf(item.style ?? null);
   try {
-    await ctx.db.write(() =>
-      item.update((i) => {
-        if (parts) i.geometry = parts.geometry;
-        i.style = polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, patch.fill ?? current.fill, i.style);
-        if (patch.name !== undefined) i.name = patch.name.trim();
-        if (patch.notes !== undefined) i.notes = patch.notes;
-        i.updatedBy = ctx.actorId();
-      }),
-    );
+    const fields: Record<string, SqlValue> = {
+      style: polygonStyle(patch.polygonType ?? current.polygonType, parts ? parts.shape : current.shape, patch.fill ?? current.fill, item.style),
+    };
+    if (parts) fields.geometry = parts.geometry;
+    if (patch.name !== undefined) fields.name = patch.name.trim();
+    if (patch.notes !== undefined) fields.notes = patch.notes;
+    await updateItemRow(ctx, ctx.db, id, fields);
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));

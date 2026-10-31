@@ -1,12 +1,26 @@
-import { Q, type Database } from '@nozbe/watermelondb';
-import { combineLatest, map, of, type Observable } from 'rxjs';
+import { combineLatest, distinctUntilChanged, map, of, type Observable } from 'rxjs';
 
 import { POINT_SIDCS } from '@/features/symbology/point-types';
-import type { MapItem } from '@/lib/db/models/MapItem';
-import type { Mission } from '@/lib/db/models/Mission';
-import type { MissionViewState } from '@/lib/db/models/MissionViewState';
+import type { AppDb, AppDbTx } from '@/lib/db/app-db';
 import { Tables } from '@/lib/db/schema';
 import type { LatLon } from '@/lib/geo/types';
+
+export type MissionRecord = { id: string; name: string; createdBy: string; createdAt: number; updatedAt: number };
+
+/** Local-only: when this device last opened a mission and where its camera was. */
+export type MissionViewStateRecord = {
+  id: string;
+  missionId: string;
+  lastOpenedAt: number;
+  /** JSON `MissionCamera` or null. */
+  camera: string | null;
+  /** JSON `MissionSnapshot` (this device's map picture) or null. */
+  snapshot: string | null;
+  updatedAt: number;
+};
+
+type MissionRow = { id: string; name: string; created_by: string; created_at: number; updated_at: number };
+type MissionViewStateRow = { id: string; mission_id: string; last_opened_at: number; camera: string | null; snapshot: string | null; updated_at: number };
 
 export type MissionCamera = { center: LatLon; zoom: number; bearing: number };
 
@@ -35,70 +49,82 @@ export function sortMissionSummaries(list: MissionSummary[]): MissionSummary[] {
   });
 }
 
-export function observeMissionSummaries(db: Database): Observable<MissionSummary[]> {
-  const missions$ = db.get<Mission>(Tables.missions).query().observeWithColumns(['name']);
-  const states$ = db
-    .get<MissionViewState>(Tables.missionViewState)
-    .query()
-    .observeWithColumns(['last_opened_at', 'camera', 'snapshot']);
-  return combineLatest([missions$, states$]).pipe(
-    map(([missions, states]) => {
-      const byMission = new Map(states.map((s) => [s.missionId, s]));
-      return sortMissionSummaries(
-        missions.map((m) => {
-          const state = byMission.get(m.id);
-          return {
-            id: m.id,
-            name: m.name,
-            createdAt: m.createdAt.getTime(),
-            lastOpenedAt: state?.lastOpenedAt ?? null,
-            camera: parseCamera(state?.camera ?? null),
-            snapshot: parseSnapshot(state?.snapshot ?? null),
-          };
-        }),
-      );
-    }),
-  );
+type SummaryRow = { id: string; name: string; created_at: number; last_opened_at: number | null; camera: string | null; snapshot: string | null };
+
+const summaryKey = (rows: readonly SummaryRow[]) =>
+  rows.map((r) => [r.id, r.name, r.last_opened_at, r.camera, r.snapshot].join('\u0000')).join('\u0001');
+
+export function observeMissionSummaries(db: AppDb): Observable<MissionSummary[]> {
+  return db
+    .watch<SummaryRow>(
+      `SELECT m.id, m.name, m.created_at, s.last_opened_at, s.camera, s.snapshot
+       FROM missions m LEFT JOIN mission_view_state s ON s.mission_id = m.id`,
+      [],
+      [Tables.missions, Tables.missionViewState],
+    )
+    .pipe(
+      distinctUntilChanged((a, b) => summaryKey(a) === summaryKey(b)),
+      map((rows) =>
+        sortMissionSummaries(
+          rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            createdAt: r.created_at,
+            lastOpenedAt: r.last_opened_at ?? null,
+            camera: parseCamera(r.camera ?? null),
+            snapshot: parseSnapshot(r.snapshot ?? null),
+          })),
+        ),
+      ),
+    );
 }
 
+const POINT_SIDC_LIST = `(${POINT_SIDCS.map(() => '?').join(', ')})`;
+type CountsRow = { symbols: number | null; points: number | null; lines: number | null; polygons: number | null };
+
 /** Units, points, lines and polygons in a mission: lines and polygons by kind, points by symbol code (see itemCategory). */
-export function observeMissionCategoryCounts(db: Database, missionId: string): Observable<CategoryCounts> {
-  const items = db.get<MapItem>(Tables.mapItems);
-  const inMission = Q.where('mission_id', missionId);
-  return combineLatest([
-    items.query(inMission, Q.where('kind', 'point')).observeCount(),
-    items.query(inMission, Q.where('kind', 'point'), Q.where('sidc', Q.oneOf([...POINT_SIDCS]))).observeCount(),
-    items.query(inMission, Q.where('kind', 'line')).observeCount(),
-    items.query(inMission, Q.where('kind', 'polygon')).observeCount(),
-  ]).pipe(map(([symbols, points, lines, polygons]) => ({ units: Math.max(0, symbols - points), points, lines, polygons })));
+export function observeMissionCategoryCounts(db: AppDb, missionId: string): Observable<CategoryCounts> {
+  return db
+    .watch<CountsRow>(
+      `SELECT
+         SUM(CASE WHEN kind = 'point' THEN 1 ELSE 0 END) AS symbols,
+         SUM(CASE WHEN kind = 'point' AND sidc IN ${POINT_SIDC_LIST} THEN 1 ELSE 0 END) AS points,
+         SUM(CASE WHEN kind = 'line' THEN 1 ELSE 0 END) AS lines,
+         SUM(CASE WHEN kind = 'polygon' THEN 1 ELSE 0 END) AS polygons
+       FROM map_items WHERE mission_id = ?`,
+      [...POINT_SIDCS, missionId],
+      [Tables.mapItems],
+    )
+    .pipe(
+      map(([row]) => {
+        // SUM over no rows is NULL.
+        const symbols = row?.symbols ?? 0;
+        const points = row?.points ?? 0;
+        return { units: Math.max(0, symbols - points), points, lines: row?.lines ?? 0, polygons: row?.polygons ?? 0 };
+      }),
+      distinctUntilChanged((a, b) => a.units === b.units && a.points === b.points && a.lines === b.lines && a.polygons === b.polygons),
+    );
 }
 
 /** Category counts for each mission id (for sorting by size and the units total). */
-export function observeCountsByMission(db: Database, ids: readonly string[]): Observable<ReadonlyMap<string, CategoryCounts>> {
+export function observeCountsByMission(db: AppDb, ids: readonly string[]): Observable<ReadonlyMap<string, CategoryCounts>> {
   if (ids.length === 0) return of(new Map());
   return combineLatest(ids.map((id) => observeMissionCategoryCounts(db, id))).pipe(
     map((counts) => new Map(ids.map((id, i) => [id, counts[i]]))),
   );
 }
 
-/** Returns null for unknown ids and for soft-deleted (markAsDeleted) missions. */
-export async function findMission(db: Database, id: string): Promise<Mission | null> {
-  let mission: Mission;
-  try {
-    mission = await db.get<Mission>(Tables.missions).find(id);
-  } catch {
-    return null;
-  }
-  if (mission._raw._status === 'deleted') return null;
-  return mission;
+/** Returns null for unknown or deleted ids. Takes a transaction handle too, for reads inside a write. */
+export async function findMission(db: AppDbTx, id: string): Promise<MissionRecord | null> {
+  const r = await db.getOptional<MissionRow>('SELECT * FROM missions WHERE id = ?', [id]);
+  return r ? { id: r.id, name: r.name, createdBy: r.created_by, createdAt: r.created_at, updatedAt: r.updated_at } : null;
 }
 
-export async function findMissionViewState(db: Database, missionId: string): Promise<MissionViewState | null> {
-  const rows = await db
-    .get<MissionViewState>(Tables.missionViewState)
-    .query(Q.where('mission_id', missionId))
-    .fetch();
-  return rows[0] ?? null;
+export async function findMissionViewState(db: AppDbTx, missionId: string): Promise<MissionViewStateRecord | null> {
+  const r = await db.getOptional<MissionViewStateRow>('SELECT * FROM mission_view_state WHERE mission_id = ? LIMIT 1', [missionId]);
+  return r
+    ? { id: r.id, missionId: r.mission_id, lastOpenedAt: r.last_opened_at, camera: r.camera ?? null, snapshot: r.snapshot ?? null, updatedAt: r.updated_at }
+    : null;
 }
 
 export function isValidCamera(value: unknown): value is MissionCamera {
@@ -133,12 +159,12 @@ export function parseSnapshot(json: string | null): MissionSnapshot | null {
   }
 }
 
-export async function getMissionCamera(db: Database, missionId: string): Promise<MissionCamera | null> {
+export async function getMissionCamera(db: AppDb, missionId: string): Promise<MissionCamera | null> {
   const state = await findMissionViewState(db, missionId);
   return parseCamera(state?.camera ?? null);
 }
 
-export async function suggestMissionName(db: Database): Promise<string> {
-  const count = await db.get<Mission>(Tables.missions).query().fetchCount();
-  return `Mission ${count + 1}`;
+export async function suggestMissionName(db: AppDb): Promise<string> {
+  const row = await db.getOptional<{ n: number }>('SELECT COUNT(*) AS n FROM missions');
+  return `Mission ${(row?.n ?? 0) + 1}`;
 }

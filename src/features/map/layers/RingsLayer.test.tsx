@@ -32,8 +32,9 @@ describe('RingsLayer', () => {
     await waitFor(() => expect(props.FillLayer['rings-fill']).toBeDefined());
     expect(JSON.stringify(props.FillLayer['rings-fill'].filter)).not.toContain(id);
     await act(async () => void (await setItemShowRing(ctx, id, true)));
-    for (const layer of [props.FillLayer['rings-fill'], props.LineLayer['rings-halo'], props.LineLayer['rings-line']]) {
-      await waitFor(() => expect(JSON.stringify(layer.filter)).toContain(id));
+    // Read the layers' props inside waitFor: each render replaces them, and the database answers asynchronously.
+    for (const layer of [() => props.FillLayer['rings-fill'], () => props.LineLayer['rings-halo'], () => props.LineLayer['rings-line']]) {
+      await waitFor(() => expect(JSON.stringify(layer().filter)).toContain(id));
     }
   });
 

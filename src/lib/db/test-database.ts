@@ -1,33 +1,13 @@
-import type { Database } from '@nozbe/watermelondb';
-import LokiJSAdapter from '@nozbe/watermelondb/adapters/lokijs';
-import logger from '@nozbe/watermelondb/utils/common/logger';
-
+import type { AppDb } from './app-db';
 import type { CommandContext } from './command-context';
-import { createDatabase } from './create-database';
-import { migrations } from './migrations';
-import { schema } from './schema';
+import { createSqlTestDb } from './sql-test-db';
 
-let counter = 0;
-
-// Silence WatermelonDB's own "[Loki] ..." info logs in test output (test-only module).
-logger.silence();
-
-/** Fresh in-memory database per call. Test use only. */
-export function createTestDatabase(): Database {
-  counter += 1;
-  return createDatabase(
-    new LokiJSAdapter({
-      schema,
-      migrations,
-      dbName: `test-${counter}`,
-      useWebWorker: false,
-      useIncrementalIndexedDB: false,
-      extraLokiOptions: { autosave: false },
-    }),
-  );
+/** Fresh, empty database per call (SQLite through PowerSync's Node SDK; closed after each test). Test use only. */
+export function createTestDatabase(): AppDb {
+  return createSqlTestDb();
 }
 
-export function makeTestContext(db: Database = createTestDatabase()): CommandContext {
+export function makeTestContext(db: AppDb = createTestDatabase()): CommandContext {
   let t = 1_700_000_000_000;
   return { db, actorId: () => 'device-test', now: () => (t += 1000) };
 }

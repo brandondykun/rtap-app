@@ -1,7 +1,7 @@
 import { PowerSyncDatabase } from '@powersync/react-native';
 
 import { type AppDb, fromPowerSync } from './app-db';
-import { appSchema } from './powersync-schema';
+import { appSchema } from './schema';
 
 let instance: AppDb | null = null;
 

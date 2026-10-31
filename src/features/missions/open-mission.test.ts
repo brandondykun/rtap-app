@@ -2,19 +2,18 @@ import { makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, saveMissionCamera } from './commands';
 import { openMission } from './open-mission';
-import { findMission, findMissionViewState } from './repository';
+import { findMissionViewState } from './repository';
 
 describe('openMission', () => {
   it('reports unknown missions as missing', async () => {
     expect(await openMission(makeTestContext(), 'nope')).toEqual({ status: 'missing' });
   });
 
-  it('reports soft-deleted missions as missing', async () => {
+  it('reports deleted missions as missing', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Gone' });
     if (!r.ok) throw new Error('setup');
-    const m = await findMission(ctx.db, r.value.id);
-    await ctx.db.write(() => m!.markAsDeleted());
+    await ctx.db.execute('DELETE FROM missions WHERE id = ?', [r.value.id]);
     expect(await openMission(ctx, r.value.id)).toEqual({ status: 'missing' });
   });
 

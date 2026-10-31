@@ -118,12 +118,7 @@ describe('EditPolygonMenu', () => {
     const bad = await placePolygon(ctx, { missionId: 'm1', polygonType: 'objective', name: 'BAD', shape: { kind: 'points', points: [C, { lat: 38.91, lon: -77 }, { lat: 38.9, lon: -76.99 }] } });
     const unit = await placePoint(ctx, { missionId: 'm1', coord: C, sidc: 'SHGPUCI--------', name: 'HOS-1' });
     if (!bad.ok || !unit.ok) throw new Error('setup');
-    await ctx.db.write(async () => {
-      const record = await findItem(ctx.db, bad.value.id);
-      await record!.update((m) => {
-        m.geometry = 'nope';
-      });
-    });
+    await ctx.db.execute('UPDATE map_items SET geometry = ? WHERE id = ?', ['nope', bad.value.id]);
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('polygon.edit', { itemId: bad.value.id }));
     await waitFor(() => expect(useToast.getState().toast?.message).toBe('That polygon no longer exists.'));

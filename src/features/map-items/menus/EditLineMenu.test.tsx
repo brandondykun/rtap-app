@@ -112,12 +112,7 @@ describe('EditLineMenu', () => {
     const bad = await placeLine(ctx, { missionId: 'm1', points: [p(0), p(1)], lineType: 'phase-line', name: 'BAD' });
     const unit = await placePoint(ctx, { missionId: 'm1', coord: p(0), sidc: 'SHGPUCI--------', name: 'HOS-1' });
     if (!bad.ok || !unit.ok) throw new Error('setup');
-    await ctx.db.write(async () => {
-      const record = await findItem(ctx.db, bad.value.id);
-      await record!.update((m) => {
-        m.geometry = 'nope';
-      });
-    });
+    await ctx.db.execute('UPDATE map_items SET geometry = ? WHERE id = ?', ['nope', bad.value.id]);
     await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
     await act(async () => useMenu.getState().openMenu('line.edit', { itemId: bad.value.id }));
     await waitFor(() => expect(useToast.getState().toast?.message).toBe('That line no longer exists.'));

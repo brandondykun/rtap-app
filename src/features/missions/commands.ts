@@ -1,10 +1,6 @@
-import { Q } from '@nozbe/watermelondb';
-
 import type { CommandContext } from '@/lib/db/command-context';
-import type { ItemViewState } from '@/lib/db/models/ItemViewState';
-import type { MapItem } from '@/lib/db/models/MapItem';
-import type { Mission } from '@/lib/db/models/Mission';
-import type { MissionViewState } from '@/lib/db/models/MissionViewState';
+import { insertRows, updateRow, type SqlValue } from '@/lib/db/insert-rows';
+import { newId } from '@/lib/db/new-id';
 import { Tables } from '@/lib/db/schema';
 import { err, ok, type Result } from '@/lib/result';
 
@@ -18,13 +14,10 @@ export async function createMission(
   const name = input.name.trim();
   if (!name) return err('invalid_name', 'Mission name is required');
   try {
-    const mission = await ctx.db.write(() =>
-      ctx.db.get<Mission>(Tables.missions).create((m) => {
-        m.name = name;
-        m.createdBy = ctx.actorId();
-      }),
-    );
-    return ok({ id: mission.id });
+    const id = newId();
+    const now = ctx.now();
+    await insertRows(ctx.db, Tables.missions, [{ id, name, created_by: ctx.actorId(), created_at: now, updated_at: now }]);
+    return ok({ id });
   } catch (e) {
     return err('write_failed', String(e));
   }
@@ -41,37 +34,32 @@ export async function renameMission(
   if (!mission) return err('not_found', `No mission ${missionId}`);
   if (mission.name === name) return ok(undefined);
   try {
-    await ctx.db.write(() =>
-      mission.update((m) => {
-        m.name = name;
-      }),
-    );
+    await updateRow(ctx.db, Tables.missions, missionId, { name, updated_at: ctx.now() });
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
   }
 }
 
+/** The view-state columns a command sets; the rest keep their values (or start at their defaults). */
+type ViewStateFields = { last_opened_at?: number; camera?: string; snapshot?: string };
+
 async function upsertViewState(
   ctx: CommandContext,
   missionId: string,
-  apply: (state: MissionViewState) => void,
+  fields: ViewStateFields,
   { requireMission = false }: { requireMission?: boolean } = {},
 ): Promise<boolean> {
-  return ctx.db.write(async () => {
+  return ctx.db.writeTransaction(async (tx) => {
     // Checked inside the write so a delete cannot land between the check and the upsert.
-    if (requireMission && !(await findMission(ctx.db, missionId))) return false;
-    const existing = await findMissionViewState(ctx.db, missionId);
+    if (requireMission && !(await findMission(tx, missionId))) return false;
+    const existing = await findMissionViewState(tx, missionId);
+    const now = ctx.now();
     if (existing) {
-      await existing.update(apply);
+      await updateRow(tx, Tables.missionViewState, existing.id, { ...fields, updated_at: now });
     } else {
-      await ctx.db.get<MissionViewState>(Tables.missionViewState).create((s) => {
-        s.missionId = missionId;
-        s.lastOpenedAt = ctx.now();
-        s.camera = null;
-        s.snapshot = null;
-        apply(s);
-      });
+      const row: Record<string, SqlValue> = { id: newId(), mission_id: missionId, last_opened_at: now, camera: null, snapshot: null, updated_at: now };
+      await insertRows(tx, Tables.missionViewState, [{ ...row, ...fields }]);
     }
     return true;
   });
@@ -79,9 +67,7 @@ async function upsertViewState(
 
 export async function markMissionOpened(ctx: CommandContext, missionId: string): Promise<Result<void, 'write_failed'>> {
   try {
-    await upsertViewState(ctx, missionId, (s) => {
-      s.lastOpenedAt = ctx.now();
-    });
+    await upsertViewState(ctx, missionId, { last_opened_at: ctx.now() });
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -95,9 +81,7 @@ export async function saveMissionCamera(
 ): Promise<Result<void, 'invalid_camera' | 'write_failed'>> {
   if (!isValidCamera(camera)) return err('invalid_camera', 'Camera values must be finite numbers');
   try {
-    await upsertViewState(ctx, missionId, (s) => {
-      s.camera = JSON.stringify(camera);
-    });
+    await upsertViewState(ctx, missionId, { camera: JSON.stringify(camera) });
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));
@@ -111,14 +95,7 @@ export async function recordMissionSnapshot(
   snapshot: MissionSnapshot,
 ): Promise<Result<void, 'not_found' | 'write_failed'>> {
   try {
-    const recorded = await upsertViewState(
-      ctx,
-      missionId,
-      (s) => {
-        s.snapshot = JSON.stringify(snapshot);
-      },
-      { requireMission: true },
-    );
+    const recorded = await upsertViewState(ctx, missionId, { snapshot: JSON.stringify(snapshot) }, { requireMission: true });
     return recorded ? ok(undefined) : err('not_found', `No mission ${missionId}`);
   } catch (e) {
     return err('write_failed', String(e));
@@ -126,29 +103,17 @@ export async function recordMissionSnapshot(
 }
 
 /**
- * Deletes a mission and every item in it in one write. Synced records are tombstoned (like
- * deleteItem); local-only view state (last opened, camera, item visibility) is removed outright.
+ * Deletes a mission, every item in it, and their view state (last opened, camera, item visibility) in one write.
  */
 export async function deleteMission(ctx: CommandContext, missionId: string): Promise<Result<void, 'not_found' | 'write_failed'>> {
   const mission = await findMission(ctx.db, missionId);
   if (!mission) return err('not_found', `No mission ${missionId}`);
   try {
-    await ctx.db.write(async () => {
-      const items = await ctx.db.get<MapItem>(Tables.mapItems).query(Q.where('mission_id', missionId)).fetch();
-      const itemViews =
-        items.length === 0
-          ? []
-          : await ctx.db
-              .get<ItemViewState>(Tables.itemViewState)
-              .query(Q.where('map_item_id', Q.oneOf(items.map((i) => i.id))))
-              .fetch();
-      const missionViews = await ctx.db.get<MissionViewState>(Tables.missionViewState).query(Q.where('mission_id', missionId)).fetch();
-      await ctx.db.batch([
-        ...items.map((i) => i.prepareMarkAsDeleted()),
-        ...itemViews.map((v) => v.prepareDestroyPermanently()),
-        ...missionViews.map((v) => v.prepareDestroyPermanently()),
-        mission.prepareMarkAsDeleted(),
-      ]);
+    await ctx.db.writeTransaction(async (tx) => {
+      await tx.execute('DELETE FROM item_view_state WHERE map_item_id IN (SELECT id FROM map_items WHERE mission_id = ?)', [missionId]);
+      await tx.execute('DELETE FROM map_items WHERE mission_id = ?', [missionId]);
+      await tx.execute('DELETE FROM mission_view_state WHERE mission_id = ?', [missionId]);
+      await tx.execute('DELETE FROM missions WHERE id = ?', [missionId]);
     });
     deleteMissionSnapshot(missionId);
     return ok(undefined);

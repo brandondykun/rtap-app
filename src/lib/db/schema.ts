@@ -1,4 +1,4 @@
-import { appSchema, tableSchema } from '@nozbe/watermelondb';
+import { column, Schema, Table } from '@powersync/common';
 
 export const Tables = {
   missions: 'missions',
@@ -7,56 +7,63 @@ export const Tables = {
   missionViewState: 'mission_view_state',
 } as const;
 
-export const schema = appSchema({
-  version: 4,
-  tables: [
-    tableSchema({
-      name: Tables.missions,
-      columns: [
-        { name: 'name', type: 'string' },
-        { name: 'created_by', type: 'string' },
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
-    tableSchema({
-      name: Tables.mapItems,
-      columns: [
-        { name: 'mission_id', type: 'string', isIndexed: true },
-        { name: 'kind', type: 'string', isIndexed: true },
-        { name: 'geometry', type: 'string' },
-        { name: 'sidc', type: 'string', isOptional: true },
-        { name: 'name', type: 'string' },
-        { name: 'notes', type: 'string', isOptional: true },
-        { name: 'style', type: 'string', isOptional: true },
-        { name: 'elevation_m', type: 'number', isOptional: true },
-        { name: 'threat_range_m', type: 'number', isOptional: true },
-        { name: 'horizontal_range_m', type: 'number', isOptional: true },
-        { name: 'vertical_range_ft', type: 'number', isOptional: true },
-        { name: 'created_by', type: 'string' },
-        { name: 'updated_by', type: 'string' },
-        { name: 'created_at', type: 'number' },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
-    tableSchema({
-      name: Tables.itemViewState,
-      columns: [
-        { name: 'map_item_id', type: 'string', isIndexed: true },
-        { name: 'hidden', type: 'boolean' },
-        { name: 'show_ring', type: 'boolean', isOptional: true },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
-    tableSchema({
-      name: Tables.missionViewState,
-      columns: [
-        { name: 'mission_id', type: 'string', isIndexed: true },
-        { name: 'last_opened_at', type: 'number' },
-        { name: 'camera', type: 'string', isOptional: true },
-        { name: 'snapshot', type: 'string', isOptional: true },
-        { name: 'updated_at', type: 'number' },
-      ],
-    }),
-  ],
+// All local-only for now; the sync release switches missions and map_items to synced (see sync-config.ts).
+// `id` is implicit: PowerSync adds it as the text primary key. Booleans are 0/1 integers, timestamps ms integers.
+const missions = new Table(
+  {
+    name: column.text,
+    created_by: column.text,
+    created_at: column.integer,
+    updated_at: column.integer,
+  },
+  { localOnly: true },
+);
+
+const mapItems = new Table(
+  {
+    mission_id: column.text,
+    kind: column.text,
+    geometry: column.text,
+    sidc: column.text,
+    name: column.text,
+    notes: column.text,
+    style: column.text,
+    elevation_m: column.real,
+    threat_range_m: column.real,
+    horizontal_range_m: column.real,
+    vertical_range_ft: column.real,
+    created_by: column.text,
+    updated_by: column.text,
+    created_at: column.integer,
+    updated_at: column.integer,
+  },
+  { localOnly: true, indexes: { mission: ['mission_id'], kind: ['kind'] } },
+);
+
+const itemViewState = new Table(
+  {
+    map_item_id: column.text,
+    hidden: column.integer,
+    show_ring: column.integer,
+    updated_at: column.integer,
+  },
+  { localOnly: true, indexes: { map_item: ['map_item_id'] } },
+);
+
+const missionViewState = new Table(
+  {
+    mission_id: column.text,
+    last_opened_at: column.integer,
+    camera: column.text,
+    snapshot: column.text,
+    updated_at: column.integer,
+  },
+  { localOnly: true, indexes: { mission: ['mission_id'] } },
+);
+
+export const appSchema = new Schema({
+  [Tables.missions]: missions,
+  [Tables.mapItems]: mapItems,
+  [Tables.itemViewState]: itemViewState,
+  [Tables.missionViewState]: missionViewState,
 });

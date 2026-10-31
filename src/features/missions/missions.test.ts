@@ -1,16 +1,14 @@
-import { Q } from '@nozbe/watermelondb';
+import { waitFor } from '@testing-library/react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { placeLine, placePoint, placePolygon, setItemHidden } from '@/features/map-items/commands';
-import type { ItemViewState } from '@/lib/db/models/ItemViewState';
-import type { MapItem } from '@/lib/db/models/MapItem';
-import type { MissionViewState } from '@/lib/db/models/MissionViewState';
-import { Tables } from '@/lib/db/schema';
+import { findItemViewState, observeMissionItems } from '@/features/map-items/repository';
 import { makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, deleteMission, markMissionOpened, renameMission, saveMissionCamera } from './commands';
 import {
   findMission,
+  findMissionViewState,
   getMissionCamera,
   observeMissionCategoryCounts,
   observeMissionSummaries,
@@ -60,10 +58,7 @@ describe('missions', () => {
     await markMissionOpened(ctx, r.value.id);
     await markMissionOpened(ctx, r.value.id);
     await saveMissionCamera(ctx, r.value.id, { center: { lat: 1, lon: 2 }, zoom: 12, bearing: 0 });
-    const rows = await ctx.db
-      .get<MissionViewState>(Tables.missionViewState)
-      .query(Q.where('mission_id', r.value.id))
-      .fetch();
+    const rows = await ctx.db.getAll('SELECT id FROM mission_view_state WHERE mission_id = ?', [r.value.id]);
     expect(rows).toHaveLength(1);
   });
 
@@ -90,18 +85,13 @@ describe('missions', () => {
     const a = await createMission(ctx, { name: 'A' });
     const b = await createMission(ctx, { name: 'B' });
     if (!a.ok || !b.ok) throw new Error('setup failed');
-    await ctx.db.write(async () => {
-      for (const missionId of [a.value.id, a.value.id, b.value.id]) {
-        await ctx.db.get<MapItem>(Tables.mapItems).create((i) => {
-          i.missionId = missionId;
-          i.kind = 'point';
-          i.geometry = '{"type":"Point","coordinates":[0,0]}';
-          i.name = 'x';
-          i.createdBy = 'd';
-          i.updatedBy = 'd';
-        });
-      }
-    });
+    for (const [i, missionId] of [a.value.id, a.value.id, b.value.id].entries()) {
+      await ctx.db.execute(
+        `INSERT INTO map_items (id, mission_id, kind, geometry, name, created_by, updated_by, created_at, updated_at)
+         VALUES (?, ?, 'point', '{"type":"Point","coordinates":[0,0]}', 'x', 'd', 'd', 1, 1)`,
+        [`i${i}`, missionId],
+      );
+    }
     expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, a.value.id))).toEqual({ units: 2, points: 0, lines: 0, polygons: 0 });
   });
 
@@ -112,12 +102,11 @@ describe('missions', () => {
     expect(await suggestMissionName(ctx.db)).toBe('Mission 2');
   });
 
-  it('treats a soft-deleted mission as missing', async () => {
+  it('treats a deleted mission as missing', async () => {
     const ctx = makeTestContext();
     const r = await createMission(ctx, { name: 'Op Gone' });
     if (!r.ok) throw new Error('setup');
-    const mission = await findMission(ctx.db, r.value.id);
-    await ctx.db.write(() => mission!.markAsDeleted());
+    await ctx.db.execute('DELETE FROM missions WHERE id = ?', [r.value.id]);
     expect(await findMission(ctx.db, r.value.id)).toBeNull();
   });
 
@@ -144,12 +133,35 @@ describe('missions', () => {
       expect((await firstValueFrom(observeMissionSummaries(ctx.db))).map((m) => m.name)).toEqual(['Op Cobra']);
       expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, iron.value.id))).toEqual({ units: 0, points: 0, lines: 0, polygons: 0 });
       expect(await firstValueFrom(observeMissionCategoryCounts(ctx.db, cobra.value.id))).toEqual({ units: 1, points: 0, lines: 0, polygons: 0 });
-      const deleted = await ctx.db.get<MapItem>(Tables.mapItems).find(a.value.id);
-      expect(deleted._raw._status).toBe('deleted');
-      const views = await ctx.db.get<ItemViewState>(Tables.itemViewState).query().fetch();
-      expect(views.map((v) => v.mapItemId)).toEqual([b.value.id]);
-      const missionViews = await ctx.db.get<MissionViewState>(Tables.missionViewState).query().fetch();
-      expect(missionViews.map((v) => v.missionId)).toEqual([cobra.value.id]);
+      // Hard deletes on the device: the rows are gone, not tombstoned.
+      expect(await ctx.db.getAll('SELECT id FROM map_items WHERE id = ?', [a.value.id])).toEqual([]);
+      expect(await ctx.db.getAll('SELECT map_item_id FROM item_view_state')).toEqual([{ map_item_id: b.value.id }]);
+      expect(await ctx.db.getAll('SELECT mission_id FROM mission_view_state')).toEqual([{ mission_id: cobra.value.id }]);
+    });
+
+    it('deleting a mission empties its open items list and removes its view state', async () => {
+      const ctx = makeTestContext();
+      const iron = await createMission(ctx, { name: 'Op Iron' });
+      if (!iron.ok) throw new Error('setup');
+      const ids: string[] = [];
+      for (const name of ['HOS-1', 'HOS-2', 'HOS-3']) {
+        const r = await placePoint(ctx, { missionId: iron.value.id, coord: at, sidc, name });
+        if (!r.ok) throw new Error('setup');
+        ids.push(r.value.id);
+      }
+      await setItemHidden(ctx, ids[0], true);
+      await markMissionOpened(ctx, iron.value.id);
+      const emitted: unknown[][] = [];
+      const sub = observeMissionItems(ctx.db, iron.value.id).subscribe((items) => emitted.push(items));
+      await waitFor(() => expect(emitted.at(-1)).toHaveLength(3));
+
+      expect(await deleteMission(ctx, iron.value.id)).toEqual({ ok: true, value: undefined });
+
+      await waitFor(() => expect(emitted.at(-1)).toEqual([]));
+      sub.unsubscribe();
+      expect(await findMissionViewState(ctx.db, iron.value.id)).toBeNull();
+      expect(await findItemViewState(ctx.db, ids[0])).toBeNull();
+      expect(await ctx.db.getOptional<{ n: number }>('SELECT COUNT(*) AS n FROM map_items')).toEqual({ n: 0 });
     });
 
     it('deletes an empty mission and reports an unknown or already deleted one', async () => {

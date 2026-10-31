@@ -79,6 +79,8 @@ describe('PointsLayer', () => {
     await renderWithProviders(<PointsLayer missionId="m1" excludeId={a.value.id} onItemPress={onItemPress} />, ctx);
     const props = mapboxMock().__props;
     await waitFor(() => expect(props.SymbolLayer['points-symbols'].filter).toEqual(hiddenFilter([a.value.id])));
+    // The stored coordinate comes from the loaded items, so wait for them before tapping.
+    await waitFor(() => expect((props.ShapeSource.points.shape as Shape).features).toHaveLength(1));
     await act(async () =>
       (props.ShapeSource.points.onPress as (e: unknown) => void)({
         features: [{ properties: { id: a.value.id, sidc: HOSTILE_INF }, geometry: { type: 'Point', coordinates: [-77.0003, 38.9002] } }],
