@@ -14,7 +14,7 @@ and look out from an observation post in 3D.
 
 - Expo SDK 57 and React Native 0.86, with Expo Router (routes in `src/app/`)
 - `@rnmapbox/maps` 10.3.8 (Mapbox Maps SDK 11), patched in `patches/` for OP mode's camera
-- WatermelonDB on SQLite for missions and map items
+- PowerSync (local-only tables on SQLite) for missions and map items
 - Zustand for app state; settings and profile saved to `expo-sqlite/kv-store`
 - NativeWind (Tailwind) styling over semantic theme tokens in `src/theme/`
 - Jest (`jest-expo`) and React Native Testing Library
@@ -77,7 +77,7 @@ Do not run Prettier over the repo.
 | `src/app/` | Routes only (Missions, a mission's map, create and rename, About) |
 | `src/features/` | Feature code: `map`, `map-items`, `missions`, `menus`, `toolbar`, `measure`, `quick-plot`, `symbology`, `profile`, … |
 | `src/components/` | Shared UI (`ui/`) and the menu building blocks (`menu/`) |
-| `src/lib/db/` | Database schema, migrations, models, command context and sync configuration |
+| `src/lib/db/` | PowerSync schema, the AppDb SQL seam, command context and sync configuration |
 | `src/lib/geo/` | Coordinates, MGRS, north references and measurement; the only place geodesy libraries may be imported |
 | `src/lib/identity/` | The per-install device id and the callsign rules |
 | `src/stores/` | Zustand stores (settings, profile, presence, interaction, menus, drafts, …) |
@@ -95,7 +95,7 @@ The data layer is built so team sharing can be added on top later:
 - Deletes keep a tombstone, so they can sync.
 - Missions and map items are the synced tables (`src/lib/db/sync-config.ts`). Per-phone state (hidden items, the
   saved camera, mission pictures) stays local.
-- Migrations only add steps. Item types and style details from a newer app version are ignored or kept, never
+- Schema changes only add columns. Item types and style details from a newer app version are ignored or kept, never
   overwritten.
 - Live positions are kept in memory (`stores/presence`), never in the database.
 - The callsign lives in the on-phone profile, not in records. Records carry ids, and names are looked up from them.

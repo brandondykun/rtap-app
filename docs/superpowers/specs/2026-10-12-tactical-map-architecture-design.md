@@ -91,7 +91,7 @@ src/
     missions/
       MissionsScreen.tsx     # list + empty state + create CTA
       CreateMissionScreen.tsx
-      repository.ts          # observe list (with item counts), get, create
+      repository.ts          # watch list (with item counts), get, create
       commands.ts            # createMission, markMissionOpened, saveMissionCamera
     map/
       MapScreen.tsx
@@ -103,7 +103,7 @@ src/
       offline/               # TilePackService interface + Mapbox implementation
     map-items/
       geometry.ts            # GeoJSON geometry (de)serialization
-      repository.ts          # observe / query / create / update / delete
+      repository.ts          # watch / query / create / update / delete
       commands.ts            # placePoint, updateItem, deleteItem, toggleItemVisibility
       selectors.ts           # records → GeoJSON FeatureCollection (cached)
       naming.ts              # auto-names (HOS-4, …)
@@ -117,9 +117,9 @@ src/
     menu/                    # menu primitives (Section 11)
   lib/
     geo/                     # pure TypeScript geospatial library (Section 6)
-    db/                      # schema, migrations, models/, adapters, id generator,
-                             # sync config, command context (models live here so
-                             # lib/ never imports features/)
+    db/                      # AppDb seam (app-db.ts), PowerSync schema, PowerSync and
+                             # test (@powersync/node) implementations, id generator,
+                             # sync config, command context
     result.ts                # shared Result<T, E> type (geo, commands)
     identity/                # deviceId now; userId later
   stores/                    # Zustand: interaction, draft, settings, presence, menu
@@ -187,7 +187,8 @@ mission_view_state               # LOCAL ONLY — never synced
   param, passed explicitly to repositories and commands (no global "active mission" store).
 - **Local-only tables** are listed in one place (`lib/db/sync-config.ts`) and excluded from
   the future sync push/pull.
-- **Migrations:** `schemaMigrations` from v1; released migrations are never edited.
+- **Schema:** the PowerSync `Schema` in `lib/db/schema.ts` (tables are `localOnly` until the
+  sync release); there is no migrations file, PowerSync manages the SQLite tables from it.
 
 ### 5.3 Visibility
 Visibility is per-device view state, not item data, so hiding a shared item never hides it
@@ -580,7 +581,7 @@ Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks
 2. **`geo-library`** — canonical forms, wrapping libraries, golden-vector tests,
    `describeVector` usage, no trigonometry in features.
 3. **`data-layer`** — adding tables/columns/commands; sync stamps, UUIDs, commands as only
-   write path, local-only table list, migration rules.
+   write path, local-only table list, schema rules.
 4. **`map-item-kinds`** — end-to-end recipe for a new item kind (geometry, selector, layer,
    tool, menu, command, tests).
 5. **`menus`** — adding a menu: registry entry, typed params, primitives only, family
@@ -605,8 +606,9 @@ Added under `.agents/skills/` (shared by Claude and Cursor via existing symlinks
    Mapbox account), with a documented fallback.
 
 ## 17. Future evolution (informative)
-- **Sync:** implement `synchronize()` pull/push in `lib/db/sync`, excluding local-only
-  tables; server keyed by UUIDs and mission IDs.
+- **Sync:** switch `missions` and `map_items` from local-only to synced tables in
+  `lib/db/schema.ts` and connect a PowerSync backend connector, leaving the view-state
+  tables local-only; server keyed by UUIDs and mission IDs.
 - **Collaboration:** presence store fed by a realtime channel; `TeamLayer`; mission
   membership for the paid tier; `lib/identity` switches to `userId`.
 - **Lines/polygons:** new `kind` values, tools, layers, and menus via the

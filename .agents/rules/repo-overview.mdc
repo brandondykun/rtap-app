@@ -17,7 +17,7 @@ Source lives under `src/`, split by concern (`app/` routes, `features/`, `compon
 - Feature modules own their screens, repositories (reads) and commands (writes); shared UI
   stays in `components/`. Reach across features by deep import, not via a barrel.
 - `lib/` never imports `features/`, `stores/`, `components/` or `app/` (lint enforced).
-- Skills: `geo-library` (coordinates, bearings), `data-layer` (WatermelonDB, sync rules),
+- Skills: `geo-library` (coordinates, bearings), `data-layer` (AppDb over PowerSync, sync rules),
   `styling` (semantic tokens), `map-performance` (anything on or over the map),
   `menus` (panels and menus), `map-item-kinds` (new item kinds end to end),
   `commits` (commit messages).
