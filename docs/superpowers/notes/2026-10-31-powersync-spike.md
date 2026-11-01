@@ -225,3 +225,15 @@ Notes:
   delete `android/` (and `ios/`), then `rm -rf node_modules && npm ci`, then build again.
 - **Commands used:** `npx eas-cli@latest build --profile preview --platform ios` and `--platform android`. Both are
   release builds, internal distribution.
+
+## Device verification
+
+EAS preview (release) builds from `feat/powersync` at f7b7f79, on an iPhone and a Pixel 7a. The user checked and
+reported everything working:
+
+- Launch over the old WatermelonDB build: empty Missions list, no crash.
+- Missions: create, rename, open, delete.
+- Every item kind: place, edit, cancel, hide/show, range ring, delete, listed in Layers.
+- Data survives a force-quit.
+- The 5,000-item perf mission opens quickly, pans smoothly, and saving or hiding an item causes no visible hitch,
+  on both devices.
