@@ -167,10 +167,26 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
   // Without a fix, invisible stand-ins hold the space the grid and its details will take, so the card does not grow when GPS arrives.
   const detailPlaceholder = (template: string) => (
     <Placeholder>
-      <OutlinedText color={colors.friendly} style={halo} className="font-mono text-xs">
+      <OutlinedText color={colors.friendly} style={halo} className="font-mono text-xs" numberOfLines={1}>
         {template}
       </OutlinedText>
     </Placeholder>
+  );
+  const hint = (
+    <OutlinedText testID="set-location-hint" color={colors.friendly} style={halo} className="text-xs">
+      Tap to set your location
+    </OutlinedText>
+  );
+  // Stacked, the hint would sit on the lower of the two detail lines, below the centered message (by more on Android,
+  // whose lines are taller). It goes beside the two lines instead, in a column of no width, and centers on the row.
+  const stackedHint = (
+    <View testID="set-location-hint-frame" className="flex-row items-center">
+      <View style={{ width: 0, overflow: 'hidden' }}>
+        {detailPlaceholder(ALTITUDE_TEMPLATE[unit])}
+        {detailPlaceholder(ACCURACY_TEMPLATE[unit])}
+      </View>
+      {hint}
+    </View>
   );
   return (
     <Pressable
@@ -194,7 +210,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
                 {formatLength(shown.altitudeM, unit)}
               </OutlinedText>
             </Reserve>
-          ) : shown ? null : (
+          ) : shown || (setting && !inline) ? null : (
             detailPlaceholder(ALTITUDE_TEMPLATE[unit])
           )
         }
@@ -204,9 +220,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
               MANUAL
             </OutlinedText>
           ) : setting ? (
-            <OutlinedText testID="set-location-hint" color={colors.friendly} style={halo} className="text-xs">
-              Tap to set your location
-            </OutlinedText>
+            inline ? hint : stackedHint
           ) : shown ? (
             <Reserve inline={inline} template={ACCURACY_TEMPLATE[unit]}>
               <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">

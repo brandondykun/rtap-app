@@ -171,6 +171,18 @@ describe('ReadoutDock', () => {
     expect(edgesOf('Location is off')).toHaveLength(8);
   });
 
+  it('centers Tap to set your location on the row, beside the space held for the two detail lines, not on the lower one', async () => {
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    await act(async () => usePresence.getState().setLocationStatus('denied'));
+    const details = screen.getByTestId('dock-self-row-details');
+    // The hint's frame is the only thing in the details column, so the column centers it on the row.
+    expect(details.children).toHaveLength(1);
+    const frame = within(details).getByTestId('set-location-hint-frame');
+    expect(frame).toHaveTextContent(/Tap to set your location/);
+    expect(frame.props.className).toMatch(/\bflex-row\b/);
+    expect(frame.props.className).toMatch(/\bitems-center\b/);
+  });
+
   it('shows altitude and accuracy in the altitude unit, and a dash for an unknown altitude', async () => {
     useSettings.getState().setAltitudeUnit('ft');
     fix(null);
