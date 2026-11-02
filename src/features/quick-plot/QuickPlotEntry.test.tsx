@@ -125,6 +125,21 @@ describe('QuickPlotEntry', () => {
     expect(within(screen.getByTestId('quick-plot-row')).queryByLabelText('Plot')).toBeNull();
   });
 
+  it('plots as the finger lands on Plot, so a press cancelled mid-touch (focus jumping fields on iOS) still plots', async () => {
+    useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    // Not valid yet: landing on the disabled Plot does nothing.
+    await fireEvent(screen.getByLabelText('Plot'), 'pressIn');
+    expect(useQuickPlot.getState().temp).toBeNull();
+    const g = mgrsFieldsFor(T);
+    await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
+    await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
+    // Only the touch landing: no press follows.
+    await fireEvent(screen.getByLabelText('Plot'), 'pressIn');
+    expect(useQuickPlot.getState().temp!.lat).toBeCloseTo(T.lat, 4);
+    expect(useQuickPlot.getState().entryOpen).toBe(false);
+  });
+
   it('Cancel closes the box without plotting', async () => {
     useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
     await renderWithProviders(<QuickPlotEntry landscape={false} />);

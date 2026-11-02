@@ -95,6 +95,10 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       accessibilityLabel="Plot"
       accessibilityState={{ disabled: !valid }}
       disabled={!valid}
+      // Plots as the finger lands, not as it lifts: on iOS, with the keyboard up, the tap can pull focus back to Easting
+      // mid-touch, which cancels the press (the first Plot tap did nothing). onPress stays for screen readers, which
+      // activate without a touch; plotting twice is harmless (the box has closed by then).
+      onPressIn={plot}
       onPress={plot}
       className={`active:opacity-60 h-10 flex-1 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
       {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
