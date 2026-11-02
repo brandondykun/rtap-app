@@ -50,6 +50,11 @@ describe('ItemView', () => {
     expect(screen.getByText('88 m')).toBeTruthy();
   });
 
+  it('lets the coordinate be long-pressed to copy on iOS', async () => {
+    await open(composeSidc('friend', 'armor'));
+    expect(screen.getByTestId('coordinate-value').props.selectable).toBe(true);
+  });
+
   it('labels LAT/LON in that format', async () => {
     useSettings.setState({ coordinateFormat: 'latlon' });
     await open(composeSidc('friend', 'armor'));

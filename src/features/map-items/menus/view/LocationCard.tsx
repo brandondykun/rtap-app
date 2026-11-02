@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
 import { formatLength } from '@/features/location/gps-format';
 import { formatCoordinate } from '@/features/map/interaction/readout';
@@ -10,6 +10,9 @@ import { useSettings } from '@/stores/settings';
 import type { MapItemSnapshot } from '../../repository';
 import { DataCell, NO_VALUE } from './DataCell';
 import { ringSummary } from './item-summary';
+
+/** Long-press to copy the coordinate (iOS only: see the coordinate's Text). */
+const COPYABLE = Platform.OS === 'ios';
 
 /** Where the item is: coordinate, range and bearing from the OP / you, elevation, and its ring. */
 export function LocationCard({ item }: { item: MapItemSnapshot }) {
@@ -27,7 +30,15 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
     <View className="overflow-hidden rounded-xl border border-border bg-surface-input">
       <View className="flex-row items-center gap-3 border-b border-border px-3 py-2.5">
         <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{coordinateFormat === 'mgrs' ? 'MGRS' : 'LAT/LON'}</Text>
-        <Text selectable numberOfLines={1} adjustsFontSizeToFit className="shrink font-mono-bold text-xl text-text">{coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}</Text>
+        <Text
+          testID="coordinate-value"
+          // Android draws selectable text with a different native view, which sits it higher than the label beside it.
+          selectable={COPYABLE}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          className="shrink font-mono-bold text-xl text-text">
+          {coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}
+        </Text>
       </View>
       <View className="flex-row">
         <DataCell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
