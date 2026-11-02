@@ -13,8 +13,39 @@ import { ringRadiusM } from './unit-ranges';
 /** The Layers list shows at most this many rows; search narrows the rest. */
 export const LAYER_ROW_LIMIT = 100;
 
-// One shared collator: localeCompare with options rebuilds collation per comparison (slow for 5k names).
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+/**
+ * A name's sort key: lower case without accents, in runs of text and numbers, so HOS-2 sorts before HOS-10. Plain
+ * JavaScript, built once per name: on Android Hermes runs every Intl.Collator comparison through Java, and sorting a
+ * 5,000-item mission that way held the Layers menu up for seconds.
+ */
+type SortKey = (string | number)[];
+
+function sortKey(name: string): SortKey {
+  // Accents only need stripping off non-ASCII names (normalize is another trip to Java on Android).
+  const plain = /[^\x00-\x7f]/.test(name) ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : name;
+  return (plain.toLowerCase().match(/\d+|\D+/g) ?? []).map((run) => (/^\d/.test(run) ? Number(run) : run));
+}
+
+/** Numbers before text, numbers by value, text by character; a key that is the start of another sorts first. */
+function compareKeys(a: SortKey, b: SortKey): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const x = a[i];
+    const y = b[i];
+    if (x === y) continue;
+    if (typeof x === 'number' && typeof y === 'number') return x - y;
+    if (typeof x === 'number') return -1;
+    if (typeof y === 'number') return 1;
+    return x < y ? -1 : 1;
+  }
+  return a.length - b.length;
+}
+
+/** Items in each category: the Layers tab counts, without sorting or building rows. */
+export function categoryCounts(items: readonly MapItemSnapshot[]): Record<ItemCategory, number> {
+  const counts = { unit: 0, point: 0, line: 0, polygon: 0 };
+  for (const i of items) counts[itemCategory(i)]++;
+  return counts;
+}
 
 export type LayerRow = {
   id: string;
@@ -38,6 +69,8 @@ export type LayerRow = {
 
 export type LayerRows = {
   rows: LayerRow[];
+  /** Every item matching the search, sorted (rows are the first `limit` of them, built); see layerRow. */
+  matches: readonly MapItemSnapshot[];
   /** Items matching the search (may exceed rows.length). */
   matched: number;
   /** Items in the chosen category (all items when none is chosen). */
@@ -55,6 +88,35 @@ export type LayerRows = {
   /** The ringable items whose ring is on. Search does not narrow it. */
   ringOnIds: string[];
 };
+
+/** One Layers row, for an item as it is drawn (a long list builds its rows only as they come into view). */
+export function layerRow(i: MapItemSnapshot, hidden: ReadonlySet<string>, ringOn: ReadonlySet<string>): LayerRow {
+  const isLine = i.kind === 'line';
+  const points = isLine ? parseLineGeometry(i.geometry) : null;
+  const isPolygon = i.kind === 'polygon';
+  const ring = isPolygon ? parsePolygonGeometry(i.geometry) : null;
+  const pstyle = isPolygon ? polygonStyleOf(i.style) : null;
+  return {
+    id: i.id,
+    kind: i.kind,
+    name: i.name,
+    sidc: !isLine && !isPolygon && i.sidc && isKnownSidc(i.sidc) ? i.sidc : DEFAULT_SIDC,
+    hidden: hidden.has(i.id),
+    coord: isLine || isPolygon ? null : pointCoord(i.geometry),
+    lineType: isLine ? lineTypeOf(i.style) : null,
+    length: points ? totalLength(points) : null,
+    polygonType: pstyle ? pstyle.polygonType : null,
+    areaM2: ring ? areaM2(ring) : null,
+    radiusM: pstyle && pstyle.shape.kind === 'circle' ? pstyle.shape.radiusM : null,
+    ring: ringRadiusM(i) !== null ? ringOn.has(i.id) : null,
+  };
+}
+
+/**
+ * The last search sorted: the items list is shared while the mission is open, so opening Layers again (or coming Back
+ * to it) with nothing changed reuses the order instead of sorting thousands of names again.
+ */
+let lastSort: { items: readonly MapItemSnapshot[]; category: ItemCategory | null; query: string; matches: MapItemSnapshot[] } | null = null;
 
 /**
  * Rows for the Layers list: the mission's items (or one category's) matching `query` (name or type
@@ -81,34 +143,19 @@ export function layerRows(
         ? polygonTypeInfo(polygonStyleOf(i.style).polygonType).label
         : typeLabel(i.sidc);
   const matchesQuery = (i: MapItemSnapshot) => i.name.toLowerCase().includes(q) || (label(i)?.toLowerCase().includes(q) ?? false);
-  const matches = (q ? inTab.filter(matchesQuery) : [...inTab]).sort(
-    // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
-    (a, b) => collator.compare(a.name, b.name) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
-  );
-  const counts = { unit: 0, point: 0, line: 0, polygon: 0 };
-  for (const i of items) counts[itemCategory(i)]++;
+  const cached = lastSort && lastSort.items === items && lastSort.category === category && lastSort.query === q ? lastSort.matches : null;
+  const matches =
+    cached ??
+    (q ? inTab.filter(matchesQuery) : inTab)
+      .map((item) => ({ item, key: sortKey(item.name) }))
+      // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
+      .sort((a, b) => compareKeys(a.key, b.key) || (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0))
+      .map((m) => m.item);
+  lastSort = { items, category, query: q, matches };
+  const counts = categoryCounts(items);
   return {
-    rows: matches.slice(0, limit).map((i): LayerRow => {
-      const isLine = i.kind === 'line';
-      const points = isLine ? parseLineGeometry(i.geometry) : null;
-      const isPolygon = i.kind === 'polygon';
-      const ring = isPolygon ? parsePolygonGeometry(i.geometry) : null;
-      const pstyle = isPolygon ? polygonStyleOf(i.style) : null;
-      return {
-        id: i.id,
-        kind: i.kind,
-        name: i.name,
-        sidc: !isLine && !isPolygon && i.sidc && isKnownSidc(i.sidc) ? i.sidc : DEFAULT_SIDC,
-        hidden: hidden.has(i.id),
-        coord: isLine || isPolygon ? null : pointCoord(i.geometry),
-        lineType: isLine ? lineTypeOf(i.style) : null,
-        length: points ? totalLength(points) : null,
-        polygonType: pstyle ? pstyle.polygonType : null,
-        areaM2: ring ? areaM2(ring) : null,
-        radiusM: pstyle && pstyle.shape.kind === 'circle' ? pstyle.shape.radiusM : null,
-        ring: ringable(i) ? ringOn.has(i.id) : null,
-      };
-    }),
+    rows: matches.slice(0, limit).map((i) => layerRow(i, hidden, ringOn)),
+    matches,
     matched: matches.length,
     total: inTab.length,
     units: counts.unit,

@@ -1,13 +1,18 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
+import { EDGE, GAP, HINT_BAR_HEIGHT } from '@/features/map/layout';
+import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MenuHost } from './MenuHost';
+import { MenuHost, menuTopReserved } from './MenuHost';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
-beforeEach(() => useMenu.setState(INITIAL_MENU));
+beforeEach(() => {
+  useMenu.setState(INITIAL_MENU);
+  useDraft.setState(INITIAL_DRAFT);
+});
 
 describe('MenuHost', () => {
   it('renders nothing without a menu', async () => {
@@ -24,6 +29,14 @@ describe('MenuHost', () => {
     await fireEvent(screen.getByTestId('menu-panel-header'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 52 } } });
     await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 200);
     expect(useMenu.getState().panelFrame).toMatchObject({ side: 'bottom' });
+  });
+
+  it('while a line or polygon is being edited in portrait, a full sheet leaves room for the Tap map bar under the toolbar', () => {
+    const base = menuTopReserved({ insetTop: 47, toolbar: 46, drawing: false, landscape: false });
+    expect(base).toBe(47 + EDGE + 46 + GAP);
+    expect(menuTopReserved({ insetTop: 47, toolbar: 46, drawing: true, landscape: false })).toBe(base + HINT_BAR_HEIGHT + EDGE);
+    // A landscape drawer is beside the bar, not under it.
+    expect(menuTopReserved({ insetTop: 47, toolbar: 46, drawing: true, landscape: true })).toBe(base);
   });
 
   it('clears the frame when the menu closes', async () => {

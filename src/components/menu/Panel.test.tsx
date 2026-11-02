@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 
 
 import { MenuHeader } from './MenuHeader';
-import { Panel } from './Panel';
+import { HEADER_SHADOW, Panel } from './Panel';
 import { PanelScrollContext } from './panel-header-slot';
 import { detentHeights, drawerWidth, MINIMIZED_BAR_HEIGHT, minimizedBarSize, SHEET_CHROME_HEIGHT, SHEET_EDGE_HEIGHT } from './panel-geometry';
 
@@ -496,6 +496,39 @@ describe('Panel', () => {
       await render(panel({}, undefined, onScrollY));
       await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
       expect(onScrollY).toHaveBeenLastCalledWith(300);
+    });
+
+    it('casts a shadow under the header only while content is scrolled under it', async () => {
+      await render(
+        <Panel landscape detents={['full']} initialDetent="full" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+          <MenuHeader title="Unit" />
+          <Text>content</Text>
+        </Panel>,
+      );
+      const shadow = () => StyleSheet.flatten(screen.getByTestId('menu-panel-header').props.style).boxShadow;
+      expect(shadow()).toBeUndefined();
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
+      expect(shadow()).toBe(HEADER_SHADOW);
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 0 } } });
+      expect(shadow()).toBeUndefined();
+    });
+
+    it('hides the header hairline once a scroll comes to rest at the top, even a fraction of a point below it', async () => {
+      await render(
+        <Panel landscape detents={['full']} initialDetent="full" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+          <MenuHeader title="Unit" />
+          <Text>content</Text>
+        </Panel>,
+      );
+      const hairline = () => screen.getByTestId('menu-panel-hairline').props.className;
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 300 } } });
+      expect(hairline()).not.toContain('opacity-0');
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 0.4 } } });
+      expect(hairline()).toContain('opacity-0');
+      // The throttle dropped the scroll back to the top: where the fling ends still clears it.
+      await fireEvent.scroll(scrollView(), { nativeEvent: { contentOffset: { x: 0, y: 120 } } });
+      await fireEvent(scrollView(), 'momentumScrollEnd', { nativeEvent: { contentOffset: { x: 0, y: 0 } } });
+      expect(hairline()).toContain('opacity-0');
     });
 
     it('scrollToTop jumps to the top, clears the header hairline, and again once a still-open keyboard closes', async () => {

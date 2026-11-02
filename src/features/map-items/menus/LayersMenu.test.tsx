@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
-import { ScrollView } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { firstValueFrom } from 'rxjs';
 
 import { MenuHost } from '@/features/menus/MenuHost';
@@ -15,6 +15,7 @@ import { composeSidc } from '@/features/symbology/presets';
 import { deleteItem, placeLine, placePoint, placePolygon, setItemHidden } from '../commands';
 import { observeHiddenItemIds, observeRingItemIds } from '../repository';
 import { openItemMenu } from './item-menus';
+import { BACK_TO_TOP_AFTER } from './LayersMenu';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
@@ -150,17 +151,46 @@ describe('LayersMenu', () => {
     await waitFor(() => expect(screen.getByLabelText('Hide all')).toHaveTextContent(/2\/2/));
   });
 
-  it('searches and caps long lists', async () => {
+  it('lists every item however many (scrolling, not capped), and searches them', async () => {
     const ctx = makeTestContext();
     for (let i = 1; i <= 105; i++) await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: `P-${i}` });
     await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'OBJ IRON' });
     await openLayers(ctx);
-    expect(await screen.findByTestId('layers-more')).toHaveTextContent('Showing 100 of 106 — refine your search');
+    expect(await screen.findByTestId('layers-count')).toHaveTextContent('106 units');
+    // The panel's scroller is the list itself: rows past the first 100 are drawn as they scroll into view.
+    expect(screen.queryByTestId('menu-panel-scroll-host')).toBeTruthy();
+    expect(screen.queryByText('P-105')).toBeNull();
+    await fireEvent.scroll(screen.getByTestId('menu-panel-scroll'), {
+      nativeEvent: { contentOffset: { x: 0, y: 106 * 100 }, contentSize: { width: 400, height: 107 * 100 }, layoutMeasurement: { width: 400, height: 900 } },
+    });
+    expect(await screen.findByText('P-105')).toBeTruthy();
     await fireEvent.changeText(await openSearch(), 'iron');
     expect(await screen.findByText('OBJ IRON')).toBeTruthy();
-    expect(screen.queryByTestId('layers-more')).toBeNull();
     await fireEvent.changeText(screen.getByLabelText('Search'), 'zzz');
     expect(screen.getByText('Nothing matches.')).toBeTruthy();
+  });
+
+  it('offers a Back to top button once scrolled well down, which scrolls the list back up', async () => {
+    const ctx = makeTestContext();
+    for (let i = 1; i <= 30; i++) await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: `P-${i}` });
+    await openLayers(ctx);
+    await screen.findByTestId('layers-count');
+    expect(screen.queryByLabelText('Back to top')).toBeNull();
+    const list = screen.getByTestId('menu-panel-scroll');
+    const scrollTo = (y: number) =>
+      fireEvent.scroll(list, { nativeEvent: { contentOffset: { x: 0, y }, contentSize: { width: 400, height: 3100 }, layoutMeasurement: { width: 400, height: 900 } } });
+    await scrollTo(BACK_TO_TOP_AFTER);
+    expect(screen.queryByLabelText('Back to top')).toBeNull();
+    await scrollTo(BACK_TO_TOP_AFTER + 100);
+    // The last row scrolls clear above the button: the list ends with room for it.
+    const bottom = (StyleSheet.flatten(list.props.contentContainerStyle) as { paddingBottom: number }).paddingBottom;
+    expect(bottom).toBeGreaterThanOrEqual(16 + 40);
+    jest.mocked(ScrollView.prototype.scrollTo).mockClear();
+    await fireEvent.press(screen.getByLabelText('Back to top'));
+    expect(ScrollView.prototype.scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 0, animated: true }));
+    // Back at the top (the scroll the press started), the button goes.
+    await scrollTo(0);
+    expect(screen.queryByLabelText('Back to top')).toBeNull();
   });
 
   it('opens a point when its row is tapped, even a hidden one', async () => {
@@ -244,6 +274,12 @@ describe('LayersMenu', () => {
       expect(screen.queryByLabelText('Close')).toBeNull();
     });
 
+    it('opens the item at its top without the scrolled header line or shadow, however far Layers was scrolled', async () => {
+      await drillIn();
+      expect(screen.getByTestId('menu-panel-hairline').props.className).toContain('opacity-0');
+      expect(StyleSheet.flatten(screen.getByTestId('menu-panel-header').props.style).boxShadow).toBeUndefined();
+    });
+
     it('goes Back to Layers as it was left: same tab, search text and scroll position', async () => {
       jest.mocked(ScrollView.prototype.scrollTo).mockClear();
       await drillIn();
@@ -254,7 +290,7 @@ describe('LayersMenu', () => {
       const scrollView = screen.getByTestId('menu-panel-scroll');
       await fireEvent(scrollView, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 400 } } });
       await fireEvent(scrollView, 'contentSizeChange', 390, 1000);
-      expect(ScrollView.prototype.scrollTo).toHaveBeenLastCalledWith({ y: 180, animated: false });
+      expect(ScrollView.prototype.scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 180, animated: false }));
     });
 
     it('returns to Layers after deleting the item, or when it no longer exists', async () => {

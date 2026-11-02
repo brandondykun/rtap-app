@@ -53,6 +53,14 @@ jest.mock('expo-screen-orientation', () => {
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 require('react-native-gesture-handler/jestSetup');
+// FlashList lists measured at a fixed size (Jest has no layout). From FlashList's jestSetup, without its remapping of
+// FlashList to RecyclerView, which 2.0 no longer exports (FlashList is the recycler view).
+jest.mock('@shopify/flash-list/dist/recyclerview/utils/measureLayout', () => ({
+  ...jest.requireActual('@shopify/flash-list/dist/recyclerview/utils/measureLayout'),
+  measureParentSize: jest.fn(() => ({ x: 0, y: 0, width: 400, height: 900 })),
+  measureFirstChildLayout: jest.fn(() => ({ x: 0, y: 0, width: 400, height: 900 })),
+  measureItemLayout: jest.fn(() => ({ x: 0, y: 0, width: 100, height: 100 })),
+}));
 jest.mock('expo-file-system', () => jest.requireActual('./__mocks__/expo-file-system'));
 jest.mock('expo-image-manipulator', () => jest.requireActual('./__mocks__/expo-image-manipulator'));
 jest.mock('@shopify/react-native-skia', () => ({ Skia: {}, ImageFormat: { PNG: 4 } }));

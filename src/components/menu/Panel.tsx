@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Keyboard, Platform, Pressable, ScrollView, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ import {
   type PanelFrame,
 } from './panel-geometry';
 import { MenuHeaderRow, type MenuHeaderProps } from './MenuHeader';
-import { PanelHeaderSlot, PanelScrollContext, type PanelScroll } from './panel-header-slot';
+import { PanelHeaderSlot, PanelScrollContext, PanelScrollerContext, type PanelScroll, type PanelScrollable, type PanelScroller } from './panel-header-slot';
 
 type Props = {
   landscape: boolean;
@@ -48,6 +48,8 @@ type Props = {
   /** Where to scroll new content to (a menu drilled back into), once it is long enough to get there. */
   restoreScrollY?: number;
   onScrollY?: (y: number) => void;
+  /** The content scrolls itself (a long virtualized list): it gets the panel's scroll props (PanelScrollerContext) instead of a scroll view. */
+  ownScroll?: boolean;
   children: ReactNode;
 };
 
@@ -59,6 +61,15 @@ const TAB_LABEL_LENGTH = 104;
 const SLIDE_MS = 220;
 /** How long a portrait sheet waits for its content to be measured before opening anyway. */
 const MEASURE_WAIT_MS = 250;
+/**
+ * Scrolled further than this shows the header hairline. Android can come to rest a fraction of a point below the
+ * top (its offsets are whole pixels), which must still count as the top.
+ */
+const SCROLLED_MIN = 1;
+/** Cast over the content once it scrolls under the header. */
+export const HEADER_SHADOW = '0px 6px 14px rgba(0, 0, 0, 0.6)';
+/** How far below the header the shadow reaches (its offset and blur), left unclipped. */
+const HEADER_SHADOW_REACH = 6 + 14;
 /** No content given up on yet (distinct from every content key, `undefined` included). */
 const NOT_YET = Symbol('not yet');
 
@@ -80,6 +91,7 @@ export function Panel({
   contentKey,
   restoreScrollY,
   onScrollY,
+  ownScroll = false,
   children,
 }: Props) {
   const { colors } = useTheme();
@@ -94,7 +106,16 @@ export function Panel({
   // The menu's header, drawn pinned above the scroll view (MenuHeader hands it over), and its measured height.
   const [header, setHeader] = useState<MenuHeaderProps | null>(null);
   const [headerHeight, setHeaderHeight] = useState<number | null>(null);
-  const [scrolled, setScrolled] = useState(false);
+  // Whether content is scrolled under the header (its hairline and shadow), for the content it was reported by. A report
+  // for other content counts for nothing: iOS hands React a scroll after the tap that opened the next menu, so the last
+  // menu's "scrolled" can land after the switch. New content opens at the top, or where it was left.
+  const [scrollReport, setScrollReport] = useState<{ key: unknown; scrolled: boolean }>({ key: contentKey, scrolled: false });
+  const scrolled = scrollReport.key === contentKey ? scrollReport.scrolled : (restoreScrollY ?? 0) > SCROLLED_MIN;
+  const scrollKey = useRef(contentKey);
+  useLayoutEffect(() => {
+    scrollKey.current = contentKey;
+  });
+  const setScrolled = useCallback((value: boolean) => setScrollReport({ key: scrollKey.current, scrolled: value }), []);
   const gaveUp = gaveUpOn === contentKey;
   const contentKnown = measured !== null && (measured.key === contentKey || gaveUp) ? measured.height : null;
   const known = contentKnown === null || (header !== null && headerHeight === null && !gaveUp) ? null : contentKnown;
@@ -125,7 +146,8 @@ export function Panel({
   /** Drawer slide: 0 open, -width minimized (and where a new drawer starts, off to the left). */
   const offset = useSharedValue(landscape ? -target : 0);
 
-  const scroller = useRef<ScrollView>(null);
+  // The panel's scroll view, or the list of a menu that scrolls itself.
+  const scroller = useRef<PanelScrollable | null>(null);
   const scrollToEnd = useCallback(() => scroller.current?.scrollToEnd({ animated: true }), []);
   const scrollToTop = useCallback(() => {
     // A jump sends no scroll event, so the hairline under the header is cleared here too.
@@ -140,13 +162,14 @@ export function Panel({
       hidden.remove();
       top();
     });
-  }, []);
+  }, [setScrolled]);
   // In portrait the sheet grows to full when the keyboard shows, so a field must scroll itself into view after.
   const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, scrollAsKeyboardShows: landscape && Platform.OS === 'ios' }), [scrollToEnd, scrollToTop, landscape]);
   const viewportHeight = useRef(0);
   /** A remembered position not yet reached (the content is still loading). */
   const pendingY = useRef<number | null>(null);
   const shownKey = useRef(contentKey);
+
 
   useEffect(() => {
     if (shownKey.current === contentKey) return;
@@ -158,14 +181,22 @@ export function Panel({
     }
   }, [contentKey, restoreScrollY]);
 
-  const onContentSizeChange = (_w: number, contentHeight: number) => {
-    setMeasured({ key: contentKey, height: contentHeight });
-    const target = pendingY.current;
-    if (target === null) return;
-    const reachable = Math.max(0, contentHeight - viewportHeight.current);
-    scroller.current?.scrollTo({ y: Math.min(target, reachable), animated: false });
-    if (reachable >= target) pendingY.current = null;
-  };
+  const onContentSizeChange = useCallback(
+    (_w: number, contentHeight: number) => {
+      setMeasured({ key: contentKey, height: contentHeight });
+      const target = pendingY.current;
+      if (target === null) return;
+      const reachable = Math.max(0, contentHeight - viewportHeight.current);
+      scroller.current?.scrollTo({ y: Math.min(target, reachable), animated: false });
+      if (reachable >= target) pendingY.current = null;
+    },
+    [contentKey],
+  );
+  // Read when scrolling, so a new callback each render does not give a self-scrolling list new props.
+  const onScrollYRef = useRef(onScrollY);
+  useEffect(() => {
+    onScrollYRef.current = onScrollY;
+  });
 
   useEffect(() => {
     detentRef.current = detent;
@@ -237,6 +268,38 @@ export function Panel({
     [landscape],
   );
 
+  const headerless = header === null;
+  const scrollerProps = useMemo<PanelScroller>(() => {
+    const settleHairline = (e: NativeSyntheticEvent<NativeScrollEvent>) => setScrolled(e.nativeEvent.contentOffset.y > SCROLLED_MIN);
+    return {
+      testID: 'menu-panel-scroll',
+      ref: (scrollable) => {
+        scroller.current = scrollable;
+      },
+      onLayout: (e) => {
+        viewportHeight.current = e.nativeEvent.layout.height;
+      },
+      onContentSizeChange,
+      onScroll: (e) => {
+        const y = e.nativeEvent.contentOffset.y;
+        setScrolled(y > SCROLLED_MIN);
+        onScrollYRef.current?.(y);
+      },
+      // Where a scroll comes to rest settles the hairline, even when the throttle drops the last scroll event.
+      onScrollEndDrag: settleHairline,
+      onMomentumScrollEnd: settleHairline,
+      scrollEventThrottle: 100,
+      keyboardShouldPersistTaps: 'handled',
+      automaticallyAdjustKeyboardInsets: true,
+      contentContainerStyle: { paddingBottom: insets.bottom + 16, paddingTop: landscape && headerless ? 12 : 0 },
+    };
+  }, [onContentSizeChange, insets.bottom, landscape, headerless, setScrolled]);
+  const content = (
+    <PanelHeaderSlot.Provider value={setHeader}>
+      <PanelScrollContext.Provider value={panelScroll}>{children}</PanelScrollContext.Provider>
+    </PanelHeaderSlot.Provider>
+  );
+
   const drawer = (
     <Animated.View
       testID="menu-panel"
@@ -277,34 +340,37 @@ export function Panel({
         {header !== null ? (
           // Pinned: Close / Back and the primary action stay in reach however far the content scrolls. In portrait the
           // row is also the drag area, so the sheet needs no separate handle row.
-          <GestureDetector gesture={pan}>
-            <View testID="menu-panel-header" onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)} style={{ paddingTop: landscape ? 4 : 0 }}>
-              <MenuHeaderRow {...header} />
-              {/* A hairline once content scrolls under the header. */}
-              <View testID="menu-panel-hairline" className={`h-px bg-border-subtle ${scrolled ? '' : 'opacity-0'}`} />
-            </View>
-          </GestureDetector>
+          // Above the content, so its shadow falls over the rows sliding under it. A real (blurred) shadow, not a
+          // gradient: on the dark panel a gradient strong enough to see reads as a line. The frame clips it to below
+          // the header (it would spill past the drawer's sides), overhanging the content by the shadow's reach without
+          // taking its space or its touches.
+          <View
+            testID="menu-panel-header-frame"
+            pointerEvents="box-none"
+            style={{ zIndex: 1, overflow: 'hidden', paddingBottom: HEADER_SHADOW_REACH, marginBottom: -HEADER_SHADOW_REACH }}>
+            <GestureDetector gesture={pan}>
+              {/* Opaque, so the shadow is only cast below it, never seen through it. */}
+              <View
+                testID="menu-panel-header"
+                onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+                style={{ paddingTop: landscape ? 4 : 0, backgroundColor: colors.surface, boxShadow: scrolled ? HEADER_SHADOW : undefined }}>
+                <MenuHeaderRow {...header} />
+                {/* A hairline once content scrolls under the header. */}
+                <View testID="menu-panel-hairline" className={`h-px bg-border-subtle ${scrolled ? '' : 'opacity-0'}`} />
+              </View>
+            </GestureDetector>
+          </View>
         ) : null}
-        <ScrollView
-          testID="menu-panel-scroll"
-          ref={scroller}
-          onLayout={(e) => {
-            viewportHeight.current = e.nativeEvent.layout.height;
-          }}
-          onContentSizeChange={onContentSizeChange}
-          onScroll={(e) => {
-            const y = e.nativeEvent.contentOffset.y;
-            setScrolled(y > 0);
-            onScrollY?.(y);
-          }}
-          scrollEventThrottle={100}
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16, paddingTop: landscape && header === null ? 12 : 0 }}>
-          <PanelHeaderSlot.Provider value={setHeader}>
-            <PanelScrollContext.Provider value={panelScroll}>{children}</PanelScrollContext.Provider>
-          </PanelHeaderSlot.Provider>
-        </ScrollView>
+        {ownScroll ? (
+          // The content is its own scroller (a virtualized list inside a scroll view would draw every row).
+          <View testID="menu-panel-scroll-host" style={{ flex: 1 }}>
+            <PanelScrollerContext.Provider value={scrollerProps}>{content}</PanelScrollerContext.Provider>
+          </View>
+        ) : (
+          <ScrollView {...scrollerProps}>
+            {content}
+          </ScrollView>
+        )}
       </View>
       {landscape ? (
         // The whole right edge hides the drawer; the menu content gives up this width.

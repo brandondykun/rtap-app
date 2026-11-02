@@ -1,7 +1,7 @@
 import { composeSidc, DEFAULT_SIDC } from '@/features/symbology/presets';
 
 import { pointGeometry } from './geometry';
-import { LAYER_ROW_LIMIT, layerRows } from './layer-rows';
+import { categoryCounts, LAYER_ROW_LIMIT, layerRows } from './layer-rows';
 import type { MapItemSnapshot } from './repository';
 
 const at = { lat: 38.9, lon: -77 };
@@ -23,6 +23,15 @@ describe('layerRows', () => {
     expect(layerRows(items, ['b'], 'frd').visibleIds).toEqual(['a', 'c', 'd']);
     expect(r).toMatchObject({ total: 4, matched: 4 });
     expect(r.rows[0].coord).toEqual(at);
+  });
+
+  it('sorts any case and accents together, numbers by value, and a name before its longer form', () => {
+    const named = ['HOS-10', 'Écho 2', 'echo 10', 'hos-9', 'HOS', '2 PLT', 'Alpha'].map((name, i) => ({ ...items[0], id: `n${i}`, name }));
+    expect(layerRows(named, [], '').rows.map((r) => r.name)).toEqual(['2 PLT', 'Alpha', 'Écho 2', 'echo 10', 'HOS', 'hos-9', 'HOS-10']);
+  });
+
+  it('counts each category without building rows', () => {
+    expect(categoryCounts([...items, { ...items[0], id: 'l', kind: 'line' }])).toEqual({ unit: 4, point: 0, line: 1, polygon: 0 });
   });
 
   it('searches names in any case', () => {
