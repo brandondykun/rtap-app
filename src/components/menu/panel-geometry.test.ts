@@ -4,6 +4,9 @@ import {
   DRAWER_MIN_WIDTH,
   detentHeights,
   fitToContent,
+  fieldTopScrollY,
+  focusedFieldScrollY,
+  FOCUSED_FIELD_MARGIN,
   SHEET_CHROME_HEIGHT,
   DRAWER_FRACTION,
   RAIL_WIDTH,
@@ -82,6 +85,28 @@ describe('panel geometry', () => {
       expect(snapIndex(350, -(FLING_VELOCITY + 1), stops)).toBe(0);
       expect(snapIndex(721, FLING_VELOCITY + 1, stops)).toBe(2);
       expect(snapIndex(130, -(FLING_VELOCITY + 1), stops)).toBe(0);
+    });
+  });
+
+  describe('fieldTopScrollY', () => {
+    it('scrolls a field to just under the top of the panel', () => {
+      expect(fieldTopScrollY(400)).toBe(400 - FOCUSED_FIELD_MARGIN);
+    });
+    it('never scrolls above the start of the content', () => {
+      expect(fieldTopScrollY(3)).toBe(0);
+    });
+  });
+
+  describe('focusedFieldScrollY', () => {
+    const viewport = { x: 0, y: 50, width: 300 };
+    it('scrolls a field in the panel to just under its top edge', () => {
+      expect(focusedFieldScrollY(30, { x: 20, y: 400 }, viewport)).toBe(30 + 400 - 50 - FOCUSED_FIELD_MARGIN);
+    });
+    it('never scrolls above the start of the content', () => {
+      expect(focusedFieldScrollY(0, { x: 20, y: 52 }, viewport)).toBe(0);
+    });
+    it('leaves the panel alone for a field outside it', () => {
+      expect(focusedFieldScrollY(30, { x: 320, y: 400 }, viewport)).toBeNull();
     });
   });
 });

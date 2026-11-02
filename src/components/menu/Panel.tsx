@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Keyboard, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import {
   detentHeights,
   drawerWidth,
   fitToContent,
+  fieldTopScrollY,
+  focusedFieldScrollY,
   MINIMIZED_BAR_HEIGHT,
   MINIMIZED_BAR_MARGIN,
   MINIMIZED_BAR_SIDE,
@@ -103,6 +105,14 @@ export function Panel({
   /** The content the measuring wait gave up on (MEASURE_WAIT_MS): its sheet sizes by what is known. */
   const [gaveUpOn, setGaveUpOn] = useState<unknown>(NOT_YET);
   const [keyboardUp, setKeyboardUp] = useState(false);
+  // While the keyboard is up the content takes its height as extra room at the end, to scroll a field above it. The
+  // panel adds this itself on both platforms: Android draws the app under the keyboard (edge to edge) and gives scroll
+  // views no keyboard inset, and iOS's own inset comes too late to scroll the last field (Notes) to the top as it opens.
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const keyboardInsetRef = useRef(0);
+  useLayoutEffect(() => {
+    keyboardInsetRef.current = keyboardInset;
+  });
   // The menu's header, drawn pinned above the scroll view (MenuHeader hands it over), and its measured height.
   const [header, setHeader] = useState<MenuHeaderProps | null>(null);
   const [headerHeight, setHeaderHeight] = useState<number | null>(null);
@@ -163,9 +173,11 @@ export function Panel({
       top();
     });
   }, [setScrolled]);
-  // In portrait the sheet grows to full when the keyboard shows, so a field must scroll itself into view after.
-  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, scrollAsKeyboardShows: landscape && Platform.OS === 'ios' }), [scrollToEnd, scrollToTop, landscape]);
+  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop }), [scrollToEnd, scrollToTop]);
   const viewportHeight = useRef(0);
+  const scrollY = useRef(0);
+  /** What the content scrolls in, measured to find where a focused field sits in it. */
+  const viewport = useRef<View | null>(null);
   /** A remembered position not yet reached (the content is still loading). */
   const pendingY = useRef<number | null>(null);
   const shownKey = useRef(contentKey);
@@ -245,6 +257,62 @@ export function Panel({
     };
   }, [landscape, detents]);
 
+  // Typing into a field: it scrolls to the top of the panel as the keyboard opens, so what is typed shows above the
+  // keyboard (landscape leaves little room). Where it lands depends only on the content, not the sheet's height, so it
+  // need not wait for the sheet to grow, only for the room at the end to be laid out. iOS starts as the keyboard starts
+  // to open, in one movement with it, and scrolls there again once it is up: the first scroll can fall short (the room
+  // not laid out yet, or iOS moving a multiline field to its cursor at the same time). Android reports the keyboard only
+  // once it is up.
+  const scrollFocusedToTop = useCallback(() => {
+    const field = TextInput.State.currentlyFocusedInput() as View | null;
+    if (!field) return;
+    // Where the field sits in the content does not move with the sheet or the scroll, unlike where it is on screen.
+    const content = (scroller.current as { getInnerViewRef?: () => View | null } | null)?.getInnerViewRef?.();
+    if (content) {
+      // Fails for a field outside the panel (the quick plot box over the map), which leaves the panel where it is.
+      field.measureLayout(content, (_x, y) => scroller.current?.scrollTo({ y: fieldTopScrollY(y), animated: true }), () => {});
+      return;
+    }
+    // A menu that scrolls itself (a list) has no content view to measure against: compare where both are on screen.
+    const frame = viewport.current;
+    if (!frame) return;
+    frame.measureInWindow((vx, vy, vw) => {
+      field.measureInWindow((fx, fy) => {
+        const y = focusedFieldScrollY(scrollY.current, { x: fx, y: fy }, { x: vx, y: vy, width: vw });
+        if (y !== null) scroller.current?.scrollTo({ y, animated: true });
+      });
+    });
+  }, []);
+  /** The keyboard is opening and the scroll waits for the content's new room to be laid out. */
+  const scrollOnceInset = useRef(false);
+  useEffect(() => {
+    if (!scrollOnceInset.current || keyboardInset === 0) return;
+    scrollOnceInset.current = false;
+    requestAnimationFrame(scrollFocusedToTop);
+  }, [keyboardInset, scrollFocusedToTop]);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
+      const inset = e.endCoordinates.height;
+      // The same room as before (shown again without hiding) is already laid out.
+      if (inset === keyboardInsetRef.current) requestAnimationFrame(scrollFocusedToTop);
+      else {
+        scrollOnceInset.current = true;
+        setKeyboardInset(inset);
+      }
+    });
+    const settled = Platform.OS === 'ios' ? Keyboard.addListener('keyboardDidShow', () => requestAnimationFrame(scrollFocusedToTop)) : null;
+    // Once the keyboard is down: taken away as it closes, the content would shrink under it and jump.
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      scrollOnceInset.current = false;
+      setKeyboardInset(0);
+    });
+    return () => {
+      show.remove();
+      settled?.remove();
+      hide.remove();
+    };
+  }, [scrollFocusedToTop]);
+
   const pan = Gesture.Pan()
     .enabled(!landscape && !hidden)
     .onBegin(() => {
@@ -282,6 +350,7 @@ export function Panel({
       onContentSizeChange,
       onScroll: (e) => {
         const y = e.nativeEvent.contentOffset.y;
+        scrollY.current = y;
         setScrolled(y > SCROLLED_MIN);
         onScrollYRef.current?.(y);
       },
@@ -290,10 +359,11 @@ export function Panel({
       onMomentumScrollEnd: settleHairline,
       scrollEventThrottle: 100,
       keyboardShouldPersistTaps: 'handled',
-      automaticallyAdjustKeyboardInsets: true,
-      contentContainerStyle: { paddingBottom: insets.bottom + 16, paddingTop: landscape && headerless ? 12 : 0 },
+      // The panel leaves room for the keyboard and scrolls to the field itself (see `keyboardInset`).
+      automaticallyAdjustKeyboardInsets: false,
+      contentContainerStyle: { paddingBottom: insets.bottom + 16 + keyboardInset, paddingTop: landscape && headerless ? 12 : 0 },
     };
-  }, [onContentSizeChange, insets.bottom, landscape, headerless, setScrolled]);
+  }, [onContentSizeChange, insets.bottom, keyboardInset, landscape, headerless, setScrolled]);
   const content = (
     <PanelHeaderSlot.Provider value={setHeader}>
       <PanelScrollContext.Provider value={panelScroll}>{children}</PanelScrollContext.Provider>
@@ -363,13 +433,13 @@ export function Panel({
         ) : null}
         {ownScroll ? (
           // The content is its own scroller (a virtualized list inside a scroll view would draw every row).
-          <View testID="menu-panel-scroll-host" style={{ flex: 1 }}>
+          <View ref={viewport} testID="menu-panel-scroll-host" style={{ flex: 1 }}>
             <PanelScrollerContext.Provider value={scrollerProps}>{content}</PanelScrollerContext.Provider>
           </View>
         ) : (
-          <ScrollView {...scrollerProps}>
-            {content}
-          </ScrollView>
+          <View ref={viewport} testID="menu-panel-viewport" collapsable={false} style={{ flex: 1 }}>
+            <ScrollView {...scrollerProps}>{content}</ScrollView>
+          </View>
         )}
       </View>
       {landscape ? (

@@ -1,7 +1,7 @@
 import { act, fireEvent, render as rtlRender, screen } from '@testing-library/react-native';
 import { useContext, useEffect } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { Dimensions, Keyboard, ScrollView, StyleSheet, Text } from 'react-native';
+import { Dimensions, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { MenuHeader } from './MenuHeader';
 import { HEADER_SHADOW, Panel } from './Panel';
 import { PanelScrollContext } from './panel-header-slot';
-import { detentHeights, drawerWidth, MINIMIZED_BAR_HEIGHT, minimizedBarSize, SHEET_CHROME_HEIGHT, SHEET_EDGE_HEIGHT } from './panel-geometry';
+import { detentHeights, drawerWidth, FOCUSED_FIELD_MARGIN, MINIMIZED_BAR_HEIGHT, minimizedBarSize, SHEET_CHROME_HEIGHT, SHEET_EDGE_HEIGHT } from './panel-geometry';
 
 const Theme = ({ children }: { children: ReactNode }) => <ThemeProvider theme="dark">{children}</ThemeProvider>;
 const render = (ui: ReactElement) => rtlRender(ui, { wrapper: Theme });
@@ -112,9 +112,11 @@ describe('Panel', () => {
   });
 
   it('returns to the user detent after repeated keyboard shows', async () => {
-    const handlers: Record<string, () => void> = {};
-    const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: () => void) => {
-      handlers[event] = cb;
+    const handlers: Record<string, (e?: unknown) => void> = {};
+    const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: (e?: unknown) => void) => {
+      // Every listener for the event runs, as on a device.
+      const prev = handlers[event];
+      handlers[event] = prev ? (e?: unknown) => (prev(e), cb(e)) : cb;
       return { remove: jest.fn() };
     }) as never);
     const onFrameChange = jest.fn();
@@ -126,12 +128,94 @@ describe('Panel', () => {
     await measure();
     const show = handlers.keyboardWillShow ?? handlers.keyboardDidShow;
     const hide = handlers.keyboardWillHide ?? handlers.keyboardDidHide;
-    await act(async () => show());
-    await act(async () => show());
+    await act(async () => show({ endCoordinates: { height: 300, screenX: 0, screenY: 500, width: 390 } }));
+    await act(async () => show({ endCoordinates: { height: 300, screenX: 0, screenY: 500, width: 390 } }));
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).full });
     await act(async () => hide());
     expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).half });
     spy.mockRestore();
+  });
+
+  describe('typing into a field', () => {
+    /** Keyboard listeners by event; each event's last listener is the Panel's own keyboard-up handling. */
+    function captureKeyboard() {
+      const handlers: Record<string, (e?: unknown) => void> = {};
+      jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: (e?: unknown) => void) => {
+        // Every listener for the event runs, as on a device.
+        const prev = handlers[event];
+        handlers[event] = prev ? (e?: unknown) => (prev(e), cb(e)) : cb;
+        return { remove: jest.fn() };
+      }) as never);
+      return handlers;
+    }
+    const keyboardShown = { endCoordinates: { height: 300, screenX: 0, screenY: 500, width: 390 } };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+      jest.useRealTimers();
+    });
+
+    const padding = () => StyleSheet.flatten(screen.getByTestId('menu-panel-scroll').props.contentContainerStyle).paddingBottom;
+    const nextFrame = () => act(async () => new Promise((done) => requestAnimationFrame(() => done(undefined))));
+
+    it.each([
+      ['iOS', 'ios', 'keyboardWillShow'],
+      ['Android', 'android', 'keyboardDidShow'],
+    ] as const)('on %s, leaves the keyboard height as room at the end of the content while it is up', async (_name, os, showEvent) => {
+      jest.replaceProperty(Platform, 'OS', os);
+      const handlers = captureKeyboard();
+      await render(
+        <Panel landscape detents={['half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+          <Text>content</Text>
+        </Panel>,
+      );
+      // The panel makes the room itself, so iOS must not add its own as well.
+      expect(screen.getByTestId('menu-panel-scroll')).toHaveProp('automaticallyAdjustKeyboardInsets', false);
+      expect(padding()).toBe(16);
+      await act(async () => handlers[showEvent](keyboardShown));
+      expect(padding()).toBe(16 + 300);
+      await act(async () => handlers.keyboardDidHide());
+      expect(padding()).toBe(16);
+    });
+
+    it.each([
+      ['as the keyboard starts to open (iOS)', 'ios', 'keyboardWillShow'],
+      ['once it is up, without waiting for the sheet to grow (Android)', 'android', 'keyboardDidShow'],
+    ] as const)('scrolls to the focused field a frame after the room is laid out, %s', async (_when, os, showEvent) => {
+      jest.replaceProperty(Platform, 'OS', os);
+      const handlers = captureKeyboard();
+      const focused = jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockReturnValue(null as never);
+      await render(
+        <Panel landscape={false} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+          <Text>content</Text>
+        </Panel>,
+      );
+      await act(async () => handlers[showEvent](keyboardShown));
+      expect(padding()).toBe(16 + 300);
+      await nextFrame();
+      expect(focused).toHaveBeenCalled();
+    });
+
+    it('scrolls the field to the top by where it sits in the content, and again on iOS once the keyboard is up', async () => {
+      const handlers = captureKeyboard();
+      const content = {};
+      jest.spyOn(ScrollView.prototype as unknown as { getInnerViewRef: () => unknown }, 'getInnerViewRef').mockReturnValue(content);
+      const scrollTo = jest.mocked(ScrollView.prototype.scrollTo);
+      const field = { measureLayout: jest.fn((relativeTo: unknown, ok: (x: number, y: number) => void) => relativeTo === content && ok(0, 400)) };
+      jest.spyOn(TextInput.State, 'currentlyFocusedInput').mockReturnValue(field as never);
+      await render(
+        <Panel landscape detents={['half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={jest.fn()}>
+          <Text>content</Text>
+        </Panel>,
+      );
+      scrollTo.mockClear();
+      await act(async () => handlers.keyboardWillShow(keyboardShown));
+      await nextFrame();
+      expect(scrollTo).toHaveBeenLastCalledWith({ y: 400 - FOCUSED_FIELD_MARGIN, animated: true });
+      await act(async () => handlers.keyboardDidShow(keyboardShown));
+      await nextFrame();
+      expect(scrollTo).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('the menu header', () => {
@@ -249,16 +333,18 @@ describe('Panel', () => {
     });
 
     it('still opens fully while the keyboard is up, so a focused field stays in view', async () => {
-      const handlers: Record<string, () => void> = {};
-      const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: () => void) => {
-        handlers[event] = cb;
+      const handlers: Record<string, (e?: unknown) => void> = {};
+      const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, cb: (e?: unknown) => void) => {
+        // Every listener for the event runs, as on a device.
+        const prev = handlers[event];
+        handlers[event] = prev ? (e?: unknown) => (prev(e), cb(e)) : cb;
         return { remove: jest.fn() };
       }) as never);
       try {
         const onFrameChange = jest.fn();
         await render(sheet(onFrameChange));
         await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 180);
-        await act(async () => (handlers.keyboardWillShow ?? handlers.keyboardDidShow)());
+        await act(async () => (handlers.keyboardWillShow ?? handlers.keyboardDidShow)({ endCoordinates: { height: 300, screenX: 0, screenY: 500, width: 390 } }));
         expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: detentHeights(metrics()).full });
         await act(async () => (handlers.keyboardWillHide ?? handlers.keyboardDidHide)());
         expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT });

@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef } from 'react';
-import { Keyboard, type TextInput } from 'react-native';
+import { Keyboard, Platform, type TextInput } from 'react-native';
 
+import { ANDROID_FOCUS_DELAY_MS } from '@/components/menu/MgrsInput';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { TextField } from '@/components/ui/TextField';
@@ -11,7 +12,8 @@ const KEYBOARD_WAIT_MS = 1500;
 
 /**
  * The item's notes, always shown: an open field while editing, read-only while viewing. Opened from the view's notes
- * (`editNotes`), it focuses itself and scrolls to the bottom of the menu, where it sits, once the keyboard is up.
+ * (`editNotes`), it focuses itself; the panel scrolls it to its top once the keyboard is up. With no keyboard (a hardware
+ * one), it scrolls to the bottom of the menu, where it sits, after a wait.
  */
 export function NotesSection() {
   const notes = useDraft((s) => s.notes);
@@ -21,23 +23,19 @@ export function NotesSection() {
 
   useEffect(() => {
     if (useDraft.getState().locked || !useDraft.getState().takeNotesFocus()) return;
-    input.current?.focus();
-    // Scroll to the bottom, where the field sits, so all of it ends up above the keyboard (after a wait, if none shows).
-    // Where the panel keeps its size, scroll as the keyboard starts to open (one movement with iOS's own); in the portrait
-    // sheet, once it is up and the sheet has grown.
-    let done = false;
-    const scroll = () => {
-      if (done) return;
-      done = true;
+    const focus = () => input.current?.focus();
+    // Focused as it mounts, Android shows the cursor but never opens the keyboard (see ANDROID_FOCUS_DELAY_MS).
+    const focusTimer = Platform.OS === 'android' ? setTimeout(focus, ANDROID_FOCUS_DELAY_MS) : undefined;
+    if (Platform.OS !== 'android') focus();
+    const shown = Keyboard.addListener('keyboardDidShow', () => clearTimeout(waitTimer));
+    const waitTimer = setTimeout(() => {
       shown.remove();
-      // A frame later, so the scroll view has taken the keyboard's inset and the end is above the keyboard.
       requestAnimationFrame(() => panel?.scrollToEnd());
-    };
-    const shown = Keyboard.addListener(panel?.scrollAsKeyboardShows ? 'keyboardWillShow' : 'keyboardDidShow', scroll);
-    const timer = setTimeout(scroll, KEYBOARD_WAIT_MS);
+    }, KEYBOARD_WAIT_MS);
     return () => {
       shown.remove();
-      clearTimeout(timer);
+      clearTimeout(focusTimer);
+      clearTimeout(waitTimer);
     };
     // Mount only: the request is taken once, when the form appears.
     // eslint-disable-next-line react-hooks/exhaustive-deps

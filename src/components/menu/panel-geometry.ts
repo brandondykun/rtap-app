@@ -91,3 +91,20 @@ export function snapIndex(position: number, velocity: number, stops: readonly nu
   }
   return nearest;
 }
+
+/** How far below the panel's top edge a field scrolled into view for typing sits. */
+export const FOCUSED_FIELD_MARGIN = 8;
+
+/** Where to scroll the panel so a field this far down its content sits at its top. */
+export function fieldTopScrollY(contentY: number): number {
+  return Math.max(0, contentY - FOCUSED_FIELD_MARGIN);
+}
+
+/**
+ * Where to scroll the panel so a focused field sits at its top, from where both are on screen and how far the content is
+ * scrolled now. Null when the field is not in the panel (the quick plot box over the map).
+ */
+export function focusedFieldScrollY(scrollY: number, field: { x: number; y: number }, viewport: { x: number; y: number; width: number }): number | null {
+  if (field.x < viewport.x || field.x >= viewport.x + viewport.width) return null;
+  return fieldTopScrollY(scrollY + field.y - viewport.y);
+}
