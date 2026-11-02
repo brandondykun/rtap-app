@@ -5,7 +5,7 @@ import { Tables } from '@/lib/db/schema';
 import { err, ok, type Result } from '@/lib/result';
 
 import { findMission, findMissionViewState, isValidCamera, type MissionCamera, type MissionSnapshot } from './repository';
-import { deleteMissionSnapshot } from './snapshot-files';
+import { deleteMissionSnapshots } from './snapshot-files';
 
 export async function createMission(
   ctx: CommandContext,
@@ -115,7 +115,7 @@ export async function deleteMission(ctx: CommandContext, missionId: string): Pro
       await tx.execute('DELETE FROM mission_view_state WHERE mission_id = ?', [missionId]);
       await tx.execute('DELETE FROM missions WHERE id = ?', [missionId]);
     });
-    deleteMissionSnapshot(missionId);
+    deleteMissionSnapshots(missionId);
     return ok(undefined);
   } catch (e) {
     return err('write_failed', String(e));

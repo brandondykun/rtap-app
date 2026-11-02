@@ -7,7 +7,7 @@ import { err, ok, type Result } from '@/lib/result';
 import { recordMissionSnapshot } from './commands';
 import { findMission, type MissionSnapshot } from './repository';
 import { visibleRect, type MapArea } from './snapshot-crop';
-import { deleteQuietly, snapshotDir, snapshotFile } from './snapshot-files';
+import { deleteMissionSnapshots, deleteQuietly, snapshotDir, snapshotFile } from './snapshot-files';
 
 export const SNAPSHOT_WIDTH = 720;
 export const SNAPSHOT_QUALITY = 0.7;
@@ -38,15 +38,18 @@ export async function saveMissionSnapshot(
     const image = await context.renderAsync();
     const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: SNAPSHOT_QUALITY });
     snapshotDir().create({ intermediates: true, idempotent: true });
-    const destination = snapshotFile(missionId);
+    const takenAt = ctx.now();
+    const destination = snapshotFile(missionId, takenAt);
     await new File(saved.uri).move(destination, { overwrite: true });
-    const snapshot = { uri: destination.uri, takenAt: ctx.now() };
+    const snapshot = { uri: destination.uri, takenAt };
     const recorded = await recordMissionSnapshot(ctx, missionId, snapshot);
     if (!recorded.ok) {
       // Deleted while the picture was processed (or the write failed): leave no stray file.
       deleteQuietly(destination);
       return err(recorded.error, recorded.message);
     }
+    // The new picture is recorded: the older ones can go.
+    deleteMissionSnapshots(missionId, destination);
     return ok(snapshot);
   } catch (e) {
     return err('write_failed', String(e));

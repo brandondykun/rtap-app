@@ -81,12 +81,13 @@ describe('PinnedMissionCard', () => {
 });
 
 describe('MissionThumb', () => {
-  it('renders from the deterministic picture path, not the stored absolute uri', async () => {
+  it('renders from the picture path built from the mission and when it was taken, not the stored absolute uri', async () => {
     // An app update or reinstall can move the iOS container: the stored path goes stale.
     const snapshot = { uri: 'file:///var/old-container/Documents/mission-snapshots/m1.jpg', takenAt: 7 };
     await renderWithProviders(<MissionThumb missionId="m1" snapshot={snapshot} className="h-10 w-10" iconSize={16} />);
     // expo-image hands the native view an array of sources.
-    expect([screen.getByTestId('mission-thumb').props.source].flat()[0]).toMatchObject({ uri: snapshotFile('m1').uri, cacheKey: 'm1-7' });
+    expect([screen.getByTestId('mission-thumb').props.source].flat()[0]).toMatchObject({ uri: snapshotFile('m1', 7).uri });
+    expect(snapshotFile('m1', 7).uri).toMatch(/mission-snapshots\/m1-7\.jpg$/);
   });
 
   it('falls back to the placeholder when the picture fails to load', async () => {

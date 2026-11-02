@@ -22,10 +22,9 @@ type Props = {
 /** The mission's map picture, or a dashed map placeholder before one was taken or when it fails to load. */
 export function MissionThumb({ missionId, snapshot, className, style, iconSize, children }: Props) {
   const { colors } = useTheme();
-  // A new capture overwrites the file; the cache key changes with it (and retries after a failure).
-  const cacheKey = snapshot ? `${missionId}-${snapshot.takenAt}` : null;
-  const [failedKey, setFailedKey] = useState<string | null>(null);
-  if (!snapshot || failedKey === cacheKey) {
+  // Each capture is a new file (named by when it was taken), so a newer picture always loads; a failure retries then.
+  const [failedAt, setFailedAt] = useState<number | null>(null);
+  if (!snapshot || failedAt === snapshot.takenAt) {
     return (
       <View testID="mission-thumb-placeholder" style={style} className={`${className} items-center justify-center border border-dashed border-border bg-surface-input`}>
         <Icon name="map-outline" size={iconSize} color={colors['text-muted']} />
@@ -39,8 +38,8 @@ export function MissionThumb({ missionId, snapshot, className, style, iconSize, 
         testID="mission-thumb"
         // Built from the mission id, not the stored uri: the iOS container path can change across
         // app updates and reinstalls, so a stored absolute path goes stale.
-        source={{ uri: snapshotFile(missionId).uri, cacheKey: cacheKey ?? undefined }}
-        onError={() => setFailedKey(cacheKey)}
+        source={{ uri: snapshotFile(missionId, snapshot.takenAt).uri }}
+        onError={() => setFailedAt(snapshot.takenAt)}
         contentFit="cover"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         accessibilityIgnoresInvertColors

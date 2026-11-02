@@ -88,6 +88,8 @@ export const StyleURL = {
   Dark: 'mapbox://styles/mapbox/dark-v10',
 };
 export const offlineManager = { createPack: jest.fn(), getPacks: jest.fn(async () => []), deletePack: jest.fn() };
+/** The offscreen snapshotter: resolves with a written image's uri. */
+export const snapshotManager = { takeSnap: jest.fn(async (_options?: unknown) => 'file:///cache/offscreen.png') };
 export const setAccessToken = jest.fn();
 export const Logger = { setLogCallback: jest.fn() };
 

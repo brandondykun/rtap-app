@@ -4,7 +4,7 @@ import { makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, deleteMission, markMissionOpened } from './commands';
 import { findMissionViewState, parseSnapshot } from './repository';
-import { deleteMissionSnapshot, snapshotFile } from './snapshot-files';
+import { deleteMissionSnapshots } from './snapshot-files';
 import { saveMissionSnapshot } from './snapshots';
 
 const fs = jest.requireMock('expo-file-system') as { __files: Set<string> };
@@ -35,8 +35,8 @@ describe('saveMissionSnapshot', () => {
     expect(ImageManipulator.manipulate).toHaveBeenCalledWith('file:///cache/snap.png');
     expect(manip.__last.resize).toEqual({ width: 720, height: null });
     expect(manip.__last.save).toEqual({ format: 'jpeg', compress: 0.7 });
-    const uri = 'file:///docs/mission-snapshots/' + id + '.jpg';
     if (!result.ok) throw new Error('expected ok');
+    const uri = `file:///docs/mission-snapshots/${id}-${result.value.takenAt}.jpg`;
     expect(result.value.uri).toBe(uri);
     expect(Number.isFinite(result.value.takenAt)).toBe(true);
     expect(fs.__files.has(uri)).toBe(true);
@@ -81,11 +81,18 @@ describe('saveMissionSnapshot', () => {
     expect(fs.__files.has('file:///cache/snap.png')).toBe(false);
   });
 
-  it('overwrites the previous picture at the same path', async () => {
+  it('names each picture by when it was taken and keeps only the newest (an old-style one too)', async () => {
     const { ctx, id } = await opened();
-    await saveMissionSnapshot(ctx, id, 'file:///cache/a.png');
-    await saveMissionSnapshot(ctx, id, 'file:///cache/b.png');
-    expect([...fs.__files].filter((f) => f.includes('mission-snapshots'))).toEqual([snapshotFile(id).uri]);
+    const other = await createMission(ctx, { name: 'Other' });
+    if (!other.ok) throw new Error('setup');
+    fs.__files.add(`file:///docs/mission-snapshots/${id}.jpg`);
+    const a = await saveMissionSnapshot(ctx, id, 'file:///cache/a.png');
+    const b = await saveMissionSnapshot(ctx, other.value.id, 'file:///cache/b.png');
+    const c = await saveMissionSnapshot(ctx, id, 'file:///cache/c.png');
+    if (!a.ok || !b.ok || !c.ok) throw new Error('expected ok');
+    expect(c.value.uri).not.toBe(a.value.uri);
+    // Another mission's picture is left alone.
+    expect([...fs.__files].filter((f) => f.includes('mission-snapshots')).sort()).toEqual([b.value.uri, c.value.uri].sort());
   });
 
   it('does not write for a deleted mission', async () => {
@@ -93,7 +100,7 @@ describe('saveMissionSnapshot', () => {
     await deleteMission(ctx, id);
     const result = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
     expect(result.ok).toBe(false);
-    expect(fs.__files.has(snapshotFile(id).uri)).toBe(false);
+    expect([...fs.__files].some((f) => f.includes('mission-snapshots'))).toBe(false);
     expect(await findMissionViewState(ctx.db, id)).toBeNull();
   });
 
@@ -139,9 +146,10 @@ describe('saveMissionSnapshot', () => {
 describe('deleting', () => {
   it('deleteMission removes the picture file; deleting a missing file is fine', async () => {
     const { ctx, id } = await opened();
-    await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    const saved = await saveMissionSnapshot(ctx, id, 'file:///cache/snap.png');
+    if (!saved.ok) throw new Error('expected ok');
     await deleteMission(ctx, id);
-    expect(fs.__files.has(snapshotFile(id).uri)).toBe(false);
-    expect(() => deleteMissionSnapshot('nope')).not.toThrow();
+    expect(fs.__files.has(saved.value.uri)).toBe(false);
+    expect(() => deleteMissionSnapshots('nope')).not.toThrow();
   });
 });
