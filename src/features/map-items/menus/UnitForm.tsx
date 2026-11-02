@@ -38,6 +38,7 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
       <MenuSection label="Name">
         <TextField mono clearable editable={!locked} accessibilityLabel="Name" value={name} onChangeText={setName} autoCapitalize="characters" autoCorrect={false} maxLength={40} />
       </MenuSection>
+      <LocationSection />
       {/* Its own row: beside Name the four symbols were squeezed. */}
       <MenuSection label="Affiliation">
         <MenuSegmented<Affiliation>
@@ -51,7 +52,6 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
           disabled={locked}
         />
       </MenuSection>
-      <LocationSection />
       <MenuColumns inset>
         <MenuSection flush label="Unit type">
           <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />

@@ -83,6 +83,17 @@ describe('menu inputs', () => {
     expect(screen.getByLabelText('Field')).toHaveProp('disableFullscreenUI', true);
   });
 
+  it('starts multiline text and its placeholder at the top, single-line text centred', async () => {
+    await renderWithProviders(
+      <>
+        <TextField accessibilityLabel="Notes" multiline placeholder="Add notes" value="" onChangeText={jest.fn()} />
+        <TextField accessibilityLabel="Name" value="" onChangeText={jest.fn()} />
+      </>,
+    );
+    expect(screen.getByLabelText('Notes')).toHaveStyle({ textAlignVertical: 'top' });
+    expect(screen.getByLabelText('Name')).toHaveStyle({ textAlignVertical: 'center' });
+  });
+
   it('draws a 1 pt border on fields and selects, focused or not (only the colour changes)', async () => {
     const first = await renderWithProviders(<TextField accessibilityLabel="Field" value="" onChangeText={jest.fn()} />);
     const cls = () => String(screen.getByLabelText('Field').props.className);

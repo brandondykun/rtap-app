@@ -71,7 +71,10 @@ export function AddItemPanel({
         leading={{ label: 'Cancel', onPress: close }}
         trailing={{ label: category === 'line' || category === 'polygon' ? 'Save' : 'Add', icon: 'check', onPress: () => void add(), disabled: !canAdd }}
       />
-      {form}
+      {/* A little room between the header's Cancel / Add and the first field. */}
+      <View testID="add-form" className="pt-3">
+        {form}
+      </View>
     </View>
   );
 }

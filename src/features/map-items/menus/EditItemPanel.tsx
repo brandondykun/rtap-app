@@ -159,7 +159,12 @@ export function EditItemPanel({ category, itemId, form }: Props) {
         ) : (
           <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
         )
-      ) : null : form : null}
+      ) : null : (
+        // A little room between the header's Cancel / Save and the first field.
+        <View testID="edit-form" className="pt-3">
+          {form}
+        </View>
+      ) : null}
     </View>
   );
 }

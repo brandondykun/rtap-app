@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Text, View, type NativeSyntheticEvent, type TextInput, type TextInputKeyPressEventData } from 'react-native';
+import { Platform, Text, View, type NativeSyntheticEvent, type TextInput, type TextInputKeyPressEventData } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { TextField } from '@/components/ui/TextField';
@@ -34,6 +34,12 @@ const DIGIT_FIELD_MIN_WIDTH = 76;
 const FIELD_GAP = 8;
 /** The narrowest the grid row can be without cutting off digits (the landscape drawer must allow it). */
 export const MGRS_ROW_MIN_WIDTH = ZONE_WIDTH + SQUARE_WIDTH + 2 * DIGIT_FIELD_MIN_WIDTH + 3 * FIELD_GAP;
+
+/**
+ * Android only opens the keyboard for a field focused once its window is ready: focused on mount, the cursor shows but
+ * the keyboard stays shut. A short wait lets it attach first.
+ */
+export const ANDROID_FOCUS_DELAY_MS = 150;
 
 const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -74,8 +80,16 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
   // Focus once from code rather than with the native autoFocus prop: iOS re-applies autoFocus whenever it
   // rebuilds a field's view, which pulled focus back to Easting mid-tap and swallowed the first Plot press.
   useEffect(() => {
-    if (autoFocus === 'zone') zone.current?.focus();
-    else if (autoFocus === 'easting') easting.current?.focus();
+    const focus = () => {
+      if (autoFocus === 'zone') zone.current?.focus();
+      else if (autoFocus === 'easting') easting.current?.focus();
+    };
+    if (Platform.OS !== 'android') {
+      focus();
+      return;
+    }
+    const timer = setTimeout(focus, ANDROID_FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
     // Mount only: later changes to autoFocus must not move the cursor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

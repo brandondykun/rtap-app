@@ -1,11 +1,11 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
-import { TextInput } from 'react-native';
+import { Platform, TextInput } from 'react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
 import { EMPTY_MGRS, evaluateMgrsFields, fieldBefore, mgrsFieldsFor } from './mgrs-fields';
-import { MgrsInput } from './MgrsInput';
+import { ANDROID_FOCUS_DELAY_MS, MgrsInput } from './MgrsInput';
 
 const DC = { lat: 38.8977, lon: -77.0365 };
 
@@ -74,6 +74,20 @@ describe('MgrsInput', () => {
     expect(fieldBefore('square')).toBe('zone');
     expect(fieldBefore('easting')).toBe('square');
     expect(fieldBefore('northing')).toBe('easting');
+  });
+
+  it('on Android, focuses a moment after mounting so the keyboard opens too', async () => {
+    jest.useFakeTimers();
+    jest.replaceProperty(Platform, 'OS', 'android');
+    try {
+      await renderWithProviders(<MgrsInput value={{ ...EMPTY_MGRS, zoneBand: '18S', square: 'UJ' }} onChange={jest.fn()} status={{ status: 'incomplete' }} autoFocus="easting" />);
+      expect(focusedLabels()).toEqual([]);
+      await act(async () => jest.advanceTimersByTime(ANDROID_FOCUS_DELAY_MS));
+      expect(focusedLabels()).toEqual(['Easting']);
+    } finally {
+      jest.restoreAllMocks();
+      jest.useRealTimers();
+    }
   });
 
   it('wires backspace on empty fields and the requested autofocus', async () => {

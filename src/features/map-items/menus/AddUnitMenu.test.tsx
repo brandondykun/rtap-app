@@ -77,6 +77,12 @@ describe('AddUnitMenu', () => {
     expect(screen.getByLabelText('Hostile')).toBeTruthy();
   });
 
+  it('orders the top of the form Name, then MGRS, then Affiliation', async () => {
+    await open();
+    const labels = screen.getAllByText(/^(Name|MGRS · .*|Affiliation)$/).map((t) => String(t.props.children));
+    expect(labels.map((l) => (l.startsWith('MGRS') ? 'MGRS' : l))).toEqual(['Name', 'MGRS', 'Affiliation']);
+  });
+
   it('says there is no threat ring for a Reconnaissance draft', async () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
