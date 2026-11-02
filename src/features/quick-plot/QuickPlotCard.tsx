@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MenuButton } from '@/components/menu/MenuButton';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { glassHalo } from '@/components/ui/glass';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { formatLength } from '@/features/location/gps-format';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { EDGE, selfCardClearance } from '@/features/map/layout';
@@ -44,8 +44,9 @@ function useGroundAltitude(at: LatLon | null): number | null {
 }
 
 /**
- * Bottom card for the temporary point: TEMP + grid on its own line with its ground altitude under it, then Save unit, Save
- * point and Discard, as wide as its content. `panel` is the open menu panel, which the card keeps clear of in landscape.
+ * Bottom card for the temporary point: TEMP, the grid with its ground altitude under it, and Discard, left to right,
+ * then Save unit and Save point sharing a row. As wide as its content. `panel` is the open menu panel, which the card keeps
+ * clear of in landscape.
  */
 export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean; panel?: PanelFrame | null }) {
   const insets = useSafeAreaInsets();
@@ -77,8 +78,10 @@ export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean;
       {`ALT ${formatLength(altitudeM, altitudeUnit)}`}
     </Text>
   );
-  const grid = (
-    <View className="flex-row items-center gap-3 px-1 pt-0.5">
+  const discard = <MenuButton label="Discard" icon="trash-can-outline" iconOnly onPress={() => useQuickPlot.getState().close()} />;
+  // Left to right: TEMP, the grid with its altitude under it, then Discard in the right corner.
+  const header = (
+    <View className="flex-row items-center gap-3 pl-1">
       <View className="rounded-md border border-accent px-2 py-0.5">
         <Text style={glassHalo(colors)} className="text-xs font-bold tracking-widest text-accent">
           TEMP
@@ -90,36 +93,43 @@ export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean;
         </Text>
         {altitude}
       </View>
+      <View className="ml-auto">{discard}</View>
     </View>
-  );
-  const discard = <MenuButton label="Discard" icon="trash-can-outline" iconOnly onPress={() => useQuickPlot.getState().close()} />;
-  const saveUnit = <MenuButton label="Save unit" icon="rhombus-outline" active onPress={() => save('unit.add')} />;
-  const savePoint = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Save point"
-      onPress={() => save('point.add')}
-      // Sized like a regular MenuButton, beside Save unit and Discard.
-      className="active:opacity-60 flex-row items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3">
-      <Icon name="map-marker-outline" size={18} color={colors['on-accent']} />
-      <Text style={{ color: colors['on-accent'] }} className="font-semibold">
-        Save point
-      </Text>
-    </Pressable>
   );
 
   return (
     <View testID="quick-plot-card-slot" pointerEvents="box-none" className={`absolute ${landscape ? 'items-start' : 'items-center'}`} style={{ bottom: insets.bottom + EDGE + clearance.lift, left, right }}>
       {/* 20 pt corners less the 1 pt border and 7 pt padding are the buttons' 12 pt (rounded-xl): concentric. */}
       <View testID="quick-plot-card" style={{ maxWidth: available }} className="gap-2 rounded-[20px] border border-accent bg-surface-glass p-[7px]">
-        {grid}
+        {header}
+        {/* The two Save buttons share the card's width, under the grid. */}
         <View testID="quick-plot-card-buttons" className="flex-row gap-1.5">
-          {/* Each button only as wide as its label, to cover less of the map. */}
-          <View>{saveUnit}</View>
-          <View>{savePoint}</View>
-          <View>{discard}</View>
+          <SaveButton label="Save unit" icon="rhombus-outline" primary={false} onPress={() => save('unit.add')} />
+          <SaveButton label="Save point" icon="map-marker-outline" primary onPress={() => save('point.add')} />
         </View>
       </View>
     </View>
+  );
+}
+
+/**
+ * Save unit (outlined amber, like an active button) or Save point (filled amber): regular height, sharing the row. A little
+ * less side padding than a regular button, and the label shrinks before it would clip, so both fit a centered card on a
+ * narrow phone.
+ */
+function SaveButton({ label, icon, primary, onPress }: { label: string; icon: IconName; primary: boolean; onPress: () => void }) {
+  const { colors } = useTheme();
+  const color = primary ? colors['on-accent'] : colors.accent;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      className={`active:opacity-60 flex-1 flex-row items-center justify-center gap-2 rounded-xl px-3 py-3 ${primary ? 'bg-accent' : 'border border-accent bg-accent-subtle'}`}>
+      <Icon name={icon} size={18} color={color} />
+      <Text numberOfLines={1} adjustsFontSizeToFit style={{ color }} className="shrink font-semibold">
+        {label}
+      </Text>
+    </Pressable>
   );
 }

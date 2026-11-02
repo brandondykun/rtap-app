@@ -70,12 +70,14 @@ describe('QuickPlotCard', () => {
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: 320 + EDGE });
   });
 
-  it.each([[false], [true]])('fits its content instead of a fixed width, with buttons only as wide as their labels (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('fits its content, with Discard in the top right corner and the two Save buttons sharing the row below (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
     expect(screen.getByTestId('quick-plot-card').props.style).not.toHaveProperty('width');
-    const slots = screen.getByTestId('quick-plot-card-buttons').children as { props: { className?: string } }[];
-    expect(slots).toHaveLength(3);
-    for (const slot of slots) expect(slot.props.className ?? '').not.toContain('flex-1');
+    for (const label of ['Save unit', 'Save point']) expect(screen.getByLabelText(label).props.className).toContain('flex-1');
+    expect(within(screen.getByTestId('quick-plot-card-buttons')).queryByLabelText('Discard')).toBeNull();
+    // Discard comes first, in the header beside TEMP and the grid.
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.filter((l) => ['Discard', 'Save unit', 'Save point'].includes(l))).toEqual(['Discard', 'Save unit', 'Save point']);
   });
 
   it('shows Discard as a trash icon only', async () => {
@@ -87,7 +89,7 @@ describe('QuickPlotCard', () => {
   it.each([[false], [true]])('puts the grid on its own line, above the buttons (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
     const buttons = within(screen.getByTestId('quick-plot-card-buttons'));
-    for (const label of ['Discard', 'Save unit', 'Save point']) expect(buttons.getByLabelText(label)).toBeTruthy();
+    for (const label of ['Save unit', 'Save point']) expect(buttons.getByLabelText(label)).toBeTruthy();
     expect(buttons.queryByText(formatCoordinate(T, 'mgrs'))).toBeNull();
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
   });
@@ -98,6 +100,11 @@ describe('QuickPlotCard', () => {
       expect(screen.getByLabelText(label).props.className).toContain('py-3');
       expect(screen.getByLabelText(label).props.className).not.toContain('py-2');
     }
+  });
+
+  it('reads TEMP, then the grid, then its altitude under it', async () => {
+    await renderWithProviders(<QuickPlotCard landscape={false} />);
+    expect(screen.getByTestId('quick-plot-card')).toHaveTextContent(new RegExp(`^TEMP${formatCoordinate(T, 'mgrs')}ALT`));
   });
 
   it('shows the ground altitude under the grid once the terrain answers, a dash until then', async () => {
@@ -133,12 +140,6 @@ describe('QuickPlotCard', () => {
       setElevationSource(null);
       jest.useRealTimers();
     }
-  });
-
-  it.each([[false], [true]])('puts the trash button after Save unit and Save point (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
-    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
-    expect(order.filter((l) => ['Discard', 'Save unit', 'Save point'].includes(l))).toEqual(['Save unit', 'Save point', 'Discard']);
   });
 
   it('is see-through, keeps its amber border and outlines the grid', async () => {
