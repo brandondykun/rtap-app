@@ -140,14 +140,10 @@ describe('ManualLocationEntry', () => {
     expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
   });
 
-  it('has a clear button right of the grid that empties the fields', async () => {
+  it('has no clear button by the grid', async () => {
     useManualEntry.getState().open('map', null);
     useManualEntry.getState().choose(DC);
     await renderWithProviders(<ManualLocationEntry landscape={false} />);
-    const row = within(screen.getByTestId('manual-location-grid-row'));
-    await fireEvent.press(row.getByLabelText('Clear grid'));
-    for (const field of ['MGRS zone', '100 km square', 'Easting', 'Northing']) expect(screen.getByLabelText(field)).toHaveDisplayValue('');
-    expect(setPressable()).toBeDisabled();
-    expect(useManualEntry.getState().pending).toBeNull();
+    expect(screen.queryByLabelText('Clear grid')).toBeNull();
   });
 });

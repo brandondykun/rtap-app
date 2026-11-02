@@ -4,9 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MenuButton } from '@/components/menu/MenuButton';
 import { MgrsInput } from '@/components/menu/MgrsInput';
-import { EMPTY_MGRS, evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
+import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { glassHalo } from '@/components/ui/glass';
-import { MapButton } from '@/features/map/controls/MapButton';
 import { bannerTop, EDGE } from '@/features/map/layout';
 import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import type { LatLon } from '@/lib/geo/types';
@@ -44,8 +43,6 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
   const { colors } = useTheme();
   const halo = glassHalo(colors);
   const [parts, setParts] = useState<MgrsParts>(() => (from ? mgrsFieldsFor(from) : squareFieldsFor(useInteraction.getState().cameraCenter)));
-  // Bumped by Clear: remounts the fields so Zone takes focus.
-  const [generation, setGeneration] = useState(0);
   const status = evaluateMgrsFields(parts);
   const valid = status.status === 'valid';
   const coord = status.status === 'valid' ? status.coord : null;
@@ -65,10 +62,6 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
     if (!useMyLocation.getState().setManual(coord)) return;
     if (origin === 'map') useToast.getState().show(POSITION_SET_MESSAGE, 'info', { sticky: true });
     close();
-  };
-  const clear = () => {
-    setParts(EMPTY_MGRS);
-    setGeneration((g) => g + 1);
   };
   const choose = () => {
     Keyboard.dismiss();
@@ -90,19 +83,8 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
         <Text style={halo} className="px-1 text-xs font-semibold uppercase tracking-widest text-text">
           MY POSITION
         </Text>
-        {/* Clear right of the grid, like quick plot. */}
-        <View testID="manual-location-grid-row" className="flex-row items-start gap-1">
-          <View className="flex-1">
-            <MgrsInput
-              key={generation}
-              value={parts}
-              onChange={setParts}
-              status={status}
-              autoFocus={generation > 0 ? 'zone' : from ? undefined : parts.square ? 'easting' : 'zone'}
-              nested
-            />
-          </View>
-          <MapButton grouped label="Clear grid" icon="close-circle-outline" onPress={clear} />
+        <View testID="manual-location-grid-row">
+          <MgrsInput value={parts} onChange={setParts} status={status} autoFocus={from ? undefined : parts.square ? 'easting' : 'zone'} nested />
         </View>
         {landscape ? null : chooseButton}
         {/* Landscape has the width: Choose on map joins Cancel and Set in one row. */}
