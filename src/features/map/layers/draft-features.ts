@@ -14,22 +14,22 @@ export type DraftFeatureInput = { coord: LatLon; sidc: string; label: string; se
 
 const lonLat = (p: LatLon): [number, number] => [p.lon, p.lat];
 
-/** The draft point, plus a range line and its label when the user's position is known. */
+/** The draft point, plus a range line when the user's position is known, labelled when `rangeLabel` is given. */
 export function draftFeatureCollection(input: DraftFeatureInput | null): DraftFeatureCollection {
   if (!input) return { type: 'FeatureCollection', features: [] };
   const features: DraftFeature[] = [
     { type: 'Feature', id: 'draft', geometry: { type: 'Point', coordinates: lonLat(input.coord) }, properties: { role: 'draft', sidc: input.sidc, label: input.label, category: itemCategory({ kind: 'point', sidc: input.sidc }) } },
   ];
-  if (input.self && input.rangeLabel) {
-    features.push(
-      { type: 'Feature', id: 'draft-range', geometry: { type: 'LineString', coordinates: [lonLat(input.self), lonLat(input.coord)] }, properties: { role: 'range' } },
-      {
+  if (input.self) {
+    features.push({ type: 'Feature', id: 'draft-range', geometry: { type: 'LineString', coordinates: [lonLat(input.self), lonLat(input.coord)] }, properties: { role: 'range' } });
+    if (input.rangeLabel) {
+      features.push({
         type: 'Feature',
         id: 'draft-range-label',
         geometry: { type: 'Point', coordinates: lonLat(midpoint(input.self, input.coord)) },
         properties: { role: 'range-label', label: input.rangeLabel },
-      },
-    );
+      });
+    }
   }
   return { type: 'FeatureCollection', features };
 }

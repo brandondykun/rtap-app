@@ -58,6 +58,16 @@ describe('DraftLayer', () => {
     expect(mapboxMock().__props.SymbolLayer['draft-label'].style).toBe(labelStyle);
   });
 
+  it('leaves the range line of a selected (view-only) item unlabelled: its menu shows the distance and direction', async () => {
+    usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 5, timestamp: 1 });
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'unit' });
+    await renderWithProviders(<DraftLayer />);
+    const roles = () => (mapboxMock().__props.ShapeSource.draft.shape as Shape).features.map((f) => f.properties.role);
+    expect(roles()).toEqual(['draft', 'range', 'range-label']);
+    await act(async () => useDraft.setState({ locked: true }));
+    expect(roles()).toEqual(['draft', 'range']);
+  });
+
   it('in OP mode draws the range line from the OP, not from me', async () => {
     const op = { lat: 38.95, lon: -77.1 };
     usePresence.getState().setSelfPosition({ position: { lat: 38.8977, lon: -77.0365 }, accuracyM: 5, timestamp: 1 });

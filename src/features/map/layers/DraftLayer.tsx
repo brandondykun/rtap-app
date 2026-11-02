@@ -52,7 +52,8 @@ export function DraftLayer() {
 
   const shape = useMemo(() => {
     if (!mode || !coord || category === 'line' || category === 'polygon') return draftFeatureCollection(null);
-    const v = self ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
+    // A selected item's menu already shows its distance and direction: its line goes unlabelled.
+    const v = self && !locked ? describeVector(self, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
     return draftFeatureCollection({
       coord,
       sidc: draftSidc({ category, affiliation, unitType, echelon, pointType }),

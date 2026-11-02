@@ -28,4 +28,10 @@ describe('draftFeatureCollection', () => {
     expect(label?.geometry).toEqual({ type: 'Point', coordinates: [mid.lon, mid.lat] });
     expect(label?.properties.label).toBe('1.15 km · 103°');
   });
+
+  it('draws the range line without a label when none is given (a selected item)', () => {
+    const fc = draftFeatureCollection({ coord: DRAFT, sidc: 'SHGPU----------', label: 'HOS-4', self: SELF, rangeLabel: null });
+    expect(fc.features.find((f) => f.properties.role === 'range')?.geometry).toEqual({ type: 'LineString', coordinates: [[SELF.lon, SELF.lat], [DRAFT.lon, DRAFT.lat]] });
+    expect(fc.features.find((f) => f.properties.role === 'range-label')).toBeUndefined();
+  });
 });
