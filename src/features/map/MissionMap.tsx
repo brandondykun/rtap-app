@@ -570,6 +570,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <Crosshair panel={opPhase === 'on' ? null : panel} />
       <Toolbar
         landscape={landscape}
+        // The drawer open on the left: the landscape toolbar narrows to its right (null while closed or minimized).
+        panelInset={panel?.side === 'left' ? panel.size : 0}
         activeTool={
           // A tool running inside OP mode is the one lit; OP is lit otherwise while picking or at an OP.
           (quickPlotting ? 'plot' : measuring ? 'measure' : placing ?? (topId === 'unit.add' ? 'unit' : topId === 'point.add' ? 'point' : topId === 'line.add' ? 'line' : topId === 'polygon.add' ? 'polygon' : rootId === 'layers' ? 'layers' : null)) ??

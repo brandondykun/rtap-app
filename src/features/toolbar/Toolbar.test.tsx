@@ -1,13 +1,16 @@
-import { fireEvent, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
+import { useState } from 'react';
+import * as Reanimated from 'react-native-reanimated';
+import { Dimensions, ScrollView, StyleSheet } from 'react-native';
 
-import { TOOLBAR_HEIGHT, TOOLBAR_HEIGHT_ICONS } from '@/features/map/layout';
+import { EDGE, TOOLBAR_HEIGHT, TOOLBAR_HEIGHT_ICONS } from '@/features/map/layout';
+import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 import { PANEL_LOOK } from '@/theme/ThemeProvider';
 import { themeColors } from '@/theme/tokens';
 
-import { Toolbar } from './Toolbar';
+import { landscapeToolbarWidth, Toolbar, type ToolId } from './Toolbar';
 
 function style() {
   return StyleSheet.flatten(screen.getByTestId('toolbar').props.style);
@@ -73,10 +76,12 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('toolbar-tools').props.contentContainerStyle).toMatchObject({ paddingLeft: 6, paddingRight: 4 });
   });
 
-  it('pads both ends 4 pt in landscape (nothing scrolls)', async () => {
+  it('pads its ends 4 pt in landscape too, the scroller carrying the right end', async () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
     expect(screen.getByTestId('toolbar').props.className).not.toMatch(/\b(px|pl|pr)-/);
-    expect(style()).toMatchObject({ paddingLeft: 4, paddingRight: 4 });
+    expect(style()).toMatchObject({ paddingLeft: 4 });
+    expect(style().paddingRight).toBeUndefined();
+    expect(screen.getByTestId('toolbar-tools').props.contentContainerStyle).toMatchObject({ paddingLeft: 6, paddingRight: 4 });
   });
 
   it('sizes Menu like the tools: 4 pt from the top and bottom', async () => {
@@ -135,6 +140,105 @@ describe('Toolbar', () => {
     await renderWithProviders(<Toolbar landscape activeTool={null} />);
     expect(style().left).toBeUndefined();
     expect(style().right).toBeDefined();
+  });
+
+  describe('in landscape with the menu drawer open', () => {
+    const DRAWER = 400;
+    const LEAD = 60;
+    const { width: screenWidth } = Dimensions.get('window');
+    // Room right of the drawer: the screen less the drawer and the 4 pt edges on both sides of the bar.
+    const room = screenWidth - EDGE - (DRAWER + EDGE);
+
+    /** Sets the drawer width and lit tool, as the map does. */
+    let drive: (next: { panelInset: number; activeTool: ToolId | null }) => void = () => {};
+    function Harness() {
+      const [props, setProps] = useState<{ panelInset: number; activeTool: ToolId | null }>({ panelInset: 0, activeTool: null });
+      drive = setProps;
+      return <Toolbar landscape {...props} />;
+    }
+
+    /** Lays the bar out with `content` of tools (its own width is the 4 pt inset, Menu and divider, and those). */
+    async function render(content: number) {
+      await renderWithProviders(<Harness />);
+      await fireEvent(screen.getByTestId('toolbar-lead'), 'layout', { nativeEvent: { layout: { x: 4, y: 0, width: LEAD, height: 48 } } });
+      await fireEvent(screen.getByTestId('toolbar-tools'), 'contentSizeChange', content, 40);
+    }
+    const ownWidth = (content: number) => 4 + LEAD + content;
+
+    // (The width itself animates; the Reanimated mock cannot show it, so landscapeToolbarWidth is tested on its own.)
+    it('narrows to the room right of the drawer, no wider than its own width', () => {
+      const at = (natural: number, panelInset: number) => landscapeToolbarWidth({ natural, windowWidth: screenWidth, insetRight: 0, panelInset });
+      expect(at(room + 200, DRAWER)).toBe(room);
+      expect(at(room - 100, DRAWER)).toBe(room - 100);
+      expect(at(room + 200, 0)).toBe(room + 200);
+      // A notch on the right takes its share.
+      expect(landscapeToolbarWidth({ natural: 2000, windowWidth: screenWidth, insetRight: 30, panelInset: DRAWER })).toBe(room - 30);
+    });
+
+    it('keeps its tools in the one scroller as the drawer opens and closes (nothing remounts)', async () => {
+      await render(room + 200);
+      const tools = screen.getByTestId('toolbar-tools');
+      await act(async () => drive({ panelInset: DRAWER, activeTool: null }));
+      await act(async () => drive({ panelInset: 0, activeTool: null }));
+      expect(screen.getByTestId('toolbar-tools')).toBe(tools);
+    });
+
+    it('scrolls only while the drawer leaves too little room, without measuring the scroller as the bar animates', async () => {
+      await render(room + 200 - ownWidth(0));
+      const tools = () => screen.getByTestId('toolbar-tools');
+      // Worked out from the bar's target width, so the animation never calls back into React.
+      expect(tools().props.onLayout).toBeUndefined();
+      expect(tools()).toHaveProp('scrollEnabled', false);
+      await act(async () => drive({ panelInset: DRAWER, activeTool: null }));
+      expect(tools()).toHaveProp('scrollEnabled', true);
+      expect(screen.getByTestId('toolbar-shade-end')).toBeTruthy();
+      await act(async () => drive({ panelInset: 0, activeTool: null }));
+      expect(tools()).toHaveProp('scrollEnabled', false);
+      expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
+    });
+
+    it('is hidden until its width is known', async () => {
+      await renderWithProviders(<Harness />);
+      expect(style().opacity).toBe(0);
+      await fireEvent(screen.getByTestId('toolbar-lead'), 'layout', { nativeEvent: { layout: { x: 4, y: 0, width: LEAD, height: 48 } } });
+      await fireEvent(screen.getByTestId('toolbar-tools'), 'contentSizeChange', 500, 40);
+      expect(style().opacity).toBeUndefined();
+    });
+
+    /** Opens the drawer beside a bar too wide for the room left; returns its own width. */
+    async function openSqueezed() {
+      await act(async () => useMenu.getState().openMenu('layers', {}));
+      await render(room + 200 - ownWidth(0));
+      await act(async () => drive({ panelInset: DRAWER, activeTool: null }));
+      return room + 200;
+    }
+
+    it.each([
+      ['closes', () => useMenu.getState().closeMenu()],
+      ['is minimized', () => useMenu.getState().setPanelMinimized(true)],
+    ])('snaps back to its width the moment the menu %s', async (_when, leave) => {
+      const own = await openSqueezed();
+      const timing = jest.spyOn(Reanimated, 'withTiming');
+      // Only the store changes here: the bar's own props still say the drawer is open.
+      await act(async () => leave());
+      // Then the map passes the drawer width back as 0: already there, so nothing animates afterwards either.
+      await act(async () => drive({ panelInset: 0, activeTool: null }));
+      expect(timing).not.toHaveBeenCalledWith(own, expect.anything());
+      timing.mockRestore();
+      useMenu.setState(INITIAL_MENU);
+    });
+
+    it('scrolls the lit tool into view when it is out of sight', async () => {
+      await render(700);
+      await act(async () => drive({ panelInset: DRAWER, activeTool: null }));
+      // OP sits at the far end, past the view left beside the drawer.
+      await fireEvent(screen.getByLabelText('OP').parent!, 'layout', { nativeEvent: { layout: { x: 640, y: 0, width: 50, height: 40 } } });
+      const scrollTo = jest.mocked(ScrollView.prototype.scrollTo);
+      scrollTo.mockClear();
+      await act(async () => drive({ panelInset: DRAWER, activeTool: 'op' }));
+      const view = room - 4 - LEAD;
+      expect(scrollTo).toHaveBeenLastCalledWith({ x: 640 + 50 + 20 - view, animated: true });
+    });
   });
 
   it('runs handlers and disables tools without one', async () => {
