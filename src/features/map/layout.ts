@@ -9,6 +9,8 @@ export const TOOLBAR_HEIGHT_ICONS = 42;
 /** Space above and below each tool in the toolbar: its highlight's corner (12, rounded-xl) is the bar's (16, rounded-2xl) less this. */
 export const TOOL_INSET = 4;
 export const CONTROL_SIZE = 40;
+/** Height of a tap-mode bar ("Tap map" with its buttons) before it is first laid out: compact buttons plus padding. */
+export const HINT_BAR_HEIGHT = 58;
 /** Height of the Mapbox logo/attribution row. */
 export const LOGO_ROW_HEIGHT = 28;
 /**
@@ -17,7 +19,14 @@ export const LOGO_ROW_HEIGHT = 28;
  */
 export const ATTRIBUTION_RAISE = { portrait: 22, landscape: 22 } as const;
 
-function attributionRaise(landscape: boolean): number {
+/**
+ * Android's (i) is a bare icon about the wordmark's height, not a tall centered frame: it lines up at the wordmark's
+ * top, and it sits at the left of its reserved room, so it moves right to sit beside the wordmark.
+ */
+export const ANDROID_ATTRIBUTION = { raise: 0, right: 9 } as const;
+
+function attributionRaise(landscape: boolean, android: boolean): number {
+  if (android) return ANDROID_ATTRIBUTION.raise;
   return landscape ? ATTRIBUTION_RAISE.landscape : ATTRIBUTION_RAISE.portrait;
 }
 
@@ -70,23 +79,25 @@ export function bannerTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT):
  * portrait, beside the top-right toolbar in landscape. There is no scale bar (it costs too much screen space).
  *
  * `insets` are added to the margins. Mapbox on iOS already measures ornament margins from the
- * safe area, so pass zero insets there.
+ * safe area, so pass zero insets there. `android` lines up Android's differently shaped (i) button.
  */
 export function ornamentPositions({
   landscape,
   insets,
   leftOffset = 0,
   toolbarHeight: toolbar = TOOLBAR_HEIGHT,
+  android = false,
 }: {
   landscape: boolean;
   insets: Insets;
   leftOffset?: number;
   toolbarHeight?: number;
+  android?: boolean;
 }) {
   const left = insets.left + EDGE + leftOffset;
   const top = insets.top + ornamentRowTop(landscape, toolbar);
   return {
-    attribution: { top: top - attributionRaise(landscape), left },
+    attribution: { top: top - attributionRaise(landscape, android), left: left + (android ? ANDROID_ATTRIBUTION.right : 0) },
     logo: { top, left: left + ATTRIBUTION_WIDTH },
   };
 }

@@ -93,6 +93,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
     insets: Platform.OS === 'ios' ? NO_INSETS : insets,
     leftOffset,
     toolbarHeight: toolbar,
+    android: Platform.OS === 'android',
   });
   const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
   const checkGridView = useMemo(() => createLatestThrottle(refreshGridView), []);

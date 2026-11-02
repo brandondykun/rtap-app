@@ -33,6 +33,19 @@ index 38de6c8..e342ef7 100644
      override fun setSourceVisibility(
          viewRef: ViewRefTag?,
          visible: Boolean,
+diff --git a/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/RNMBXMapView.kt b/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/RNMBXMapView.kt
+index 91243df..baf6970 100644
+--- a/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/RNMBXMapView.kt
++++ b/node_modules/@rnmapbox/maps/android/src/main/java/com/rnmapbox/rnmbx/components/mapview/RNMBXMapView.kt
+@@ -1541,6 +1541,8 @@ open class RNMBXMapView(private val mContext: Context, var mManager: RNMBXMapVie
+ 
+     private fun applyAttribution() {
+         mapView.attribution.updateSettings {
++            // White (i) so it reads on the dark chrome and satellite imagery, as on iOS.
++            setIconColor(android.graphics.Color.WHITE)
+             updateOrnament("attribution", mAttributionSettings, this.toGenericOrnamentSettings())
+         }
+         workaroundToRelayoutChildOfMapView()
 diff --git a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift b/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift
 index 3b25490..7d0f53c 100644
 --- a/node_modules/@rnmapbox/maps/ios/RNMBX/RNMBXMapView.swift

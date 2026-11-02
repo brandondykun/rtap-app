@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -46,8 +46,9 @@ export function CallsignScreen() {
       testID="callsign-screen"
       keyboardShouldPersistTaps="handled"
       className="flex-1 bg-surface"
-      // The sheet spans the screen width in landscape: keep its content clear of the notch side.
-      contentContainerStyle={{ paddingTop: 32, paddingBottom: insets.bottom + 24, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 }}>
+      // The sheet spans the screen width in landscape: keep its content clear of the notch side. Android shows the
+      // modal full screen (iOS: a page sheet below the status bar), so it also clears the status bar there.
+      contentContainerStyle={{ paddingTop: (Platform.OS === 'android' ? insets.top : 0) + 32, paddingBottom: insets.bottom + 24, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 }}>
       <View className="w-full max-w-[560px] gap-6 self-center">
         <Text accessibilityRole="header" className="text-2xl font-semibold text-text">
           Choose your callsign

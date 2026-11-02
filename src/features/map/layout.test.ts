@@ -1,4 +1,5 @@
 import {
+  ANDROID_ATTRIBUTION,
   ATTRIBUTION_RAISE,
   ATTRIBUTION_WIDTH,
   bannerTop,
@@ -40,6 +41,15 @@ describe('map layout', () => {
     expect(p.attribution.top).toBeGreaterThanOrEqual(-12);
     expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE.landscape);
     expect(p.attribution.left).toBe(EDGE);
+  });
+
+  it('on Android, raises the (i) icon only by its own amount and moves it right beside the logo, in both orientations', () => {
+    for (const landscape of [false, true]) {
+      const p = ornamentPositions({ landscape, insets: NO_INSETS, android: true });
+      expect(p.logo.top - p.attribution.top).toBe(ANDROID_ATTRIBUTION.raise);
+      expect(p.attribution.left).toBe(EDGE + ANDROID_ATTRIBUTION.right);
+      expect(p.logo.left).toBe(EDGE + ATTRIBUTION_WIDTH);
+    }
   });
 
   it('adds device insets when the platform measures from the map edges', () => {
