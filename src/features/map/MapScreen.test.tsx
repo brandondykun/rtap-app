@@ -47,7 +47,8 @@ beforeEach(() => {
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   usePlacing.setState(INITIAL_PLACING);
   usePresence.setState(INITIAL_PRESENCE);
-  useSettings.setState(DEFAULT_SETTINGS);
+  // Long-press is off by default; these tests exercise it.
+  useSettings.setState({ ...DEFAULT_SETTINGS, longPressAddUnit: true });
   useOp.setState(INITIAL_OP);
   useManualEntry.setState(INITIAL_MANUAL_ENTRY);
   // A real phone has a GPS fix only with location on: tests that publish a fix run with permission granted.
@@ -440,6 +441,18 @@ describe('MapScreen', () => {
     );
     expect(await screen.findByRole('header')).toHaveTextContent('Add unit');
     expect(useDraft.getState()).toMatchObject({ category: 'unit', affiliation: 'hostile', coord: { lat: 38.95, lon: -77.1 } });
+  });
+
+  it('long-press does nothing when the long-press setting is off', async () => {
+    useSettings.setState({ longPressAddUnit: false });
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await act(async () =>
+      (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.1, 38.95] }, properties: {} }),
+    );
+    expect(useMenu.getState().stack).toEqual([]);
   });
 
   it('long-press during Add point starts a hostile Add unit instead of moving the point', async () => {

@@ -19,7 +19,11 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   },
   { name: 'Label text size', choices: 'Small · Medium · Large', help: 'The size of names on units, points, lines and polygons.' },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
-  { name: 'Terrain in 2D', help: 'Hills at true scale in 2D. Turn it off to lay the map flat in 2D; 3D always uses the terrain height.' },
+  { name: 'Terrain in 2D', help: 'Raises hills at true scale in 2D.' },
+  {
+    name: 'Long press to add unit',
+    help: 'Long pressing on the map adds an enemy unit there, moves the unit you are adding or editing, or adds a point while drawing.',
+  },
   {
     name: 'Show MGRS grid',
     help: 'Grid lines over the map. They get finer as you zoom in: grid zones, then 100 km, 10 km, 1 km and 100 m squares.',

@@ -79,6 +79,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
   });
 
+  it('sets and persists long-press to add unit (off by default)', () => {
+    expect(useSettings.getState().longPressAddUnit).toBe(false);
+    useSettings.getState().setLongPressAddUnit(true);
+    expect(useSettings.getState().longPressAddUnit).toBe(true);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ longPressAddUnit: true });
+  });
+
   it('sets and persists minimal landscape grids (off by default)', () => {
     expect(useSettings.getState().minimalLandscapeGrids).toBe(false);
     useSettings.getState().setMinimalLandscapeGrids(true);

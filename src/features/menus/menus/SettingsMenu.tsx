@@ -126,6 +126,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setLabelSize = useSettings((s) => s.setLabelSize);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
+  const longPressAddUnit = useSettings((s) => s.longPressAddUnit);
+  const setLongPressAddUnit = useSettings((s) => s.setLongPressAddUnit);
   const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const minimalLandscapeGrids = useSettings((s) => s.minimalLandscapeGrids);
@@ -217,7 +219,11 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
           <MenuSegmented<string> options={TERRAIN_HEIGHT_OPTIONS} value={String(terrainHeight)} onChange={(v) => setTerrainHeight(Number(v))} />
           <Text className="text-xs text-text-muted">How much hills are raised in 3D. 1× is true scale.</Text>
           <MenuToggle label="Terrain in 2D" value={terrainIn2d} onValueChange={setTerrainIn2d} />
-          <Text className="text-xs text-text-muted">Off lays the map flat in 2D. 3D always uses the height above.</Text>
+          <Text className="text-xs text-text-muted">Raises hills at true scale in 2D.</Text>
+        </MenuSection>
+        <MenuSection label="Long press">
+          <MenuToggle label="Long press to add unit" value={longPressAddUnit} onValueChange={setLongPressAddUnit} />
+          <Text className="text-xs text-text-muted">Long pressing on the map adds a unit there.</Text>
         </MenuSection>
       </MenuGroup>
       <MenuGroup title="MGRS grid" icon="grid">

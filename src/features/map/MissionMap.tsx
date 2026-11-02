@@ -478,6 +478,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     stakeAt(at);
   };
   const onLongPress = (coord: LatLon) => {
+    if (!useSettings.getState().longPressAddUnit) return;
     // In OP mode a finger held to look around reads as a long-press (the map itself stays still): it never adds a unit.
     if (useMeasure.getState().active || useOp.getState().phase === 'on') return;
     notifyPlaced();

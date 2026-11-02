@@ -202,6 +202,14 @@ describe('SettingsMenu', () => {
     expect(screen.getByLabelText('Feet')).toBeSelected();
   });
 
+  it('turns long-press to add unit on or off (off by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    expect(screen.getByLabelText('Long press to add unit').props.value).toBe(false);
+    await fireEvent(screen.getByLabelText('Long press to add unit'), 'valueChange', true);
+    expect(useSettings.getState().longPressAddUnit).toBe(true);
+    expect(screen.getByLabelText('Long press to add unit').props.value).toBe(true);
+  });
+
   it('shows or hides the zoom buttons (shown by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByLabelText('Show zoom buttons').props.value).toBe(true);

@@ -30,6 +30,8 @@ type SettingsValues = {
   showLineDistances: boolean;
   /** The zoom in / zoom out buttons on the map (pinch still zooms). */
   showZoomButtons: boolean;
+  /** Long-press on the map adds an enemy unit (or moves the one being added or edited, or adds a drawing point); off ignores long-press. */
+  longPressAddUnit: boolean;
   /** The crosshair (map center) readout card. */
   showCenterGrid: boolean;
   /** Landscape: the readout shows only the center grid and yours, no distance, bearing, altitude or accuracy. */
@@ -65,6 +67,7 @@ type SettingsActions = {
   setAltitudeUnit: (unit: AltitudeUnit) => void;
   setShowLineDistances: (show: boolean) => void;
   setShowZoomButtons: (show: boolean) => void;
+  setLongPressAddUnit: (on: boolean) => void;
   setShowCenterGrid: (show: boolean) => void;
   setMinimalLandscapeGrids: (on: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
@@ -97,6 +100,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   altitudeUnit: 'm',
   showLineDistances: true,
   showZoomButtons: true,
+  longPressAddUnit: false,
   showCenterGrid: true,
   minimalLandscapeGrids: false,
   showToolbarText: true,
@@ -144,6 +148,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     altitudeUnit: pick(p.altitudeUnit, ['m', 'ft'], current.altitudeUnit),
     showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
+    longPressAddUnit: typeof p.longPressAddUnit === 'boolean' ? p.longPressAddUnit : current.longPressAddUnit,
     showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
     minimalLandscapeGrids: typeof p.minimalLandscapeGrids === 'boolean' ? p.minimalLandscapeGrids : current.minimalLandscapeGrids,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
@@ -172,6 +177,7 @@ export const useSettings = create<SettingsState>()(
       setAltitudeUnit: (altitudeUnit) => set({ altitudeUnit }),
       setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
+      setLongPressAddUnit: (longPressAddUnit) => set({ longPressAddUnit }),
       setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
       setMinimalLandscapeGrids: (minimalLandscapeGrids) => set({ minimalLandscapeGrids }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
@@ -202,7 +208,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -211,6 +217,7 @@ export const useSettings = create<SettingsState>()(
         altitudeUnit,
         showLineDistances,
         showZoomButtons,
+        longPressAddUnit,
         showCenterGrid,
         minimalLandscapeGrids,
         showToolbarText,
