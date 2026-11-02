@@ -1,5 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
-import { TextInput } from 'react-native';
+import { Platform, TextInput } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { bannerTop, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
@@ -9,13 +9,24 @@ import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { QuickPlotEntry } from './QuickPlotEntry';
+import { ONE_LINE_MIN_WIDTH, QuickPlotEntry } from './QuickPlotEntry';
+
+/** A window width for one test (`null`: the real one). */
+let mockWindowWidth: number | null = null;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => {
+    const window = jest.requireActual('react-native/Libraries/Utilities/Dimensions').default.get('window');
+    return mockWindowWidth === null ? window : { ...window, width: mockWindowWidth };
+  },
+}));
 
 const C = { lat: 38.9, lon: -77 };
 const focusedLabels = () => (TextInput.prototype.focus as jest.Mock).mock.contexts.map((c) => (c as { props: { accessibilityLabel: string } }).props.accessibilityLabel);
 const T = { lat: 38.91, lon: -77 };
 
 beforeEach(() => {
+  mockWindowWidth = null;
   (TextInput.prototype.focus as jest.Mock).mockClear();
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   useQuickPlot.getState().open();
@@ -47,7 +58,7 @@ describe('QuickPlotEntry', () => {
     expect(useQuickPlot.getState().entryOpen).toBe(false);
   });
 
-  it('shows range and bearing from me, and clears to Zone', async () => {
+  it('shows range and bearing from me', async () => {
     useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
     usePresence.getState().setSelfPosition({ position: C, accuracyM: 5, timestamp: 1 });
     await renderWithProviders(<QuickPlotEntry landscape />);
@@ -55,9 +66,6 @@ describe('QuickPlotEntry', () => {
     await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
     await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent('Valid · 1.11 km @ 000° TRUE from you');
-    await fireEvent.press(screen.getByLabelText('Clear grid'));
-    expect(screen.getByLabelText('MGRS zone')).toHaveDisplayValue('');
-    expect(focusedLabels().at(-1)).toBe('MGRS zone');
   });
 
   it('opens empty on Zone when the crosshair has no position yet', async () => {
@@ -67,13 +75,54 @@ describe('QuickPlotEntry', () => {
   });
 
 
-  it.each([[false], [true]])('puts Clear right of the grid, with Cancel and Plot side by side below it (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('has no Clear button, and puts Cancel and Plot side by side below the grid (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
+    expect(screen.queryByLabelText('Clear grid')).toBeNull();
     const row = within(screen.getByTestId('quick-plot-row'));
-    expect(row.getByLabelText('Clear grid')).toBeTruthy();
     expect(row.queryByLabelText('Plot')).toBeNull();
     const actions = within(screen.getByTestId('quick-plot-actions'));
     expect(actions.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Cancel', 'Plot']);
+  });
+
+  describe('on Android in landscape, where the keyboard is taller', () => {
+    beforeEach(() => jest.replaceProperty(Platform, 'OS', 'android'));
+    afterEach(() => jest.restoreAllMocks());
+
+    const typeValidGrid = async () => {
+      useInteraction.getState().setCamera({ center: C, zoom: 14, bearing: 0 });
+      await renderWithProviders(<QuickPlotEntry landscape />);
+      const g = mgrsFieldsFor(T);
+      await fireEvent.changeText(screen.getByLabelText('Easting'), g.easting);
+      await fireEvent.changeText(screen.getByLabelText('Northing'), g.northing);
+    };
+
+    it('puts Cancel and Plot on the grid line when it fits, with the valid line below it all', async () => {
+      mockWindowWidth = ONE_LINE_MIN_WIDTH + 2 * EDGE;
+      await typeValidGrid();
+      const row = within(screen.getByTestId('quick-plot-row'));
+      expect(row.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Cancel', 'Plot']);
+      expect(row.queryByTestId('mgrs-status')).toBeNull();
+      expect(within(screen.getByTestId('quick-plot-entry')).getByTestId('mgrs-status')).toHaveTextContent(/^Valid/);
+    });
+
+    it('keeps Cancel and Plot below the grid when the line would not fit', async () => {
+      mockWindowWidth = ONE_LINE_MIN_WIDTH + 2 * EDGE - 1;
+      await typeValidGrid();
+      expect(within(screen.getByTestId('quick-plot-row')).queryByLabelText('Plot')).toBeNull();
+      expect(within(screen.getByTestId('quick-plot-row')).getByTestId('mgrs-status')).toHaveTextContent(/^Valid/);
+    });
+
+    it('keeps the portrait layout', async () => {
+      mockWindowWidth = 2000;
+      await renderWithProviders(<QuickPlotEntry landscape={false} />);
+      expect(within(screen.getByTestId('quick-plot-row')).queryByLabelText('Plot')).toBeNull();
+    });
+  });
+
+  it('keeps Cancel and Plot below the grid on iOS in landscape, even with room', async () => {
+    mockWindowWidth = 2000;
+    await renderWithProviders(<QuickPlotEntry landscape />);
+    expect(within(screen.getByTestId('quick-plot-row')).queryByLabelText('Plot')).toBeNull();
   });
 
   it('Cancel closes the box without plotting', async () => {

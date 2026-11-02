@@ -46,7 +46,6 @@ const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
 export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false, showStatus = true }: Props) {
-  const { colors } = useTheme();
   const zone = useRef<TextInput>(null);
   const square = useRef<TextInput>(null);
   const easting = useRef<TextInput>(null);
@@ -128,22 +127,29 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
           <TextField nested={nested} editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
         </View>
       </View>
-      {showStatus && (status.status === 'valid' || status.status === 'invalid') ? (
-        <View className="flex-row items-center gap-1">
-          {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
-          {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}
-          <Text testID="mgrs-status" className="shrink text-sm text-text">
-            {status.status === 'valid' ? (
-              <>
-                <Text className="text-success">Valid</Text>
-                {validDetail ? ` · ${validDetail}` : ''}
-              </>
-            ) : (
-              <Text className="text-danger">{status.message}</Text>
-            )}
-          </Text>
-        </View>
-      ) : null}
+      {showStatus ? <MgrsStatusLine status={status} validDetail={validDetail} /> : null}
+    </View>
+  );
+}
+
+/** The validation line under the fields: Valid (with `validDetail`) or why the grid is not valid; nothing while incomplete. */
+export function MgrsStatusLine({ status, validDetail }: { status: MgrsFieldStatus; validDetail?: string }) {
+  const { colors } = useTheme();
+  if (status.status !== 'valid' && status.status !== 'invalid') return null;
+  return (
+    <View className="flex-row items-center gap-1">
+      {status.status === 'valid' ? <Icon name="check" size={16} color={colors.success} /> : null}
+      {status.status === 'invalid' ? <Icon name="alert-circle-outline" size={16} color={colors.danger} /> : null}
+      <Text testID="mgrs-status" className="shrink text-sm text-text">
+        {status.status === 'valid' ? (
+          <>
+            <Text className="text-success">Valid</Text>
+            {validDetail ? ` · ${validDetail}` : ''}
+          </>
+        ) : (
+          <Text className="text-danger">{status.message}</Text>
+        )}
+      </Text>
     </View>
   );
 }
