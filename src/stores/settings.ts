@@ -110,7 +110,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   terrainIn2d: true,
   labelSize: 'medium',
   missionSort: 'recent',
-  panelBackground: 'light',
+  panelBackground: 'heavy',
 };
 
 const syncStorage: StateStorage = {

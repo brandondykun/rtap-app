@@ -30,8 +30,8 @@ describe('ThemeProvider', () => {
         <Glass />
       </ThemeProvider>,
     );
-    expect(screen.getByText('rgba(10, 10, 10, 0.35)')).toBeTruthy();
-    for (const [level, alpha] of [['clear', 0.15], ['heavy', 0.6], ['solid', 0.9]] as const) {
+    expect(screen.getByText('rgba(10, 10, 10, 0.6)')).toBeTruthy();
+    for (const [level, alpha] of [['clear', 0.15], ['light', 0.35], ['solid', 0.9]] as const) {
       await act(async () => useSettings.getState().setPanelBackground(level));
       expect(screen.getByText(`rgba(10, 10, 10, ${alpha})`)).toBeTruthy();
     }
@@ -47,8 +47,8 @@ describe('ThemeProvider', () => {
         <Divider />
       </ThemeProvider>,
     );
-    expect(screen.getByText('rgba(250, 250, 249, 0.35)')).toBeTruthy();
-    for (const [level, alpha] of [['clear', 0.45], ['heavy', 0.3], ['solid', 0.25]] as const) {
+    expect(screen.getByText('rgba(250, 250, 249, 0.3)')).toBeTruthy();
+    for (const [level, alpha] of [['clear', 0.45], ['light', 0.35], ['solid', 0.25]] as const) {
       await act(async () => useSettings.getState().setPanelBackground(level));
       expect(screen.getByText(`rgba(250, 250, 249, ${alpha})`)).toBeTruthy();
     }

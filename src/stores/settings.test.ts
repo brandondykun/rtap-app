@@ -118,11 +118,11 @@ describe('settings store', () => {
     expect(useSettings.getState().showMapLabels).toBe(true);
   });
 
-  it('sets and persists the panel background (light by default)', () => {
-    expect(useSettings.getState().panelBackground).toBe('light');
-    useSettings.getState().setPanelBackground('heavy');
+  it('sets and persists the panel background (heavy by default)', () => {
     expect(useSettings.getState().panelBackground).toBe('heavy');
-    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ panelBackground: 'heavy' });
+    useSettings.getState().setPanelBackground('light');
+    expect(useSettings.getState().panelBackground).toBe('light');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ panelBackground: 'light' });
   });
 
   it('sets and persists the label text size (medium by default)', () => {

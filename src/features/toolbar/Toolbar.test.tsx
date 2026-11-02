@@ -98,7 +98,7 @@ describe('Toolbar', () => {
 
   /** The divider is the panel's separator color, and a brighter white while tools hide behind it. */
   const lit = () => {
-    const colors = themeColors('dark', PANEL_LOOK.light.glass, PANEL_LOOK.light.divider);
+    const colors = themeColors('dark', PANEL_LOOK.heavy.glass, PANEL_LOOK.heavy.divider);
     const color = StyleSheet.flatten(screen.getByTestId('divider-start').props.style).backgroundColor;
     expect([colors['divider-lit'], colors.divider]).toContain(color);
     return color === colors['divider-lit'];
