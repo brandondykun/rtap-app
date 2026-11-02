@@ -156,6 +156,13 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-bearing')).toHaveTextContent('—');
   });
 
+  it('holds the space of a grid and its details while waiting for GPS, so the card does not grow when the fix arrives', async () => {
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.getByTestId('gps-position-placeholder', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('dock-self-row-details')).toBeTruthy();
+    expect(screen.queryByTestId('gps-position')).toBeNull();
+  });
+
   it('says location is off when it is denied', async () => {
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));

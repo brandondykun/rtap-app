@@ -115,6 +115,18 @@ const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 m
 const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: '0000 m', ft: '00000 ft' };
 const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
 
+/** A typical full-length grid, held invisibly while there is no fix so the row is as tall (and, inline, as wide) as with one. */
+const GRID_TEMPLATE_AT: LatLon = { lat: -38.88888, lon: -177.88888 };
+
+/** Takes up its children's space without showing them or reaching screen readers. */
+function Placeholder({ children }: { children: ReactNode }) {
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" className="opacity-0">
+      {children}
+    </View>
+  );
+}
+
 function SelfRow(props: SelfProps & { inline: boolean; minimal: boolean }) {
   const op = useOpPosition();
   return op ? <OpRow inline={props.inline} minimal={props.minimal} at={op.at} elevationM={op.elevationM} /> : <MeRow {...props} />;
@@ -152,6 +164,14 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
   const unit = useSettings((s) => s.altitudeUnit);
   const shown = me.kind === 'fix' ? me.fix : null;
   const setting = me.kind === 'set';
+  // Without a fix, invisible stand-ins hold the space the grid and its details will take, so the card does not grow when GPS arrives.
+  const detailPlaceholder = (template: string) => (
+    <Placeholder>
+      <OutlinedText color={colors.friendly} style={halo} className="font-mono text-xs">
+        {template}
+      </OutlinedText>
+    </Placeholder>
+  );
   return (
     <Pressable
       testID="dock-self"
@@ -174,7 +194,9 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
                 {formatLength(shown.altitudeM, unit)}
               </OutlinedText>
             </Reserve>
-          ) : null
+          ) : shown ? null : (
+            detailPlaceholder(ALTITUDE_TEMPLATE[unit])
+          )
         }
         bottom={
           shown?.manual ? (
@@ -191,14 +213,25 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
                 {`±${formatLength(shown.accuracyM, unit)}`}
               </OutlinedText>
             </Reserve>
-          ) : null
+          ) : (
+            detailPlaceholder(ACCURACY_TEMPLATE[unit])
+          )
         }>
         {shown ? (
           <Grid testID="gps-position" color={colors.friendly} outline small={inline}>{formatCoordinate(shown.position, coordinateFormat)}</Grid>
         ) : (
-          <OutlinedText color={colors.friendly} style={halo} className="text-xs">
-            {me.kind === 'set' ? SET_LOCATION_MESSAGE[me.reason] : 'Waiting for GPS…'}
-          </OutlinedText>
+          <View>
+            <Placeholder>
+              <Grid testID="gps-position-placeholder" outline small={inline}>
+                {formatCoordinate(GRID_TEMPLATE_AT, coordinateFormat)}
+              </Grid>
+            </Placeholder>
+            <View className="absolute inset-0 justify-center">
+              <OutlinedText color={colors.friendly} style={halo} className="text-xs" numberOfLines={1}>
+                {me.kind === 'set' ? SET_LOCATION_MESSAGE[me.reason] : 'Waiting for GPS…'}
+              </OutlinedText>
+            </View>
+          </View>
         )}
       </Row>
     </Pressable>
