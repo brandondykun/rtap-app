@@ -54,20 +54,30 @@ type SelfProps = {
   onSetLocation: () => void;
 };
 
-type RowProps = { testID: string; inline: boolean; minimal?: boolean; lead: ReactNode; children: ReactNode; top?: ReactNode; bottom?: ReactNode };
+type RowProps = {
+  testID: string;
+  inline: boolean;
+  minimal?: boolean;
+  lead: ReactNode;
+  children: ReactNode;
+  top?: ReactNode;
+  bottom?: ReactNode;
+  /** Inline: a tighter gap between the two details (ME, whose labelled altitude is the longer). */
+  tight?: boolean;
+};
 
 /**
  * Lead, grid, then the details on the right: two small lines, or one line when `inline`. The lead has a fixed width so
  * both grids line up; inline, the grid grows to the widest row so the details line up too, and everything is tighter
  * to take as little of the map as it can.
  */
-function Row({ testID, inline, minimal = false, lead, children, top, bottom }: RowProps) {
+function Row({ testID, inline, minimal = false, lead, children, top, bottom, tight = false }: RowProps) {
   return (
     <View testID={testID} className={inline ? 'flex-row items-center gap-1.5 py-1' : 'min-h-12 flex-row items-center gap-2 py-1.5'}>
       <View className={inline ? 'w-10' : 'w-12'}>{lead}</View>
       <View className={inline ? 'shrink grow' : 'flex-1'}>{children}</View>
       {!minimal && (top || bottom) ? (
-        <View testID={`${testID}-details`} className={inline ? 'ml-1 flex-row items-center gap-1.5' : 'items-end'}>
+        <View testID={`${testID}-details`} className={inline ? `ml-1 flex-row items-center ${tight ? 'gap-1' : 'gap-1.5'}` : 'items-end'}>
           {top}
           {bottom}
         </View>
@@ -112,7 +122,7 @@ function Reserve({ inline, template, children }: { inline: boolean; template: st
 const DISTANCE_TEMPLATE = '0000 km';
 const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 mils' };
 /** The longest altitude and accuracy (to 9,999 m / 99,999 ft). */
-const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: '0000 m', ft: '00000 ft' };
+const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: 'ALT 0000 m', ft: 'ALT 00000 ft' };
 const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
 
 /** A typical full-length grid, held invisibly while there is no fix so the row is as tall (and, inline, as wide) as with one. */
@@ -202,12 +212,13 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
         testID="dock-self-row"
         inline={inline}
         minimal={minimal}
+        tight
         lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
             <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
               <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
-                {formatLength(shown.altitudeM, unit)}
+                {`ALT ${formatLength(shown.altitudeM, unit)}`}
               </OutlinedText>
             </Reserve>
           ) : shown || (setting && !inline) ? null : (

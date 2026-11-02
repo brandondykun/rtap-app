@@ -48,7 +48,7 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-coordinate')).not.toHaveStyle({ color: themeColors('dark').danger });
     // The CTR icon is the app's crosshair: white arms, amber dot.
     expect(screen.getByTestId('crosshair-dot')).toHaveStyle({ backgroundColor: themeColors('dark').accent });
-    expect(screen.getByTestId('gps-altitude')).toHaveTextContent('142 m');
+    expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT 142 m');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±5 m');
     expect(screen.getByTestId('dock-center')).toHaveTextContent(/CTR/);
     expect(screen.getByTestId('readout-coordinate')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
@@ -68,6 +68,10 @@ describe('ReadoutDock', () => {
     }
     for (const id of ['readout-range', 'readout-bearing']) expect(screen.getByTestId('dock-center-details')).toContainElement(screen.getByTestId(id));
     for (const id of ['gps-altitude', 'gps-accuracy']) expect(screen.getByTestId('dock-self-row-details')).toContainElement(screen.getByTestId(id));
+    // ME's labelled altitude is longer: its two details sit closer together than CTR's.
+    expect(screen.getByTestId('dock-self-row-details').props.className).toContain('gap-1');
+    expect(screen.getByTestId('dock-self-row-details').props.className).not.toContain('gap-1.5');
+    expect(screen.getByTestId('dock-center-details').props.className).toContain('gap-1.5');
   });
 
   it('inline is tighter than the portrait dock: less padding, smaller grids, smaller icons', async () => {
@@ -91,11 +95,11 @@ describe('ReadoutDock', () => {
     fix(142.4);
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
     const reserves = () => screen.getAllByTestId('detail-reserve', HIDDEN).map((r) => r.props.children);
-    expect(reserves()).toEqual(['0000 km', '000°', '0000 m', '±0000 m']);
+    expect(reserves()).toEqual(['0000 km', '000°', 'ALT 0000 m', '±0000 m']);
     await screen.unmount();
     await act(async () => useSettings.setState({ altitudeUnit: 'ft', angleUnit: 'mil' }));
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
-    expect(reserves()).toEqual(['0000 km', '0000 mils', '00000 ft', '±00000 ft']);
+    expect(reserves()).toEqual(['0000 km', '0000 mils', 'ALT 00000 ft', '±00000 ft']);
     await screen.unmount();
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     expect(screen.queryAllByTestId('detail-reserve', HIDDEN)).toHaveLength(0);
@@ -187,7 +191,7 @@ describe('ReadoutDock', () => {
     useSettings.getState().setAltitudeUnit('ft');
     fix(null);
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
-    expect(screen.getByTestId('gps-altitude')).toHaveTextContent('—');
+    expect(screen.getByTestId('gps-altitude')).toHaveTextContent('ALT —');
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
   });
 
