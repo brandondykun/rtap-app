@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
@@ -8,7 +8,7 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 import { themeColors } from '@/theme/tokens';
 
-import { EYE_TRACK_HEIGHT, OpEyeSlider } from './OpEyeSlider';
+import { EYE_TRACK_HEIGHT, EYE_TRACK_MIN, OpEyeSlider } from './OpEyeSlider';
 
 const dragTo = (y: number) =>
   act(() => {
@@ -36,6 +36,18 @@ describe('OpEyeSlider', () => {
     expect(useOp.getState().eyeM).toBe(250);
     await dragTo(EYE_TRACK_HEIGHT);
     expect(useOp.getState().eyeM).toBe(5);
+  });
+
+  it('is at most EYE_TRACK_HEIGHT tall and shrinks to fit, never below the minimum: the ends follow the measured track', async () => {
+    await renderWithProviders(<OpEyeSlider />);
+    expect(screen.getByTestId('op-eye-slider').props.className).toContain('shrink');
+    expect(screen.getByTestId('op-eye-track').props.className).toContain('shrink');
+    expect(StyleSheet.flatten(screen.getByTestId('op-eye-track').props.style)).toMatchObject({ height: EYE_TRACK_HEIGHT, minHeight: EYE_TRACK_MIN });
+    await fireEvent(screen.getByTestId('op-eye-track'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 44, height: 120 } } });
+    await dragTo(120);
+    expect(useOp.getState().eyeM).toBe(5);
+    await dragTo(60);
+    expect(useOp.getState().eyeM).toBe(Math.round(5 + 245 / 2));
   });
 
   it('sets whole metres in between, and clamps past the ends', async () => {

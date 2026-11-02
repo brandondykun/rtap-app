@@ -10,7 +10,7 @@ import { useMapChrome } from '@/stores/map-chrome';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
-import { CONTROL_SIZE, EDGE, GAP, roomAboveSheet } from '../layout';
+import { CONTROL_SIZE, EDGE, GAP, HINT_BAR_HEIGHT as BAR_HEIGHT, roomAboveSheet } from '../layout';
 import { MapButton } from './MapButton';
 import { ReadoutDock } from './ReadoutDock';
 
@@ -40,12 +40,12 @@ type Props = {
 /** Height of the dock before it is first laid out: one row, or two with the divider. */
 const DOCK_ROW_HEIGHT = 50;
 const DOCK_HEIGHT = 2 * DOCK_ROW_HEIGHT + 1;
-/** Height of a tap-mode bar before it is first laid out (compact buttons plus padding). */
-const BAR_HEIGHT = 58;
 /** Space between the buttons and the card under them (gap-3). */
 const STACK_GAP = 12;
 /** Zoom in and zoom out, with the divider between them. */
 const ZOOM_HEIGHT = 2 * CONTROL_SIZE + 1;
+/** In portrait, a bottom menu taller than this share of the screen hides the readout dock. */
+export const TALL_SHEET_FRACTION = 0.5;
 
 /**
  * Map controls: north-up under the toolbar (only while the map is rotated), and at the bottom, also while a panel is open:
@@ -68,6 +68,10 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
   const [barHeight, setBarHeight] = useState(BAR_HEIGHT);
   // A tall bottom sheet can leave too little room below north-up: the buttons give way first, then the cards.
   const room = roomAboveSheet(height, panel, insets.top, toolbar);
+  // A menu pulled up past half the screen hides the CTR / ME readouts, leaving the map above it to see.
+  const sheetTall = panel?.side === 'bottom' && panel.size > height * TALL_SHEET_FRACTION;
+  // Something in the zoom buttons' place (OP mode's eye height) shrinks to stay under the toolbar, never over it.
+  const sideTop = side ? { top: insets.top + EDGE + toolbar + GAP } : null;
   const zoom = (
     <View testID="zoom-group" className="overflow-hidden rounded-2xl bg-surface-glass">
       <MapButton grouped label="Zoom in" icon="plus" onPress={onZoomIn} />
@@ -86,7 +90,7 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
           {bar}
         </View>
       </SelfCardSlot>
-    ) : room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
+    ) : sheetTall || room < dockSize + (over ? barHeight + STACK_GAP : 0) ? null : (
       <SelfCardSlot onHeight={setDockHeight}>
         <ReadoutDock showCenter={showCenter} following={following} disabled={!canRecenter} onRecenter={onRecenter} onSetLocation={onSetLocation} />
       </SelfCardSlot>
@@ -95,8 +99,12 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
     return (
       <>
         {showNorthUp ? <NorthUpButton top={insets.top + EDGE + toolbar + GAP} right={right} onPress={onNorthUp} /> : null}
-        <View testID="map-controls-bottom" pointerEvents="box-none" className="absolute gap-3" style={{ bottom, left: insets.left + EDGE, right }}>
-          <View pointerEvents="box-none" className="items-end gap-3">
+        <View
+          testID="map-controls-bottom"
+          pointerEvents="box-none"
+          className="absolute justify-end gap-3"
+          style={{ bottom, left: insets.left + EDGE, right, ...sideTop }}>
+          <View pointerEvents="box-none" className={`items-end gap-3 ${side ? 'flex-1' : ''}`}>
             {side ?? (showZoom && room >= ZOOM_HEIGHT + below ? zoom : null)}
           </View>
           {over ? (
@@ -120,7 +128,13 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
       </SelfCardSlot>
     );
   const below = card ? dockSize + STACK_GAP : 0;
-  const buttons = side ?? (!showZoom || room < ZOOM_HEIGHT + below ? null : zoom);
+  const buttons = side ? (
+    <View pointerEvents="box-none" className="flex-1 items-end">
+      {side}
+    </View>
+  ) : !showZoom || room < ZOOM_HEIGHT + below ? null : (
+    zoom
+  );
   // The action bar always shows: it is how the user finishes the mode. Over the dock, so both grids stay in view.
   const top = bar ? (
     <View testID="bar-over-dock" pointerEvents="box-none" className="flex-row items-end gap-3" style={{ maxWidth }}>
@@ -138,8 +152,8 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
       <View
         testID="map-controls-bottom"
         pointerEvents="box-none"
-        className="absolute items-end gap-3"
-        style={{ bottom, right }}>
+        className="absolute items-end justify-end gap-3"
+        style={{ bottom, right, ...sideTop }}>
         {top}
         {card}
       </View>

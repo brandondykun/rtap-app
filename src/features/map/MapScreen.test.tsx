@@ -979,6 +979,17 @@ describe('MapScreen', () => {
       mapboxMock().__camera.setCamera.mockClear();
     };
 
+    it('in OP mode a long-press (a finger held to look around) never adds a unit', async () => {
+      await openMap();
+      await stakeOnMap();
+      expect(useOp.getState().phase).toBe('on');
+      await act(async () =>
+        (mapboxMock().__props.MapView.main.onLongPress as (f: unknown) => void)({ type: 'Feature', geometry: { type: 'Point', coordinates: [-77.03, 38.9] }, properties: {} }),
+      );
+      expect(topMenu(useMenu.getState())).toBeNull();
+      expect(Haptics.impactAsync).not.toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
+    });
+
     it('OP waits for a spot, and CTR stakes it at the crosshair, turning 3D on', async () => {
       await openMap();
       await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 14, bearing: 30 }));

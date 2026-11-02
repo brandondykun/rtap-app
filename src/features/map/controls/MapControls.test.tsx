@@ -7,9 +7,20 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { CONTROL_SIZE, EDGE, GAP, TOOLBAR_HEIGHT } from '../layout';
-import { MapControls } from './MapControls';
+import { MapControls, TALL_SHEET_FRACTION } from './MapControls';
+
+/** A window height for one test (`null`: the real one), for the screens too short to tell some layouts apart. */
+let mockWindowHeight: number | null = null;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => {
+    const window = jest.requireActual('react-native/Libraries/Utilities/Dimensions').default.get('window');
+    return mockWindowHeight === null ? window : { ...window, height: mockWindowHeight };
+  },
+}));
 
 beforeEach(() => {
+  mockWindowHeight = null;
   useInteraction.setState(INITIAL_INTERACTION);
   useMapChrome.setState(INITIAL_MAP_CHROME);
   useSettings.setState(DEFAULT_SETTINGS);
@@ -47,6 +58,18 @@ describe('MapControls', () => {
       await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} side={<Text testID="side">eye</Text>} />);
       expect(screen.getByTestId('side')).toBeTruthy();
       expect(screen.queryByLabelText('Zoom in')).toBeNull();
+      await screen.unmount();
+    }
+  });
+
+  it('keeps a side control under the toolbar, never over it, in both orientations', async () => {
+    for (const landscape of [false, true]) {
+      await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} side={<Text>eye</Text>} />);
+      expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).top).toBe(EDGE + TOOLBAR_HEIGHT + GAP);
+      await screen.unmount();
+      // Without one, the controls stay anchored at the bottom only.
+      await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape={landscape} />);
+      expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).top).toBeUndefined();
       await screen.unmount();
     }
   });
@@ -109,6 +132,20 @@ describe('MapControls', () => {
     expect(screen.getByLabelText('Zoom in')).toBeTruthy();
   });
 
+  it('in portrait, hides the readout dock once a menu is taller than half the screen, but keeps a docked action bar', async () => {
+    const half = Dimensions.get('window').height * TALL_SHEET_FRACTION;
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: Math.floor(half) }} landscape={false} />);
+    expect(screen.getByTestId('dock-self')).toBeTruthy();
+    await screen.unmount();
+    await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: Math.ceil(half) + 1 }} landscape={false} />);
+    expect(screen.queryByTestId('dock-self')).toBeNull();
+    await screen.unmount();
+    await renderWithProviders(
+      <MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size: Math.ceil(half) + 1 }} landscape={false} bar={<Text>bar</Text>} />,
+    );
+    expect(screen.getByTestId('bar-in-dock')).toBeTruthy();
+  });
+
   it('hides zoom and the dock when a full sheet leaves no room for them', async () => {
     const size = Dimensions.get('window').height - 100;
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={{ side: 'bottom', size }} landscape={false} showCenter />);
@@ -166,7 +203,9 @@ describe('MapControls', () => {
   });
 
   it('gives way zoom first, then the dock, when a bottom sheet leaves too little room', async () => {
-    const { height } = Dimensions.get('window');
+    // A short screen, so the sheets stay under half of it (past half the dock always hides).
+    mockWindowHeight = 390;
+    const height = mockWindowHeight;
     const roomFor = (h: number) => height - h - (EDGE + TOOLBAR_HEIGHT + GAP + CONTROL_SIZE + GAP + EDGE);
     const dock = 2 * 50 + 1;
     const render = async (room: number) => {

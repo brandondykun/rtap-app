@@ -478,7 +478,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     stakeAt(at);
   };
   const onLongPress = (coord: LatLon) => {
-    if (useMeasure.getState().active) return;
+    // In OP mode a finger held to look around reads as a long-press (the map itself stays still): it never adds a unit.
+    if (useMeasure.getState().active || useOp.getState().phase === 'on') return;
     notifyPlaced();
     if (isDrawing()) {
       placeDraftPoint(coord);
@@ -601,7 +602,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         side={
           opPhase === 'on' ? (
             // Bottom right, in the zoom buttons' place: eye height, then Exit on its own.
-            <View testID="op-side" pointerEvents="box-none" className="items-end gap-3">
+            <View testID="op-side" pointerEvents="box-none" className="flex-1 items-end justify-end gap-3">
               <OpEyeSlider />
               <MenuButton glass compact label="Exit" icon="close" onPress={() => exitOp()} />
             </View>
