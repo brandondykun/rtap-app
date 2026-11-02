@@ -48,6 +48,11 @@ export function composeSidc(affiliation: Affiliation, unitType: UnitType, echelo
   return `S${AFFILIATION_CODE[affiliation]}GP${UNIT_FUNCTIONS[unitType].functionId}${ECHELON_CODE[echelon]}---`;
 }
 
+/** A symbol's affiliation (SIDC position 2), or null for one the app does not offer (suspect, exercise and so on). */
+export function affiliationOf(sidc: string): Affiliation | null {
+  return AFFILIATION_BY_CODE.get(sidc[1]) ?? null;
+}
+
 /** A ground unit SIDC the app can edit; an echelon it does not offer reads as unspecified. */
 export function decomposeSidc(sidc: string): { affiliation: Affiliation; unitType: UnitType; echelon: Echelon } | null {
   if (sidc.length !== 15 || sidc[0] !== 'S' || sidc[2] !== 'G' || sidc[3] !== 'P') return null;

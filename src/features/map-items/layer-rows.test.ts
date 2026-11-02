@@ -10,6 +10,20 @@ function item(id: string, name: string, sidc: string | null = 'SHGPUCI--------')
   return { id, kind: 'point', geometry: pointGeometry(at), sidc, style: null, name, notes: null, elevationM: null, threatRangeM: null, horizontalRangeM: null, verticalRangeFt: null, updatedAt: 1 };
 }
 
+describe('layerRows by affiliation (the Units filter chips)', () => {
+  const units = [item('h', 'HOS-1'), item('f', 'FRD-1', composeSidc('friend', 'infantry')), item('s', 'SUS-1', 'SSGPUCI--------')];
+
+  it('keeps only units of the chosen affiliation, with show/hide all narrowed to them', () => {
+    const r = layerRows(units, ['f'], '', 100, 'unit', [], 'friend');
+    expect(r.rows.map((x) => x.id)).toEqual(['f']);
+    expect(r).toMatchObject({ total: 1, hiddenIds: ['f'], visibleIds: [] });
+  });
+
+  it('keeps every unit for All, including ones of an affiliation with no chip (suspect)', () => {
+    expect(layerRows(units, [], '', 100, 'unit', [], null).total).toBe(3);
+  });
+});
+
 describe('layerRows', () => {
   const items = [item('a', 'HOS-10'), item('b', 'hos-2'), item('c', 'OBJ IRON', 'bogus'), item('d', 'FRD-1')];
 

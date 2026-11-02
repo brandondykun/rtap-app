@@ -1,5 +1,5 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,15 +8,16 @@ import { MenuHeader } from '@/components/menu/MenuHeader';
 import { MenuListItem } from '@/components/menu/MenuListItem';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { usePanelListProps } from '@/components/menu/panel-list';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
 import { useMenuEntryState } from '@/features/menus/menu-entry-memory';
-import type { ItemCategory } from '@/features/symbology/categories';
+import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo } from '@/features/symbology/line-types';
 import { polygonTypeInfo } from '@/features/symbology/polygon-types';
+import { AFFILIATION_LABELS, affiliationOf, composeSidc, type Affiliation } from '@/features/symbology/presets';
 import { SymbolImage } from '@/features/symbology/SymbolImage';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
@@ -41,11 +42,19 @@ const count = (n: number) => n.toLocaleString('en-US');
 const tabCount = (n: number) => (n > 99 ? '99+' : String(n));
 
 // `label` is the screen-reader name; `short` is what the tab shows, so all four fit on one line.
-const TABS: { id: ItemCategory; label: string; short: string; one: string; noun: string; empty: string }[] = [
-  { id: 'unit', label: 'Units', short: 'Units', one: 'unit', noun: 'units', empty: 'No units yet. Use UNIT or long-press the map.' },
-  { id: 'point', label: 'Points', short: 'Points', one: 'point', noun: 'points', empty: 'No points yet. Use POINT to add one.' },
-  { id: 'line', label: 'Lines', short: 'Lines', one: 'line', noun: 'lines', empty: 'No lines yet. Use LINE to draw one.' },
-  { id: 'polygon', label: 'Polygons', short: 'Polys', one: 'polygon', noun: 'polygons', empty: 'No polygons yet. Use POLYGON to draw one.' },
+/** The Units tab's filter chips, in the order of the design: friendly and hostile first. */
+const CHIP_AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'unknown', 'neutral'];
+const NO_AFFILIATION_COUNTS: Record<Affiliation, number> = { friend: 0, hostile: 0, neutral: 0, unknown: 0 };
+
+/** The empty state's box is at least this tall, and otherwise fills the panel below the tabs. */
+const EMPTY_MIN_HEIGHT = 220;
+
+/** `icon` is the tab's toolbar tool's, shown on its empty state. */
+const TABS: { id: ItemCategory; label: string; short: string; one: string; noun: string; icon: IconName }[] = [
+  { id: 'unit', label: 'Units', short: 'Units', one: 'unit', noun: 'units', icon: 'rhombus-outline' },
+  { id: 'point', label: 'Points', short: 'Points', one: 'point', noun: 'points', icon: 'map-marker-outline' },
+  { id: 'line', label: 'Lines', short: 'Lines', one: 'line', noun: 'lines', icon: 'vector-polyline' },
+  { id: 'polygon', label: 'Polygons', short: 'Polys', one: 'polygon', noun: 'polygons', icon: 'pentagon-outline' },
 ];
 const RING_ICON = 'record-circle-outline';
 /** Scrolled further down than this, a button brings the list back to the top. */
@@ -72,21 +81,38 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   // Focus only when the user opens search, not when coming Back to Layers with it still open.
   const [focusSearch, setFocusSearch] = useState(false);
   const chosenTab = useLayersView((s) => s.tab);
+  const chosenAffiliation = useLayersView((s) => s.unitAffiliation);
   const byTab = useMemo(() => categoryCounts(items), [items]);
   // The tab chosen last; until then the first tab that has items.
   const tab = chosenTab ?? TABS.find((t) => byTab[t.id] > 0)?.id ?? 'unit';
   const tabInfo = TABS.find((t) => t.id === tab)!;
+  const byAffiliation = useMemo(() => affiliationCounts(items), [items]);
+  // A chip whose units are all gone falls back to All, rather than showing an empty list.
+  const affiliation = tab === 'unit' && chosenAffiliation && byAffiliation[chosenAffiliation] > 0 ? chosenAffiliation : null;
   // No rows built up front: the list builds each one as it scrolls into view.
   const { matches, matched, total, hiddenIds, visibleIds, ringableIds, ringOnIds } = useMemo(
-    () => layerRows(items, hidden, query, 0, tab, ringIds),
-    [items, hidden, query, tab, ringIds],
+    () => layerRows(items, hidden, query, 0, tab, ringIds, affiliation),
+    [items, hidden, query, tab, ringIds, affiliation],
   );
+  // Empty is the whole tab, not what a chip leaves.
+  const empty = byTab[tab] === 0;
   const hiddenSet = useMemo(() => new Set(hidden), [hidden]);
   const ringOnSet = useMemo(() => new Set(ringIds), [ringIds]);
   const panelListProps = usePanelListProps<MapItemSnapshot>();
   const { colors } = useTheme();
   const list = useRef<FlashListRef<MapItemSnapshot> | null>(null);
+  // Another tab or chip is a new list: it starts at the top, with the tabs and chips in view.
+  const shownList = useRef({ tab, affiliation });
+  useEffect(() => {
+    if (shownList.current.tab === tab && shownList.current.affiliation === affiliation) return;
+    shownList.current = { tab, affiliation };
+    list.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [tab, affiliation]);
   const [farDown, setFarDown] = useState(false);
+  // What the empty state needs to fill the rest of the panel: the list's height, and where the box starts in it.
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [sectionTop, setSectionTop] = useState(0);
+  const [emptyTop, setEmptyTop] = useState(0);
   // Down by the screen edge, only clear of the home indicator (lower than the list's own bottom padding).
   const topButtonBottom = Math.max(useSafeAreaInsets().bottom, TOP_BUTTON_MIN_BOTTOM);
   // The panel's scroll props, also keeping the list (to scroll it back up) and whether it is far enough down to.
@@ -97,7 +123,13 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         // Room under the last row for the Top button, so the row scrolls clear above it rather than sitting under it.
         contentContainerStyle: {
           ...panelListProps.contentContainerStyle,
-          paddingBottom: Math.max(panelListProps.contentContainerStyle.paddingBottom, topButtonBottom + TOP_BUTTON_HEIGHT + TOP_BUTTON_GAP),
+          paddingBottom: empty
+            ? panelListProps.contentContainerStyle.paddingBottom
+            : Math.max(panelListProps.contentContainerStyle.paddingBottom, topButtonBottom + TOP_BUTTON_HEIGHT + TOP_BUTTON_GAP),
+        },
+        onLayout: (e: Parameters<typeof panelListProps.onLayout>[0]) => {
+          panelListProps.onLayout(e);
+          setViewportHeight(e.nativeEvent.layout.height);
         },
         ref: (l: FlashListRef<MapItemSnapshot> | null) => {
           list.current = l;
@@ -108,7 +140,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           setFarDown(e.nativeEvent.contentOffset.y > BACK_TO_TOP_AFTER);
         },
       },
-    [panelListProps, topButtonBottom],
+    [panelListProps, topButtonBottom, empty],
   );
   const tabOptions = TABS.map((t) => ({
     value: t.id,
@@ -123,7 +155,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
 
   // The ring column shows on the Units tab once any unit there has a ring distance.
   const ringColumn = tab === 'unit' && ringableIds.length > 0;
-  const noun = total === 1 ? tabInfo.one : tabInfo.noun;
+  const noun = affiliation ? AFFILIATION_LABELS[affiliation].toLowerCase() : total === 1 ? tabInfo.one : tabInfo.noun;
   const listCount = query.trim() ? `${count(matched)} of ${count(total)} ${noun}` : `${count(total)} ${noun}`;
 
   const toggleSearch = () => {
@@ -188,7 +220,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         }
       />
       {/* A section whose last gap, under the counts, is the rows' own (they follow in the list). */}
-      <View className="gap-2 px-4 pb-2">
+      <View onLayout={(e) => setSectionTop(e.nativeEvent.layout.y)} className="gap-2 px-4 pb-2">
         <MenuSegmented<ItemCategory>
           options={tabOptions}
           value={tab}
@@ -197,6 +229,9 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             setQuery('');
           }}
         />
+        {tab === 'unit' && !empty ? (
+          <UnitFilterChips all={byTab.unit} counts={byAffiliation} value={affiliation} onChange={(a) => useLayersView.getState().setUnitAffiliation(a)} />
+        ) : null}
         {searchOpen && total > 0 ? (
           <TextField
             icon="magnify"
@@ -218,6 +253,8 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           <View className="flex-row items-center gap-1 pt-1">
             <Text testID="layers-count" className="mr-auto text-xs font-semibold uppercase tracking-widest text-text-muted">
               {listCount}
+              {/* A chip narrows the tab: how many units there are in all, in quieter type. */}
+              {affiliation && !query.trim() ? <Text className="font-normal normal-case tracking-normal">{` of ${count(byTab.unit)}`}</Text> : null}
             </Text>
             {ringColumn ? (
               <MenuCountButton
@@ -236,7 +273,17 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
             />
           </View>
         ) : null}
-        {total === 0 ? <Text className="text-sm text-text-muted">{tabInfo.empty}</Text> : null}
+        {empty ? (
+          <EmptyLayer
+            icon={tabInfo.icon}
+            title={`No ${tabInfo.noun} yet`}
+            // Broken in the same place on every tab, so the box looks the same on each (Polygons would wrap alone).
+            body={`${tabInfo.label} you add to the map\nwill be listed here.`}
+            // Down to the panel's bottom padding, less this section's own (pb-2).
+            minHeight={Math.max(EMPTY_MIN_HEIGHT, viewportHeight - sectionTop - emptyTop - (panelListProps?.contentContainerStyle.paddingBottom ?? 0) - 8)}
+            onTop={setEmptyTop}
+          />
+        ) : null}
         {total > 0 && matched === 0 ? <Text className="text-sm text-text-muted">Nothing matches.</Text> : null}
       </View>
     </View>
@@ -263,6 +310,9 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         // A row also redraws when its visibility, ring or the coordinate format changes.
         extraData={[hiddenSet, ringOnSet, ringColumn, coordinateFormat]}
         ListHeaderComponent={controls}
+        // Kept off: when rows come back above the first one shown (a chip back to All), FlashList would scroll to keep
+        // that row in place, pushing the tabs and chips up. A list sorted by name has nothing worth holding in place.
+        maintainVisibleContentPosition={{ disabled: true }}
         keyboardDismissMode="on-drag"
       />
       {farDown ? (
@@ -284,6 +334,78 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           </Pressable>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/** How many units of each affiliation (units the app does not class, like suspect, count only under All). */
+function affiliationCounts(items: readonly MapItemSnapshot[]): Record<Affiliation, number> {
+  const counts = { ...NO_AFFILIATION_COUNTS };
+  for (const i of items) {
+    if (itemCategory(i) !== 'unit' || i.sidc === null) continue;
+    const a = affiliationOf(i.sidc);
+    if (a) counts[a] += 1;
+  }
+  return counts;
+}
+
+/**
+ * The Units tab's filter: All, then one chip per affiliation showing its frame and count. One at a time; a chip with no
+ * units is dimmed and cannot be chosen. The chosen chip is outlined and filled in amber, like the chosen tab above it.
+ */
+function UnitFilterChips({ all, counts, value, onChange }: { all: number; counts: Record<Affiliation, number>; value: Affiliation | null; onChange: (a: Affiliation | null) => void }) {
+  const chips: { key: string; affiliation: Affiliation | null; count: number; label: string }[] = [
+    { key: 'all', affiliation: null, count: all, label: 'All' },
+    ...CHIP_AFFILIATIONS.map((a) => ({ key: a, affiliation: a, count: counts[a], label: AFFILIATION_LABELS[a] })),
+  ];
+  return (
+    <View testID="layers-unit-filter" className="flex-row gap-1.5">
+      {chips.map((chip) => {
+        const selected = chip.affiliation === value;
+        const disabled = chip.count === 0 && !selected;
+        return (
+          <Pressable
+            key={chip.key}
+            testID={`layers-chip-${chip.key}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${chip.label}, ${chip.count} ${chip.count === 1 ? 'unit' : 'units'}`}
+            accessibilityState={{ selected, disabled }}
+            disabled={disabled}
+            onPress={() => onChange(chip.affiliation)}
+            hitSlop={{ top: 4, bottom: 4 }}
+            className={`h-9 flex-1 flex-row items-center justify-center gap-1.5 rounded-full border active:opacity-60 ${selected ? 'border-accent bg-accent-subtle' : 'border-border'} ${disabled ? 'opacity-40' : ''}`}>
+            {chip.affiliation ? (
+              <SymbolImage sidc={composeSidc(chip.affiliation, 'unspecified')} width={18} height={16} />
+            ) : (
+              <Text className={`text-sm font-semibold ${selected ? 'text-accent' : 'text-text'}`}>All</Text>
+            )}
+            <Text className={`font-mono text-xs ${selected ? 'text-accent' : 'text-text-muted'}`}>{count(chip.count)}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** A tab with nothing in it: a dashed box with the tab's tool icon (and a plus) over what will be listed there. */
+function EmptyLayer({ icon, title, body, minHeight, onTop }: { icon: IconName; title: string; body: string; minHeight: number; onTop: (y: number) => void }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      testID="layers-empty"
+      onLayout={(e) => onTop(e.nativeEvent.layout.y)}
+      style={{ minHeight }}
+      className="items-center justify-center gap-3 rounded-2xl border border-dashed border-border p-6">
+      <View className="mb-1 h-24 w-24 items-center justify-center rounded-full border border-border bg-surface-raised">
+        <Icon testID="layers-empty-icon" name={icon} size={32} color={colors['text-muted']} />
+        <View className="absolute -bottom-1 -right-1 h-9 w-9 items-center justify-center rounded-full border-2 border-surface bg-accent">
+          <Icon testID="layers-empty-plus" name="plus" size={22} color={colors['on-accent']} />
+        </View>
+      </View>
+      <Text className="text-center text-2xl font-bold text-text">
+        {title}
+      </Text>
+      <Text className="text-center text-base text-text-muted">{body}</Text>
     </View>
   );
 }
@@ -362,4 +484,4 @@ const LayerListRow = memo(
     (Object.keys(a.row) as (keyof LayerRow)[]).every((k) => a.row[k] === b.row[k] || (k === 'coord' && a.row.coord?.lat === b.row.coord?.lat && a.row.coord?.lon === b.row.coord?.lon)),
 );
 
-export const layersMenu = defineMenu({ id: 'layers', family: 'app', title: 'Layers', icon: 'layers-outline', component: LayersMenu, ownScroll: true });
+export const layersMenu = defineMenu({ id: 'layers', family: 'app', title: 'Layers', icon: 'layers-outline', component: LayersMenu, ownScroll: true, growOnly: true });

@@ -1,7 +1,9 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ScrollView, StyleSheet } from 'react-native';
 import { firstValueFrom } from 'rxjs';
 
+import type { IconName } from '@/components/ui/Icon';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
@@ -52,11 +54,13 @@ describe('LayersMenu', () => {
   it('explains an empty mission', async () => {
     await openLayers();
     expect(screen.getByLabelText('Units')).toBeSelected();
-    expect(screen.getByText('No units yet. Use UNIT or long-press the map.')).toBeTruthy();
+    expect(screen.getByText('No units yet')).toBeTruthy();
+    expect(screen.getByText('Units you add to the map\nwill be listed here.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Lines'));
-    expect(screen.getByText('No lines yet. Use LINE to draw one.')).toBeTruthy();
+    expect(screen.getByText('No lines yet')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Polygons'));
-    expect(screen.getByText('No polygons yet. Use POLYGON to draw one.')).toBeTruthy();
+    expect(screen.getByText('No polygons yet')).toBeTruthy();
+    expect(screen.getByText('Polygons you add to the map\nwill be listed here.')).toBeTruthy();
     expect(screen.queryByLabelText('Show all')).toBeNull();
     expect(screen.queryByLabelText('Hide all')).toBeNull();
   });
@@ -83,6 +87,83 @@ describe('LayersMenu', () => {
     expect(screen.getByText('HOS-2')).toBeTruthy();
     // Opening it again starts empty.
     expect(await openSearch()).toHaveProp('value', '');
+  });
+
+  it.each([
+    ['Units', 'rhombus-outline'],
+    ['Points', 'map-marker-outline'],
+    ['Lines', 'vector-polyline'],
+    ['Polygons', 'pentagon-outline'],
+  ] as const)('shows the %s tool icon, with a plus, on its empty tab', async (tab, icon) => {
+    await openLayers();
+    await fireEvent.press(screen.getByLabelText(tab));
+    const empty = within(screen.getByTestId('layers-empty'));
+    // The icon font draws each icon as one character.
+    const glyph = (name: IconName) => String.fromCodePoint(Number(MaterialCommunityIcons.getRawGlyphMap()[name]));
+    expect(empty.getByTestId('layers-empty-icon')).toHaveTextContent(glyph(icon));
+    expect(empty.getByTestId('layers-empty-plus')).toHaveTextContent(glyph('plus'));
+  });
+
+  describe('Units filter chips', () => {
+    async function openWithUnits() {
+      const ctx = makeTestContext();
+      const frd = await placePoint(ctx, { missionId: 'm1', coord: at, sidc: composeSidc('friend', 'infantry'), name: 'FRD-1' });
+      if (!frd.ok) throw new Error('setup');
+      await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-1' });
+      await placePoint(ctx, { missionId: 'm1', coord: at, sidc: HOS, name: 'HOS-2' });
+      await openLayers(ctx);
+      await screen.findByText('HOS-2');
+      return { ctx, frdId: frd.value.id };
+    }
+    const chip = (key: string) => screen.getByTestId(`layers-chip-${key}`);
+
+    it('shows All and one chip per affiliation with its count, All chosen', async () => {
+      await openWithUnits();
+      expect(chip('all')).toHaveProp('accessibilityLabel', 'All, 3 units');
+      expect(chip('friend')).toHaveProp('accessibilityLabel', 'Friendly, 1 unit');
+      expect(chip('hostile')).toHaveProp('accessibilityLabel', 'Hostile, 2 units');
+      expect(chip('all')).toBeSelected();
+      // Nobody neutral or unknown: dimmed, and cannot be chosen.
+      expect(chip('neutral')).toBeDisabled();
+      expect(chip('unknown')).toBeDisabled();
+    });
+
+    it('lists only the chosen affiliation, says how many of all, and narrows show/hide all to it', async () => {
+      await openWithUnits();
+      await fireEvent.press(chip('hostile'));
+      expect(chip('hostile')).toBeSelected();
+      expect(screen.queryByText('FRD-1')).toBeNull();
+      expect(screen.getByText('HOS-1')).toBeTruthy();
+      expect(screen.getByTestId('layers-count')).toHaveTextContent('2 hostile of 3');
+      expect(screen.getByLabelText('Hide all')).toBeTruthy();
+      await fireEvent.press(chip('all'));
+      expect(screen.getByText('FRD-1')).toBeTruthy();
+      expect(screen.getByTestId('layers-count')).toHaveTextContent('3 units');
+    });
+
+    it('falls back to All once the chosen affiliation has no units left', async () => {
+      const { ctx, frdId } = await openWithUnits();
+      await fireEvent.press(chip('friend'));
+      await act(async () => void (await deleteItem(ctx, frdId)));
+      await waitFor(() => expect(chip('all')).toBeSelected());
+      expect(screen.getByText('HOS-1')).toBeTruthy();
+    });
+
+    it('starts the list at the top whenever the chip or the tab changes', async () => {
+      await openWithUnits();
+      const scrollTo = jest.mocked(ScrollView.prototype.scrollTo);
+      for (const change of [() => fireEvent.press(chip('hostile')), () => fireEvent.press(chip('all')), () => fireEvent.press(screen.getByLabelText('Points'))]) {
+        scrollTo.mockClear();
+        await change();
+        expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 0, animated: false }));
+      }
+    });
+
+    it('is only on the Units tab', async () => {
+      await openWithUnits();
+      await fireEvent.press(screen.getByLabelText('Points'));
+      expect(screen.queryByTestId('layers-unit-filter')).toBeNull();
+    });
   });
 
   it('has no search button while the tab is empty', async () => {

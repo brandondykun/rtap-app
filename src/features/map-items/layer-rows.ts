@@ -1,7 +1,7 @@
 import { itemCategory, isKnownSidc, typeLabel, type ItemCategory } from '@/features/symbology/categories';
 import { lineTypeInfo, lineTypeOf, type LineType } from '@/features/symbology/line-types';
 import { polygonStyleOf, polygonTypeInfo, type PolygonType } from '@/features/symbology/polygon-types';
-import { DEFAULT_SIDC } from '@/features/symbology/presets';
+import { affiliationOf, DEFAULT_SIDC, type Affiliation } from '@/features/symbology/presets';
 import type { LatLon } from '@/lib/geo/types';
 
 import { parseLineGeometry, parsePolygonGeometry, pointCoord } from './geometry';
@@ -116,7 +116,7 @@ export function layerRow(i: MapItemSnapshot, hidden: ReadonlySet<string>, ringOn
  * The last search sorted: the items list is shared while the mission is open, so opening Layers again (or coming Back
  * to it) with nothing changed reuses the order instead of sorting thousands of names again.
  */
-let lastSort: { items: readonly MapItemSnapshot[]; category: ItemCategory | null; query: string; matches: MapItemSnapshot[] } | null = null;
+let lastSort: { items: readonly MapItemSnapshot[]; category: ItemCategory | null; affiliation: Affiliation | null; query: string; matches: MapItemSnapshot[] } | null = null;
 
 /**
  * Rows for the Layers list: the mission's items (or one category's) matching `query` (name or type
@@ -130,11 +130,14 @@ export function layerRows(
   limit = LAYER_ROW_LIMIT,
   category: ItemCategory | null = null,
   ringIds: readonly string[] = [],
+  /** On the Units tab, only units of this affiliation (the filter chips); null for all. */
+  affiliation: Affiliation | null = null,
 ): LayerRows {
   const hidden = new Set(hiddenIds);
   const ringOn = new Set(ringIds);
   const ringable = (i: MapItemSnapshot) => ringRadiusM(i) !== null;
-  const inTab = category ? items.filter((i) => itemCategory(i) === category) : items;
+  const inCategory = category ? items.filter((i) => itemCategory(i) === category) : items;
+  const inTab = category === 'unit' && affiliation ? inCategory.filter((i) => i.sidc !== null && affiliationOf(i.sidc) === affiliation) : inCategory;
   const q = query.trim().toLowerCase();
   const label = (i: MapItemSnapshot) =>
     i.kind === 'line'
@@ -143,7 +146,7 @@ export function layerRows(
         ? polygonTypeInfo(polygonStyleOf(i.style).polygonType).label
         : typeLabel(i.sidc);
   const matchesQuery = (i: MapItemSnapshot) => i.name.toLowerCase().includes(q) || (label(i)?.toLowerCase().includes(q) ?? false);
-  const cached = lastSort && lastSort.items === items && lastSort.category === category && lastSort.query === q ? lastSort.matches : null;
+  const cached = lastSort && lastSort.items === items && lastSort.category === category && lastSort.affiliation === affiliation && lastSort.query === q ? lastSort.matches : null;
   const matches =
     cached ??
     (q ? inTab.filter(matchesQuery) : inTab)
@@ -151,7 +154,7 @@ export function layerRows(
       // Names that compare equal ('HOS-1' vs 'hos-1') fall back to id so the order is stable.
       .sort((a, b) => compareKeys(a.key, b.key) || (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0))
       .map((m) => m.item);
-  lastSort = { items, category, query: q, matches };
+  lastSort = { items, category, affiliation, query: q, matches };
   const counts = categoryCounts(items);
   return {
     rows: matches.slice(0, limit).map((i) => layerRow(i, hidden, ringOn)),
