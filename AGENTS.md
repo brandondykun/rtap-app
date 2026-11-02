@@ -39,3 +39,22 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Value colors
+
+Each kind of value keeps one color everywhere it shows: on the map, in the readouts, cards, forms, lists and bars. Users read a value's kind from its color, and heights are always called ALT or Altitude, never elevation, so a new screen must follow this, and the About page explains it ("Reading the colors").
+
+| Value | Token | Color | Examples |
+| --- | --- | --- | --- |
+| Friendly grid | `friendly` | sky blue | ME, your manual position, friendly units' grids |
+| Any other grid | `text` | white | CTR, the OP, hostile, neutral and unknown units, points, shapes |
+| Distance | `value-distance` | amber | range to CTR or an item, measure, line segments and totals, radius, perimeter |
+| Direction | `value-bearing` | white | bearings in degrees or mils, with their north reference |
+| Altitude | `value-altitude` | white, always prefaced ALT | ALT (yours, the OP's, units' and points'), the OP eye height, ceilings (↕ ft) |
+| Accuracy | `value-accuracy` | muted gray | the GPS ± |
+
+- Use the tokens, not the palette: `VALUE_TEXT_CLASS[kind]` / `VALUE_TOKEN[kind]` and `gridTextClass(friendly)` from `src/theme/value-colors.ts`, or `DataCell`'s `kind`, `MenuVertexRow`'s `detailKind`. On the map, chips with both a distance and a bearing carry them as separate `distance`/`bearing` properties so `makeRangeLabelStyle` colors each.
+- In cards and forms, color the number only: its label (DIST, ALT) and small unit stay muted. In the readouts, bars and map chips the whole value is colored, its unit and short label (ALT) included. A missing value (—) stays muted. Values not in the table (area, counts, the G-M angle) stay in the normal text color.
+- Never use these colors for anything else, and never use an affiliation color (red, green, yellow) for a value. Amber is also the app's highlight (selected tab, active tool, primary buttons), so a distance never sits on an amber fill.
+- Labels and units still name every value, so color is never the only cue.
+- Changing a color or adding a kind: update `tokens.ts`, `semantic-token-names.json`, `VALUE_COLOR_GUIDE` (the About page) and this table together.

@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
  * Uppercase muted label above its content; `trailing` is a short note right-aligned on the label row. `flush` drops the
  * side padding, for sections inside an `inset` MenuColumns (which supplies it once).
  */
-export function MenuSection({ label, trailing, flush = false, children }: { label?: string; trailing?: string; flush?: boolean; children: ReactNode }) {
+export function MenuSection({ label, trailing, flush = false, children }: { label?: string; trailing?: ReactNode; flush?: boolean; children: ReactNode }) {
   return (
     <View testID={label ? `menu-section-${label}` : undefined} className={`gap-2 pb-4 ${flush ? '' : 'px-4'}`}>
       {label || trailing ? (

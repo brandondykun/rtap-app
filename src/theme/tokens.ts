@@ -52,6 +52,16 @@ const dark = {
   danger: 'red-500',
   /** Fill behind a destructive action (Delete), as accent-subtle is to accent. */
   'danger-subtle': 'red-950',
+  /**
+   * Value colors: each kind of value has one color everywhere it shows (readouts, cards, forms, the map), so it can be
+   * told apart at a glance. Grids are `friendly` for you and friendly units, `text` otherwise. See AGENTS.md, Value colors.
+   */
+  'value-distance': 'amber-500',
+  /** Directions and altitudes read plain white (altitudes are always prefaced ALT), like the grids that are not friendly. */
+  'value-bearing': 'stone-50',
+  'value-altitude': 'stone-50',
+  /** How good a fix is (GPS ±): quieter than the values themselves. */
+  'value-accuracy': 'stone-400',
   friendly: 'sky-300',
   hostile: 'red-400',
   neutral: 'green-300',

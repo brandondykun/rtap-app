@@ -124,13 +124,31 @@ export function makeRangeLineStyle(colors: Record<SemanticToken, string>): LineL
   return { lineColor: colors.accent, lineWidth: 2, lineDasharray: [2, 2] };
 }
 
-/** "1.15 km · 103°" on a dark chip at the line's midpoint. */
+/** A range chip's distance and bearing, apart, so each is drawn in its value color (see AGENTS.md, Value colors). */
+export type RangeParts = { distance: string; bearing: string };
+
+/**
+ * A chip's text: with `distance` and `bearing` properties, "1.15 km · 103°" with each in its value color; otherwise its
+ * `label` (a segment's length), in the distance color the style gives it.
+ */
+function rangeText(colors: Record<SemanticToken, string>): SymbolLayerStyle['textField'] {
+  // A Mapbox `format` expression; the style types do not model its per-part options.
+  const expression = [
+    'case',
+    ['has', 'bearing'],
+    ['format', ['get', 'distance'], { 'text-color': colors['value-distance'] }, ' · ', { 'text-color': colors['map-label-text'] }, ['get', 'bearing'], { 'text-color': colors['value-bearing'] }],
+    ['get', 'label'],
+  ];
+  return expression as unknown as SymbolLayerStyle['textField'];
+}
+
+/** "1.15 km · 103°" (or a segment's length) on a dark chip at the line's midpoint. */
 export function makeRangeLabelStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
   return {
-    textField: ['get', 'label'],
+    textField: rangeText(colors),
     textFont: MAP_LABEL_FONT,
     textSize: 12,
-    textColor: colors.accent,
+    textColor: colors['value-distance'],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,
@@ -215,14 +233,14 @@ export function makeLineLabelStyle(colors: Record<SemanticToken, string>, textSi
   };
 }
 
-/** Measure readout chip: dark text on an amber chip at the line's midpoint. */
+/** Measure readout chip at the line's midpoint: on a dark chip, so its distance and bearing show in their value colors. */
 export function makeMeasureChipStyle(colors: Record<SemanticToken, string>): SymbolLayerStyle {
   return {
-    textField: ['get', 'label'],
+    textField: rangeText(colors),
     textFont: MAP_LABEL_FONT,
     textSize: 13,
-    textColor: colors['on-accent'],
-    iconImage: MAP_IMAGE_IDS.labelChipAccent,
+    textColor: colors['value-distance'],
+    iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,
     textAllowOverlap: true,

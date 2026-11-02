@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform, Text, View, type NativeSyntheticEvent, type TextInput, type TextInputKeyPressEventData } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -12,8 +12,8 @@ type Props = {
   value: MgrsParts;
   onChange: (parts: MgrsParts) => void;
   status: MgrsFieldStatus;
-  /** Extra text after "Valid ·", e.g. range and bearing from the user. */
-  validDetail?: string;
+  /** Extra text after "Valid ·", e.g. range and bearing from the user (its values in their value colors). */
+  validDetail?: ReactNode;
   /** Read-only: the fields show the reference but cannot be edited. */
   disabled?: boolean;
   /** Return in the northing field (e.g. add the typed point). Without it there is no return key (no iOS Done bar). */
@@ -133,7 +133,7 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
 }
 
 /** The validation line under the fields: Valid (with `validDetail`) or why the grid is not valid; nothing while incomplete. */
-export function MgrsStatusLine({ status, validDetail }: { status: MgrsFieldStatus; validDetail?: string }) {
+export function MgrsStatusLine({ status, validDetail }: { status: MgrsFieldStatus; validDetail?: ReactNode }) {
   const { colors } = useTheme();
   if (status.status !== 'valid' && status.status !== 'invalid') return null;
   return (
@@ -144,7 +144,7 @@ export function MgrsStatusLine({ status, validDetail }: { status: MgrsFieldStatu
         {status.status === 'valid' ? (
           <>
             <Text className="text-success">Valid</Text>
-            {validDetail ? ` · ${validDetail}` : ''}
+            {validDetail ? <>{' · '}{validDetail}</> : null}
           </>
         ) : (
           <Text className="text-danger">{status.message}</Text>

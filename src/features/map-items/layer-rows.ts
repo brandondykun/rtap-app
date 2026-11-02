@@ -65,6 +65,8 @@ export type LayerRow = {
   radiusM: number | null;
   /** Units with a ring distance: whether the ring shows on the map. Others: null. */
   ring: boolean | null;
+  /** A friendly unit: its grid shows in the friendly blue. */
+  friendly: boolean;
 };
 
 export type LayerRows = {
@@ -109,6 +111,7 @@ export function layerRow(i: MapItemSnapshot, hidden: ReadonlySet<string>, ringOn
     areaM2: ring ? areaM2(ring) : null,
     radiusM: pstyle && pstyle.shape.kind === 'circle' ? pstyle.shape.radiusM : null,
     ring: ringRadiusM(i) !== null ? ringOn.has(i.id) : null,
+    friendly: i.sidc !== null && itemCategory(i) === 'unit' && affiliationOf(i.sidc) === 'friend',
   };
 }
 

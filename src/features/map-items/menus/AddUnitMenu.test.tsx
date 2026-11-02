@@ -233,7 +233,7 @@ describe('AddUnitMenu', () => {
   it('shows the ground elevation at the unit and saves it with the unit', async () => {
     setElevationSource(async () => 312.4);
     const ctx = await open();
-    expect(await screen.findByLabelText('Elevation 312 m')).toBeTruthy();
+    expect(await screen.findByLabelText('Altitude 312 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     const [item] = await items(ctx);
@@ -244,12 +244,12 @@ describe('AddUnitMenu', () => {
     useSettings.setState({ altitudeUnit: 'ft' });
     setElevationSource(async () => 312.4);
     await open();
-    expect(await screen.findByLabelText('Elevation 1025 ft')).toBeTruthy();
+    expect(await screen.findByLabelText('Altitude 1025 ft')).toBeTruthy();
   });
 
   it('saves an unknown elevation when the map has none, without blocking Add', async () => {
     const ctx = await open();
-    expect(screen.getByLabelText('Elevation unknown')).toBeTruthy();
+    expect(screen.getByLabelText('Altitude unknown')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     expect((await items(ctx))[0].elevationM).toBeNull();
@@ -258,7 +258,7 @@ describe('AddUnitMenu', () => {
   it('saves the elevation of where the unit ends up, even when Add comes before the display catches up', async () => {
     setElevationSource(async (c) => (Math.abs(c.lat - OTHER.lat) < 0.001 ? 50 : 312));
     const ctx = await open();
-    await screen.findByLabelText('Elevation 312 m');
+    await screen.findByLabelText('Altitude 312 m');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Add'));

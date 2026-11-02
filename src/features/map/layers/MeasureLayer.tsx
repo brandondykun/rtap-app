@@ -2,7 +2,7 @@ import { LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { measureFeatures } from '@/features/measure/measure-features';
-import { measureReadout } from '@/features/measure/measure-readout';
+import { measureParts, measureReadout } from '@/features/measure/measure-readout';
 import { useMeasure } from '@/stores/measure';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -27,8 +27,9 @@ export function MeasureLayer() {
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const shape = useMemo(() => {
-    const label = start && end ? measureReadout(start, end, { angleUnit, northRef, declinationOverrideDeg }) : '';
-    return measureFeatures(start, end, label);
+    const s = { angleUnit, northRef, declinationOverrideDeg };
+    const label = start && end ? measureReadout(start, end, s) : '';
+    return measureFeatures(start, end, label, start && end ? measureParts(start, end, s) : undefined);
   }, [start, end, angleUnit, northRef, declinationOverrideDeg]);
   const styles = useMemo(() => {
     // Measure is drawn in amber over the same dark halo as lines (halo uses the normal 3 pt width).

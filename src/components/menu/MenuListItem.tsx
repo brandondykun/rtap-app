@@ -16,6 +16,7 @@ type Column = { icon: IconName; label: string; onPress: () => void; /** An "on" 
 export function MenuListItem({
   title,
   subtitle,
+  subtitleContent,
   leading,
   onPress,
   secondary,
@@ -23,7 +24,10 @@ export function MenuListItem({
   dimmed = false,
 }: {
   title: string;
+  /** Also the row's screen-reader hint. */
   subtitle?: string;
+  /** Shown in place of `subtitle`, for one with its values in their value colors. */
+  subtitleContent?: ReactNode;
   leading?: ReactNode;
   onPress: () => void;
   secondary?: Column | null;
@@ -40,7 +44,7 @@ export function MenuListItem({
           </Text>
           {subtitle ? (
             <Text numberOfLines={1} className="font-mono text-xs text-text-muted">
-              {subtitle}
+              {subtitleContent ?? subtitle}
             </Text>
           ) : null}
         </View>

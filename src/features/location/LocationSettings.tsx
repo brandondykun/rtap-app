@@ -66,7 +66,8 @@ export function LocationSettingsGroup() {
       {source === 'manual' ? (
         <MenuSection label="Manual position">
           <View className="flex-row items-center gap-3">
-            <Text className={`flex-1 ${manual ? 'font-mono-bold text-base text-text' : 'text-base text-text-muted'}`}>
+            {/* Your own grid: in the friendly blue, like ME. */}
+            <Text className={`flex-1 ${manual ? 'font-mono-bold text-base text-friendly' : 'text-base text-text-muted'}`}>
               {manual ? formatCoordinate(manual, coordinateFormat) : 'Not set'}
             </Text>
             <MenuButton compact label={manual ? 'Change' : 'Set'} icon={manual ? 'pencil-outline' : 'crosshairs-gps'} onPress={edit} />

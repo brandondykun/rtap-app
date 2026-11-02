@@ -25,14 +25,19 @@ describe('pointSubtitle', () => {
 });
 
 describe('ringSummary', () => {
-  it('artillery: one ring', () => expect(ringSummary(unit(composeSidc('hostile', 'artillery'), { threatRangeM: 800 }))).toEqual({ title: 'RANGE RING', text: '800 m' }));
+  it('artillery: one ring', () => expect(ringSummary(unit(composeSidc('hostile', 'artillery'), { threatRangeM: 800 }))).toMatchObject({ title: 'RANGE RING', text: '800 m' }));
   it('air defense with both ranges: rings, plural', () =>
-    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { horizontalRangeM: 1200, verticalRangeFt: 900 }))).toEqual({ title: 'RANGE RINGS', text: '↔ 1200 m · ↕ 900 ft' }));
+    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { horizontalRangeM: 1200, verticalRangeFt: 900 }))).toMatchObject({ title: 'RANGE RINGS', text: '↔ 1200 m · ↕ 900 ft' }));
   it('air defense with one range: singular', () => {
-    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { verticalRangeFt: 900 }))).toEqual({ title: 'RANGE RING', text: '↕ 900 ft' });
-    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { horizontalRangeM: 1200 }))).toEqual({ title: 'RANGE RING', text: '↔ 1200 m' });
+    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { verticalRangeFt: 900 }))).toMatchObject({ title: 'RANGE RING', text: '↕ 900 ft' });
+    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { horizontalRangeM: 1200 }))).toMatchObject({ title: 'RANGE RING', text: '↔ 1200 m' });
   });
-  it('nothing set', () => expect(ringSummary(unit(composeSidc('hostile', 'artillery')))).toEqual({ title: 'RANGE RING', text: 'No range set — Edit to add' }));
+  it('tags each range with its kind, for its value color (across a distance, up an altitude)', () =>
+    expect(ringSummary(unit(composeSidc('hostile', 'air-defense'), { horizontalRangeM: 1200, verticalRangeFt: 900 }))?.parts).toEqual([
+      { kind: 'distance', text: '↔ 1200 m' },
+      { kind: 'altitude', text: '↕ 900 ft' },
+    ]));
+  it('nothing set', () => expect(ringSummary(unit(composeSidc('hostile', 'artillery')))).toMatchObject({ title: 'RANGE RING', text: 'No range set — Edit to add' }));
   it('null for non-ring units', () => expect(ringSummary(unit(composeSidc('friend', 'recon'), { threatRangeM: 5 }))).toBeNull());
 });
 

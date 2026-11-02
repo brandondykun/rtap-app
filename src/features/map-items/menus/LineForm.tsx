@@ -16,6 +16,7 @@ import type { MgrsParts } from '@/lib/geo/coords/mgrs';
 import { useDraft, type DraftMode } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
+import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
 import { canRemove } from '../line-draft';
 import { segmentLengths, totalLength } from '../line-measure';
@@ -73,7 +74,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
       <MenuSection label="Line type">
         <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
       </MenuSection>
-      <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? `${formatDistance(totalLength(vertices))} total` : undefined}>
+      <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? <><Text className={VALUE_TEXT_CLASS.distance}>{formatDistance(totalLength(vertices))}</Text> total</> : undefined}>
         <View>
           {vertices.map((v, i) => (
             <MenuVertexRow
@@ -81,6 +82,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
               number={i + 1}
               title={formatCoordinate(v, coordinateFormat)}
               detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
+              detailKind={i === 0 ? undefined : 'distance'}
               selected={selected === i}
               disabled={locked}
               onPress={() => select(i)}

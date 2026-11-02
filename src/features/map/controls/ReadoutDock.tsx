@@ -154,8 +154,8 @@ function OpRow({ inline, minimal, at, elevationM }: { inline: boolean; minimal: 
         minimal={minimal}
         lead={<CardLead icon={<Icon name="binoculars" size={inline ? 12 : 14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
-          <OutlinedText testID="op-elevation" accessibilityLabel={`Ground elevation ${formatLength(elevationM, unit)}`} color={colors.text} style={glassHalo(colors)} className="font-mono text-xs">
-            {`ELV ${formatLength(elevationM, unit)}`}
+          <OutlinedText testID="op-elevation" accessibilityLabel={`Altitude ${formatLength(elevationM, unit)}`} color={colors['value-altitude']} style={glassHalo(colors)} className="font-mono text-xs">
+            {`ALT ${formatLength(elevationM, unit)}`}
           </OutlinedText>
         }>
         <Grid testID="op-position" outline small={inline}>
@@ -217,7 +217,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
         top={
           shown && !shown.manual ? (
             <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
-              <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
+              <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors['value-altitude']} style={halo} className="font-mono text-xs">
                 {`ALT ${formatLength(shown.altitudeM, unit)}`}
               </OutlinedText>
             </Reserve>
@@ -234,7 +234,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
             inline ? hint : stackedHint
           ) : shown ? (
             <Reserve inline={inline} template={ACCURACY_TEMPLATE[unit]}>
-              <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors.friendly} style={halo} className="font-mono text-xs">
+              <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
                 {`±${formatLength(shown.accuracyM, unit)}`}
               </OutlinedText>
             </Reserve>
@@ -289,7 +289,7 @@ function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
             </OutlinedText>
           ) : null}
           <Reserve inline={inline} template={DISTANCE_TEMPLATE}>
-            <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors.accent} style={halo} className="font-mono text-xs">
+            <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors['value-distance']} style={halo} className="font-mono text-xs">
               {r.distance}
             </OutlinedText>
           </Reserve>
@@ -297,7 +297,7 @@ function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
       }
       bottom={
         <Reserve inline={inline} template={BEARING_TEMPLATE[angleUnit]}>
-          <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors.text} style={halo} className="font-mono text-xs">
+          <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors['value-bearing']} style={halo} className="font-mono text-xs">
             {r.bearing}
           </OutlinedText>
         </Reserve>

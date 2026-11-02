@@ -31,13 +31,19 @@ export function itemAccessibleTitle(category: ItemCategory, item: Pick<MapItemSn
  */
 export function ringSummary(
   item: Pick<MapItemSnapshot, 'sidc' | 'threatRangeM' | 'horizontalRangeM' | 'verticalRangeFt'>,
-): { title: 'RANGE RING' | 'RANGE RINGS'; text: string } | null {
+): { title: 'RANGE RING' | 'RANGE RINGS'; text: string; parts: RingPart[] } | null {
   const fields = rangeFieldsForSidc(item.sidc);
   if (fields.length === 0) return null;
   const radius = ringRadiusM(item);
-  const parts = fields.length === 1 ? [radius === null ? null : `${radius} m`] : [radius === null ? null : `↔ ${radius} m`, item.verticalRangeFt === null ? null : `↕ ${item.verticalRangeFt} ft`];
-  const set = parts.filter((p): p is string => p !== null);
-  return { title: set.length > 1 ? 'RANGE RINGS' : 'RANGE RING', text: set.length ? set.join(' · ') : NO_RANGE };
+  const parts: (RingPart | null)[] =
+    fields.length === 1
+      ? [radius === null ? null : { kind: 'distance', text: `${radius} m` }]
+      : [radius === null ? null : { kind: 'distance', text: `↔ ${radius} m` }, item.verticalRangeFt === null ? null : { kind: 'altitude', text: `↕ ${item.verticalRangeFt} ft` }];
+  const set = parts.filter((p): p is RingPart => p !== null);
+  return { title: set.length > 1 ? 'RANGE RINGS' : 'RANGE RING', text: set.length ? set.map((p) => p.text).join(' · ') : NO_RANGE, parts: set };
 }
+
+/** One range of a ring summary: the reach across (a distance) or up (an altitude), for its value color. */
+export type RingPart = { kind: 'distance' | 'altitude'; text: string };
 
 const NO_RANGE = 'No range set — Edit to add';

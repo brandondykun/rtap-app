@@ -3,9 +3,12 @@ import { Platform, Text, View } from 'react-native';
 import { formatLength } from '@/features/location/gps-format';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { useReadoutOrigin } from '@/features/map/interaction/use-readout-origin';
+import { itemCategory } from '@/features/symbology/categories';
+import { affiliationOf } from '@/features/symbology/presets';
 import { describeVector } from '@/lib/geo/vector';
 import { useDraft } from '@/stores/draft';
 import { useSettings } from '@/stores/settings';
+import { gridTextClass, VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
 import type { MapItemSnapshot } from '../../repository';
 import { DataCell, NO_VALUE } from './DataCell';
@@ -25,6 +28,8 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
   const altitudeUnit = useSettings((s) => s.altitudeUnit);
   const vector = coord && from ? describeVector(from, coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
   const ring = ringSummary(item);
+  // A friendly unit's grid is in the friendly blue; every other grid is plain.
+  const friendly = item.sidc !== null && itemCategory(item) === 'unit' && affiliationOf(item.sidc) === 'friend';
   return (
     // Black like the inputs, with thin lines between its parts (the mockup's grid card).
     <View className="overflow-hidden rounded-xl border border-border bg-surface-input">
@@ -36,19 +41,28 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
           selectable={COPYABLE}
           numberOfLines={1}
           adjustsFontSizeToFit
-          className="shrink font-mono-bold text-xl text-text">
+          className={`shrink font-mono-bold text-xl ${gridTextClass(friendly)}`}>
           {coord ? formatCoordinate(coord, coordinateFormat) : NO_VALUE}
         </Text>
       </View>
       <View className="flex-row">
-        <DataCell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} accent />
-        <DataCell label={vector ? `DIR (${vector.refLabel})` : 'DIR'} value={vector?.bearingLabel ?? NO_VALUE} accent />
-        <DataCell label="ELEV" value={formatLength(item.elevationM, altitudeUnit)} last />
+        <DataCell label="DIST" value={vector?.distanceLabel ?? NO_VALUE} kind="distance" />
+        <DataCell label={vector ? `DIR (${vector.refLabel})` : 'DIR'} value={vector?.bearingLabel ?? NO_VALUE} kind="bearing" />
+        <DataCell label="ALT" value={formatLength(item.elevationM, altitudeUnit)} kind="altitude" last />
       </View>
       {ring ? (
         <View testID="ring-row" className="flex-row items-baseline gap-3 border-t border-border px-3 py-2">
           <Text className="font-mono text-xs uppercase tracking-widest text-text-muted">{ring.title}</Text>
-          <Text className="shrink font-mono text-base text-text">{ring.text}</Text>
+          <Text testID="ring-text" className="shrink font-mono text-base text-text-muted">
+            {ring.parts.length === 0
+              ? ring.text
+              : ring.parts.map((p, i) => (
+                  <Text key={p.kind}>
+                    {i > 0 ? ' · ' : ''}
+                    <Text className={VALUE_TEXT_CLASS[p.kind]}>{p.text}</Text>
+                  </Text>
+                ))}
+          </Text>
         </View>
       ) : null}
     </View>

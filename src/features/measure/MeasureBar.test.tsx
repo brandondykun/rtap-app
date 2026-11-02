@@ -40,6 +40,14 @@ describe('MeasureBar', () => {
     expect(useMeasure.getState().active).toBe(false);
   });
 
+  it('draws the distance and the bearing each in its value color', async () => {
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
+    useMeasure.getState().place(C);
+    await renderWithProviders(<MeasureBar />);
+    expect(screen.getByText(/ m$|km$/).props.className).toContain('text-value-distance');
+    expect(screen.getByText(/TRUE$/).props.className).toContain('text-value-bearing');
+  });
+
   it('looks like the other tap-mode bars: compact buttons, the crosshair with CTR', async () => {
     await renderWithProviders(<MeasureBar />);
     expect(screen.getByTestId('measure-bar')).toBeTruthy();

@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('LocationSection', () => {
-  it('shows Valid (no distance or bearing) on line 1 and ELEV on line 2', async () => {
+  it('shows Valid (no distance or bearing) on line 1 and ALT on line 2', async () => {
     await act(async () => {
       usePresence.setState({ selfPosition: { position: HERE, accuracyM: 4, timestamp: 1, altitudeM: null } });
       useDraft.setState({ coord: THERE, category: 'unit', elevation: { at: THERE, m: 126 } });
@@ -25,7 +25,7 @@ describe('LocationSection', () => {
     await renderWithProviders(<LocationSection />);
     // Editing doesn't need the distance and direction from you; the view shows them.
     expect(screen.getByTestId('location-status')).toHaveTextContent(/^Valid$/);
-    expect(screen.getByTestId('location-elevation')).toHaveTextContent(/^ELEV 126 m/);
+    expect(screen.getByTestId('location-elevation')).toHaveTextContent(/^ALT 126 m/);
     expect(screen.queryByTestId('mgrs-status')).toBeNull();
     // Line 1 never wraps, so the block stays exactly two lines beside the buttons.
     expect(screen.getByTestId('location-status')).toHaveProp('numberOfLines', 1);

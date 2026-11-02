@@ -30,7 +30,7 @@ export function QuickPlotLayer() {
   const shape = useMemo(() => {
     if (!temp) return { type: 'FeatureCollection' as const, features: [] };
     const v = self ? describeVector(self, temp, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
-    return quickPlotFeatures(temp, self, v ? `${v.distanceLabel} · ${v.bearingLabel}` : null);
+    return quickPlotFeatures(temp, self, v ? `${v.distanceLabel} · ${v.bearingLabel}` : null, v ? { distance: v.distanceLabel, bearing: v.bearingLabel } : undefined);
   }, [temp, self, angleUnit, northRef, declinationOverrideDeg]);
   const labelSize = useLabelTextSize();
   const styles = useMemo(

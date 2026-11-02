@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
  * The amber-outlined bar for a tap mode: a tap hint, then compact buttons. MapControls shows it in place of
  * your grid card, or centered over the portrait dock while placing a unit or point.
  */
-export function MapHintBar({ testID, hint, mono = false, children }: { testID: string; hint: string; mono?: boolean; children: ReactNode }) {
+export function MapHintBar({ testID, hint, mono = false, children }: { testID: string; hint: ReactNode; mono?: boolean; children: ReactNode }) {
   const { colors } = useTheme();
   const halo = glassHalo(colors);
   return (

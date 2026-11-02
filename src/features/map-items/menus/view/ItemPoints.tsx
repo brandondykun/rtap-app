@@ -47,6 +47,7 @@ export function ItemPoints({ points }: { points: LatLon[] }) {
               number={i + 1}
               title={formatCoordinate(p, coordinateFormat)}
               detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
+              detailKind={i === 0 ? undefined : 'distance'}
               onPress={() => useDraft.getState().lookAt(p)}
             />
           ))}

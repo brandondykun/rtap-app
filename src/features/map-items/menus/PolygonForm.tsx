@@ -17,6 +17,7 @@ import { formatDistance } from '@/lib/geo/format/measure';
 import { useDraft, type DraftMode } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { useSettings } from '@/stores/settings';
+import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
 import { canRemove } from '../line-draft';
 import { segmentLengths } from '../line-measure';
@@ -100,7 +101,14 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   };
 
   const blocked = !locked && vertices.length === 3;
-  const pointsTrailing = vertices.length >= 3 ? `${formatDistance(perimeterM(vertices))} · ${formatArea(areaM2(vertices))}` : undefined;
+  // The perimeter in the distance color; area is not one of the value kinds.
+  const pointsTrailing =
+    vertices.length >= 3 ? (
+      <>
+        <Text className={VALUE_TEXT_CLASS.distance}>{formatDistance(perimeterM(vertices))}</Text>
+        {` · ${formatArea(areaM2(vertices))}`}
+      </>
+    ) : undefined;
   const circleArea = center && radiusM ? formatArea(areaM2(circleRing(center, radiusM))) : undefined;
 
   return (
@@ -127,6 +135,7 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
                   number={i + 1}
                   title={formatCoordinate(v, coordinateFormat)}
                   detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
+              detailKind={i === 0 ? undefined : 'distance'}
                   selected={selected === i}
                   disabled={locked}
                   onPress={() => select(i)}

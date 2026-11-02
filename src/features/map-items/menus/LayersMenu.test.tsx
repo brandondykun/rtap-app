@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { firstValueFrom } from 'rxjs';
 
 import type { IconName } from '@/components/ui/Icon';
+import { formatCoordinate } from '@/features/map/interaction/readout';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
@@ -157,6 +158,13 @@ describe('LayersMenu', () => {
         await change();
         expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 0, animated: false }));
       }
+    });
+
+    it('draws a friendly unit grid in the friendly blue, other grids plain (value colors)', async () => {
+      await openWithUnits();
+      const grids = screen.getAllByText(formatCoordinate(at, 'mgrs'));
+      // FRD-1, HOS-1 and HOS-2 all sit at the same spot: only the friendly one is blue.
+      expect(grids.filter((g) => String(g.props.className ?? '').includes('text-friendly'))).toHaveLength(1);
     });
 
     it('is only on the Units tab', async () => {

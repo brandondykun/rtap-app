@@ -40,7 +40,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   },
   { name: 'Coordinates', choices: 'MGRS · Lat/Lon', help: 'How positions show in the readouts and menus.' },
   { name: 'Angles', choices: 'Degrees · Mils', help: 'The unit for bearings and the G-M angle. A full circle is 360° or 6400 mils.' },
-  { name: 'Altitude', choices: 'Meters · Feet', help: 'The unit for your altitude, GPS accuracy and OP ground elevation.' },
+  { name: 'Altitude', choices: 'Meters · Feet', help: 'The unit for altitudes (yours, the OP\'s, units\' and points\'), GPS accuracy and the OP eye height.' },
   {
     name: 'North reference',
     choices: 'Grid · Magnetic · True',

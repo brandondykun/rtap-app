@@ -15,6 +15,7 @@ import { usePresence } from '@/stores/presence';
 import { useQuickPlot } from '@/stores/quick-plot';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
+import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
 const LANDSCAPE_WIDTH = 520;
 const PORTRAIT_MARGIN = 6;
@@ -47,7 +48,15 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
   const status = evaluateMgrsFields(parts);
   const v = status.status === 'valid' && self ? describeVector(self, status.coord, { date: new Date(), declinationOverrideDeg, unit: angleUnit, ref: northRef }) : null;
-  const validDetail = v ? `${v.distanceLabel} @ ${v.bearingLabel} ${v.refLabel} from you` : undefined;
+  // The distance and bearing each in their value color.
+  const validDetail = v ? (
+    <>
+      <Text className={VALUE_TEXT_CLASS.distance}>{v.distanceLabel}</Text>
+      {' @ '}
+      <Text className={VALUE_TEXT_CLASS.bearing}>{`${v.bearingLabel} ${v.refLabel}`}</Text>
+      {' from you'}
+    </>
+  ) : undefined;
   const available = width - insets.left - insets.right - 2 * EDGE;
   const oneLine = oneLineFits(landscape, available);
   // Portrait uses slimmer side margins than the map's usual edge so the four fields get more room.

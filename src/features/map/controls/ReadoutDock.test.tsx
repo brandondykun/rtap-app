@@ -135,8 +135,12 @@ describe('ReadoutDock', () => {
     expect(me.getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
     for (const text of ['ME', formatCoordinate(DC, 'mgrs')]) expect(me.getAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text)).toHaveLength(8);
     for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(edgesOf(screen.getByTestId(id).props.children)).toHaveLength(8);
-    // Everything in the ME row is in the friendly blue.
-    for (const id of ['gps-altitude', 'gps-accuracy']) expect(screen.getByTestId(id)).toHaveStyle({ color: themeColors('dark').friendly });
+    // Value colors: each kind of value has its own color, your grid the friendly blue (see AGENTS.md).
+    const c = themeColors('dark');
+    expect(screen.getByTestId('readout-range')).toHaveStyle({ color: c['value-distance'] });
+    expect(screen.getByTestId('readout-bearing')).toHaveStyle({ color: c['value-bearing'] });
+    expect(screen.getByTestId('gps-altitude')).toHaveStyle({ color: c['value-altitude'] });
+    expect(screen.getByTestId('gps-accuracy')).toHaveStyle({ color: c['value-accuracy'] });
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC, groundM: 300 }));
     expect(edgesOf('FROM OP')).toHaveLength(8);
   });
@@ -217,15 +221,15 @@ describe('ReadoutDock', () => {
     await renderWithProviders(<ReadoutDock {...PROPS} onRecenter={onRecenter} showCenter={false} />);
     expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/OP/);
     expect(screen.getByTestId('op-position')).toHaveTextContent(formatCoordinate(CENTER, 'mgrs'));
-    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 300 m');
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ALT 300 m');
     expect(screen.queryByTestId('gps-position')).toBeNull();
     // The binoculars, OP, its grid and elevation have a crisp dark edge, like the ME row.
     expect(within(screen.getByTestId('dock-self')).getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
-    for (const text of ['OP', formatCoordinate(CENTER, 'mgrs'), 'ELV 300 m']) expect(edgesOf(text)).toHaveLength(8);
+    for (const text of ['OP', formatCoordinate(CENTER, 'mgrs'), 'ALT 300 m']) expect(edgesOf(text)).toHaveLength(8);
     await fireEvent.press(screen.getByTestId('dock-self'));
     expect(onRecenter).not.toHaveBeenCalled();
     await act(async () => useSettings.setState({ altitudeUnit: 'ft' }));
-    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ELV 984 ft');
+    expect(screen.getByTestId('op-elevation')).toHaveTextContent('ALT 984 ft');
     await act(async () => useOp.setState(INITIAL_OP));
     expect(screen.getByTestId('dock-self-row')).toHaveTextContent(/ME/);
   });

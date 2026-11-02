@@ -38,8 +38,8 @@ export function PolygonCard({ summary }: { summary: PolygonSummary }) {
         </Text>
       </View>
       <View className="flex-row">
-        <DataCell label="TO CENTER" value={vector?.distanceLabel ?? NO_VALUE} accent />
-        <DataCell label={circle ? 'RADIUS' : 'PERIMETER'} value={size === null ? NO_VALUE : formatDistance(size)} />
+        <DataCell label="TO CENTER" value={vector?.distanceLabel ?? NO_VALUE} kind="distance" />
+        <DataCell label={circle ? 'RADIUS' : 'PERIMETER'} value={size === null ? NO_VALUE : formatDistance(size)} kind="distance" />
         <DataCell label="AREA" value={formatArea(summary.areaM2)} last />
       </View>
     </View>

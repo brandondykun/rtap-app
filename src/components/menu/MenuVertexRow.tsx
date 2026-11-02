@@ -2,11 +2,14 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { useTheme } from '@/theme/ThemeProvider';
+import { VALUE_TEXT_CLASS, type ValueKind } from '@/theme/value-colors';
 
 type Props = {
   number: number;
   title: string;
   detail: string;
+  /** The detail is a value (the distance from the previous point): drawn in that kind's value color. */
+  detailKind?: ValueKind;
   selected?: boolean;
   disabled?: boolean;
   onPress: () => void;
@@ -21,7 +24,7 @@ type Props = {
 };
 
 /** One point of a line: number badge, grid, distance from the previous point, remove (×). */
-export function MenuVertexRow({ number, title, detail, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter, inserting = false, onInsertDone }: Props) {
+export function MenuVertexRow({ number, title, detail, detailKind, selected = false, disabled = false, onPress, onRemove, removeDisabled = false, onInsertAfter, inserting = false, onInsertDone }: Props) {
   const { colors } = useTheme();
   return (
     <View testID={`vertex-row-${number}`} className={`border-t border-border px-3 py-3 ${selected ? 'bg-accent-subtle' : ''}`}>
@@ -40,7 +43,7 @@ export function MenuVertexRow({ number, title, detail, selected = false, disable
           <Text numberOfLines={1} className="shrink font-mono text-base text-text">
             {title}
           </Text>
-          <Text className={`ml-auto font-mono text-sm ${selected ? 'text-accent' : 'text-text-muted'}`}>{detail}</Text>
+          <Text className={`ml-auto font-mono text-sm ${detailKind ? VALUE_TEXT_CLASS[detailKind] : selected ? 'text-accent' : 'text-text-muted'}`}>{detail}</Text>
         </Pressable>
         {onRemove ? (
           <Pressable

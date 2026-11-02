@@ -16,10 +16,12 @@ import {
   makeLineHaloStyle,
   makeLineLabelStyle,
   makeLineStyle,
+  makeMeasureChipStyle,
   makePointLabelStyle,
   makePolygonFillStyle,
   makePolygonLabelStyle,
   makePolygonOutlineDashedStyle,
+  makeRangeLabelStyle,
   makePolygonOutlineStyle,
   makeRingFillStyle,
   makeRingHaloStyle,
@@ -298,5 +300,16 @@ describe('range ring styles', () => {
   it('outlines with a halo and the affiliation color', () => {
     expect(makeRingHaloStyle(colors)).toMatchObject({ lineColor: colors['point-symbol-halo'], lineWidth: 4 });
     expect(makeRingLineStyle(colors)).toMatchObject({ lineWidth: 2 });
+  });
+});
+
+describe('range chips (value colors)', () => {
+  const colors = themeColors('dark');
+  it('draws a distance and bearing each in its value color, and a lone length in the distance color', () => {
+    for (const style of [makeRangeLabelStyle(colors), makeMeasureChipStyle(colors)]) {
+      expect(JSON.stringify(style.textField)).toContain(`"text-color":"${colors['value-distance']}"`);
+      expect(JSON.stringify(style.textField)).toContain(`"text-color":"${colors['value-bearing']}"`);
+      expect(style.textColor).toBe(colors['value-distance']);
+    }
   });
 });

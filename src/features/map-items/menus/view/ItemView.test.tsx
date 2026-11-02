@@ -40,14 +40,30 @@ async function open(sidc: string, extra: { ranges?: Partial<UnitRanges>; notes?:
 }
 
 describe('ItemView', () => {
-  it('shows the MGRS then DIST/DIR/ELEV', async () => {
+  it('shows the MGRS then DIST/DIR/ALT', async () => {
     await open(composeSidc('friend', 'armor'), { elevationM: 88 });
     expect(screen.getByText('MGRS')).toBeTruthy();
     expect(screen.getByText(/^18S/)).toBeTruthy();
     expect(screen.getByText('DIST')).toBeTruthy();
     expect(screen.getByText('DIR')).toBeTruthy();
-    expect(screen.getByText('ELEV')).toBeTruthy();
+    expect(screen.getByText('ALT')).toBeTruthy();
     expect(screen.getByText('88 m')).toBeTruthy();
+  });
+
+  it('draws each value in its value color, and a friendly unit grid in the friendly blue', async () => {
+    usePresence.setState({ ...INITIAL_PRESENCE, selfPosition: { position: OP_AT, accuracyM: 5, timestamp: 1 } });
+    await open(composeSidc('friend', 'armor'), { elevationM: 88 });
+    expect(screen.getByTestId('coordinate-value').props.className).toContain('text-friendly');
+    expect(screen.getByText('88').props.className).toContain('text-value-altitude');
+    const v = describeVector(OP_AT, AT, { date: new Date(), declinationOverrideDeg: null, unit: 'deg', ref: useSettings.getState().northRef });
+    expect(screen.getByText(v.distanceLabel.split(' ')[0]).props.className).toContain('text-value-distance');
+    expect(screen.getByText(v.bearingLabel).props.className).toContain('text-value-bearing');
+  });
+
+  it('draws a grid that is not friendly as plain text', async () => {
+    await open(composeSidc('hostile', 'armor'));
+    expect(screen.getByTestId('coordinate-value').props.className).toContain('text-text');
+    expect(screen.getByTestId('coordinate-value').props.className).not.toContain('text-friendly');
   });
 
   it('lets the coordinate be long-pressed to copy on iOS', async () => {

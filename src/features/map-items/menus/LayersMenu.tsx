@@ -1,5 +1,5 @@
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Keyboard, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,6 +26,7 @@ import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
 import { useSettings, type CoordinateFormat } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
+import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
 import { setItemHidden, setItemShowRing, setItemsHidden, setItemsShowRing } from '../commands';
 import { categoryCounts, layerRow, layerRows, type LayerRow } from '../layer-rows';
@@ -418,24 +419,43 @@ type RowProps = {
   onToggleRing: (id: string, show: boolean) => void;
 };
 
+/**
+ * A row's second line, as text (its screen-reader hint) and drawn: a line's type and length, a polygon's type and radius
+ * (or area), a unit's or point's grid. Lengths and radii are in the distance color, a friendly unit's grid in the friendly
+ * blue (see AGENTS.md, Value colors).
+ */
+function layerSubtitle(row: LayerRow, coordinateFormat: CoordinateFormat): { text: string; content: ReactNode } {
+  const distance = (prefix: string, value: string) => ({
+    text: `${prefix}${value}`,
+    content: (
+      <>
+        {prefix}
+        <Text className={VALUE_TEXT_CLASS.distance}>{value}</Text>
+      </>
+    ),
+  });
+  if (row.lineType) return distance(`${lineTypeInfo(row.lineType).label} · `, formatDistance(row.length ?? 0));
+  if (row.polygonType) {
+    const label = `${polygonTypeInfo(row.polygonType).label} · `;
+    if (row.radiusM !== null) return distance(`${label}r `, formatDistance(row.radiusM));
+    const text = `${label}${row.areaM2 !== null ? formatArea(row.areaM2) : '—'}`;
+    return { text, content: text };
+  }
+  if (!row.coord) return { text: '—', content: '—' };
+  const grid = formatCoordinate(row.coord, coordinateFormat);
+  return { text: grid, content: row.friendly ? <Text className="text-friendly">{grid}</Text> : grid };
+}
+
 /** One item in the list; one gapless list, rows split by their own top line. Redraws only when its own props change. */
 const LayerListRow = memo(
   function LayerListRow({ row, ringColumn, coordinateFormat, onToggle, onToggleRing }: RowProps) {
+    const sub = layerSubtitle(row, coordinateFormat);
     return (
       <View className="px-4">
         <MenuListItem
           title={row.name}
-          subtitle={`${
-            row.lineType
-              ? `${lineTypeInfo(row.lineType).label} · ${formatDistance(row.length ?? 0)}`
-              : row.polygonType
-                ? `${polygonTypeInfo(row.polygonType).label} · ${
-                    row.radiusM !== null ? `r ${formatDistance(row.radiusM)}` : row.areaM2 !== null ? formatArea(row.areaM2) : '—'
-                  }`
-                : row.coord
-                  ? formatCoordinate(row.coord, coordinateFormat)
-                  : '—'
-          }`}
+          subtitle={sub.text}
+          subtitleContent={sub.content}
           dimmed={row.hidden}
           leading={
             row.polygonType ? (

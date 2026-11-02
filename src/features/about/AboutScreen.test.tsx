@@ -8,6 +8,8 @@ import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
 import { TOOLBAR_HELP } from '@/features/toolbar/toolbar-help';
 
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
+import { VALUE_COLOR_GUIDE } from '@/theme/value-colors';
 
 import { AboutScreen } from './AboutScreen';
 
@@ -18,6 +20,18 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 afterEach(() => jest.restoreAllMocks());
 
 describe('AboutScreen', () => {
+  it('explains the value colors, each sample drawn in its own color', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByText('Reading the colors')).toBeTruthy();
+    const colors = themeColors('dark');
+    for (const g of VALUE_COLOR_GUIDE) {
+      expect(screen.getByTestId(`color-help-${g.name}`)).toHaveTextContent(g.help, { exact: false });
+      expect(screen.getByTestId(`color-sample-${g.name}`)).toHaveStyle({ color: colors[g.token] });
+    }
+    // The guide's colors are the ones the readouts use.
+    expect(VALUE_COLOR_GUIDE.map((g) => g.token)).toEqual(['friendly', 'text', 'value-distance', 'value-bearing', 'value-altitude', 'value-accuracy']);
+  });
+
   it('shows the identity card: amber mark, RTAP, tagline, builders and version', async () => {
     await renderWithProviders(<AboutScreen />);
     const card = screen.getByTestId('about-identity');

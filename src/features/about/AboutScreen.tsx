@@ -11,6 +11,7 @@ import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { SETTINGS_HELP, type SettingHelp } from '@/features/menus/menus/settings-help';
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
+import { VALUE_COLOR_GUIDE, type ValueColorGuide } from '@/theme/value-colors';
 
 import { updateLabel } from './update-label';
 
@@ -101,6 +102,19 @@ export function AboutScreen() {
           ))}
 
           <View className="gap-2">
+            <SectionTitle>Reading the colors</SectionTitle>
+            <Text testID="about-colors-intro" className="ml-1 text-base text-text">
+              Each kind of value has one color everywhere it shows, on the map, in the readouts and in the menus, so you can tell
+              them apart at a glance.
+            </Text>
+            <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+              {VALUE_COLOR_GUIDE.map((g, i) => (
+                <ColorRow key={g.name} guide={g} first={i === 0} />
+              ))}
+            </View>
+          </View>
+
+          <View className="gap-2">
             <SectionTitle>Settings guide</SectionTitle>
             <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
               {SETTINGS_HELP.map((h, i) => (
@@ -181,6 +195,24 @@ function HelpRow({ help, first }: { help: ToolbarHelp; first: boolean }) {
         <Text className="text-base font-bold uppercase tracking-widest text-text">{help.label}</Text>
         <Text className="text-base text-text">{help.help}</Text>
       </View>
+    </View>
+  );
+}
+
+/** One value color: a sample in its color on a dark tile (like the map's panels), what it is and where it shows. */
+function ColorRow({ guide, first }: { guide: ValueColorGuide; first: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View testID={`color-help-${guide.name}`} accessible className={`gap-1.5 px-4 py-3 ${first ? '' : 'border-t border-border'}`}>
+      <View className="flex-row items-center gap-3">
+        <View className="rounded-lg bg-surface-input px-2.5 py-1">
+          <Text testID={`color-sample-${guide.name}`} style={{ color: colors[guide.token] }} className="font-mono-bold text-base">
+            {guide.sample}
+          </Text>
+        </View>
+        <Text className="text-base font-bold uppercase tracking-widest text-text">{guide.name}</Text>
+      </View>
+      <Text className="text-base text-text">{guide.help}</Text>
     </View>
   );
 }

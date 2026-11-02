@@ -75,33 +75,33 @@ describe('AddPointMenu', () => {
   it('shows the ground elevation at the point and saves it with the point', async () => {
     setElevationSource(async () => 312.4);
     const ctx = await open();
-    expect(await screen.findByLabelText('Elevation 312 m')).toBeTruthy();
+    expect(await screen.findByLabelText('Altitude 312 m')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     expect((await items(ctx))[0].elevationM).toBe(312.4);
   });
 
-  it('shows elevation as an ELEV line, muted while unknown', async () => {
+  it('shows elevation as an ALT line, muted while unknown', async () => {
     let answer: ((m: number) => void) | null = null;
     setElevationSource(() => new Promise((resolve) => (answer = resolve)));
     await open();
     await waitFor(() => expect(answer).not.toBeNull());
-    expect(screen.getByLabelText('Elevation unknown')).toHaveTextContent('ELEV —');
+    expect(screen.getByLabelText('Altitude unknown')).toHaveTextContent('ALT —');
     await act(async () => answer!(312.4));
-    expect(await screen.findByLabelText('Elevation 312 m')).toHaveTextContent('ELEV 312 m');
-    expect(screen.getByTestId('location-elevation')).toHaveTextContent('ELEV 312 m');
+    expect(await screen.findByLabelText('Altitude 312 m')).toHaveTextContent('ALT 312 m');
+    expect(screen.getByTestId('location-elevation')).toHaveTextContent('ALT 312 m');
   });
 
   it('shows elevation in feet with the Altitude setting', async () => {
     useSettings.setState({ altitudeUnit: 'ft' });
     setElevationSource(async () => 312.4);
     await open();
-    expect(await screen.findByLabelText('Elevation 1025 ft')).toBeTruthy();
+    expect(await screen.findByLabelText('Altitude 1025 ft')).toBeTruthy();
   });
 
   it('saves an unknown elevation when the map has none, without blocking Add', async () => {
     const ctx = await open();
-    expect(screen.getByLabelText('Elevation unknown')).toBeTruthy();
+    expect(screen.getByLabelText('Altitude unknown')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Add'));
     await waitFor(async () => expect(await items(ctx)).toHaveLength(1));
     expect((await items(ctx))[0].elevationM).toBeNull();
@@ -110,7 +110,7 @@ describe('AddPointMenu', () => {
   it('saves the elevation of where the point ends up, even when Add comes before the display catches up', async () => {
     setElevationSource(async (c) => (Math.abs(c.lat - OTHER.lat) < 0.001 ? 50 : 312));
     const ctx = await open();
-    await screen.findByLabelText('Elevation 312 m');
+    await screen.findByLabelText('Altitude 312 m');
     const p = mgrsFieldsFor(OTHER);
     await fireEvent.changeText(screen.getByLabelText('MGRS zone'), `${p.zoneBand} ${p.square} ${p.easting} ${p.northing}`);
     await fireEvent.press(screen.getByLabelText('Add'));
