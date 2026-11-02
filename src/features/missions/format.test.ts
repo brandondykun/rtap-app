@@ -1,4 +1,4 @@
-import { formatCategoryCounts, formatLastOpened } from './format';
+import { formatCategoryCounts, formatLastOpened, formatLastSaved } from './format';
 
 const NOW = Date.UTC(2026, 9, 12, 12, 0, 0);
 const MIN = 60_000;
@@ -14,6 +14,17 @@ describe('formatLastOpened', () => {
     [Date.UTC(2026, 8, 1, 8, 0, 0), 'Opened 2026-09-01'],
   ])('%p → %p', (ts, expected) => {
     expect(formatLastOpened(ts, NOW)).toBe(expected);
+  });
+});
+
+describe('formatLastSaved', () => {
+  it.each([
+    [NOW - 30_000, 'Saved just now'],
+    [NOW - 2 * MIN, 'Saved 2 min ago'],
+    [NOW - 3 * 60 * MIN, 'Saved 3 h ago'],
+    [Date.UTC(2026, 8, 1, 8, 0, 0), 'Saved 2026-09-01'],
+  ])('%p → %p', (ts, expected) => {
+    expect(formatLastSaved(ts, NOW)).toBe(expected);
   });
 });
 

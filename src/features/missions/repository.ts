@@ -106,6 +106,24 @@ export function observeMissionCategoryCounts(db: AppDb, missionId: string): Obse
     );
 }
 
+/**
+ * When the mission last changed: its newest item edit, or the mission's own time (created, renamed, an item deleted).
+ * Null for an unknown mission.
+ */
+export function observeMissionLastChange(db: AppDb, missionId: string): Observable<number | null> {
+  return db
+    .watch<{ t: number | null }>(
+      `SELECT MAX(m.updated_at, COALESCE((SELECT MAX(i.updated_at) FROM map_items i WHERE i.mission_id = m.id), 0)) AS t
+       FROM missions m WHERE m.id = ?`,
+      [missionId],
+      [Tables.missions, Tables.mapItems],
+    )
+    .pipe(
+      map(([row]) => row?.t ?? null),
+      distinctUntilChanged(),
+    );
+}
+
 /** Category counts for each mission id (for sorting by size and the units total). */
 export function observeCountsByMission(db: AppDb, ids: readonly string[]): Observable<ReadonlyMap<string, CategoryCounts>> {
   if (ids.length === 0) return of(new Map());

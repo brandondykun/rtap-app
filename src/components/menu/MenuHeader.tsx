@@ -24,6 +24,8 @@ export type MenuHeaderProps = {
   title: string;
   leading?: MenuHeaderAction;
   trailing?: MenuHeaderAction;
+  /** Amber text in the trailing place, not a button (the app's name on the main menu). */
+  badge?: string;
 };
 
 /**
@@ -43,7 +45,7 @@ export function MenuHeader(props: MenuHeaderProps) {
 }
 
 /** The header row itself (in a portrait Panel it is also the sheet's drag area). */
-export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
+export function MenuHeaderRow({ title, leading, trailing, badge }: MenuHeaderProps) {
   const { colors } = useTheme();
   return (
     <View className="flex-row items-center px-4 py-2">
@@ -96,6 +98,8 @@ export function MenuHeaderRow({ title, leading, trailing }: MenuHeaderProps) {
             {trailing.icon ? <Icon name={trailing.icon} size={18} color={colors['on-accent']} /> : null}
             <Text className="font-bold text-on-accent">{trailing.label}</Text>
           </Pressable>
+        ) : badge ? (
+          <Text className="text-base font-bold uppercase tracking-widest text-accent">{badge}</Text>
         ) : null}
       </View>
     </View>

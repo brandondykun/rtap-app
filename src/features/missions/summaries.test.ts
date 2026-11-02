@@ -1,11 +1,11 @@
 import { firstValueFrom } from 'rxjs';
 
-import { placePoint } from '@/features/map-items/commands';
+import { deleteItem, placePoint, updateItem } from '@/features/map-items/commands';
 import { appSchema, Tables } from '@/lib/db/schema';
 import { makeTestContext } from '@/lib/db/test-database';
 
 import { createMission, markMissionOpened, saveMissionCamera } from './commands';
-import { observeCountsByMission, observeMissionSummaries, parseCamera, parseSnapshot } from './repository';
+import { observeCountsByMission, observeMissionLastChange, observeMissionSummaries, parseCamera, parseSnapshot } from './repository';
 
 const HOSTILE_INF = 'SHGPUCI--------';
 const at = { lat: 38.8977, lon: -77.0365 };
@@ -55,5 +55,31 @@ describe('observeCountsByMission', () => {
     expect(counts.get(iron.value.id)).toEqual({ units: 1, points: 0, lines: 0, polygons: 0 });
     expect(counts.get(cobra.value.id)).toEqual({ units: 0, points: 0, lines: 0, polygons: 0 });
     expect((await firstValueFrom(observeCountsByMission(ctx.db, []))).size).toBe(0);
+  });
+});
+
+describe('observeMissionLastChange', () => {
+  it('is the newest change: the mission made, an item placed or edited, an item deleted', async () => {
+    const ctx = makeTestContext();
+    const iron = await createMission(ctx, { name: 'Op Iron' });
+    if (!iron.ok) throw new Error('setup');
+    const id = iron.value.id;
+    const last = () => firstValueFrom(observeMissionLastChange(ctx.db, id));
+    const made = await last();
+    expect(made).not.toBeNull();
+    const p = await placePoint(ctx, { missionId: id, coord: at, sidc: HOSTILE_INF, name: 'HOS-1' });
+    if (!p.ok) throw new Error('setup');
+    const placed = await last();
+    expect(placed).toBeGreaterThan(made!);
+    await updateItem(ctx, p.value.id, { name: 'HOS-2' });
+    const edited = await last();
+    expect(edited).toBeGreaterThan(placed!);
+    await deleteItem(ctx, p.value.id);
+    expect(await last()).toBeGreaterThan(edited!);
+  });
+
+  it('is null for an unknown mission', async () => {
+    const ctx = makeTestContext();
+    expect(await firstValueFrom(observeMissionLastChange(ctx.db, 'nope'))).toBeNull();
   });
 });

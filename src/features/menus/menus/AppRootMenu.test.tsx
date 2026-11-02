@@ -1,5 +1,9 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
+import { placePoint } from '@/features/map-items/commands';
+import { createMission } from '@/features/missions/commands';
+import { makeTestContext } from '@/lib/db/test-database';
+import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -11,6 +15,7 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 beforeEach(() => {
   jest.clearAllMocks();
   useMenu.setState(INITIAL_MENU);
+  useInteraction.setState(INITIAL_INTERACTION);
   useMenu.getState().openMenu('app.root', {});
 });
 
@@ -51,5 +56,27 @@ describe('AppRootMenu', () => {
     expect(rows.filter((l) => ['Switch mission', 'Settings', 'About'].includes(l))).toEqual(['Switch mission', 'Settings', 'About']);
     await fireEvent.press(screen.getByText('Settings'));
     expect(useMenu.getState().stack.map((e) => e.id)).toEqual(['settings']);
+  });
+
+  it('shows the current mission: name, counts, when it was saved and the square under the crosshair', async () => {
+    const ctx = makeTestContext();
+    const m = await createMission(ctx, { name: 'Mission 1' });
+    if (!m.ok) throw new Error('setup');
+    await placePoint(ctx, { missionId: m.value.id, coord: { lat: 38.9, lon: -77 }, sidc: 'SHGPUCI--------', name: 'HOS-1' });
+    useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 12, bearing: 0 });
+    await renderWithProviders(<AppRootMenu params={{}} missionId={m.value.id} />, ctx);
+    const card = within(screen.getByTestId('current-mission-card'));
+    expect(card.getByText('Current mission')).toBeTruthy();
+    expect(await card.findByText('Mission 1')).toBeTruthy();
+    expect(await card.findByLabelText('1 unit · 0 points · 0 lines · 0 polygons')).toBeTruthy();
+    expect(await card.findByTestId('current-mission-saved')).toHaveTextContent(/^Saved .+ · 18S UJ$/);
+    expect(card.getByRole('button', { name: 'Switch mission' })).toBeTruthy();
+  });
+
+  it('names the app in the header and says what Settings and About hold', async () => {
+    await renderWithProviders(<AppRootMenu params={{}} missionId="m1" />);
+    expect(screen.getByText('RTAP')).toBeTruthy();
+    expect(screen.getByText('Grid format, units, display')).toBeTruthy();
+    expect(screen.getByText(/^Toolbar guide/)).toBeTruthy();
   });
 });

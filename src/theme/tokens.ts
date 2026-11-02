@@ -10,6 +10,7 @@ export const palette = {
   'stone-700': '#44403c',
   'stone-800': '#292524',
   'stone-900': '#1c1917',
+  'stone-950': '#0c0a09',
   'neutral-950': '#0a0a0a',
   'amber-500': '#f59e0b',
   'amber-950': '#451a03',
@@ -33,6 +34,8 @@ const dark = {
   'surface-glass': { color: 'neutral-950', alpha: 0.35 },
   'surface-input': 'neutral-950',
   'surface-raised': 'stone-800',
+  /** Cards set into a panel (the main menu's mission card and links): a step darker than the panel. */
+  'surface-sunken': 'stone-950',
   border: 'stone-700',
   /** Faint lines inside a panel (the drawer's notch edge, the header's scroll divider): a step off the surface. */
   'border-subtle': 'stone-800',
