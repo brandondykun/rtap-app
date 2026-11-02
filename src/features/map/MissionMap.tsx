@@ -612,8 +612,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           ) : undefined
         }
         landscape={landscape}
-        // In landscape the temp card sits beside the dock, which drops its CTR row to leave it room; in portrait the dock keeps it, under the card.
-        showCenter={showCenterGrid && !(landscape && plotTemp)}
+        // The temp card sits beside the dock (landscape) or above it (portrait), which keeps its CTR row either way.
+        showCenter={showCenterGrid}
         barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing)}
         bar={
           lineDrawing ? (

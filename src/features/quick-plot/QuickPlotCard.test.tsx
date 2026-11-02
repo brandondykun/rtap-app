@@ -1,7 +1,8 @@
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { CONTROL_SIZE, EDGE, GAP } from '@/features/map/layout';
+import { setElevationSource } from '@/features/map/terrain/elevation';
 import { INITIAL_MAP_CHROME, useMapChrome } from '@/stores/map-chrome';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
@@ -91,11 +92,46 @@ describe('QuickPlotCard', () => {
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
   });
 
-  it.each([[false], [true]])('uses compact buttons, like the other map bars (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('uses regular-size buttons, easier to hit than the compact map-bar ones (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
     for (const label of ['Discard', 'Save unit', 'Save point']) {
-      expect(screen.getByLabelText(label).props.className).toContain('py-2');
-      expect(screen.getByLabelText(label).props.className).not.toContain('py-3');
+      expect(screen.getByLabelText(label).props.className).toContain('py-3');
+      expect(screen.getByLabelText(label).props.className).not.toContain('py-2');
+    }
+  });
+
+  it('shows the ground altitude under the grid once the terrain answers, a dash until then', async () => {
+    jest.useFakeTimers();
+    const source = jest.fn(async () => 312.4);
+    setElevationSource(source);
+    try {
+      await renderWithProviders(<QuickPlotCard landscape={false} />);
+      expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT —');
+      await act(async () => jest.advanceTimersByTime(400));
+      expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT 312 m');
+      expect(screen.getByTestId('quick-plot-altitude').props.className).toContain('text-value-altitude');
+      // Found on the first lookup: no second one.
+      await act(async () => jest.advanceTimersByTime(2000));
+      expect(source).toHaveBeenCalledTimes(1);
+    } finally {
+      setElevationSource(null);
+      jest.useRealTimers();
+    }
+  });
+
+  it('looks the altitude up once more when the terrain had not loaded yet', async () => {
+    jest.useFakeTimers();
+    const source = jest.fn().mockResolvedValueOnce(null).mockResolvedValue(90);
+    setElevationSource(source);
+    try {
+      await renderWithProviders(<QuickPlotCard landscape={false} />);
+      await act(async () => jest.advanceTimersByTime(400));
+      expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT —');
+      await act(async () => jest.advanceTimersByTime(1100));
+      expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT 90 m');
+    } finally {
+      setElevationSource(null);
+      jest.useRealTimers();
     }
   });
 
@@ -113,11 +149,11 @@ describe('QuickPlotCard', () => {
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toHaveStyle({ textShadowRadius: 3 });
   });
 
-  it('nests its buttons concentrically: 16 pt corners less 1 pt border and 7 pt padding is their 8 pt', async () => {
+  it('nests its buttons concentrically: 20 pt corners less 1 pt border and 7 pt padding is their 12 pt', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     const card = screen.getByTestId('quick-plot-card').props.className as string;
-    expect(card).toMatch(/\brounded-2xl\b/);
+    expect(card).toMatch(/\brounded-\[20px\]/);
     expect(card).toMatch(/\bp-\[7px\]/);
-    for (const label of ['Save unit', 'Save point', 'Discard']) expect(screen.getByLabelText(label).props.className).toMatch(/\brounded-lg\b/);
+    for (const label of ['Save unit', 'Save point', 'Discard']) expect(screen.getByLabelText(label).props.className).toMatch(/\brounded-xl\b/);
   });
 });
