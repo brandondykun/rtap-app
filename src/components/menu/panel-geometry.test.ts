@@ -9,6 +9,7 @@ import {
   RAIL_WIDTH,
   drawerWidth,
   FLING_VELOCITY,
+  MENU_DETENTS,
   MIN_HALF_HEIGHT,
   PEEK_HEIGHT,
   snapIndex,
@@ -22,15 +23,25 @@ describe('panel geometry', () => {
     const h = detentHeights(phone);
     expect(h.full).toBe(844 - 123);
     expect(h.half).toBe(Math.max(MIN_HALF_HEIGHT, Math.round(844 * 0.42)));
+    expect(h.tall).toBe(Math.round(844 * 0.55));
     expect(h.peek).toBe(PEEK_HEIGHT + 34);
     expect(h.peek).toBeLessThan(h.half);
-    expect(h.half).toBeLessThan(h.full);
+    expect(h.half).toBeLessThan(h.tall);
+    expect(h.tall).toBeLessThan(h.full);
+  });
+
+  it('gives menus four snap points, the extra one about half way between half and full', () => {
+    expect(MENU_DETENTS).toEqual(['peek', 'half', 'tall', 'full']);
+    const h = detentHeights(phone);
+    expect(MENU_DETENTS.map((d) => h[d])).toEqual([...MENU_DETENTS.map((d) => h[d])].sort((a, b) => a - b));
+    // Past the half-screen line, where the map's grid readouts give way to the menu.
+    expect(h.tall).toBeGreaterThan(844 / 2);
   });
 
   it('shrinks every detent to what short content needs, rail and grip included', () => {
     const h = detentHeights(phone);
     const fitted = fitToContent(h, 200);
-    expect(fitted).toEqual({ peek: Math.min(h.peek, 200 + SHEET_CHROME_HEIGHT), half: 200 + SHEET_CHROME_HEIGHT, full: 200 + SHEET_CHROME_HEIGHT });
+    expect(fitted).toEqual({ peek: Math.min(h.peek, 200 + SHEET_CHROME_HEIGHT), half: 200 + SHEET_CHROME_HEIGHT, tall: 200 + SHEET_CHROME_HEIGHT, full: 200 + SHEET_CHROME_HEIGHT });
   });
 
   it('leaves the detents alone for tall content, or before the content is measured', () => {
@@ -39,9 +50,10 @@ describe('panel geometry', () => {
     expect(fitToContent(h, null)).toEqual(h);
   });
 
-  it('never lets half exceed full on short screens', () => {
+  it('never lets half or tall exceed full on short screens', () => {
     const h = detentHeights({ ...phone, height: 360, topReserved: 100 });
-    expect(h.half).toBeLessThanOrEqual(h.full);
+    expect(h.half).toBeLessThanOrEqual(h.tall);
+    expect(h.tall).toBeLessThanOrEqual(h.full);
     expect(h.peek).toBeLessThanOrEqual(h.half);
   });
 

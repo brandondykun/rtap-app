@@ -1,10 +1,10 @@
 /** The screen area a panel occupies: a bottom sheet's height or a left drawer's width, in points. */
 export type PanelFrame = { side: 'bottom' | 'left'; size: number };
 
-export type Detent = 'peek' | 'half' | 'full';
+export type Detent = 'peek' | 'half' | 'tall' | 'full';
 
-/** Every menu snaps to the same three heights in portrait and opens at half (shorter when its content is). */
-export const MENU_DETENTS: readonly Detent[] = ['peek', 'half', 'full'];
+/** Every menu snaps to the same four heights in portrait and opens at half (shorter when its content is). */
+export const MENU_DETENTS: readonly Detent[] = ['peek', 'half', 'tall', 'full'];
 export const MENU_INITIAL_DETENT: Detent = 'half';
 
 export type PanelMetrics = {
@@ -19,6 +19,8 @@ export type PanelMetrics = {
 export const PEEK_HEIGHT = 88;
 export const MIN_HALF_HEIGHT = 300;
 export const HALF_FRACTION = 0.42;
+/** Between half and full: about half the screen, with the map still showing above. */
+export const TALL_FRACTION = 0.55;
 /** Narrow enough to leave map beside it, wide enough for a full MGRS row (see the geometry test). */
 export const DRAWER_MIN_WIDTH = 350;
 export const DRAWER_MAX_WIDTH = 424;
@@ -44,12 +46,13 @@ export function minimizedBarSize(insetBottom: number): number {
 /** Release velocity (points/s) above which the sheet moves one detent in the fling direction. */
 export const FLING_VELOCITY = 800;
 
-/** Bottom-sheet heights (including the bottom safe area), ascending: peek ≤ half ≤ full. */
+/** Bottom-sheet heights (including the bottom safe area), ascending: peek ≤ half ≤ tall ≤ full. */
 export function detentHeights(m: PanelMetrics): Record<Detent, number> {
   const full = Math.max(PEEK_HEIGHT, m.height - m.topReserved);
   const half = Math.min(full, Math.max(MIN_HALF_HEIGHT, Math.round(m.height * HALF_FRACTION)));
+  const tall = Math.min(full, Math.max(half, Math.round(m.height * TALL_FRACTION)));
   const peek = Math.min(half, PEEK_HEIGHT + m.insets.bottom);
-  return { peek, half, full };
+  return { peek, half, tall, full };
 }
 
 /**
@@ -60,7 +63,7 @@ export function detentHeights(m: PanelMetrics): Record<Detent, number> {
 export function fitToContent(heights: Record<Detent, number>, contentHeight: number | null, chrome = SHEET_CHROME_HEIGHT): Record<Detent, number> {
   if (contentHeight === null) return heights;
   const fit = contentHeight + chrome;
-  return { peek: Math.min(heights.peek, fit), half: Math.min(heights.half, fit), full: Math.min(heights.full, fit) };
+  return { peek: Math.min(heights.peek, fit), half: Math.min(heights.half, fit), tall: Math.min(heights.tall, fit), full: Math.min(heights.full, fit) };
 }
 
 /** Left drawer width from the screen's left edge (includes the left safe area). */
