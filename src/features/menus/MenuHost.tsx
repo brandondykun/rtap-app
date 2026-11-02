@@ -58,7 +58,8 @@ export function MenuHost({ landscape, missionId }: { landscape: boolean; mission
         contentKey={top}
         restoreScrollY={recallForEntry<number>(top, 'scrollY')}
         onScrollY={(y) => rememberForEntry(top, 'scrollY', y)}
-        ownScroll={definition.ownScroll}>
+        ownScroll={definition.ownScroll}
+        growOnly={definition.growOnly}>
         <Component key={`${top.id}:${JSON.stringify(top.params)}`} params={top.params as MenuParams<MenuId>} missionId={missionId} />
       </Panel>
     </View>

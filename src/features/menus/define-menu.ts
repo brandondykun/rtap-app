@@ -18,6 +18,8 @@ export type MenuDefinition<I extends MenuId> = {
   component: ComponentType<MenuComponentProps<I>>;
   /** The menu scrolls itself (a long virtualized list): the panel hands it its scroll props (usePanelListProps) instead of wrapping it in a scroll view. */
   ownScroll?: boolean;
+  /** Portrait: the sheet fitted to the content only ever grows while the menu is open (Layers: switching tabs never shrinks it). */
+  growOnly?: boolean;
 };
 
 /** Declares a menu once; its params schema lives in `params.ts` under the same id. */

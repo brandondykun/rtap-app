@@ -289,6 +289,44 @@ describe('Panel', () => {
       expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 180 + SHEET_CHROME_HEIGHT });
     });
 
+    it('shrinks to shorter content, unless it only grows (Layers switching to a shorter tab)', async () => {
+      const entry = { id: 'layers' };
+      const panel = (growOnly: boolean, onFrameChange: jest.Mock) => (
+        <Panel landscape={false} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={onFrameChange} contentKey={entry} growOnly={growOnly}>
+          <Text>content</Text>
+        </Panel>
+      );
+      for (const growOnly of [false, true]) {
+        const onFrameChange = jest.fn();
+        await render(panel(growOnly, onFrameChange));
+        await measure(240);
+        await measure(120);
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: (growOnly ? 240 : 120) + SHEET_CHROME_HEIGHT });
+        await measure(300);
+        expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 300 + SHEET_CHROME_HEIGHT });
+        await screen.unmount();
+      }
+    });
+
+    it('keeps its tallest height for a menu it comes back to, while it only grows', async () => {
+      const layers = { id: 'layers' };
+      const item = { id: 'unit.view' };
+      const onFrameChange = jest.fn();
+      const panel = (contentKey: object) => (
+        <Panel landscape={false} detents={['peek', 'half', 'full']} initialDetent="half" topReserved={TOP_RESERVED} onFrameChange={onFrameChange} contentKey={contentKey} growOnly>
+          <Text>content</Text>
+        </Panel>
+      );
+      await render(panel(layers));
+      await measure(240);
+      await screen.rerender(panel(item));
+      await measure(100);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 100 + SHEET_CHROME_HEIGHT });
+      await screen.rerender(panel(layers));
+      await measure(120);
+      expect(onFrameChange).toHaveBeenLastCalledWith({ side: 'bottom', size: 240 + SHEET_CHROME_HEIGHT });
+    });
+
     it('stays closed until its content is measured, then opens once, straight to the fitted height', async () => {
       const onFrameChange = jest.fn();
       await render(sheet(onFrameChange));

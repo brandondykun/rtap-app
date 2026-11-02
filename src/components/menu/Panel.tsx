@@ -52,6 +52,11 @@ type Props = {
   onScrollY?: (y: number) => void;
   /** The content scrolls itself (a long virtualized list): it gets the panel's scroll props (PanelScrollerContext) instead of a scroll view. */
   ownScroll?: boolean;
+  /**
+   * The sheet fitted to the content only grows: each menu-stack entry keeps the tallest content measured for it, so a
+   * shorter tab (or Back from an item) does not shrink it.
+   */
+  growOnly?: boolean;
   children: ReactNode;
 };
 
@@ -94,6 +99,7 @@ export function Panel({
   restoreScrollY,
   onScrollY,
   ownScroll = false,
+  growOnly = false,
   children,
 }: Props) {
   const { colors } = useTheme();
@@ -193,16 +199,21 @@ export function Panel({
     }
   }, [contentKey, restoreScrollY]);
 
+  /** With `growOnly`: the tallest content measured for each entry (by identity; Back returns the same entry). */
+  const tallest = useRef(new WeakMap<object, number>());
   const onContentSizeChange = useCallback(
     (_w: number, contentHeight: number) => {
-      setMeasured({ key: contentKey, height: contentHeight });
+      const entry = growOnly && typeof contentKey === 'object' && contentKey !== null ? contentKey : null;
+      const fitted = entry ? Math.max(contentHeight, tallest.current.get(entry) ?? 0) : contentHeight;
+      if (entry) tallest.current.set(entry, fitted);
+      setMeasured({ key: contentKey, height: fitted });
       const target = pendingY.current;
       if (target === null) return;
       const reachable = Math.max(0, contentHeight - viewportHeight.current);
       scroller.current?.scrollTo({ y: Math.min(target, reachable), animated: false });
       if (reachable >= target) pendingY.current = null;
     },
-    [contentKey],
+    [contentKey, growOnly],
   );
   // Read when scrolling, so a new callback each render does not give a self-scrolling list new props.
   const onScrollYRef = useRef(onScrollY);
