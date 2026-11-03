@@ -150,14 +150,17 @@ describe('LayersMenu', () => {
       expect(screen.getByText('HOS-1')).toBeTruthy();
     });
 
-    it('starts the list at the top whenever the chip or the tab changes', async () => {
+    it('keeps the list where it was scrolled when the chip changes, and starts it at the top when the tab does', async () => {
       await openWithUnits();
       const scrollTo = jest.mocked(ScrollView.prototype.scrollTo);
-      for (const change of [() => fireEvent.press(chip('hostile')), () => fireEvent.press(chip('all')), () => fireEvent.press(screen.getByLabelText('Points'))]) {
+      for (const change of [() => fireEvent.press(chip('hostile')), () => fireEvent.press(chip('all'))]) {
         scrollTo.mockClear();
         await change();
-        expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 0, animated: false }));
+        expect(scrollTo).not.toHaveBeenCalledWith(expect.objectContaining({ y: 0 }));
       }
+      scrollTo.mockClear();
+      await fireEvent.press(screen.getByLabelText('Points'));
+      expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ y: 0, animated: false }));
     });
 
     it('draws a friendly unit grid in the friendly blue, other grids plain (value colors)', async () => {

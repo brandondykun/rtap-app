@@ -115,13 +115,14 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const panelListProps = usePanelListProps<MapItemSnapshot>();
   const { colors } = useTheme();
   const list = useRef<FlashListRef<MapItemSnapshot> | null>(null);
-  // Another tab or chip is a new list: it starts at the top, with the tabs and chips in view.
-  const shownList = useRef({ tab, affiliation });
+  // Another tab is a new list: it starts at the top, with the tabs in view. A chip only narrows the tab's list, so the
+  // list stays where it was scrolled (a jump to the top there looked out of place).
+  const shownTab = useRef(tab);
   useEffect(() => {
-    if (shownList.current.tab === tab && shownList.current.affiliation === affiliation) return;
-    shownList.current = { tab, affiliation };
+    if (shownTab.current === tab) return;
+    shownTab.current = tab;
     list.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [tab, affiliation]);
+  }, [tab]);
   const [farDown, setFarDown] = useState(false);
   // What the empty state needs to fill the rest of the panel: the list's height, and where the box starts in it.
   const [viewportHeight, setViewportHeight] = useState(0);
