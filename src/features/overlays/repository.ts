@@ -11,7 +11,10 @@ type OverlayRow = { id: string; mission_id: string; name: string; sort_order: nu
 
 const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
 
-/** The mission's overlays in order, each with this device's shown or hidden. */
+/** A to Z, ignoring case, with numbers by value: "Phase 2" before "Phase 10". */
+const byName = (a: Overlay, b: Overlay) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+
+/** The mission's overlays A to Z (same names in the order made), each with this device's shown or hidden. */
 export function observeMissionOverlays(db: AppDb, missionId: string): Observable<Overlay[]> {
   return db
     .watch<OverlayRow>(
@@ -24,7 +27,9 @@ export function observeMissionOverlays(db: AppDb, missionId: string): Observable
     )
     .pipe(
       map((rows) =>
-        rows.map((r) => ({ id: r.id, missionId: r.mission_id, name: r.name, sortOrder: r.sort_order, hidden: r.hidden === 1, itemCount: r.item_count ?? 0 })),
+        rows
+          .map((r) => ({ id: r.id, missionId: r.mission_id, name: r.name, sortOrder: r.sort_order, hidden: r.hidden === 1, itemCount: r.item_count ?? 0 }))
+          .sort(byName),
       ),
     );
 }

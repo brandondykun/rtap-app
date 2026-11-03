@@ -2,10 +2,14 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { firstValueFrom } from 'rxjs';
 
 import { placePoint } from '@/features/map-items/commands';
+import { AddPointMenu } from '@/features/map-items/menus/AddPointMenu';
+import { observeMissionItems } from '@/features/map-items/repository';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import { PointsLayer } from '@/features/map/layers/PointsLayer';
 import { MenuHost } from '@/features/menus/MenuHost';
 import { makeTestContext } from '@/lib/db/test-database';
+import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
+import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_LAYERS_VIEW, useLayersView } from '@/stores/layers-view';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
@@ -54,6 +58,18 @@ describe('overlays in Layers', () => {
     await fireEvent.press(header);
     expect(useLayersView.getState().overlaysOpen).toBe(true);
     expect(within(screen.getByTestId('layers-overlays')).getByLabelText('Show Phase 1')).toBeTruthy();
+  });
+
+  it('shows every overlay from All while any is off, and hides them all once all are on', async () => {
+    const { ctx, overlayId } = await withOverlay();
+    await setOverlayHidden(ctx, overlayId, true);
+    await openLayers(ctx, { overlaysOpen: false });
+    await fireEvent.press(await screen.findByLabelText('Show all overlays'));
+    expect(await screen.findByLabelText('Overlays, 2 of 2 on')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Hide all overlays'));
+    expect(await screen.findByLabelText('Overlays, 0 of 2 on')).toBeTruthy();
+    expect(await firstValueFrom(observeBaseHidden(ctx.db, M))).toBe(true);
+    expect((await firstValueFrom(observeMissionOverlays(ctx.db, M)))[0].hidden).toBe(true);
   });
 
   it('counts the items in each overlay, Base those in none', async () => {
@@ -170,11 +186,71 @@ describe('an item\'s overlays', () => {
   });
 });
 
+describe('adding an item', () => {
+  async function openAdd(ctx: ReturnType<typeof makeTestContext>) {
+    useDraft.setState(INITIAL_DRAFT);
+    useInteraction.setState(INITIAL_INTERACTION);
+    useInteraction.getState().setCamera({ center: at, zoom: 14, bearing: 0 });
+    useMenu.getState().openMenu('point.add', {});
+    await renderWithProviders(<AddPointMenu params={{}} missionId={M} />, ctx);
+    await screen.findByDisplayValue('CP-1');
+  }
+
+  it('offers no overlays until the mission has some', async () => {
+    await openAdd(makeTestContext());
+    expect(screen.queryByTestId('item-overlays')).toBeNull();
+  });
+
+  it('puts the new item in the overlays chosen before Add', async () => {
+    const ctx = makeTestContext();
+    const p1 = await createOverlay(ctx, { missionId: M, name: 'Phase 1' });
+    const p2 = await createOverlay(ctx, { missionId: M, name: 'Phase 2' });
+    if (!p1.ok || !p2.ok) throw new Error('setup');
+    await openAdd(ctx);
+    expect(await screen.findByLabelText('In Base')).toBeSelected();
+    expect(screen.getByTestId('item-overlays-hint')).toHaveTextContent(/will be in Base/);
+    await fireEvent.press(screen.getByLabelText('Add to Phase 1'));
+    await fireEvent.press(screen.getByLabelText('Add to Phase 2'));
+    await fireEvent.press(screen.getByLabelText('Take out of Phase 2'));
+    expect(screen.getByTestId('item-overlays-hint')).toHaveTextContent(/will be in Phase 1\./);
+    await fireEvent.press(screen.getByLabelText('Add'));
+    const [item] = await waitFor(async () => {
+      const list = await firstValueFrom(observeMissionItems(ctx.db, M));
+      expect(list).toHaveLength(1);
+      return list;
+    });
+    await waitFor(async () => expect(await firstValueFrom(observeItemOverlayIds(ctx.db, item.id))).toEqual([p1.value.id]));
+  });
+
+  it('adds the item to Base when Base is chosen again', async () => {
+    const ctx = makeTestContext();
+    await createOverlay(ctx, { missionId: M, name: 'Phase 1' });
+    await openAdd(ctx);
+    await fireEvent.press(await screen.findByLabelText('Add to Phase 1'));
+    await fireEvent.press(screen.getByLabelText('Move to Base'));
+    expect(screen.getByLabelText('In Base')).toBeSelected();
+    await fireEvent.press(screen.getByLabelText('Add'));
+    await waitFor(async () => expect(await firstValueFrom(observeMissionItems(ctx.db, M))).toHaveLength(1));
+    expect(await ctx.db.getAll('SELECT id FROM map_item_overlays')).toEqual([]);
+  });
+});
+
 describe('the item hint', () => {
   it('says which overlays the item is in, and when that puts it on the map', () => {
     expect(itemOverlaysHint([])).toBe('This item is in Base. It shows on the map while Base is turned on. Tap another overlay to move it there.');
     expect(itemOverlaysHint(['Phase 1'])).toBe('This item is in Phase 1. It shows on the map while Phase 1 is turned on.');
     expect(itemOverlaysHint(['Phase 1', 'Phase 2', 'Fires'])).toBe('This item is in Phase 1, Phase 2 and Fires. It shows on the map while any one of them is turned on.');
+  });
+
+  it('speaks of the future while adding', () => {
+    expect(itemOverlaysHint([], { adding: true })).toBe('This item will be in Base. It shows on the map while Base is turned on. Tap another overlay to put it there instead.');
+    expect(itemOverlaysHint(['Phase 1'], { adding: true })).toBe('This item will be in Phase 1. It shows on the map while Phase 1 is turned on.');
+  });
+
+  it('warns when every overlay the item is in is turned off', () => {
+    expect(itemOverlaysHint([], { allOff: true })).toMatch(/Base is turned off right now, so the item won't show until you turn it on\.$/);
+    expect(itemOverlaysHint(['Phase 2'], { adding: true, allOff: true })).toMatch(/Phase 2 is turned off right now, so the item won't show until you turn it on\.$/);
+    expect(itemOverlaysHint(['Phase 1', 'Phase 2'], { allOff: true })).toMatch(/They are all turned off right now, so the item won't show until you turn one on\.$/);
   });
 });
 

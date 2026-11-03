@@ -4,7 +4,7 @@ import { deleteItem, placePoint, setItemHidden } from '@/features/map-items/comm
 import { createMission, deleteMission, setBaseHidden } from '@/features/missions/commands';
 import { makeTestContext } from '@/lib/db/test-database';
 
-import { createOverlay, deleteOverlay, MAX_OVERLAY_NAME, moveItemToBase, renameOverlay, setItemInOverlay, setOverlayHidden } from './commands';
+import { createOverlay, deleteOverlay, MAX_OVERLAY_NAME, moveItemToBase, renameOverlay, setAllOverlaysHidden, setItemInOverlay, setOverlayHidden } from './commands';
 import { observeBaseHidden, observeItemOverlayIds, observeMapHiddenItemIds, observeMissionOverlays, observeOverlayHiddenItemIds } from './repository';
 
 const at = { lat: 38.9, lon: -77 };
@@ -31,7 +31,7 @@ async function setup() {
 }
 
 describe('overlays', () => {
-  it('lists the mission overlays in the order made, all shown at first', async () => {
+  it('lists the mission overlays all shown at first', async () => {
     const { ctx, missionId, overlay } = await setup();
     await overlay('Phase 1');
     await overlay('Phase 2');
@@ -40,6 +40,13 @@ describe('overlays', () => {
       ['Phase 1', 0, false],
       ['Phase 2', 1, false],
     ]);
+  });
+
+  it('lists the overlays A to Z whatever order they were made in, ignoring case, with numbers by value', async () => {
+    const { ctx, missionId, overlay } = await setup();
+    for (const name of ['Phase 10', 'fires', 'Phase 2', 'Enemy COA 1']) await overlay(name);
+    const list = await firstValueFrom(observeMissionOverlays(ctx.db, missionId));
+    expect(list.map((o) => o.name)).toEqual(['Enemy COA 1', 'fires', 'Phase 2', 'Phase 10']);
   });
 
   it('needs a name of 1 to 32 characters, trimmed', async () => {
@@ -71,6 +78,22 @@ describe('overlays', () => {
     expect(await overlayHidden()).toEqual([base]);
     await setBaseHidden(ctx, missionId, false);
     expect(await overlayHidden()).toEqual([]);
+  });
+
+  it('hides and shows every overlay at once, Base too, whether or not each was toggled before', async () => {
+    const { ctx, missionId, item, overlay, link, overlayHidden } = await setup();
+    const base = await item('BASE');
+    const unit = await item('HOS-1');
+    const p1 = await overlay('Phase 1');
+    await overlay('Phase 2');
+    await link(unit, p1);
+    await setOverlayHidden(ctx, p1, false);
+    await setAllOverlaysHidden(ctx, missionId, true);
+    expect((await firstValueFrom(observeMissionOverlays(ctx.db, missionId))).map((o) => o.hidden)).toEqual([true, true]);
+    expect(await overlayHidden()).toEqual([base, unit].sort());
+    await setAllOverlaysHidden(ctx, missionId, false);
+    expect(await overlayHidden()).toEqual([]);
+    expect(await firstValueFrom(observeBaseHidden(ctx.db, missionId))).toBe(false);
   });
 
   it('moves an item back to Base by taking it out of every overlay', async () => {

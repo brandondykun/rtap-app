@@ -1,3 +1,4 @@
+import type { AppDbTx } from '@/lib/db/app-db';
 import type { CommandContext } from '@/lib/db/command-context';
 import { insertRows, updateRow, type SqlValue } from '@/lib/db/insert-rows';
 import { newId } from '@/lib/db/new-id';
@@ -53,16 +54,20 @@ async function upsertViewState(
   return ctx.db.writeTransaction(async (tx) => {
     // Checked inside the write so a delete cannot land between the check and the upsert.
     if (requireMission && !(await findMission(tx, missionId))) return false;
-    const existing = await findMissionViewState(tx, missionId);
-    const now = ctx.now();
-    if (existing) {
-      await updateRow(tx, Tables.missionViewState, existing.id, { ...fields, updated_at: now });
-    } else {
-      const row: Record<string, SqlValue> = { id: newId(), mission_id: missionId, last_opened_at: now, camera: null, snapshot: null, updated_at: now };
-      await insertRows(tx, Tables.missionViewState, [{ ...row, ...fields }]);
-    }
+    await writeViewState(tx, ctx.now(), missionId, fields);
     return true;
   });
+}
+
+/** Sets view-state columns inside a write already open (making the row if the mission has none yet). */
+export async function writeViewState(tx: AppDbTx, now: number, missionId: string, fields: ViewStateFields): Promise<void> {
+  const existing = await findMissionViewState(tx, missionId);
+  if (existing) {
+    await updateRow(tx, Tables.missionViewState, existing.id, { ...fields, updated_at: now });
+  } else {
+    const row: Record<string, SqlValue> = { id: newId(), mission_id: missionId, last_opened_at: now, camera: null, snapshot: null, updated_at: now };
+    await insertRows(tx, Tables.missionViewState, [{ ...row, ...fields }]);
+  }
 }
 
 /** Shows or hides the mission's base (its items in no overlay) on this device only. */

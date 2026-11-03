@@ -26,7 +26,7 @@ import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
 import { useSettings, type CoordinateFormat } from '@/stores/settings';
 import { LayersOverlaysSection } from '@/features/overlays/LayersOverlaysSection';
-import { setOverlayHidden } from '@/features/overlays/commands';
+import { setAllOverlaysHidden, setOverlayHidden } from '@/features/overlays/commands';
 import { BASE_OVERLAY_ID, baseOverlay, observeBaseHidden, observeBaseItemCount, observeMissionOverlays, observeOverlayHiddenItemIds, type Overlay } from '@/features/overlays/repository';
 import { setBaseHidden } from '@/features/missions/commands';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -241,6 +241,11 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
           onToggle={(o) =>
             void (o.id === BASE_OVERLAY_ID ? setBaseHidden(ctx, missionId, !o.hidden) : setOverlayHidden(ctx, o.id, !o.hidden)).then((r) => {
               if (!r.ok) notifyError('Could not change the overlay.');
+            })
+          }
+          onSetAll={(hide) =>
+            void setAllOverlaysHidden(ctx, missionId, hide).then((r) => {
+              if (!r.ok) notifyError(hide ? 'Could not hide the overlays.' : 'Could not show the overlays.');
             })
           }
           onManage={() => useMenu.getState().pushMenu('overlays', {})}
