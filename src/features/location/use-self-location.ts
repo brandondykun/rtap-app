@@ -11,6 +11,7 @@ import { useSettings } from '@/stores/settings';
 import {
   screenHeadingOffset,
   shouldEmitHeading,
+  smoothHeading,
   trueHeadingFrom,
   type HeadingSample,
   type ScreenOrientation as Orientation,
@@ -46,6 +47,8 @@ export function useSelfLocation(): void {
     let starting = false;
     let subscriptions: { remove: () => void }[] = [];
     let lastHeading: HeadingSample | null = null;
+    // The compass smoothed (before turning it for the screen, so a rotation still applies at once).
+    let smoothed: HeadingSample | null = null;
     // The heading follows the screen, not the phone's top edge (landscape is 90° off otherwise).
     let orientation: Orientation = 'unknown';
     let lastEvent: Location.LocationHeadingObject | null = null;
@@ -72,7 +75,10 @@ export function useSelfLocation(): void {
         new Date(),
         useSettings.getState().declinationOverrideDeg,
       );
-      const heading = compass === null ? null : normalizeDeg(compass + screenHeadingOffset(orientation));
+      if (compass === null) smoothed = null;
+      // A forced update (the screen turned) reuses the last reading: it must not count as a new one.
+      else if (!force || smoothed === null) smoothed = smoothHeading(smoothed, compass, Date.now());
+      const heading = smoothed === null ? null : normalizeDeg(smoothed.heading + screenHeadingOffset(orientation));
       if (heading === null) {
         lastHeading = null;
         if (presence.selfHeading !== null) presence.setSelfHeading(null);
@@ -88,6 +94,7 @@ export function useSelfLocation(): void {
       subscriptions.forEach((sub) => sub.remove());
       subscriptions = [];
       lastHeading = null;
+      smoothed = null;
       lastEvent = null;
     };
 

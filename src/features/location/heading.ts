@@ -3,7 +3,13 @@ import type { LatLon } from '@/lib/geo/types';
 import { normalizeDeg } from '@/lib/geo/units/angle';
 
 export const HEADING_MIN_INTERVAL_MS = 100; // ≈10 Hz
-export const HEADING_MIN_DELTA_DEG = 2;
+/** Smoothed headings are steady, so a small step is a real turn: the icon follows it rather than holding 2° off. */
+export const HEADING_MIN_DELTA_DEG = 1;
+/** How quickly the smoothed heading closes in on the compass: slowly for small wobbles, quickly for a real turn. */
+export const HEADING_SMOOTH_MS = 300;
+export const HEADING_FAST_MS = 60;
+/** A compass change bigger than this is a turn, not sensor noise. */
+export const HEADING_TURN_DEG = 15;
 
 export type HeadingSample = { heading: number; at: number };
 
@@ -43,13 +49,28 @@ export function screenHeadingOffset(orientation: ScreenOrientation): number {
   }
 }
 
+/**
+ * The compass heading smoothed over time: Android compasses wobble a few degrees at rest, which ticked the location icon
+ * back and forth. Each reading moves the heading part of the way to it (more the longer since the last), the short way
+ * round north; a change of more than HEADING_TURN_DEG is followed almost at once, so turning still shows in real time.
+ */
+export function smoothHeading(prev: HeadingSample | null, next: number, now: number): HeadingSample {
+  if (prev === null) return { heading: normalizeDeg(next), at: now };
+  const dt = Math.max(0, now - prev.at);
+  // Signed, the short way round: 350° → 10° is +20°, not −340°.
+  const diff = ((((next - prev.heading) % 360) + 540) % 360) - 180;
+  const tau = Math.abs(diff) > HEADING_TURN_DEG ? HEADING_FAST_MS : HEADING_SMOOTH_MS;
+  const k = 1 - Math.exp(-dt / tau);
+  return { heading: normalizeDeg(prev.heading + diff * k), at: now };
+}
+
 /** Smallest angle between two headings, 0–180°. */
 export function angularDistance(a: number, b: number): number {
   const d = normalizeDeg(a - b);
   return d > 180 ? 360 - d : d;
 }
 
-/** Throttles compass updates so the self layer re-renders at most ≈10 Hz and only on ≥2° change. */
+/** Throttles compass updates so the self layer re-renders at most ≈10 Hz and only on a change of HEADING_MIN_DELTA_DEG or more. */
 export function shouldEmitHeading(prev: HeadingSample | null, next: number, now: number): boolean {
   if (prev === null) return true;
   if (now - prev.at < HEADING_MIN_INTERVAL_MS) return false;
