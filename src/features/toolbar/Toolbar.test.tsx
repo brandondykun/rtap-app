@@ -142,6 +142,23 @@ describe('Toolbar', () => {
     expect(style().right).toBeDefined();
   });
 
+  it('is given the full portrait width again after turning to landscape and back (it kept the landscape width)', async () => {
+    let turn: (landscape: boolean) => void = () => {};
+    function Turning() {
+      const [landscape, setLandscape] = useState(false);
+      turn = setLandscape;
+      return <Toolbar landscape={landscape} activeTool={null} />;
+    }
+    await renderWithProviders(<Turning />);
+    const full = Dimensions.get('window').width - 2 * EDGE;
+    expect(style().width).toBe(full);
+    await act(async () => turn(true));
+    await act(async () => turn(false));
+    // Always the animated width: dropping it in portrait left the landscape width on the native view.
+    expect(style().width).toBe(full);
+    expect(style()).toMatchObject({ left: EDGE, right: EDGE });
+  });
+
   describe('in landscape with the menu drawer open', () => {
     const DRAWER = 400;
     const LEAD = 60;

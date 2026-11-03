@@ -71,7 +71,9 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
   const natural = leadWidth > 0 && contentWidth > 0 ? TOOL_INSET + leadWidth + contentWidth : 0;
   const target = landscapeToolbarWidth({ natural, windowWidth, insetRight: insets.right, panelInset });
   const overflow = useOverflow(landscape ? Math.max(0, target - TOOL_INSET - leadWidth) : null);
-  const width = useSharedValue(0);
+  // Portrait: the full width between the screen's edges.
+  const portraitWidth = windowWidth - insets.left - insets.right - 2 * EDGE;
+  const width = useSharedValue(landscape ? 0 : portraitWidth);
   // The width last aimed at: aiming at it again (a later render with the same target) must not restart the animation.
   const aimedAt = useRef(0);
   const aim = useCallback(
@@ -83,6 +85,14 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
     },
     [width],
   );
+  // The width is always the animated value, in portrait too: a width Reanimated has set stays on the view after the
+  // animated style is dropped, so turning back to portrait would keep the landscape width (the bar ran off the left edge
+  // and could not scroll). Each turn sets the new width at once.
+  useEffect(() => {
+    if (landscape) return;
+    width.set(portraitWidth);
+    aimedAt.current = 0;
+  }, [landscape, portraitWidth, width]);
   useEffect(() => {
     if (landscape && natural > 0) aim(target);
   }, [landscape, natural, target, aim]);
@@ -126,7 +136,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
       testID="toolbar"
       // Its left end is padded like its top and bottom; the scroller carries the right end's padding.
       // Landscape: hidden for the frame before its width is known.
-      style={[position, { height, paddingLeft: TOOL_INSET }, landscape ? animatedWidth : null, landscape && natural === 0 ? { opacity: 0 } : null]}
+      style={[position, { height, paddingLeft: TOOL_INSET }, animatedWidth, landscape && natural === 0 ? { opacity: 0 } : null]}
       // Clipped to its rounded ends. The tools run right up to the right end and vanish under its curve (the scroller
       // carries that end's padding), so the shade must follow the curve too.
       className="absolute flex-row items-center overflow-hidden rounded-2xl bg-surface-glass">
