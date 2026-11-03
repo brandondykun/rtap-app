@@ -12,6 +12,7 @@ import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_LAYERS_VIEW, useLayersView } from '@/stores/layers-view';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
+import { useToast } from '@/stores/toast';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -29,6 +30,7 @@ const M = 'm1';
 beforeEach(() => {
   useMenu.setState(INITIAL_MENU);
   useLayersView.setState(INITIAL_LAYERS_VIEW);
+  useToast.setState({ toast: null });
 });
 
 async function withOverlay() {
@@ -135,6 +137,30 @@ describe('Overlays menu', () => {
     expect(await screen.findByText('Fires')).toBeTruthy();
     expect((await firstValueFrom(observeMissionOverlays(ctx.db, M))).map((o) => o.name)).toEqual(['Fires']);
     expect(screen.getByLabelText('New overlay name')).toHaveDisplayValue('');
+  });
+
+  it('says so, and keeps the name typed, when an overlay of that name exists', async () => {
+    const { ctx } = await withOverlay();
+    await openMenu(ctx);
+    await screen.findByText('Phase 1');
+    await fireEvent.changeText(screen.getByLabelText('New overlay name'), 'phase 1');
+    await fireEvent.press(screen.getByLabelText('Add overlay'));
+    await waitFor(() =>
+      expect(useToast.getState().toast).toMatchObject({ message: 'There is already an overlay named phase 1.', detail: 'Choose a different name.' }),
+    );
+    expect(screen.getByLabelText('New overlay name')).toHaveDisplayValue('phase 1');
+    expect(await firstValueFrom(observeMissionOverlays(ctx.db, M))).toHaveLength(1);
+  });
+
+  it('clears the name fields from their clear buttons', async () => {
+    const { ctx } = await withOverlay();
+    await openMenu(ctx);
+    await fireEvent.changeText(screen.getByLabelText('New overlay name'), 'Fires');
+    await fireEvent.press(screen.getByLabelText('Clear New overlay name'));
+    expect(screen.getByLabelText('New overlay name')).toHaveDisplayValue('');
+    await fireEvent.press(await screen.findByText('Phase 1'));
+    await fireEvent.press(screen.getByLabelText('Clear Rename Phase 1'));
+    expect(screen.getByLabelText('Rename Phase 1')).toHaveDisplayValue('');
   });
 
   it('renames an overlay from its row', async () => {

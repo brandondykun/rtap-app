@@ -42,6 +42,30 @@ describe('overlays', () => {
     ]);
   });
 
+  it('allows no two overlays of one name in a mission, ignoring case, nor one named Base', async () => {
+    const { ctx, missionId, overlay } = await setup();
+    const p1 = await overlay('Phase 1');
+    const p2 = await overlay('Phase 2');
+    expect(await createOverlay(ctx, { missionId, name: ' phase 1 ' })).toMatchObject({ ok: false, error: 'name_taken' });
+    expect(await createOverlay(ctx, { missionId, name: 'BASE' })).toMatchObject({ ok: false, error: 'name_taken' });
+    expect(await renameOverlay(ctx, p2, 'PHASE 1')).toMatchObject({ ok: false, error: 'name_taken' });
+    expect(await renameOverlay(ctx, p2, 'base')).toMatchObject({ ok: false, error: 'name_taken' });
+    // Its own name in other case is fine.
+    expect((await renameOverlay(ctx, p1, 'PHASE 1')).ok).toBe(true);
+    // Another mission may have its own Phase 1.
+    const other = await createMission(ctx, { name: 'Op Steel' });
+    if (!other.ok) throw new Error('setup');
+    expect((await createOverlay(ctx, { missionId: other.value.id, name: 'Phase 1' })).ok).toBe(true);
+    expect((await firstValueFrom(observeMissionOverlays(ctx.db, missionId))).map((o) => o.name)).toEqual(['PHASE 1', 'Phase 2']);
+  });
+
+  it('adds only one of two overlays of one name made at once', async () => {
+    const { ctx, missionId } = await setup();
+    const results = await Promise.all([createOverlay(ctx, { missionId, name: 'Fires' }), createOverlay(ctx, { missionId, name: 'fires' })]);
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(await firstValueFrom(observeMissionOverlays(ctx.db, missionId))).toHaveLength(1);
+  });
+
   it('lists the overlays A to Z whatever order they were made in, ignoring case, with numbers by value', async () => {
     const { ctx, missionId, overlay } = await setup();
     for (const name of ['Phase 10', 'fires', 'Phase 2', 'Enemy COA 1']) await overlay(name);

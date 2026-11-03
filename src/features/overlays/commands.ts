@@ -1,4 +1,5 @@
 import { writeViewState } from '@/features/missions/commands';
+import type { AppDbTx } from '@/lib/db/app-db';
 import type { CommandContext } from '@/lib/db/command-context';
 import { insertRows, updateRow } from '@/lib/db/insert-rows';
 import { newId } from '@/lib/db/new-id';
@@ -13,14 +14,33 @@ function cleanName(name: string): string | null {
   return n.length > 0 && n.length <= MAX_OVERLAY_NAME ? n : null;
 }
 
-/** A new overlay at the end of the mission's list, shown. */
-export async function createOverlay(ctx: CommandContext, input: { missionId: string; name: string }): Promise<Result<{ id: string }, 'invalid_name' | 'write_failed'>> {
+/** Same name, ignoring case: "phase 1" is "Phase 1". */
+const sameName = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'accent' }) === 0;
+
+/**
+ * Whether another of the mission's overlays (not `exceptId`) already has the name, or it is Base's. Checked inside the
+ * write, so two adds of one name cannot both pass.
+ */
+async function nameTaken(tx: AppDbTx, missionId: string, name: string, exceptId: string | null): Promise<boolean> {
+  if (sameName(name, 'Base')) return true;
+  const rows = await tx.getAll<{ id: string; name: string }>('SELECT id, name FROM overlays WHERE mission_id = ?', [missionId]);
+  return rows.some((r) => r.id !== exceptId && sameName(r.name, name));
+}
+
+class NameTaken extends Error {}
+
+/** A new overlay, shown. Its name must be one no other overlay of the mission has (ignoring case), nor Base. */
+export async function createOverlay(
+  ctx: CommandContext,
+  input: { missionId: string; name: string },
+): Promise<Result<{ id: string }, 'invalid_name' | 'name_taken' | 'write_failed'>> {
   const name = cleanName(input.name);
   if (!name) return err('invalid_name', `An overlay name is 1 to ${MAX_OVERLAY_NAME} characters`);
   try {
     const id = newId();
     const now = ctx.now();
     await ctx.db.writeTransaction(async (tx) => {
+      if (await nameTaken(tx, input.missionId, name, null)) throw new NameTaken();
       const last = await tx.getOptional<{ n: number | null }>('SELECT MAX(sort_order) AS n FROM overlays WHERE mission_id = ?', [input.missionId]);
       await insertRows(tx, Tables.overlays, [
         { id, mission_id: input.missionId, name, sort_order: (last?.n ?? -1) + 1, created_by: ctx.actorId(), created_at: now, updated_at: now },
@@ -28,17 +48,24 @@ export async function createOverlay(ctx: CommandContext, input: { missionId: str
     });
     return ok({ id });
   } catch (e) {
+    if (e instanceof NameTaken) return err('name_taken', `There is already an overlay named ${name}`);
     return err('write_failed', String(e));
   }
 }
 
-export async function renameOverlay(ctx: CommandContext, id: string, input: string): Promise<Result<void, 'invalid_name' | 'write_failed'>> {
+/** Renames an overlay; like a new one, not to a name another overlay of the mission has (a change of case is fine). */
+export async function renameOverlay(ctx: CommandContext, id: string, input: string): Promise<Result<void, 'invalid_name' | 'name_taken' | 'write_failed'>> {
   const name = cleanName(input);
   if (!name) return err('invalid_name', `An overlay name is 1 to ${MAX_OVERLAY_NAME} characters`);
   try {
-    await updateRow(ctx.db, Tables.overlays, id, { name, updated_at: ctx.now() });
+    await ctx.db.writeTransaction(async (tx) => {
+      const overlay = await tx.getOptional<{ mission_id: string }>('SELECT mission_id FROM overlays WHERE id = ?', [id]);
+      if (overlay && (await nameTaken(tx, overlay.mission_id, name, id))) throw new NameTaken();
+      await updateRow(tx, Tables.overlays, id, { name, updated_at: ctx.now() });
+    });
     return ok(undefined);
   } catch (e) {
+    if (e instanceof NameTaken) return err('name_taken', `There is already an overlay named ${name}`);
     return err('write_failed', String(e));
   }
 }

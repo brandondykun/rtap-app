@@ -24,6 +24,9 @@ const NO_OVERLAYS: Overlay[] = [];
  * The mission's overlays: add one by name, show or hide each, tap one to rename it, delete one (its items stay, back in the
  * base unless in another overlay). Opened from Layers, whose Back it returns to.
  */
+/** Under "There is already an overlay named …". */
+const NAME_TAKEN_DETAIL = 'Choose a different name.';
+
 export function OverlaysMenu({ missionId }: MenuComponentProps<'overlays'>) {
   const ctx = useCommandContext();
   const overlays = useObservable(() => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, [ctx, missionId]);
@@ -38,13 +41,21 @@ export function OverlaysMenu({ missionId }: MenuComponentProps<'overlays'>) {
   const add = async () => {
     if (!newName.trim()) return;
     const r = await createOverlay(ctx, { missionId, name: newName });
-    if (!r.ok) return notifyError('Could not add the overlay.');
+    if (!r.ok) {
+      if (r.error === 'name_taken') notifyError(`There is already an overlay named ${newName.trim()}.`, NAME_TAKEN_DETAIL);
+      else notifyError('Could not add the overlay.');
+      return;
+    }
     setNewName('');
   };
   const saveRename = async () => {
     if (!renaming) return;
     const r = await renameOverlay(ctx, renaming.id, renaming.name);
-    if (!r.ok) return notifyError('Could not rename the overlay.');
+    if (!r.ok) {
+      if (r.error === 'name_taken') notifyError(`There is already an overlay named ${renaming.name.trim()}.`, NAME_TAKEN_DETAIL);
+      else notifyError('Could not rename the overlay.');
+      return;
+    }
     setRenaming(null);
     Keyboard.dismiss();
   };
@@ -72,6 +83,7 @@ export function OverlaysMenu({ missionId }: MenuComponentProps<'overlays'>) {
           <View className="flex-1">
             <TextField
               accessibilityLabel="New overlay name"
+              clearable
               value={newName}
               onChangeText={setNewName}
               placeholder="e.g. Phase 1"
@@ -107,6 +119,7 @@ export function OverlaysMenu({ missionId }: MenuComponentProps<'overlays'>) {
                   <View className="flex-1">
                     <TextField
                       accessibilityLabel={`Rename ${o.name}`}
+                      clearable
                       autoFocus
                       value={renaming.name}
                       onChangeText={(name) => setRenaming({ id: o.id, name })}
