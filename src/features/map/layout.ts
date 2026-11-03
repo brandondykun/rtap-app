@@ -17,7 +17,7 @@ export const LOGO_ROW_HEIGHT = 28;
  * The attribution (i) button's tappable frame is taller than the wordmark and centers its icon,
  * so at the same `top` the icon sits visibly lower. Raise it so the icon lines up with the logo.
  */
-export const ATTRIBUTION_RAISE = { portrait: 22, landscape: 22 } as const;
+export const ATTRIBUTION_RAISE = 22;
 
 /**
  * Android's (i) is a bare icon about the wordmark's height, not a tall centered frame: it lines up at the wordmark's
@@ -25,16 +25,6 @@ export const ATTRIBUTION_RAISE = { portrait: 22, landscape: 22 } as const;
  */
 export const ANDROID_ATTRIBUTION = { raise: 0, right: 9 } as const;
 
-function attributionRaise(landscape: boolean, android: boolean): number {
-  if (android) return ANDROID_ATTRIBUTION.raise;
-  return landscape ? ATTRIBUTION_RAISE.landscape : ATTRIBUTION_RAISE.portrait;
-}
-
-/**
- * Logo row top in landscape (from the safe area). The (i) button's frame then starts slightly
- * above the safe area; that is padding around the icon, which stays on screen.
- */
-export const LANDSCAPE_LOGO_TOP = 14;
 /** Room reserved for the attribution (i) button, which sits left of the Mapbox wordmark. */
 export const ATTRIBUTION_WIDTH = 36;
 
@@ -45,11 +35,12 @@ export function isLandscape(width: number, height: number): boolean {
 }
 
 /**
- * Top of the Mapbox logo row, measured from the safe area: under the full-width toolbar in
- * portrait, near the top edge in landscape.
+ * Top of the Mapbox logo row, measured from the safe area: just under the toolbar's height, in both orientations. In
+ * landscape the toolbar is top-right and its width varies (the phone, an open drawer, toolbar text), so a row beside
+ * it could end up under it; nothing at the top reaches lower than the toolbar.
  */
-export function ornamentRowTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
-  return landscape ? LANDSCAPE_LOGO_TOP : EDGE + toolbar + GAP;
+export function ornamentRowTop(toolbar: number = TOOLBAR_HEIGHT): number {
+  return EDGE + toolbar + GAP;
 }
 
 /** Toolbar height for the Show toolbar text setting. */
@@ -61,43 +52,38 @@ export function toolbarHeight(showText: boolean): number {
 export const LOGO_WORDMARK_HEIGHT = 22;
 
 /** Top of the top-left stack (GPS readout, location notice), from the safe area: right under the wordmark. */
-export function topLeftStackTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
-  return ornamentRowTop(landscape, toolbar) + LOGO_WORDMARK_HEIGHT;
+export function topLeftStackTop(toolbar: number = TOOLBAR_HEIGHT): number {
+  return ornamentRowTop(toolbar) + LOGO_WORDMARK_HEIGHT;
 }
 
-/**
- * Location banner top (from the safe area): below the Mapbox logo row and below the toolbar,
- * whichever is lower. In landscape the toolbar is top-right, so the logo row alone is too high.
- */
-export function bannerTop(landscape: boolean, toolbar: number = TOOLBAR_HEIGHT): number {
-  return Math.max(ornamentRowTop(landscape, toolbar) + LOGO_ROW_HEIGHT, EDGE + toolbar + GAP);
+/** Location banner top (from the safe area): below the Mapbox logo row (itself under the toolbar). */
+export function bannerTop(toolbar: number = TOOLBAR_HEIGHT): number {
+  return ornamentRowTop(toolbar) + LOGO_ROW_HEIGHT;
 }
 
 /**
  * Mapbox ornament positions. The logo and attribution must stay visible (Mapbox terms), so they
- * sit top-left (the (i) button first, then the wordmark): under the full-width toolbar in
- * portrait, beside the top-right toolbar in landscape. There is no scale bar (it costs too much screen space).
+ * sit top-left of the map (the (i) button first, then the wordmark), under the toolbar's height in both orientations
+ * (see ornamentRowTop), right of an open drawer. There is no scale bar (it costs too much screen space).
  *
  * `insets` are added to the margins. Mapbox on iOS already measures ornament margins from the
  * safe area, so pass zero insets there. `android` lines up Android's differently shaped (i) button.
  */
 export function ornamentPositions({
-  landscape,
   insets,
   leftOffset = 0,
   toolbarHeight: toolbar = TOOLBAR_HEIGHT,
   android = false,
 }: {
-  landscape: boolean;
   insets: Insets;
   leftOffset?: number;
   toolbarHeight?: number;
   android?: boolean;
 }) {
   const left = insets.left + EDGE + leftOffset;
-  const top = insets.top + ornamentRowTop(landscape, toolbar);
+  const top = insets.top + ornamentRowTop(toolbar);
   return {
-    attribution: { top: top - attributionRaise(landscape, android), left: left + (android ? ANDROID_ATTRIBUTION.right : 0) },
+    attribution: { top: top - (android ? ANDROID_ATTRIBUTION.raise : ATTRIBUTION_RAISE), left: left + (android ? ANDROID_ATTRIBUTION.right : 0) },
     logo: { top, left: left + ATTRIBUTION_WIDTH },
   };
 }

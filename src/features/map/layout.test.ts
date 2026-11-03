@@ -8,7 +8,6 @@ import {
   EDGE,
   GAP,
   isLandscape,
-  LANDSCAPE_LOGO_TOP,
   LOGO_ROW_HEIGHT,
   ornamentPositions,
   ornamentRowTop,
@@ -27,46 +26,33 @@ describe('map layout', () => {
     expect(isLandscape(390, 844)).toBe(false);
   });
 
-  it('puts the (i) button left of the logo and raised by ATTRIBUTION_RAISE, under the toolbar in portrait', () => {
-    const p = ornamentPositions({ landscape: false, insets: NO_INSETS });
+  it('puts the (i) button left of the logo and raised by ATTRIBUTION_RAISE, under the toolbar', () => {
+    const p = ornamentPositions({ insets: NO_INSETS });
     const top = EDGE + TOOLBAR_HEIGHT + GAP;
-    expect(p.attribution).toEqual({ top: top - ATTRIBUTION_RAISE.portrait, left: EDGE });
+    expect(p.attribution).toEqual({ top: top - ATTRIBUTION_RAISE, left: EDGE });
     expect(p.logo).toEqual({ top, left: EDGE + ATTRIBUTION_WIDTH });
   });
 
-  it('keeps the logo near the top edge in landscape, with the (i) button raised to line up', () => {
-    const p = ornamentPositions({ landscape: true, insets: NO_INSETS });
-    expect(p.logo.top).toBe(LANDSCAPE_LOGO_TOP);
-    // Only the button's padding may extend past the safe area, never the icon (~half its frame).
-    expect(p.attribution.top).toBeGreaterThanOrEqual(-12);
-    expect(p.logo.top - p.attribution.top).toBe(ATTRIBUTION_RAISE.landscape);
-    expect(p.attribution.left).toBe(EDGE);
-  });
-
-  it('on Android, raises the (i) icon only by its own amount and moves it right beside the logo, in both orientations', () => {
-    for (const landscape of [false, true]) {
-      const p = ornamentPositions({ landscape, insets: NO_INSETS, android: true });
-      expect(p.logo.top - p.attribution.top).toBe(ANDROID_ATTRIBUTION.raise);
-      expect(p.attribution.left).toBe(EDGE + ANDROID_ATTRIBUTION.right);
-      expect(p.logo.left).toBe(EDGE + ATTRIBUTION_WIDTH);
-    }
+  it('on Android, raises the (i) icon only by its own amount and moves it right beside the logo', () => {
+    const p = ornamentPositions({ insets: NO_INSETS, android: true });
+    expect(p.logo.top - p.attribution.top).toBe(ANDROID_ATTRIBUTION.raise);
+    expect(p.attribution.left).toBe(EDGE + ANDROID_ATTRIBUTION.right);
+    expect(p.logo.left).toBe(EDGE + ATTRIBUTION_WIDTH);
   });
 
   it('adds device insets when the platform measures from the map edges', () => {
     const insets = { top: 47, right: 0, bottom: 34, left: 10 };
-    const p = ornamentPositions({ landscape: false, insets });
-    expect(p.logo).toEqual({ top: 47 + ornamentRowTop(false), left: 10 + EDGE + ATTRIBUTION_WIDTH });
+    const p = ornamentPositions({ insets });
+    expect(p.logo).toEqual({ top: 47 + ornamentRowTop(), left: 10 + EDGE + ATTRIBUTION_WIDTH });
   });
 
   it('exposes the logo row height for the location banner', () => {
     expect(LOGO_ROW_HEIGHT).toBe(28);
   });
 
-  it('puts the location banner below both the logo row and the toolbar', () => {
-    for (const landscape of [false, true]) {
-      expect(bannerTop(landscape)).toBeGreaterThanOrEqual(ornamentRowTop(landscape) + LOGO_ROW_HEIGHT);
-      expect(bannerTop(landscape)).toBeGreaterThanOrEqual(EDGE + TOOLBAR_HEIGHT + GAP);
-    }
+  it('puts the logo row below the toolbar (so the landscape toolbar, however wide, never covers it), and the location banner below both', () => {
+    expect(ornamentRowTop()).toBeGreaterThanOrEqual(EDGE + TOOLBAR_HEIGHT + GAP);
+    expect(bannerTop()).toBeGreaterThanOrEqual(ornamentRowTop() + LOGO_ROW_HEIGHT);
   });
 
   it('pads the camera by the panel area', () => {
@@ -76,7 +62,7 @@ describe('map layout', () => {
   });
 
   it('shifts the logo row right by an offset', () => {
-    const p = ornamentPositions({ landscape: true, insets: NO_INSETS, leftOffset: 400 });
+    const p = ornamentPositions({ insets: NO_INSETS, leftOffset: 400 });
     expect(p.attribution.left).toBe(EDGE + 400);
     expect(p.logo.left).toBe(EDGE + 400 + ATTRIBUTION_WIDTH);
   });
@@ -100,10 +86,8 @@ describe('map layout', () => {
     expect(toolbarHeight(false)).toBe(TOOLBAR_HEIGHT_ICONS);
     expect(TOOLBAR_HEIGHT_ICONS).toBeLessThan(TOOLBAR_HEIGHT);
     const shrink = TOOLBAR_HEIGHT - TOOLBAR_HEIGHT_ICONS;
-    expect(ornamentRowTop(false, TOOLBAR_HEIGHT_ICONS)).toBe(ornamentRowTop(false) - shrink);
-    expect(bannerTop(false, TOOLBAR_HEIGHT_ICONS)).toBe(bannerTop(false) - shrink);
-    expect(ornamentPositions({ landscape: false, insets: NO_INSETS, toolbarHeight: TOOLBAR_HEIGHT_ICONS }).logo.top).toBe(EDGE + TOOLBAR_HEIGHT_ICONS + GAP);
-    // Landscape: the logo row is beside the toolbar, not under it.
-    expect(ornamentRowTop(true, TOOLBAR_HEIGHT_ICONS)).toBe(ornamentRowTop(true));
+    expect(ornamentRowTop(TOOLBAR_HEIGHT_ICONS)).toBe(ornamentRowTop() - shrink);
+    expect(bannerTop(TOOLBAR_HEIGHT_ICONS)).toBe(bannerTop() - shrink);
+    expect(ornamentPositions({ insets: NO_INSETS, toolbarHeight: TOOLBAR_HEIGHT_ICONS }).logo.top).toBe(EDGE + TOOLBAR_HEIGHT_ICONS + GAP);
   });
 });

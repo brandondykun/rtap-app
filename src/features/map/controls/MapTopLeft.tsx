@@ -10,11 +10,11 @@ import { useQuickPlot } from '@/stores/quick-plot';
 import { bannerTop, CONTROL_SIZE, EDGE, GAP, topLeftStackTop } from '../layout';
 
 /** The location-off notice under the Mapbox logo row; a left drawer pushes it right, like the logo. */
-export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: PanelFrame | null }) {
+export function MapTopLeft({ panel }: { panel: PanelFrame | null }) {
   const insets = useSafeAreaInsets();
   const drawer = panel?.side === 'left' ? panel.size : 0;
   const toolbar = useToolbarHeight();
-  const top = topLeftStackTop(landscape, toolbar);
+  const top = topLeftStackTop(toolbar);
   // The quick plot entry card sits where the notice would; the notice would cover its fields.
   const plotEntryOpen = useQuickPlot((s) => s.entryOpen);
   // Minimized in portrait the panel still reports its reopen bar, but the menu is out of the way.
@@ -30,8 +30,8 @@ export function MapTopLeft({ landscape, panel }: { landscape: boolean; panel: Pa
         left: Math.max(insets.left, drawer) + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
-      {/* The notice hides while a panel is open. It sits below the toolbar (it would reach under it in landscape). */}
-      {panelOpen || plotEntryOpen ? null : <LocationBanner marginTop={Math.max(0, bannerTop(landscape, toolbar) - top)} />}
+      {/* The notice hides while a panel is open. It sits below the logo row, itself under the toolbar. */}
+      {panelOpen || plotEntryOpen ? null : <LocationBanner marginTop={Math.max(0, bannerTop(toolbar) - top)} />}
     </View>
   );
 }

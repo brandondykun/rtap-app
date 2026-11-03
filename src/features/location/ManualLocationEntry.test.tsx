@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
-import { bannerTop, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { bannerTop } from '@/features/map/layout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_MANUAL_ENTRY, useManualEntry } from '@/stores/manual-entry';
 import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
@@ -130,14 +130,14 @@ describe('ManualLocationEntry', () => {
     expect(portraitRow.queryByLabelText('Choose on map')).toBeNull();
   });
 
-  it('sits below the Mapbox logo in portrait, and right under the toolbar in landscape', async () => {
+  it('sits below the Mapbox logo row (under the toolbar) in both orientations', async () => {
     useManualEntry.getState().open('map', null);
     await renderWithProviders(<ManualLocationEntry landscape={false} />);
-    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: bannerTop(false) });
+    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: bannerTop() });
     await screen.unmount();
 
     await renderWithProviders(<ManualLocationEntry landscape />);
-    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
+    expect(screen.getByTestId('manual-location-frame')).toHaveStyle({ top: bannerTop() });
   });
 
   it('has no clear button by the grid', async () => {

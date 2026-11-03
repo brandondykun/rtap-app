@@ -51,7 +51,6 @@ type Props = {
   onLongPress?: (coord: LatLon) => void;
   /** A tap on the map (not on a point). */
   onPress?: (coord: LatLon) => void;
-  landscape: boolean;
   panel: PanelFrame | null;
   /** Runtime symbol images by SIDC (useSymbolImages) and the request for one the map reports missing. */
   symbolImages: Record<string, { url: string; scale: number }>;
@@ -59,7 +58,7 @@ type Props = {
   children?: ReactNode;
 };
 
-export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, landscape, panel, symbolImages, onSymbolMissing, children }: Props) {
+export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUserGesture, onLongPress, onPress, panel, symbolImages, onSymbolMissing, children }: Props) {
   const basemap = useSettings((s) => s.basemap);
   const threeD = useSettings((s) => s.terrain3d);
   // Subscribed, so a new height from Settings reshapes the terrain at once.
@@ -89,7 +88,6 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
   // width counts from the screen edge, the ornament margin from the safe area: subtract the inset.
   const leftOffset = panel?.side === 'left' ? Math.max(0, panel.size - insets.left) : 0;
   const ornaments = ornamentPositions({
-    landscape,
     insets: Platform.OS === 'ios' ? NO_INSETS : insets,
     leftOffset,
     toolbarHeight: toolbar,

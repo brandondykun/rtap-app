@@ -35,7 +35,6 @@ async function renderCanvas(overrides: Partial<Parameters<typeof MapCanvas>[0]> 
     initialCamera: { center: { lat: 38.8977, lon: -77.0365 }, zoom: 13, bearing: 0 },
     onCameraIdle: jest.fn(),
     onUserGesture: jest.fn(),
-    landscape: false,
     panel: null,
     symbolImages: {},
     onSymbolMissing: jest.fn(),

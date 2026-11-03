@@ -71,13 +71,12 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
   const chooseButton = <MenuButton compact label={from ? 'Adjust on map' : 'Choose on map'} icon="gesture-tap" onPress={choose} />;
 
   return (
-    // Below the Mapbox logo row, which must stay visible: in portrait it sits under the toolbar; in landscape it is
-    // beside the toolbar, so the box goes right under the toolbar.
+    // Below the Mapbox logo row (under the toolbar), which must stay visible.
     <View
       testID="manual-location-frame"
       pointerEvents={hidden ? 'none' : 'box-none'}
       className="absolute left-0 right-0 items-center"
-      style={{ top: insets.top + bannerTop(landscape, toolbar), display: hidden ? 'none' : 'flex' }}>
+      style={{ top: insets.top + bannerTop(toolbar), display: hidden ? 'none' : 'flex' }}>
       <View testID="manual-location-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         {/* Full text color, not muted: gray is hard to read on the see-through background. */}
         <Text style={halo} className="px-1 text-xs font-semibold uppercase tracking-widest text-text">

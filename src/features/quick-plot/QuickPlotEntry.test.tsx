@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react-native';
 import { Platform, TextInput } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
-import { bannerTop, EDGE, GAP, TOOLBAR_HEIGHT } from '@/features/map/layout';
+import { bannerTop, EDGE } from '@/features/map/layout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { INITIAL_QUICK_PLOT, useQuickPlot } from '@/stores/quick-plot';
@@ -193,13 +193,13 @@ describe('QuickPlotEntry', () => {
     expect(screen.getByTestId('mgrs-status')).toHaveTextContent(/^Valid · 1\.11 km @ 000° TRUE from you$/);
   });
 
-  it('sits below the Mapbox logo in portrait, and right under the toolbar in landscape', async () => {
+  it('sits below the Mapbox logo row (under the toolbar) in both orientations', async () => {
     await renderWithProviders(<QuickPlotEntry landscape={false} />);
-    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: bannerTop(false) });
+    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: bannerTop() });
     await screen.unmount();
 
     await renderWithProviders(<QuickPlotEntry landscape />);
-    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: EDGE + TOOLBAR_HEIGHT + GAP });
+    expect(screen.getByTestId('quick-plot-frame')).toHaveStyle({ top: bannerTop() });
   });
 
   it('dims Plot only lightly while the grid is invalid, like Set in MY POSITION', async () => {

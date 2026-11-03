@@ -538,7 +538,6 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         cameraRef={cameraRef}
         mapRef={mapRef}
         initialCamera={initialCamera}
-        landscape={landscape}
         panel={panel}
         symbolImages={symbols.images}
         onSymbolMissing={symbols.request}
@@ -636,7 +635,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       <ManualLocationEntry landscape={landscape} />
       {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} panel={panel} /> : null}
-      <MapTopLeft landscape={landscape} panel={panel} />
+      <MapTopLeft panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />
     </View>

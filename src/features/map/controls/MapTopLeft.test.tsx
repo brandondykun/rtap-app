@@ -17,40 +17,40 @@ beforeEach(() => {
 });
 
 describe('MapTopLeft', () => {
-  it.each([[false], [true]])('places the location notice below the logo row and the toolbar (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<MapTopLeft landscape={landscape} panel={null} />);
+  it('places the location notice below the logo row and the toolbar', async () => {
+    await renderWithProviders(<MapTopLeft panel={null} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
-    expect(screen.getByTestId('map-top-left')).toHaveStyle({ top: topLeftStackTop(landscape), left: EDGE });
-    expect(screen.getByTestId('location-banner')).toHaveStyle({ marginTop: bannerTop(landscape) - topLeftStackTop(landscape) });
+    expect(screen.getByTestId('map-top-left')).toHaveStyle({ top: topLeftStackTop(), left: EDGE });
+    expect(screen.getByTestId('location-banner')).toHaveStyle({ marginTop: bannerTop() - topLeftStackTop() });
   });
 
   it('hides the notice while a panel is open and moves right of a left drawer', async () => {
-    const { rerender } = await renderWithProviders(<MapTopLeft landscape panel={null} />);
+    const { rerender } = await renderWithProviders(<MapTopLeft panel={null} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByTestId('location-banner')).toBeTruthy();
-    await rerender(<MapTopLeft landscape panel={{ side: 'left', size: 320 }} />);
+    await rerender(<MapTopLeft panel={{ side: 'left', size: 320 }} />);
     expect(screen.queryByTestId('location-banner')).toBeNull();
     expect(screen.getByTestId('map-top-left')).toHaveStyle({ left: 320 + EDGE });
   });
 
   it('shows the notice while the portrait sheet is minimized to its bottom bar', async () => {
     useMenu.setState({ panelMinimized: true });
-    await renderWithProviders(<MapTopLeft landscape={false} panel={{ side: 'bottom', size: 48 }} />);
+    await renderWithProviders(<MapTopLeft panel={{ side: 'bottom', size: 48 }} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.getByTestId('location-banner')).toBeTruthy();
   });
 
   it('keeps the location notice in place while measuring (the measure bar is at the bottom)', async () => {
     useMeasure.getState().startMeasure();
-    await renderWithProviders(<MapTopLeft landscape={false} panel={null} />);
+    await renderWithProviders(<MapTopLeft panel={null} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.queryByTestId('measure-bar')).toBeNull();
-    expect(screen.getByTestId('location-banner')).toHaveStyle({ marginTop: bannerTop(false) - topLeftStackTop(false) });
+    expect(screen.getByTestId('location-banner')).toHaveStyle({ marginTop: bannerTop() - topLeftStackTop() });
   });
 
   it('hides the location notice while the quick plot entry is up (it would cover the grid fields)', async () => {
     useQuickPlot.getState().open();
-    await renderWithProviders(<MapTopLeft landscape={false} panel={null} />);
+    await renderWithProviders(<MapTopLeft panel={null} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.queryByTestId('location-banner')).toBeNull();
   });

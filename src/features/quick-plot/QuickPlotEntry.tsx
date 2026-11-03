@@ -115,8 +115,8 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   );
 
   return (
-    // Below the Mapbox logo row, which must stay visible (in landscape the logo is beside the toolbar: right under it).
-    <View testID="quick-plot-frame" pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + bannerTop(landscape, toolbar) }}>
+    // Below the Mapbox logo row (under the toolbar), which must stay visible.
+    <View testID="quick-plot-frame" pointerEvents="box-none" className="absolute left-0 right-0 items-center" style={{ top: insets.top + bannerTop(toolbar) }}>
       {/* 16 pt corners less 8 pt padding are the fields' and Plot's 8 pt (rounded-lg): concentric. */}
       <View testID="quick-plot-entry" style={{ width: cardWidth }} className="gap-2 rounded-2xl bg-surface-glass p-2">
         {/* Cancel and Plot side by side below the grid, like the MY POSITION box, or on the grid's line with the valid
