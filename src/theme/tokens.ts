@@ -16,6 +16,7 @@ export const palette = {
   'amber-950': '#451a03',
   'green-300': '#86efac',
   'green-400': '#4ade80',
+  'red-50': '#fef2f2',
   'red-400': '#f87171',
   'red-500': '#ef4444',
   'red-950': '#450a0a',
@@ -54,6 +55,8 @@ const dark = {
   danger: 'red-500',
   /** Fill behind a destructive action (Delete), as accent-subtle is to accent. */
   'danger-subtle': 'red-950',
+  /** Text on danger-subtle (an error toast): very light red. */
+  'on-danger-subtle': 'red-50',
   /**
    * Value colors: each kind of value has one color everywhere it shows (readouts, cards, forms, the map), so it can be
    * told apart at a glance. Grids are `friendly` for you and friendly units, `text` otherwise. See AGENTS.md, Value colors.

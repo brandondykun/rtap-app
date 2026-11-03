@@ -17,6 +17,7 @@
   "success",
   "danger",
   "danger-subtle",
+  "on-danger-subtle",
   "value-distance",
   "value-bearing",
   "value-altitude",

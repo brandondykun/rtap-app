@@ -27,9 +27,9 @@ export function notifySuccess(): void {
   haptic(Haptics.NotificationFeedbackType.Success);
 }
 
-/** A command failed: toast plus error haptic (spec §12). */
-export function notifyError(message: string): void {
-  useToast.getState().show(message, 'error');
+/** A command failed: toast plus error haptic (spec §12). `detail`, a second line: what to do about it. */
+export function notifyError(message: string, detail?: string): void {
+  useToast.getState().show(message, 'error', { detail });
   haptic(Haptics.NotificationFeedbackType.Error);
 }
 

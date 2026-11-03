@@ -30,17 +30,27 @@ describe('Toast', () => {
     expect(useToast.getState().toast).toBeNull();
   });
 
-  it('is see-through, keeping the red border only for errors, with outlined text', async () => {
+  it('is a solid card, dark red edged in red for an error, its text light red', async () => {
     await renderWithProviders(<Toast top={100} />);
     await act(async () => useToast.getState().show('Saved.', 'info'));
     let card = screen.getByRole('alert').props.className as string;
-    expect(card).toContain('bg-surface-glass');
-    expect(card).not.toContain('border');
-    expect(screen.getByText('Saved.')).toHaveStyle({ textShadowRadius: 3 });
+    expect(card).toContain('bg-surface-raised');
+    expect(card).not.toContain('surface-glass');
+    expect(card).toContain('border-border');
     await act(async () => useToast.getState().show('Could not save.', 'error'));
     card = screen.getByRole('alert').props.className as string;
-    expect(card).toContain('bg-surface-glass');
+    expect(card).toContain('bg-danger-subtle');
     expect(card).toContain('border-danger');
+    expect(screen.getByText('Could not save.').props.className).toContain('text-on-danger-subtle');
+  });
+
+  it('shows a quieter second line under the message when there is one', async () => {
+    await renderWithProviders(<Toast top={100} />);
+    await act(async () => useToast.getState().show('Name taken.', 'error', { detail: 'Choose a different name.' }));
+    expect(screen.getByText('Name taken.')).toBeTruthy();
+    expect(screen.getByText('Choose a different name.').props.className).toContain('text-xs');
+    await act(async () => useToast.getState().show('Saved.', 'info'));
+    expect(screen.queryByText('Choose a different name.')).toBeNull();
   });
 
   it('keeps a sticky toast until its close button is pressed; tapping the message does nothing', async () => {
