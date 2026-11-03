@@ -10,6 +10,7 @@ export const MENU_PARAMS = {
   'app.root': z.object({}),
   settings: z.object({}),
   layers: z.object({}),
+  overlays: z.object({}),
   'line.add': z.object({}),
   'line.edit': z.object({ itemId: z.string().min(1) }),
   'polygon.add': z.object({}),

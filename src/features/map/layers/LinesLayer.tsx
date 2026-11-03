@@ -2,7 +2,8 @@ import { LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { createLineFeatureSelector } from '@/features/map-items/line-selectors';
-import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMapHiddenItemIds } from '@/features/overlays/repository';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
@@ -35,7 +36,8 @@ export function LinesLayer({ missionId, excludeId = null, onItemPress }: Props) 
   // End labels flip to stay upright as the map turns; a coarse bearing restyles them only now and then.
   const mapBearing = useInteraction((s) => (Math.round(s.cameraBearing / LABEL_BEARING_STEP) * LABEL_BEARING_STEP) % 360);
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
-  const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
+  // Hidden one by one, or by their overlays.
+  const hiddenIds = useObservable(() => observeMapHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
   const select = useMemo(() => createLineFeatureSelector(), []);
   const { lines, ends } = useMemo(() => select(items), [select, items]);
   const visible = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds), [hiddenIds, excludeId]);

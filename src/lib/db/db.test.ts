@@ -57,8 +57,9 @@ describe('database', () => {
   });
 
   it('keeps every column of the old schema, with its type', () => {
-    expect(appSchema.tables.map((t) => t.name).sort()).toEqual(Object.keys(OLD_COLUMNS).sort());
-    for (const table of appSchema.tables) {
+    // Every old table is still there (newer ones, like overlays, come after it).
+    expect(appSchema.tables.map((t) => t.name)).toEqual(expect.arrayContaining(Object.keys(OLD_COLUMNS)));
+    for (const table of appSchema.tables.filter((t) => t.name in OLD_COLUMNS)) {
       const types = Object.fromEntries(table.columns.map((c) => [c.name, c.type]));
       expect(types).toEqual(expect.objectContaining(OLD_COLUMNS[table.name]));
     }

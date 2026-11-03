@@ -25,6 +25,10 @@ import { formatDistance } from '@/lib/geo/format/measure';
 import { useLayersView } from '@/stores/layers-view';
 import { useMenu } from '@/stores/menu';
 import { useSettings, type CoordinateFormat } from '@/stores/settings';
+import { LayersOverlaysSection } from '@/features/overlays/LayersOverlaysSection';
+import { setOverlayHidden } from '@/features/overlays/commands';
+import { BASE_OVERLAY_ID, baseOverlay, observeBaseHidden, observeBaseItemCount, observeMissionOverlays, observeOverlayHiddenItemIds, type Overlay } from '@/features/overlays/repository';
+import { setBaseHidden } from '@/features/missions/commands';
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
 
@@ -44,6 +48,8 @@ const tabCount = (n: number) => (n > 99 ? '99+' : String(n));
 
 // `label` is the screen-reader name; `short` is what the tab shows, so all four fit on one line.
 /** The Units tab's filter chips, in the order of the design: friendly and hostile first. */
+const NO_OVERLAYS: Overlay[] = [];
+
 const CHIP_AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'unknown', 'neutral'];
 const NO_AFFILIATION_COUNTS: Record<Affiliation, number> = { friend: 0, hostile: 0, neutral: 0, unknown: 0 };
 
@@ -76,6 +82,13 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
   const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
+  const namedOverlays = useObservable(() => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, [ctx, missionId]);
+  const baseHidden = useObservable(() => observeBaseHidden(ctx.db, missionId), false, [ctx, missionId]);
+  const baseCount = useObservable(() => observeBaseItemCount(ctx.db, missionId), 0, [ctx, missionId]);
+  // The base first: the items in no overlay, shown or hidden like any overlay.
+  const overlays = useMemo(() => [baseOverlay(missionId, baseHidden, baseCount), ...namedOverlays], [missionId, baseHidden, baseCount, namedOverlays]);
+  const overlayHidden = useObservable(() => observeOverlayHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
+  const overlayHiddenSet = useMemo(() => new Set(overlayHidden), [overlayHidden]);
   // Kept for an item drilled into and back out of.
   const [query, setQuery] = useMenuEntryState('query', '');
   const [searchOpen, setSearchOpen] = useMenuEntryState('searchOpen', false);
@@ -222,6 +235,16 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
       />
       {/* A section whose last gap, under the counts, is the rows' own (they follow in the list). */}
       <View onLayout={(e) => setSectionTop(e.nativeEvent.layout.y)} className="gap-2 px-4 pb-2">
+        {/* Overlays act on every tab: tap one to show or hide its items; the last tile manages them. */}
+        <LayersOverlaysSection
+          overlays={overlays}
+          onToggle={(o) =>
+            void (o.id === BASE_OVERLAY_ID ? setBaseHidden(ctx, missionId, !o.hidden) : setOverlayHidden(ctx, o.id, !o.hidden)).then((r) => {
+              if (!r.ok) notifyError('Could not change the overlay.');
+            })
+          }
+          onManage={() => useMenu.getState().pushMenu('overlays', {})}
+        />
         <MenuSegmented<ItemCategory>
           options={tabOptions}
           value={tab}
@@ -293,6 +316,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const renderItem = ({ item }: { item: MapItemSnapshot }) => (
     <LayerListRow
       row={layerRow(item, hiddenSet, ringOnSet)}
+      overlayOff={overlayHiddenSet.has(item.id)}
       ringColumn={ringColumn}
       coordinateFormat={coordinateFormat}
       onToggle={toggle}
@@ -309,7 +333,7 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         // A row also redraws when its visibility, ring or the coordinate format changes.
-        extraData={[hiddenSet, ringOnSet, ringColumn, coordinateFormat]}
+        extraData={[hiddenSet, ringOnSet, overlayHiddenSet, ringColumn, coordinateFormat]}
         ListHeaderComponent={controls}
         // Kept off: when rows come back above the first one shown (a chip back to All), FlashList would scroll to keep
         // that row in place, pushing the tabs and chips up. A list sorted by name has nothing worth holding in place.
@@ -413,6 +437,8 @@ function EmptyLayer({ icon, title, body, minHeight, onTop }: { icon: IconName; t
 
 type RowProps = {
   row: LayerRow;
+  /** Every overlay it is in is hidden: dimmed like a hidden item, though its own eye stays on. */
+  overlayOff: boolean;
   ringColumn: boolean;
   coordinateFormat: CoordinateFormat;
   onToggle: (id: string, hide: boolean) => void;
@@ -448,7 +474,7 @@ function layerSubtitle(row: LayerRow, coordinateFormat: CoordinateFormat): { tex
 
 /** One item in the list; one gapless list, rows split by their own top line. Redraws only when its own props change. */
 const LayerListRow = memo(
-  function LayerListRow({ row, ringColumn, coordinateFormat, onToggle, onToggleRing }: RowProps) {
+  function LayerListRow({ row, overlayOff, ringColumn, coordinateFormat, onToggle, onToggleRing }: RowProps) {
     const sub = layerSubtitle(row, coordinateFormat);
     return (
       <View className="px-4">
@@ -456,7 +482,7 @@ const LayerListRow = memo(
           title={row.name}
           subtitle={sub.text}
           subtitleContent={sub.content}
-          dimmed={row.hidden}
+          dimmed={row.hidden || overlayOff}
           leading={
             row.polygonType ? (
               <View style={{ width: 28, height: 20, justifyContent: 'center', alignItems: 'center' }}>
@@ -497,6 +523,7 @@ const LayerListRow = memo(
   },
   // A row is rebuilt on every list render; it only needs drawing again when what it shows changed.
   (a, b) =>
+    a.overlayOff === b.overlayOff &&
     a.ringColumn === b.ringColumn &&
     a.coordinateFormat === b.coordinateFormat &&
     a.onToggle === b.onToggle &&

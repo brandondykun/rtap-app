@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
 import { notifyError, notifySuccess } from '@/features/feedback/feedback';
+import { ItemOverlaysSection } from '@/features/overlays/ItemOverlaysSection';
 import { itemCategory, type ItemCategory } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
@@ -24,7 +25,7 @@ const NO_IDS: string[] = [];
 type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
 
 /** Item view: every item opens as a condensed view (Edit unlocks the form). Save or Cancel locks it again. */
-export function EditItemPanel({ category, itemId, form }: Props) {
+export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
   const adapter = ITEM_ADAPTERS[category];
   const GONE = `That ${noun} no longer exists.`;
@@ -152,13 +153,16 @@ export function EditItemPanel({ category, itemId, form }: Props) {
         />
       )}
       {ready ? locked ? item ? (
-        category === 'line' ? (
-          <LineView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
-        ) : category === 'polygon' ? (
-          <PolygonView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
-        ) : (
-          <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
-        )
+        <>
+          {category === 'line' ? (
+            <LineView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+          ) : category === 'polygon' ? (
+            <PolygonView item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+          ) : (
+            <ItemView category={category} item={item} hidden={hidden} onEditNotes={() => useDraft.getState().editNotes()} onDelete={() => void remove()} />
+          )}
+          <ItemOverlaysSection missionId={missionId} itemId={itemId} />
+        </>
       ) : null : (
         // A little room between the header's Cancel / Save and the first field.
         <View testID="edit-form" className="pt-3">

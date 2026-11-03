@@ -1,7 +1,8 @@
 import { ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
-import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMapHiddenItemIds } from '@/features/overlays/repository';
 import { pointCoord } from '@/features/map-items/geometry';
 import { createPointFeatureSelector, hiddenFilter } from '@/features/map-items/selectors';
 import type { ItemRef } from '@/features/symbology/categories';
@@ -39,7 +40,8 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
   const ctx = useCommandContext();
   const { colors } = useTheme();
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
-  const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
+  // Hidden one by one, or by their overlays.
+  const hiddenIds = useObservable(() => observeMapHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
   const select = useMemo(() => createPointFeatureSelector(), []);
   const shape = useMemo(() => select(items), [select, items]);
   const filter = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds) as unknown as LayerFilter, [hiddenIds, excludeId]);

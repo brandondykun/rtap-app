@@ -42,7 +42,7 @@ export async function renameMission(
 }
 
 /** The view-state columns a command sets; the rest keep their values (or start at their defaults). */
-type ViewStateFields = { last_opened_at?: number; camera?: string; snapshot?: string };
+type ViewStateFields = { last_opened_at?: number; camera?: string; snapshot?: string; base_hidden?: number };
 
 async function upsertViewState(
   ctx: CommandContext,
@@ -63,6 +63,16 @@ async function upsertViewState(
     }
     return true;
   });
+}
+
+/** Shows or hides the mission's base (its items in no overlay) on this device only. */
+export async function setBaseHidden(ctx: CommandContext, missionId: string, hidden: boolean): Promise<Result<void, 'write_failed'>> {
+  try {
+    await upsertViewState(ctx, missionId, { base_hidden: hidden ? 1 : 0 });
+    return ok(undefined);
+  } catch (e) {
+    return err('write_failed', String(e));
+  }
 }
 
 export async function markMissionOpened(ctx: CommandContext, missionId: string): Promise<Result<void, 'write_failed'>> {
@@ -111,6 +121,9 @@ export async function deleteMission(ctx: CommandContext, missionId: string): Pro
     if (!mission) return err('not_found', `No mission ${missionId}`);
     await ctx.db.writeTransaction(async (tx) => {
       await tx.execute('DELETE FROM item_view_state WHERE map_item_id IN (SELECT id FROM map_items WHERE mission_id = ?)', [missionId]);
+      await tx.execute('DELETE FROM map_item_overlays WHERE mission_id = ?', [missionId]);
+      await tx.execute('DELETE FROM overlay_view_state WHERE overlay_id IN (SELECT id FROM overlays WHERE mission_id = ?)', [missionId]);
+      await tx.execute('DELETE FROM overlays WHERE mission_id = ?', [missionId]);
       await tx.execute('DELETE FROM map_items WHERE mission_id = ?', [missionId]);
       await tx.execute('DELETE FROM mission_view_state WHERE mission_id = ?', [missionId]);
       await tx.execute('DELETE FROM missions WHERE id = ?', [missionId]);

@@ -7,6 +7,7 @@ import { editPointMenu } from '@/features/map-items/menus/EditPointMenu';
 import { editPolygonMenu } from '@/features/map-items/menus/EditPolygonMenu';
 import { editUnitMenu } from '@/features/map-items/menus/EditUnitMenu';
 import { layersMenu } from '@/features/map-items/menus/LayersMenu';
+import { overlaysMenu } from '@/features/overlays/OverlaysMenu';
 
 import type { MenuDefinition } from './define-menu';
 import { appRootMenu } from './menus/AppRootMenu';
@@ -19,6 +20,7 @@ export type MenuRegistry = { [I in MenuId]: MenuDefinition<I> };
 export const MENU_REGISTRY: MenuRegistry = {
   'app.root': appRootMenu,
   layers: layersMenu,
+  overlays: overlaysMenu,
   'line.add': addLineMenu,
   'line.edit': editLineMenu,
   'point.add': addPointMenu,

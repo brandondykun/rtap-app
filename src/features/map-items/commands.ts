@@ -160,6 +160,7 @@ export async function deleteItem(ctx: CommandContext, id: string): Promise<Resul
     await ctx.db.writeTransaction(async (tx) => {
       await tx.execute('DELETE FROM map_items WHERE id = ?', [id]);
       await tx.execute('DELETE FROM item_view_state WHERE map_item_id = ?', [id]);
+      await tx.execute('DELETE FROM map_item_overlays WHERE map_item_id = ?', [id]);
       // A deleted item leaves no time of its own: the mission's records the change (its "Saved" time).
       await tx.execute('UPDATE missions SET updated_at = ? WHERE id = ?', [ctx.now(), item.missionId]);
     });

@@ -2,7 +2,8 @@ import { FillLayer, LineLayer, ShapeSource } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { createRingFeatureSelector } from '@/features/map-items/ring-selectors';
-import { observeHiddenItemIds, observeMissionItems, observeRingItemIds, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMissionItems, observeRingItemIds, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMapHiddenItemIds } from '@/features/overlays/repository';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
@@ -30,7 +31,8 @@ export function RingsLayer({ missionId, onItemPress }: Props) {
   const ctx = useCommandContext();
   const { colors } = useTheme();
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
-  const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
+  // Hidden one by one, or by their overlays.
+  const hiddenIds = useObservable(() => observeMapHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
   const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
   const select = useMemo(() => createRingFeatureSelector(), []);
   const shape = useMemo(() => select(items), [select, items]);

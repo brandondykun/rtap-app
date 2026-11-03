@@ -9,6 +9,7 @@ describe('menu icons', () => {
       'app.root': 'menu',
       settings: 'cog-outline',
       layers: 'layers-outline',
+      overlays: 'layers-triple-outline',
       'line.add': 'vector-polyline',
       'line.edit': 'vector-polyline',
       'polygon.add': 'pentagon-outline',

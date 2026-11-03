@@ -2,7 +2,8 @@ import { FillLayer, LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { createPolygonFeatureSelector } from '@/features/map-items/polygon-selectors';
-import { observeHiddenItemIds, observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMissionItems, type MapItemSnapshot } from '@/features/map-items/repository';
+import { observeMapHiddenItemIds } from '@/features/overlays/repository';
 import { hiddenFilter } from '@/features/map-items/selectors';
 import type { ItemRef } from '@/features/symbology/categories';
 import { useObservable } from '@/hooks/use-observable';
@@ -30,7 +31,8 @@ export function PolygonsLayer({ missionId, excludeId = null, onItemPress }: Prop
   const showLabels = useSettings((s) => s.showMapLabels);
   const labelSize = useLabelTextSize();
   const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
-  const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
+  // Hidden one by one, or by their overlays.
+  const hiddenIds = useObservable(() => observeMapHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
   const select = useMemo(() => createPolygonFeatureSelector(), []);
   const { fills, shapes } = useMemo(() => select(items), [select, items]);
   const visible = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds), [hiddenIds, excludeId]);

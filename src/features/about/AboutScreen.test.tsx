@@ -5,6 +5,7 @@ import { Linking, StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
+import { OVERLAYS_HELP } from '@/features/overlays/overlays-help';
 import { TOOLBAR_HELP } from '@/features/toolbar/toolbar-help';
 
 import { renderWithProviders } from '@/test-utils/render';
@@ -20,6 +21,12 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 afterEach(() => jest.restoreAllMocks());
 
 describe('AboutScreen', () => {
+  it('explains overlays: what they are, Base, showing and hiding, adding items, managing them', async () => {
+    await renderWithProviders(<AboutScreen />);
+    expect(screen.getByText('Overlays')).toBeTruthy();
+    for (const h of OVERLAYS_HELP) expect(screen.getByTestId(`overlay-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
+  });
+
   it('explains the value colors, each sample drawn in its own color', async () => {
     await renderWithProviders(<AboutScreen />);
     expect(screen.getByText('Reading the colors')).toBeTruthy();

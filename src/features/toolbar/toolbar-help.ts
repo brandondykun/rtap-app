@@ -20,7 +20,7 @@ export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
   { group: 'plot', label: 'POLYGON', icon: 'pentagon-outline', help: 'Outline an area, like an objective or boundary.' },
   { group: 'plot', label: 'PLOT', icon: 'target', help: 'Type a grid to drop a temp point, then save it or discard it.' },
   { group: 'read', label: 'MEASURE', icon: 'ruler', help: 'Distance and bearing between two places.' },
-  { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons.' },
+  { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons one at a time, or turn whole overlays (groups of items, like the phases of an operation) on and off.' },
   { group: 'read', label: 'LABELS', icon: 'label-outline', help: 'Turn the names on map items on or off.' },
   { group: 'read', label: '3D', icon: 'video-3d', help: 'Tilt the map to see hills and valleys in 3D.' },
   { group: 'read', label: 'OP', icon: 'binoculars', help: 'Look out over the 3D map from a spot you pick.' },
