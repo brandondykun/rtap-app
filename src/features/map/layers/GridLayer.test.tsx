@@ -84,6 +84,17 @@ describe('GridLayer', () => {
     for (const l of labels()) expect(l.style).toMatchObject({ textColor: black.line, textHaloColor: black.halo });
   });
 
+  it('edges each line with the shade\'s outline color, drawn under the lines, so a bright line still shows over sand', async () => {
+    await renderWithProviders(<GridLayer />);
+    const props = mapboxMock().__props;
+    await act(async () => useSettings.getState().setGridColor('magenta'));
+    const magenta = gridShadeColors('magenta');
+    expect(props.LineLayer['mgrs-grid-casing'].style).toMatchObject({ lineColor: magenta.halo });
+    expect(props.LineLayer['mgrs-grid-lines'].style).toMatchObject({ lineColor: magenta.line });
+    // Each goes in just below the same layer, so the outline (added first) ends up under the lines.
+    expect(props.LineLayer['mgrs-grid-casing'].belowLayerID).toBe(props.LineLayer['mgrs-grid-lines'].belowLayerID);
+  });
+
   it('hides the labels with the grid labels setting', async () => {
     await renderWithProviders(<GridLayer />);
     const props = mapboxMock().__props;

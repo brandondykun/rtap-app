@@ -1,7 +1,7 @@
 import type { FillLayerStyle, LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
 import { sidcForPointType } from '@/features/symbology/point-types';
-import type { LabelSize } from '@/stores/settings';
+import type { GridStrength, LabelSize } from '@/stores/settings';
 import type { SemanticToken } from '@/theme/tokens';
 
 import { MIN_ZOOM } from '../canvas/camera';
@@ -305,15 +305,47 @@ export function makePolygonLabelStyle(colors: Record<SemanticToken, string>, tex
   return { ...makePointLabelStyle(colors, textSize), textField: ['get', 'label'], textAnchor: 'center', textOffset: [0, 0] };
 }
 
-/** Colors for the MGRS grid: its lines and labels (`line`), and the outline around the labels (`halo`). */
+/** Colors for the MGRS grid: its lines and labels (`line`), and the outline around both (`halo`). */
 export type GridColors = { line: string; halo: string };
 
-/** MGRS grid lines: thin and see-through, firmer for 100 km lines and firmest for grid zone edges. */
-export function makeGridLineStyle(grid: GridColors): LineLayerStyle {
+type GridLineLook = { width: number; opacity: number };
+/** Grid line widths (pt) and opacities by strength (the Line strength setting), then by kind: grid zone edges, 100 km lines, then the finer lines. */
+const GRID_LINE: Record<GridStrength, { zone: GridLineLook; major: GridLineLook; minor: GridLineLook }> = {
+  light: { zone: { width: 1.6, opacity: 0.85 }, major: { width: 1.2, opacity: 0.7 }, minor: { width: 0.8, opacity: 0.5 } },
+  medium: { zone: { width: 1.8, opacity: 1 }, major: { width: 1.4, opacity: 0.9 }, minor: { width: 1, opacity: 0.75 } },
+  strong: { zone: { width: 2, opacity: 1 }, major: { width: 1.6, opacity: 1 }, minor: { width: 1.2, opacity: 1 } },
+};
+/** How much wider the outline is than its line: 0.6 pt each side. */
+const GRID_CASING_EXTRA = 1.2;
+/** The outline is a little fainter than its line, so it edges the line without reading as a second one. */
+const GRID_CASING_OPACITY = 0.8;
+
+/** A value by the line's kind, as a Mapbox `match` expression (usable for both width and opacity). */
+function byGridKind(strength: GridStrength, pick: (k: GridLineLook) => number): number {
+  const look = GRID_LINE[strength];
+  const expression = ['match', ['get', 'kind'], 'zone', pick(look.zone), 'major', pick(look.major), pick(look.minor)];
+  // The style types do not model expressions this way round; Mapbox takes them wherever a number goes.
+  return expression as unknown as number;
+}
+
+/** MGRS grid lines: thin, firmer for 100 km lines and firmest for grid zone edges; bolder with `strength`. */
+export function makeGridLineStyle(grid: GridColors, strength: GridStrength = 'light'): LineLayerStyle {
   return {
     lineColor: grid.line,
-    lineWidth: ['match', ['get', 'kind'], 'zone', 1.6, 'major', 1.2, 0.8] as LineLayerStyle['lineWidth'],
-    lineOpacity: ['match', ['get', 'kind'], 'zone', 0.85, 'major', 0.7, 0.5] as LineLayerStyle['lineOpacity'],
+    lineWidth: byGridKind(strength, (k) => k.width),
+    lineOpacity: byGridKind(strength, (k) => k.opacity),
+  };
+}
+
+/**
+ * The outline under each grid line, in the shade's outline color (dark under light shades, light under dark ones), like
+ * the outline around the grid's numbers: it keeps the line readable over ground of its own color (sand, concrete, snow).
+ */
+export function makeGridCasingStyle(grid: GridColors, strength: GridStrength = 'light'): LineLayerStyle {
+  return {
+    lineColor: grid.halo,
+    lineWidth: byGridKind(strength, (k) => k.width + GRID_CASING_EXTRA),
+    lineOpacity: byGridKind(strength, (k) => k.opacity * GRID_CASING_OPACITY),
   };
 }
 

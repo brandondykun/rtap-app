@@ -15,7 +15,7 @@ import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { gridShadeColors, type GridShade } from '@/theme/tokens';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type LabelSize, type PanelBackground } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type GridStrength, type LabelSize, type PanelBackground } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatAngleSize, formatEastWest, formatEastWestBoth, roundsToZero } from './settings-format';
@@ -27,7 +27,7 @@ const BASEMAP_OPTIONS: { value: Basemap; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
-const GRID_COLOR_LABELS: Record<GridShade, string> = { white: 'White', 'light-gray': 'Light gray', gray: 'Gray', 'dark-gray': 'Dark gray', black: 'Black' };
+const GRID_COLOR_LABELS: Record<GridShade, string> = { white: 'White', 'light-gray': 'Light gray', gray: 'Gray', 'dark-gray': 'Dark gray', black: 'Black', yellow: 'Yellow', magenta: 'Magenta' };
 
 /** Each grid shade as a swatch of its color (the label is its accessible name). */
 const GRID_COLOR_OPTIONS = (Object.keys(GRID_COLOR_LABELS) as GridShade[]).map((value) => ({
@@ -35,6 +35,12 @@ const GRID_COLOR_OPTIONS = (Object.keys(GRID_COLOR_LABELS) as GridShade[]).map((
   label: GRID_COLOR_LABELS[value],
   icon: <View testID={`grid-swatch-${value}`} className="h-5 w-5 rounded-full border border-border" style={{ backgroundColor: gridShadeColors(value).line }} />,
 }));
+
+const GRID_STRENGTH_OPTIONS: { value: GridStrength; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'strong', label: 'Strong' },
+];
 
 const PANEL_BACKGROUND_OPTIONS: { value: PanelBackground; label: string }[] = [
   { value: 'clear', label: 'Clear' },
@@ -142,6 +148,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowGrid100m = useSettings((s) => s.setShowGrid100m);
   const gridColor = useSettings((s) => s.gridColor);
   const setGridColor = useSettings((s) => s.setGridColor);
+  const gridStrength = useSettings((s) => s.gridStrength);
+  const setGridStrength = useSettings((s) => s.setGridStrength);
   const terrainHeight = useSettings((s) => s.terrainExaggeration);
   const setTerrainHeight = useSettings((s) => s.setTerrainExaggeration);
   const terrainIn2d = useSettings((s) => s.terrainIn2d);
@@ -234,6 +242,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         </MenuSection>
         <MenuSection label="Grid color">
           <MenuSegmented<GridShade> options={GRID_COLOR_OPTIONS} value={gridColor} disabled={!showMgrsGrid} onChange={setGridColor} />
+        </MenuSection>
+        <MenuSection label="Line strength">
+          <MenuSegmented<GridStrength> options={GRID_STRENGTH_OPTIONS} value={gridStrength} disabled={!showMgrsGrid} onChange={setGridStrength} />
+          <Text className="text-xs text-text-muted">Bolder lines show up better over busy or light ground.</Text>
         </MenuSection>
       </MenuGroup>
       <MenuGroup title="Units" icon="ruler">

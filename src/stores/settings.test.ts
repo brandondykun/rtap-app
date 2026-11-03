@@ -86,6 +86,12 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ longPressAddUnit: true });
   });
 
+  it('sets and persists the grid line strength (medium by default)', () => {
+    expect(useSettings.getState().gridStrength).toBe('medium');
+    useSettings.getState().setGridStrength('strong');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ gridStrength: 'strong' });
+  });
+
   it('sets and persists minimal landscape grids (off by default)', () => {
     expect(useSettings.getState().minimalLandscapeGrids).toBe(false);
     useSettings.getState().setMinimalLandscapeGrids(true);

@@ -17,6 +17,9 @@ export type MissionSort = 'recent' | 'name' | 'most';
 export type PanelBackground = 'clear' | 'light' | 'heavy' | 'solid';
 export const PANEL_BACKGROUNDS: readonly PanelBackground[] = ['clear', 'light', 'heavy', 'solid'];
 export const MISSION_SORTS: readonly MissionSort[] = ['recent', 'name', 'most'];
+/** How bold the MGRS grid lines are: wider and less see-through from light to strong. */
+export type GridStrength = 'light' | 'medium' | 'strong';
+export const GRID_STRENGTHS: readonly GridStrength[] = ['light', 'medium', 'strong'];
 
 type SettingsValues = {
   coordinateFormat: CoordinateFormat;
@@ -46,6 +49,8 @@ type SettingsValues = {
   showGrid100m: boolean;
   /** The shade the MGRS grid lines and labels draw in. */
   gridColor: GridShade;
+  /** How bold the grid lines are (light is the old, faint look). */
+  gridStrength: GridStrength;
   /** Name labels on saved units, points, lines and polygons (the LABELS toolbar toggle). */
   showMapLabels: boolean;
   /** Tilted map with raised terrain and a sky (the 3D toolbar toggle). */
@@ -75,6 +80,7 @@ type SettingsActions = {
   setShowGridLabels: (show: boolean) => void;
   setShowGrid100m: (show: boolean) => void;
   setGridColor: (shade: GridShade) => void;
+  setGridStrength: (strength: GridStrength) => void;
   toggleMapLabels: () => void;
   toggleTerrain3d: () => void;
   /** Returns false (and changes nothing) unless finite and within 1–3. */
@@ -108,6 +114,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showGridLabels: true,
   showGrid100m: true,
   gridColor: 'white',
+  gridStrength: 'medium',
   showMapLabels: true,
   terrain3d: false,
   terrainExaggeration: 1.5,
@@ -156,6 +163,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showGridLabels: typeof p.showGridLabels === 'boolean' ? p.showGridLabels : current.showGridLabels,
     showGrid100m: typeof p.showGrid100m === 'boolean' ? p.showGrid100m : current.showGrid100m,
     gridColor: pick(p.gridColor, GRID_SHADES, current.gridColor),
+    gridStrength: pick(p.gridStrength, GRID_STRENGTHS, current.gridStrength),
     showMapLabels: typeof p.showMapLabels === 'boolean' ? p.showMapLabels : current.showMapLabels,
     terrain3d: typeof p.terrain3d === 'boolean' ? p.terrain3d : current.terrain3d,
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
@@ -185,6 +193,7 @@ export const useSettings = create<SettingsState>()(
       setShowGridLabels: (showGridLabels) => set({ showGridLabels }),
       setShowGrid100m: (showGrid100m) => set({ showGrid100m }),
       setGridColor: (gridColor) => set({ gridColor }),
+      setGridStrength: (gridStrength) => set({ gridStrength }),
       toggleMapLabels: () => set({ showMapLabels: !get().showMapLabels }),
       toggleTerrain3d: () => set({ terrain3d: !get().terrain3d }),
       setTerrainExaggeration: (x) => {
@@ -208,7 +217,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, gridStrength, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -225,6 +234,7 @@ export const useSettings = create<SettingsState>()(
         showGridLabels,
         showGrid100m,
         gridColor,
+        gridStrength,
         showMapLabels,
         terrain3d,
         terrainExaggeration,

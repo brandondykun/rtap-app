@@ -11,7 +11,9 @@ import {
   LINE_WIDTHS,
   makeDraftLabelStyle,
   makeGridAreaLabelStyle,
+  makeGridCasingStyle,
   makeGridLineLabelStyle,
+  makeGridLineStyle,
   makeLineDashedStyle,
   makeLineHaloStyle,
   makeLineLabelStyle,
@@ -311,5 +313,30 @@ describe('range chips (value colors)', () => {
       expect(JSON.stringify(style.textField)).toContain(`"text-color":"${colors['value-bearing']}"`);
       expect(style.textColor).toBe(colors['value-distance']);
     }
+  });
+});
+
+describe('grid line outline', () => {
+  it('runs under each grid line in the shade\'s outline color, a little wider and fainter than the line', () => {
+    const grid = gridShadeColors('white');
+    const line = makeGridLineStyle(grid);
+    const casing = makeGridCasingStyle(grid);
+    expect(casing.lineColor).toBe(grid.halo);
+    const values = (v: unknown) => (v as unknown[]).filter((x): x is number => typeof x === 'number');
+    values(casing.lineWidth).forEach((w, i) => expect(w).toBeCloseTo(values(line.lineWidth)[i] + 1.2));
+    values(casing.lineOpacity).forEach((o, i) => expect(o).toBeLessThan(values(line.lineOpacity)[i]));
+  });
+});
+
+describe('grid line strength', () => {
+  const nums = (v: unknown) => (v as unknown[]).filter((x): x is number => typeof x === 'number');
+  it('makes lines wider and less see-through from light to strong, solid when strong (the outline follows)', () => {
+    const grid = gridShadeColors('white');
+    const [light, medium, strong] = (['light', 'medium', 'strong'] as const).map((k) => makeGridLineStyle(grid, k));
+    nums(medium.lineWidth).forEach((w, i) => expect(w).toBeGreaterThan(nums(light.lineWidth)[i]));
+    nums(strong.lineWidth).forEach((w, i) => expect(w).toBeGreaterThan(nums(medium.lineWidth)[i]));
+    nums(medium.lineOpacity).forEach((o, i) => expect(o).toBeGreaterThanOrEqual(nums(light.lineOpacity)[i]));
+    expect(nums(strong.lineOpacity)).toEqual([1, 1, 1]);
+    nums(makeGridCasingStyle(grid, 'strong').lineWidth).forEach((w, i) => expect(w).toBeCloseTo(nums(strong.lineWidth)[i] + 1.2));
   });
 });

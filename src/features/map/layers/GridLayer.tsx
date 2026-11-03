@@ -6,7 +6,7 @@ import { useSettings } from '@/stores/settings';
 import { gridShadeColors } from '@/theme/tokens';
 
 import { eastingsRunSouth, mgrsGrid, orientEastings } from './mgrs-grid';
-import { makeGridAreaLabelStyle, makeGridLineLabelStyle, makeGridLineStyle } from './styles';
+import { makeGridAreaLabelStyle, makeGridCasingStyle, makeGridLineLabelStyle, makeGridLineStyle } from './styles';
 
 /** The lowest mission item layer: the grid stays under it even when switched on after the items are drawn. */
 const BELOW = 'polygons-fill';
@@ -26,23 +26,27 @@ export function GridLayer() {
   // Easting numbers read down the screen; the lines turn around only when the map turns far enough to tip them over.
   const south = useInteraction((s) => eastingsRunSouth(s.cameraBearing));
   const shade = useSettings((s) => s.gridColor);
+  const strength = useSettings((s) => s.gridStrength);
   const grid = useMemo(() => (show && view ? mgrsGrid(view, finest) : null), [show, view, finest]);
   const lines = useMemo(() => grid && orientEastings(grid.lines, south), [grid, south]);
   const styles = useMemo(() => {
     const visibility = showLabels ? 'visible' : 'none';
     const colors = gridShadeColors(shade);
     return {
-      line: makeGridLineStyle(colors),
+      casing: makeGridCasingStyle(colors, strength),
+      line: makeGridLineStyle(colors, strength),
       eastingLabel: { ...makeGridLineLabelStyle(colors, false), visibility } as const,
       northingLabel: { ...makeGridLineLabelStyle(colors), visibility } as const,
       areaLabel: { ...makeGridAreaLabelStyle(colors), visibility } as const,
     };
-  }, [shade, showLabels]);
+  }, [shade, strength, showLabels]);
   if (!grid || !lines) return null;
 
   return (
     <>
       <ShapeSource id="mgrs-grid" shape={lines}>
+        {/* Added first, so it lands under the lines (each layer goes in just below BELOW). */}
+        <LineLayer id="mgrs-grid-casing" belowLayerID={BELOW} style={styles.casing} />
         <LineLayer id="mgrs-grid-lines" belowLayerID={BELOW} style={styles.line} />
         <SymbolLayer id="mgrs-grid-easting-labels" belowLayerID={BELOW} style={styles.eastingLabel} filter={EASTINGS} />
         <SymbolLayer id="mgrs-grid-northing-labels" belowLayerID={BELOW} style={styles.northingLabel} filter={NORTHINGS} />

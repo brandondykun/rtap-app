@@ -19,6 +19,8 @@ export const palette = {
   'red-400': '#f87171',
   'red-500': '#ef4444',
   'red-950': '#450a0a',
+  'yellow-400': '#facc15',
+  'fuchsia-500': '#d946ef',
   'sky-300': '#7dd3fc',
   'sky-400': '#38bdf8',
   'yellow-300': '#fde047',
@@ -102,16 +104,19 @@ export function cssVars(name: ThemeName, glassAlpha?: number, dividerAlpha?: num
 }
 
 /** Shades for the MGRS grid (the Grid color setting), lightest first. */
-export type GridShade = 'white' | 'light-gray' | 'gray' | 'dark-gray' | 'black';
-export const GRID_SHADES: readonly GridShade[] = ['white', 'light-gray', 'gray', 'dark-gray', 'black'];
+/** The grays, then bright colors for ground where no gray stands out (sand, concrete, snow). */
+export type GridShade = 'white' | 'light-gray' | 'gray' | 'dark-gray' | 'black' | 'yellow' | 'magenta';
+export const GRID_SHADES: readonly GridShade[] = ['white', 'light-gray', 'gray', 'dark-gray', 'black', 'yellow', 'magenta'];
 
-/** Each shade's line and label color, and the label outline: dark under light shades, light under dark ones. */
+/** Each shade's line and label color, and the outline around both: dark under light shades, light under dark ones. */
 const gridShades: Record<GridShade, { line: PaletteName; halo: PaletteName }> = {
   white: { line: 'stone-50', halo: 'neutral-950' },
   'light-gray': { line: 'stone-300', halo: 'neutral-950' },
   gray: { line: 'stone-500', halo: 'neutral-950' },
   'dark-gray': { line: 'stone-700', halo: 'stone-50' },
   black: { line: 'neutral-950', halo: 'stone-50' },
+  yellow: { line: 'yellow-400', halo: 'neutral-950' },
+  magenta: { line: 'fuchsia-500', halo: 'neutral-950' },
 };
 
 export function gridShadeColors(shade: GridShade): { line: string; halo: string } {

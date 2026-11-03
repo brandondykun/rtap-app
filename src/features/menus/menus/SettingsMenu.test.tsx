@@ -258,7 +258,7 @@ describe('SettingsMenu', () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText('Grid color')).toBeTruthy();
     expect(screen.getByLabelText('White')).toBeSelected();
-    for (const shade of ['White', 'Light gray', 'Gray', 'Dark gray', 'Black']) expect(screen.getByLabelText(shade)).toBeDisabled();
+    for (const shade of ['White', 'Light gray', 'Gray', 'Dark gray', 'Black', 'Yellow', 'Magenta']) expect(screen.getByLabelText(shade)).toBeDisabled();
     await fireEvent(screen.getByLabelText('Show MGRS grid'), 'valueChange', true);
     await fireEvent.press(screen.getByLabelText('Black'));
     expect(useSettings.getState().gridColor).toBe('black');
@@ -299,25 +299,40 @@ describe('SettingsMenu', () => {
     expect(screen.queryByText('Offline map downloads use Satellite.')).toBeNull();
   });
 
+  it('sets the grid line strength (Medium by default), only while the grid shows', async () => {
+    useSettings.setState({ showMgrsGrid: true });
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    const section = within(screen.getByTestId('menu-section-Line strength'));
+    expect(section.getByLabelText('Medium')).toBeSelected();
+    await fireEvent.press(section.getByLabelText('Strong'));
+    expect(useSettings.getState().gridStrength).toBe('strong');
+    await act(async () => useSettings.setState({ showMgrsGrid: false }));
+    expect(section.getByLabelText('Light')).toBeDisabled();
+  });
+
   it('sets the label text size (Medium by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText('Label text size')).toBeTruthy();
-    expect(screen.getByLabelText('Medium')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Small'));
+    // Line strength has a Medium too: look in this section.
+    const section = within(screen.getByTestId('menu-section-Label text size'));
+    expect(section.getByLabelText('Medium')).toBeSelected();
+    await fireEvent.press(section.getByLabelText('Small'));
     expect(useSettings.getState().labelSize).toBe('small');
-    expect(screen.getByLabelText('Small')).toBeSelected();
+    expect(section.getByLabelText('Small')).toBeSelected();
   });
 
   it('sets how see-through the map panels are (Heavy by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText('Panel background')).toBeTruthy();
-    expect(screen.getByLabelText('Heavy')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Light'));
+    // Line strength has a Light too: look in this section.
+    const section = within(screen.getByTestId('menu-section-Panel background'));
+    expect(section.getByLabelText('Heavy')).toBeSelected();
+    await fireEvent.press(section.getByLabelText('Light'));
     expect(useSettings.getState().panelBackground).toBe('light');
-    expect(screen.getByLabelText('Light')).toBeSelected();
-    await fireEvent.press(screen.getByLabelText('Clear'));
+    expect(section.getByLabelText('Light')).toBeSelected();
+    await fireEvent.press(section.getByLabelText('Clear'));
     expect(useSettings.getState().panelBackground).toBe('clear');
-    await fireEvent.press(screen.getByLabelText('Solid'));
+    await fireEvent.press(section.getByLabelText('Solid'));
     expect(useSettings.getState().panelBackground).toBe('solid');
   });
 

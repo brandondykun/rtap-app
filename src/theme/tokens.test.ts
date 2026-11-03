@@ -28,12 +28,15 @@ describe('theme tokens', () => {
   });
 
   it('offers grid shades from white (the grid as it was) to black, with a dark outline on light shades and a light one on dark', () => {
-    expect(GRID_SHADES).toEqual(['white', 'light-gray', 'gray', 'dark-gray', 'black']);
+    expect(GRID_SHADES).toEqual(['white', 'light-gray', 'gray', 'dark-gray', 'black', 'yellow', 'magenta']);
     expect(gridShadeColors('white')).toEqual({ line: themeColors('dark')['map-label-text'], halo: themeColors('dark')['point-symbol-halo'] });
     expect(gridShadeColors('light-gray')).toEqual({ line: '#d6d3d1', halo: '#0a0a0a' });
     expect(gridShadeColors('gray')).toEqual({ line: '#78716c', halo: '#0a0a0a' });
     expect(gridShadeColors('dark-gray')).toEqual({ line: '#44403c', halo: '#fafaf9' });
     expect(gridShadeColors('black')).toEqual({ line: '#0a0a0a', halo: '#fafaf9' });
+    // Bright colors for ground no gray stands out from (sand, concrete), each edged in black.
+    expect(gridShadeColors('yellow')).toEqual({ line: '#facc15', halo: '#0a0a0a' });
+    expect(gridShadeColors('magenta')).toEqual({ line: '#d946ef', halo: '#0a0a0a' });
   });
 
   it('makes success a bright green (green-400), so Valid stands out on the dark panels', () => {

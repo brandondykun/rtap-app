@@ -35,8 +35,13 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
   { name: 'Show 100 m grid lines', help: 'The finest grid lines, when zoomed in close. Turn it off to stop at 1 km lines.' },
   {
     name: 'Grid color',
-    choices: 'White · Light gray · Gray · Dark gray · Black',
-    help: 'The shade of the MGRS grid lines and numbers. Pick one that stands out from the ground: white over dark forest, black over snow.',
+    choices: 'White · Light gray · Gray · Dark gray · Black · Yellow · Magenta',
+    help: 'The color of the MGRS grid lines and numbers, each edged in a contrasting outline. Pick one that stands out from the ground: white over dark forest, black over snow, yellow or magenta over sand and concrete.',
+  },
+  {
+    name: 'Line strength',
+    choices: 'Light · Medium · Strong',
+    help: 'How bold the grid lines are. Light is faint and see-through; Strong is wider and solid, for busy or light ground like cities and desert.',
   },
   { name: 'Coordinates', choices: 'MGRS · Lat/Lon', help: 'How positions show in the readouts and menus.' },
   { name: 'Angles', choices: 'Degrees · Mils', help: 'The unit for bearings and the G-M angle. A full circle is 360° or 6400 mils.' },
