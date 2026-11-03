@@ -78,6 +78,7 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "maxWorkers": "40%",
     "setupFiles": [
       "<rootDir>/jest.setup.ts"
     ],

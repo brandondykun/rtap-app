@@ -23,6 +23,8 @@ npx expo install --fix      # fix incompatible package versions
 
 Run lint and typecheck before declaring any task done.
 
+Jest runs with `maxWorkers: "40%"` (package.json). Each test database is a real PowerSync SQLite with its own worker threads, so Jest's default (cores − 1) oversubscribes the CPU: tests time out at random and the suite runs slower. Don't raise it to fix speed.
+
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
