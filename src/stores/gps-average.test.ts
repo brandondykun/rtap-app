@@ -61,6 +61,37 @@ describe('gps average store', () => {
     expect(g().farSince).toBeNull();
   });
 
+  it('pauses on fixes too poor to average when they still clearly show movement', () => {
+    /** About 500 m north of HERE. */
+    const WAY_OFF = { lat: 38.9 + 500 / 111_320, lon: -77 };
+    const settled = () => {
+      useGpsAverage.setState({ ...INITIAL_GPS_AVERAGE, phase: 'averaging' });
+      for (let i = 0; i < 10; i++) g().addFix(fix(i * 10_000), 0);
+    };
+    // Moving under cover: the accuracy drops past 30 m but the speed says moving.
+    settled();
+    for (let i = 0; i < 3; i++) g().addFix(fix(100_000 + i * 1000, 60), 1.4);
+    expect(g().phase).toBe('paused');
+    settled();
+    for (let i = 0; i < 3; i++) g().addFix(fix(100_000 + i * 1000, null), 1.4);
+    expect(g().phase).toBe('paused');
+    // No speed, but far beyond even a ±60 m fix's noise.
+    settled();
+    for (let i = 0; i < 3; i++) g().addFix(fix(100_000 + i * 1000, 60, WAY_OFF), null);
+    expect(g().phase).toBe('paused');
+    // Without a valid time it cannot date the move: ignored, so nothing is trimmed by a NaN cutoff.
+    settled();
+    for (let i = 0; i < 3; i++) g().addFix(fix(NaN, 60), 1.4);
+    expect(g().phase).toBe('averaging');
+    expect(g().farCount).toBe(0);
+    // Within its own noise: still ignored, never sampled.
+    settled();
+    for (let i = 0; i < 3; i++) g().addFix(fix(100_000 + i * 1000, 60, FAR), 0);
+    expect(g().phase).toBe('averaging');
+    expect(g().farCount).toBe(0);
+    expect(g().samples).toHaveLength(10);
+  });
+
   it('uses the last still moment from the motion sensor as the cutoff when known', () => {
     g().start();
     for (let i = 0; i < 10; i++) g().addFix(fix(i * 10_000), 0);
@@ -129,18 +160,12 @@ describe('gps average store', () => {
     expect(g().samples).toHaveLength(1);
   });
 
-  it('thins to at most 600 samples, keeping the first and the newest', () => {
-    // Preloaded, since 600 real addFix calls cost seconds of geodesic passes.
-    const samples = Array.from({ length: MAX_SAMPLES }, (_, i) => ({
-      lat: HERE.lat,
-      lon: HERE.lon,
-      altitudeM: 10,
-      accuracyM: 5,
-      at: i * 1000,
-    }));
-    useGpsAverage.setState({ phase: 'averaging', samples });
+  it('thins to at most 600 samples, keeping the first and the newest, and stays cheap per fix', () => {
+    g().start();
     const last = MAX_SAMPLES + 2;
-    for (let i = MAX_SAMPLES; i <= last; i++) g().addFix(fix(i * 1000), 0);
+    const startedAt = performance.now();
+    for (let i = 0; i <= last; i++) g().addFix(fix(i * 1000), 0);
+    expect(performance.now() - startedAt).toBeLessThan(200);
     const next = g().samples;
     expect(next.length).toBeLessThanOrEqual(MAX_SAMPLES);
     expect(next[0].at).toBe(0);

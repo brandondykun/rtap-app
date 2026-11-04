@@ -2,15 +2,15 @@ import { create } from 'zustand';
 
 import {
   type AverageSample,
-  estimateAccuracyM,
-  isFarFromCluster,
+  clusterStats,
+  type ClusterStats,
+  isFarFromStats,
   isOnSpot,
-  isOutlier,
+  isOutlierFromStats,
   MOVED_FIXES,
   MOVED_SPEED_MPS,
   sampleFromFix,
   trimFrom,
-  weightedCenter,
 } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
@@ -19,7 +19,7 @@ export type AveragePhase = 'off' | 'averaging' | 'paused' | 'away';
 
 /** When the move is only noticed by GPS, readings this far before it was noticed are dropped too. */
 export const DROP_BACK_MS = 15000;
-/** Each fix runs several O(n) geodesic passes, so long averages are thinned to this many samples. */
+/** Each fix runs a few O(n) passes over the samples, so long averages are thinned to this many. */
 export const MAX_SAMPLES = 600;
 
 type GpsAverageValues = {
@@ -56,19 +56,21 @@ export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
 
 const FRESH: GpsAverageValues = { ...INITIAL_GPS_AVERAGE, phase: 'averaging' };
 
-function averaged(samples: readonly AverageSample[], timestamp: number): SelfPosition | null {
-  const center = weightedCenter(samples);
-  if (center === null) return null;
+function averaged(stats: ClusterStats | null, timestamp: number): SelfPosition | null {
+  if (stats === null) return null;
   return {
-    position: center.position,
-    altitudeM: center.altitudeM,
-    accuracyM: estimateAccuracyM(samples),
+    position: stats.center.position,
+    altitudeM: stats.center.altitudeM,
+    accuracyM: stats.accuracyM,
     timestamp,
     averaged: true,
   };
 }
 
-/** Appends, thinning to every other sample past the cap while keeping the first (the time span the accuracy depends on) and the newest. */
+/**
+ * Appends, thinning to every other sample past the cap while keeping the first and the newest. Thinning widens the gaps
+ * between old samples, so after a long average some of its time may count short (MAX_SAMPLE_GAP_S): conservative.
+ */
 function append(samples: AverageSample[], s: AverageSample): AverageSample[] {
   if (samples.length < MAX_SAMPLES) return [...samples, s];
   return [...samples.filter((_, i) => i % 2 === 0), s];
@@ -82,29 +84,34 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
   addFix: (fix, speedMps) => {
     const { phase, samples, farCount, farSince } = get();
     if (phase !== 'averaging') return null;
-    // A fix that cannot be used neither counts as far nor resets the count: it is ignored.
+    // The samples' center, spread and accuracy, worked out once for all the checks below.
+    const stats = clusterStats(samples);
     const sample = sampleFromFix(fix);
-    if (sample === null) return averaged(samples, fix.timestamp);
+    // A fix too poor to average still shows a move when its speed says so or it lands far beyond its own noise.
+    const judged = sample ?? sampleFromFix(fix, Infinity);
+    // Without a valid time it cannot date the move, so it does not count.
     const far =
-      (samples.length > 0 && isFarFromCluster(samples, sample)) ||
-      (speedMps !== null && speedMps > MOVED_SPEED_MPS);
+      Number.isFinite(fix.timestamp) &&
+      ((stats !== null && judged !== null && isFarFromStats(stats, judged)) || (speedMps !== null && speedMps > MOVED_SPEED_MPS));
     if (far) {
       const count = farCount + 1;
-      const since = farSince ?? sample.at;
+      const since = farSince ?? fix.timestamp;
       if (count >= MOVED_FIXES) {
         get().pause(since);
         return null;
       }
       set({ farCount: count, farSince: since });
-      return averaged(samples, fix.timestamp);
+      return averaged(stats, fix.timestamp);
     }
-    if (isOutlier(samples, sample)) {
+    // A fix that cannot be used and shows no move neither counts as far nor resets the count: it is ignored.
+    if (sample === null) return averaged(stats, fix.timestamp);
+    if (stats !== null && isOutlierFromStats(stats, sample)) {
       set({ farCount: 0, farSince: null });
-      return averaged(samples, fix.timestamp);
+      return averaged(stats, fix.timestamp);
     }
     const next = append(samples, sample);
     set({ samples: next, farCount: 0, farSince: null });
-    return averaged(next, fix.timestamp);
+    return averaged(clusterStats(next), fix.timestamp);
   },
   markStill: (at) => set({ lastStillAt: at }),
   pause: (detectedAt) => {
