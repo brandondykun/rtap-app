@@ -27,7 +27,7 @@ type Props = {
   landscape: boolean;
   /** A tap-mode action bar (placing, drawing, measuring): in portrait in the dock's place or over it, in landscape over the dock. */
   bar?: ReactNode;
-  /** In portrait, float the bar centered over the dock instead of in its place (placing a unit or point). */
+  /** In portrait, float the bar centered over the dock instead of in its place (every tap mode but drawing a line). */
   barOverDock?: boolean;
   /** The center grid: the dock's CTR row (over ME). */
   showCenter?: boolean;

@@ -843,8 +843,9 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('MEASURE'));
       expect(useMenu.getState().stack).toEqual([]);
       expect(screen.getByTestId('measure-bar')).toBeTruthy();
-      // The bar takes the dock's place.
-      expect(screen.queryByTestId('dock-self')).toBeNull();
+      // In portrait the bar floats over the dock, which stays.
+      expect(screen.getByTestId('bar-over-dock')).toContainElement(screen.getByTestId('measure-bar'));
+      expect(screen.getByTestId('dock-self')).toBeTruthy();
       expect(screen.getByLabelText('MEASURE')).toBeSelected();
       await fireEvent.press(screen.getByLabelText('MEASURE'));
       expect(screen.queryByTestId('measure-bar')).toBeNull();

@@ -624,7 +624,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         landscape={landscape}
         // The temp card sits beside the dock (landscape) or above it (portrait), which keeps its CTR row either way.
         showCenter={showCenterGrid}
-        barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing)}
+        barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing || measuring)}
         bar={
           lineDrawing ? (
             <LineDrawBar />
