@@ -7,6 +7,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { ManualLocationEntry } from '@/features/location/ManualLocationEntry';
+import { useAverageWatch } from '@/features/location/use-average-watch';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { draftSidc } from '@/features/map-items/draft-sidc';
 import { openItemMenu } from '@/features/map-items/menus/item-menus';
@@ -125,6 +126,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     saver.touch();
   }, [saver]);
   useSelfLocation();
+  useAverageWatch();
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.

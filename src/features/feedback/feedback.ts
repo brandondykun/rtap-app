@@ -36,3 +36,8 @@ export function notifyError(message: string, detail?: string): void {
 export function notifyInfo(message: string): void {
   useToast.getState().show(message, 'info');
 }
+
+/** Averaging paused because the phone moved: a warning buzz, since the user may not be looking at the screen. */
+export function notifyWarning(): void {
+  haptic(Haptics.NotificationFeedbackType.Warning);
+}
