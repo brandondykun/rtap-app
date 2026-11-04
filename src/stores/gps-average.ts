@@ -30,6 +30,8 @@ type GpsAverageValues = {
   /** Timestamp of the first fix in the current run of far-from-cluster fixes. */
   farSince: number | null;
   farCount: number;
+  /** When averaging paused: a fix from before then says nothing about where the user is now. */
+  pausedAt: number | null;
 };
 type GpsAverageActions = {
   start: () => void;
@@ -38,6 +40,7 @@ type GpsAverageActions = {
   addFix: (fix: SelfPosition, speedMps: number | null) => SelfPosition | null;
   markStill: (at: number) => void;
   pause: (detectedAt: number) => void;
+  /** Resumes when the live fix (taken since the pause) is back on the spot; otherwise goes away. */
   resume: (live: SelfPosition | null) => 'resumed' | 'away';
   restartHere: () => void;
 };
@@ -48,6 +51,7 @@ export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
   lastStillAt: null,
   farSince: null,
   farCount: 0,
+  pausedAt: null,
 };
 
 const FRESH: GpsAverageValues = { ...INITIAL_GPS_AVERAGE, phase: 'averaging' };
@@ -107,13 +111,16 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
     const { phase, samples, lastStillAt } = get();
     if (phase !== 'averaging') return;
     const cutoff = Math.min(detectedAt, lastStillAt ?? detectedAt - DROP_BACK_MS);
-    set({ phase: 'paused', samples: trimFrom(samples, cutoff), farCount: 0, farSince: null });
+    set({ phase: 'paused', samples: trimFrom(samples, cutoff), farCount: 0, farSince: null, pausedAt: detectedAt });
   },
   resume: (live) => {
-    if (get().phase !== 'paused') return 'away';
-    const sample = live === null ? null : sampleFromFix(live);
-    const onSpot = sample !== null && isOnSpot(get().samples, sample);
-    set({ phase: onSpot ? 'averaging' : 'away', farCount: 0, farSince: null });
+    const { phase, samples, pausedAt } = get();
+    if (phase !== 'paused') return 'away';
+    // Only a fix taken since the pause shows where the user is now; an older one (or the average itself) proves nothing.
+    const fresh = live !== null && !live.averaged && (pausedAt === null || live.timestamp > pausedAt);
+    const sample = fresh ? sampleFromFix(live) : null;
+    const onSpot = sample !== null && isOnSpot(samples, sample);
+    set({ phase: onSpot ? 'averaging' : 'away', farCount: 0, farSince: null, pausedAt: onSpot ? null : pausedAt });
     return onSpot ? 'resumed' : 'away';
   },
   restartHere: () => set(FRESH),

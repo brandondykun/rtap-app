@@ -55,6 +55,18 @@ describe('AverageBanner', () => {
     expect(screen.getByText(AWAY_TEXT)).toBeTruthy();
   });
 
+  it('paused: Resume with no fix since the pause, or only the average, does not carry on', async () => {
+    // The last fix before the phone was carried off, on the spot but old.
+    pauseAt(fix(40_000));
+    await renderWithProviders(<AverageBanner />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(useGpsAverage.getState().phase).toBe('away');
+
+    await act(async () => pauseAt({ ...fix(120_000), averaged: true }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(useGpsAverage.getState().phase).toBe('away');
+  });
+
   it('paused: Discard turns Average mode off', async () => {
     pauseAt(fix(120_000));
     await renderWithProviders(<AverageBanner />);

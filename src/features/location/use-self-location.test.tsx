@@ -168,6 +168,51 @@ describe('useSelfLocation', () => {
       expect(published?.averaged).toBeUndefined();
     });
 
+    it('republishes the last live fix, plain, the moment averaging pauses (motion sensor or leaving the app)', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => fake.position(fix(38.9, 1000)));
+      await act(async () => fake.position(fix(38.9000002, 2000, 4)));
+      expect(usePresence.getState().selfPosition?.averaged).toBe(true);
+      // What the accelerometer and the background listener call: no new fix comes with it.
+      await act(async () => useGpsAverage.getState().pause(3000));
+      expect(usePresence.getState().selfPosition).toEqual({ position: { lat: 38.9000002, lon: -77 }, accuracyM: 4, timestamp: 2000, altitudeM: null });
+    });
+
+    it('republishes the last live fix, plain, when averaging is turned off', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => fake.position(fix(38.9, 1000)));
+      await act(async () => fake.position(fix(38.9000002, 2000)));
+      await act(async () => useGpsAverage.getState().stop());
+      const published = usePresence.getState().selfPosition;
+      expect(published).toMatchObject({ position: { lat: 38.9000002, lon: -77 }, timestamp: 2000 });
+      expect(published?.averaged).toBeUndefined();
+    });
+
+    it('publishes the newest fix, plain, when GPS itself notices the move', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      for (let i = 0; i < 5; i++) await act(async () => fake.position(fix(38.9, i * 1000)));
+      for (let i = 0; i < 3; i++) await act(async () => fake.position(fix(38.901, 10_000 + i * 1000)));
+      expect(useGpsAverage.getState().phase).toBe('paused');
+      const published = usePresence.getState().selfPosition;
+      expect(published).toMatchObject({ position: { lat: 38.901, lon: -77 }, timestamp: 12_000 });
+      expect(published?.averaged).toBeUndefined();
+    });
+
+    it('clears me when averaging stops with no live fix to fall back on', async () => {
+      grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 2, timestamp: 1, averaged: true }));
+      await act(async () => useGpsAverage.getState().pause(10));
+      expect(usePresence.getState().selfPosition).toBeNull();
+    });
+
     it('restarts the GPS watch with distanceInterval 0 while averaging, and 1 after', async () => {
       const fake = grant();
       await render(<Probe />);

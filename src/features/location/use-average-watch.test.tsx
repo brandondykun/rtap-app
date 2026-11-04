@@ -1,12 +1,15 @@
 import { act, renderHook } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import * as Location from 'expo-location';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
+import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 
 import { loadAccelerometer } from './motion';
 import { useAverageWatch } from './use-average-watch';
+import { useSelfLocation } from './use-self-location';
 
 jest.mock('expo-keep-awake', () => ({
   activateKeepAwakeAsync: jest.fn(async () => {}),
@@ -118,5 +121,49 @@ describe('useAverageWatch', () => {
     await flush();
     await act(async () => useGpsAverage.getState().pause(now));
     expect(Haptics.notificationAsync).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useAverageWatch with useSelfLocation', () => {
+  type PositionCb = (loc: { coords: { latitude: number; longitude: number; accuracy: number; altitude: null }; timestamp: number }) => void;
+  let onPosition: PositionCb = () => {};
+  let lastFixAt = 0;
+  const fix = (latitude: number, timestamp: number) => onPosition({ coords: { latitude, longitude: -77, accuracy: 4, altitude: null }, timestamp });
+
+  /** Both hooks mounted, averaging, with an averaged position published as me. */
+  async function averaging() {
+    await act(async () => usePresence.setState(INITIAL_PRESENCE));
+    jest.mocked(Location.requestForegroundPermissionsAsync).mockResolvedValue({ status: 'granted', granted: true } as never);
+    jest.mocked(Location.watchPositionAsync).mockImplementation(async (_opts, cb) => {
+      onPosition = cb as unknown as PositionCb;
+      return { remove: jest.fn() };
+    });
+    await renderHook(() => {
+      useSelfLocation();
+      useAverageWatch();
+    });
+    await act(async () => useGpsAverage.getState().start());
+    await flush();
+    await act(async () => fix(38.9, now - 2000));
+    lastFixAt = now - 1000;
+    await act(async () => fix(38.9000002, lastFixAt));
+    expect(usePresence.getState().selfPosition?.averaged).toBe(true);
+  }
+
+  const expectLivePlain = () => {
+    expect(useGpsAverage.getState().phase).toBe('paused');
+    expect(usePresence.getState().selfPosition).toEqual({ position: { lat: 38.9000002, lon: -77 }, accuracyM: 4, timestamp: lastFixAt, altitudeM: null });
+  };
+
+  it('shows the live fix, plain, as soon as carrying the phone pauses averaging', async () => {
+    await averaging();
+    await carry();
+    expectLivePlain();
+  });
+
+  it('shows the live fix, plain, as soon as leaving the app pauses averaging', async () => {
+    await averaging();
+    await act(async () => appStateCb?.('background'));
+    expectLivePlain();
   });
 });

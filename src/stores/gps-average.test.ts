@@ -77,15 +77,32 @@ describe('gps average store', () => {
       g().pause(100_000);
     };
     paused();
-    expect(g().resume(fix(20_000))).toBe('resumed');
+    expect(g().pausedAt).toBe(100_000);
+    expect(g().resume(fix(120_000))).toBe('resumed');
     expect(g().phase).toBe('averaging');
+    expect(g().pausedAt).toBeNull();
     paused();
-    expect(g().resume(fix(20_000, 5, FAR))).toBe('away');
+    expect(g().resume(fix(120_000, 5, FAR))).toBe('away');
     expect(g().phase).toBe('away');
     paused();
     expect(g().resume(null)).toBe('away');
     paused();
-    expect(g().resume(fix(20_000, 80))).toBe('away');
+    expect(g().resume(fix(120_000, 80))).toBe('away');
+  });
+
+  it('does not resume on a fix from before the pause, or on an averaged position', () => {
+    const paused = () => {
+      useGpsAverage.setState({ ...INITIAL_GPS_AVERAGE, phase: 'averaging' });
+      for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
+      g().pause(100_000);
+    };
+    paused();
+    // The last fix before the phone was carried off: on the spot, but it says nothing about where the user is now.
+    expect(g().resume(fix(90_000))).toBe('away');
+    paused();
+    expect(g().resume(fix(100_000))).toBe('away');
+    paused();
+    expect(g().resume({ ...fix(120_000), averaged: true })).toBe('away');
   });
 
   it('restartHere starts fresh; stop clears everything', () => {
@@ -93,8 +110,9 @@ describe('gps average store', () => {
     g().addFix(fix(0), 0);
     g().markStill(5);
     g().pause(10);
+    expect(g().pausedAt).toBe(10);
     g().restartHere();
-    expect(g()).toMatchObject({ phase: 'averaging', samples: [], farCount: 0, farSince: null });
+    expect(g()).toMatchObject({ phase: 'averaging', samples: [], farCount: 0, farSince: null, pausedAt: null });
     g().addFix(fix(0), 0);
     g().stop();
     expect(g()).toMatchObject(INITIAL_GPS_AVERAGE);

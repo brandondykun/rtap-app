@@ -29,7 +29,7 @@ function AverageCard({ paused, marginTop }: { paused: boolean; marginTop: number
       <View className="flex-row flex-wrap gap-2">
         {paused ? (
           <>
-            {/* While paused the presence store holds the live fix. */}
+            {/* While paused the presence store holds the live fix (or none); resume ignores any fix from before the pause. */}
             <MenuButton compact label="Resume" icon="play" onPress={() => useGpsAverage.getState().resume(usePresence.getState().selfPosition)} />
             <MenuButton compact label="Discard" icon="close" onPress={stop} />
           </>

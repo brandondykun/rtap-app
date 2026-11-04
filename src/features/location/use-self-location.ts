@@ -58,6 +58,8 @@ export function useSelfLocation(): void {
     // The heading follows the screen, not the phone's top edge (landscape is 90° off otherwise).
     let orientation: Orientation = 'unknown';
     let lastEvent: Location.LocationHeadingObject | null = null;
+    // The newest GPS fix as it came, so "me" can drop back to it the moment averaging stops.
+    let lastLive: SelfPosition | null = null;
 
     const isAveraging = () => useGpsAverage.getState().phase === 'averaging';
     const manualSource = () => useMyLocation.getState().source === 'manual';
@@ -70,6 +72,8 @@ export function useSelfLocation(): void {
         timestamp: loc.timestamp,
         altitudeM: Number.isFinite(loc.coords.altitude) ? loc.coords.altitude : null,
       };
+      // Before addFix: a pause it triggers republishes this fix.
+      lastLive = live;
       const average = useGpsAverage.getState();
       // Nothing averaged yet, paused or away: the live fix is "me".
       const published = average.phase === 'averaging' ? average.addFix(live, loc.coords.speed ?? null) : null;
@@ -107,6 +111,7 @@ export function useSelfLocation(): void {
       lastHeading = null;
       smoothed = null;
       lastEvent = null;
+      lastLive = null;
     };
 
     const applyManual = async () => {
@@ -198,6 +203,13 @@ export function useSelfLocation(): void {
       const now = isAveraging();
       if (now === wasAveraging) return;
       wasAveraging = now;
+      // Paused (by any signal) or off: the average must not stay up as "me" until the next fix, since the user may
+      // have moved. Fall back to the last live fix, or to nothing.
+      const presence = usePresence.getState();
+      if (!now && presence.selfPosition?.averaged) {
+        if (lastLive) presence.setSelfPosition(lastLive);
+        else presence.clearSelfPosition();
+      }
       void restartPosition();
     });
 
