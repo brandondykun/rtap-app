@@ -67,7 +67,12 @@ accuracy gain is only a meter or two.
   - Readings that could be bad are thrown out: on pause, drop the fixes from just before detection as well.
   - While paused, ME shows the **current live location** (plain ME, no orange).
   - **Discard** shuts Average mode off completely (back to live GPS; start again to average again).
-  - **Resume** keeps the cleaned samples and carries on.
+  - **Resume** first checks that the user is back on the same spot: the live fix must fall inside the sample cluster
+    (judged against the spread of the samples and the live fix's own accuracy; exact rule is the builder's call).
+    - Back on the spot: keep the cleaned samples and carry on averaging.
+    - Not on the spot: don't resume. Say so ("You're not where you were averaging") and offer **Start new average
+      here** (fresh samples at the current spot) or **Turn off** (same as Discard).
+    - If the live fix is too poor to tell (very large accuracy), treat it as not on the spot.
 - **Map dot:** unchanged in look; it shows the averaged position while averaging, the live one otherwise.
 - **Dependencies:** new native build with `expo-sensors` (and `react-native-keyboard-controller`), done.
 
