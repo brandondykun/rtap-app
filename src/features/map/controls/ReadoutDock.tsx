@@ -124,6 +124,8 @@ const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 m
 /** The longest altitude and accuracy (to 9,999 m / 99,999 ft). */
 const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: 'ALT 0000 m', ft: 'ALT 00000 ft' };
 const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
+/** Averaging adds AVG before the accuracy. */
+const AVERAGED_ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: 'AVG ±0000 m', ft: 'AVG ±00000 ft' };
 
 /** A typical full-length grid, held invisibly while there is no fix so the row is as tall (and, inline, as wide) as with one. */
 const GRID_TEMPLATE_AT: LatLon = { lat: -38.88888, lon: -177.88888 };
@@ -174,6 +176,8 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
   const unit = useSettings((s) => s.altitudeUnit);
   const shown = me.kind === 'fix' ? me.fix : null;
   const setting = me.kind === 'set';
+  // Average mode recolors the lead (triangle and tag) and prefixes the accuracy with AVG, like OP mode recolors its lead.
+  const lead = shown?.averaged ? colors.averaged : colors.friendly;
   // Without a fix, invisible stand-ins hold the space the grid and its details will take, so the card does not grow when GPS arrives.
   const detailPlaceholder = (template: string) => (
     <Placeholder>
@@ -213,7 +217,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
         inline={inline}
         minimal={minimal}
         tight
-        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={colors.friendly} outline />} tag="ME" tagColor={colors.friendly} tagStyle={halo} outline />}
+        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={lead} outline />} tag="ME" tagColor={lead} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
             <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
@@ -233,10 +237,17 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
           ) : setting ? (
             inline ? hint : stackedHint
           ) : shown ? (
-            <Reserve inline={inline} template={ACCURACY_TEMPLATE[unit]}>
-              <OutlinedText testID="gps-accuracy" accessibilityLabel={`Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
-                {`±${formatLength(shown.accuracyM, unit)}`}
-              </OutlinedText>
+            <Reserve inline={inline} template={(shown.averaged ? AVERAGED_ACCURACY_TEMPLATE : ACCURACY_TEMPLATE)[unit]}>
+              <View accessible={shown.averaged} accessibilityLabel={shown.averaged ? `Averaged accuracy ±${formatLength(shown.accuracyM, unit)}` : undefined} className="flex-row items-center gap-1">
+                {shown.averaged ? (
+                  <OutlinedText testID="gps-avg" color={colors.averaged} style={halo} className="font-mono-bold text-xs">
+                    AVG
+                  </OutlinedText>
+                ) : null}
+                <OutlinedText testID="gps-accuracy" accessibilityLabel={shown.averaged ? undefined : `Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
+                  {`±${formatLength(shown.accuracyM, unit)}`}
+                </OutlinedText>
+              </View>
             </Reserve>
           ) : (
             detailPlaceholder(ACCURACY_TEMPLATE[unit])

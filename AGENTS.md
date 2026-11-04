@@ -59,4 +59,5 @@ Each kind of value keeps one color everywhere it shows: on the map, in the reado
 - In cards and forms, color the number only: its label (DIST, ALT) and small unit stay muted. In the readouts, bars and map chips the whole value is colored, its unit and short label (ALT) included. A missing value (—) stays muted. Values not in the table (area, counts, the G-M angle) stay in the normal text color.
 - Never use these colors for anything else, and never use an affiliation color (red, green, yellow) for a value. Amber is also the app's highlight (selected tab, active tool, primary buttons), so a distance never sits on an amber fill.
 - Labels and units still name every value, so color is never the only cue.
+- Orange (`averaged`) marks Average mode on the ME row (triangle, ME tag, AVG) and is reserved for it: a state, never a value.
 - Changing a color or adding a kind: update `tokens.ts`, `semantic-token-names.json`, `VALUE_COLOR_GUIDE` (the About page) and this table together.

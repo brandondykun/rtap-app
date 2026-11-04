@@ -199,6 +199,49 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
   });
 
+  describe('while averaging', () => {
+    const averaging = () => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 2, timestamp: 1, altitudeM: 142, averaged: true });
+
+    it('colors the ME icon and tag orange while averaged, keeping the grid friendly blue and ALT white', async () => {
+      averaging();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
+      const c = themeColors('dark');
+      expect(screen.getByTestId('me-icon')).toHaveStyle({ color: c.averaged });
+      expect(screen.getByText('ME')).toHaveStyle({ color: c.averaged });
+      expect(screen.getByTestId('gps-position')).toHaveStyle({ color: c.friendly });
+      expect(screen.getByTestId('gps-altitude')).toHaveStyle({ color: c['value-altitude'] });
+    });
+
+    it('shows AVG before the accuracy while averaged', async () => {
+      averaging();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
+      const c = themeColors('dark');
+      expect(screen.getByTestId('gps-avg')).toHaveTextContent('AVG');
+      expect(screen.getByTestId('gps-avg')).toHaveStyle({ color: c.averaged });
+      expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±2 m');
+      expect(screen.getByTestId('gps-accuracy')).toHaveStyle({ color: c['value-accuracy'] });
+      expect(screen.getByLabelText('Averaged accuracy ±2 m')).toBeTruthy();
+    });
+
+    it('shows AVG before the accuracy in feet too', async () => {
+      useSettings.getState().setAltitudeUnit('ft');
+      averaging();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} inline />);
+      expect(screen.getByTestId('gps-avg')).toHaveTextContent('AVG');
+      expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±7 ft');
+      expect(screen.getByLabelText('Averaged accuracy ±7 ft')).toBeTruthy();
+      expect(screen.getAllByTestId('detail-reserve', HIDDEN).map((n) => n.props.children)).toContain('AVG ±00000 ft');
+    });
+
+    it('looks as before when not averaged', async () => {
+      fix(142.4);
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
+      expect(screen.queryByTestId('gps-avg')).toBeNull();
+      expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').friendly });
+      expect(screen.getByTestId('me-icon')).toHaveStyle({ color: themeColors('dark').friendly });
+    });
+  });
+
   it('recenters when the ME row is tapped, adds no accent border while following, and does nothing while disabled', async () => {
     const onRecenter = jest.fn();
     await renderWithProviders(<ReadoutDock following disabled={false} onRecenter={onRecenter} onSetLocation={() => {}} showCenter />);

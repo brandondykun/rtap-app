@@ -14,6 +14,7 @@ export const palette = {
   'neutral-950': '#0a0a0a',
   'amber-500': '#f59e0b',
   'amber-950': '#451a03',
+  'orange-600': '#ea580c',
   'green-300': '#86efac',
   'green-400': '#4ade80',
   'red-50': '#fef2f2',
@@ -67,6 +68,8 @@ const dark = {
   'value-altitude': 'stone-50',
   /** How good a fix is (GPS ±): quieter than the values themselves. */
   'value-accuracy': 'stone-400',
+  /** Average mode's state color on the ME row (triangle, ME tag, AVG). Reserved for it: a state, never a value. */
+  averaged: 'orange-600',
   friendly: 'sky-300',
   hostile: 'red-400',
   neutral: 'green-300',
