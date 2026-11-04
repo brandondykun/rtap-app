@@ -156,7 +156,13 @@ describe('useSelfLocation', () => {
       expect(published?.averaged).toBeUndefined();
     });
 
-    it('publishes the live fix, plain, while paused', async () => {
+    /** Half a minute on the spot, one fix a second: well before any pause's drop-back. */
+    const averageHalfAMinute = async (fake: ReturnType<typeof grant>) => {
+      await act(async () => useGpsAverage.getState().start());
+      for (let i = 0; i <= 30; i++) await act(async () => fake.position(fix(38.9, i * 1000)));
+    };
+
+    it('publishes the live fix while paused when the move came too soon to keep anything averaged', async () => {
       const fake = grant();
       await render(<Probe />);
       await act(async () => useGpsAverage.getState().start());
@@ -168,16 +174,27 @@ describe('useSelfLocation', () => {
       expect(published?.averaged).toBeUndefined();
     });
 
-    it('republishes the last live fix, plain, the moment averaging pauses (motion sensor or leaving the app)', async () => {
+    it('holds the average as me while paused, as live fixes keep arriving', async () => {
       const fake = grant();
       await render(<Probe />);
-      await act(async () => useGpsAverage.getState().start());
-      await act(async () => fake.position(fix(38.9, 1000)));
-      await act(async () => fake.position(fix(38.9000002, 2000, 4)));
-      expect(usePresence.getState().selfPosition?.averaged).toBe(true);
+      await averageHalfAMinute(fake);
+      await act(async () => useGpsAverage.getState().pause(60_000));
+      await act(async () => fake.position(fix(38.91, 61_000)));
+      const published = usePresence.getState().selfPosition;
+      expect(published).toMatchObject({ averaged: true, timestamp: 61_000 });
+      expect(published?.position.lat).toBeCloseTo(38.9, 6);
+      // The live fix is still known: Resume and the "you moved" distance use it.
+      expect(useGpsAverage.getState().live?.position.lat).toBe(38.91);
+    });
+
+    it('holds the average the moment averaging pauses (motion sensor or leaving the app)', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await averageHalfAMinute(fake);
       // What the accelerometer and the background listener call: no new fix comes with it.
-      await act(async () => useGpsAverage.getState().pause(3000));
-      expect(usePresence.getState().selfPosition).toEqual({ position: { lat: 38.9000002, lon: -77 }, accuracyM: 4, timestamp: 2000, altitudeM: null });
+      await act(async () => useGpsAverage.getState().pause(60_000));
+      expect(usePresence.getState().selfPosition).toMatchObject({ averaged: true, timestamp: 30_000 });
+      expect(usePresence.getState().selfPosition?.position.lat).toBeCloseTo(38.9, 6);
     });
 
     it('republishes the last live fix, plain, when averaging is turned off', async () => {
@@ -192,16 +209,15 @@ describe('useSelfLocation', () => {
       expect(published?.averaged).toBeUndefined();
     });
 
-    it('publishes the newest fix, plain, when GPS itself notices the move', async () => {
+    it('holds the average, not the far fix, when GPS itself notices the move', async () => {
       const fake = grant();
       await render(<Probe />);
-      await act(async () => useGpsAverage.getState().start());
-      for (let i = 0; i < 5; i++) await act(async () => fake.position(fix(38.9, i * 1000)));
-      for (let i = 0; i < 3; i++) await act(async () => fake.position(fix(38.901, 10_000 + i * 1000)));
+      await averageHalfAMinute(fake);
+      for (let i = 0; i < 3; i++) await act(async () => fake.position(fix(38.901, 40_000 + i * 1000)));
       expect(useGpsAverage.getState().phase).toBe('paused');
       const published = usePresence.getState().selfPosition;
-      expect(published).toMatchObject({ position: { lat: 38.901, lon: -77 }, timestamp: 12_000 });
-      expect(published?.averaged).toBeUndefined();
+      expect(published).toMatchObject({ averaged: true, timestamp: 42_000 });
+      expect(published?.position.lat).toBeCloseTo(38.9, 6);
     });
 
     it('clears me when averaging stops with no live fix to fall back on', async () => {
@@ -213,7 +229,7 @@ describe('useSelfLocation', () => {
       expect(usePresence.getState().selfPosition).toBeNull();
     });
 
-    it('restarts the GPS watch with distanceInterval 0 while averaging, and 1 after', async () => {
+    it('restarts the GPS watch with distanceInterval 0 while Average mode is on (paused too), and 1 after', async () => {
       const fake = grant();
       await render(<Probe />);
       expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1, timeInterval: 1000 }), expect.any(Function));
@@ -224,7 +240,10 @@ describe('useSelfLocation', () => {
       // The compass keeps running.
       expect(mocked.watchHeadingAsync).toHaveBeenCalledTimes(1);
       expect(fake.removes.heading).not.toHaveBeenCalled();
+      // Paused, a user standing back on the spot still needs a fresh fix to resume.
       await act(async () => useGpsAverage.getState().pause(1000));
+      expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(2);
+      await act(async () => useGpsAverage.getState().stop());
       expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(3);
       expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1 }), expect.any(Function));
     });

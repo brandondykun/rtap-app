@@ -4,8 +4,10 @@ import { Pressable, Text, View } from 'react-native';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { Icon } from '@/components/ui/Icon';
 import { OutlinedText } from '@/components/ui/OutlinedText';
+import { AverageActions, AverageHeader } from '@/features/location/AverageStatus';
 import { formatLength } from '@/features/location/gps-format';
 import type { AngleUnit, LatLon } from '@/lib/geo/types';
+import { useGpsAverage } from '@/stores/gps-average';
 import { useInteraction } from '@/stores/interaction';
 import { type AltitudeUnit, useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -24,6 +26,7 @@ import { glassHalo } from '@/components/ui/glass';
  * - portrait: docked full width at the bottom, each row's details stacked on the right;
  * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid;
  *   `minimal` drops the details, leaving only each row's lead and grid.
+ * In Average mode an orange border and a status line frame it, and while paused its Resume/Discard buttons sit below.
  */
 export function ReadoutDock({
   showCenter,
@@ -35,12 +38,16 @@ export function ReadoutDock({
   onRecenter,
   onSetLocation,
 }: { showCenter: boolean; inline?: boolean; minimal?: boolean; maxWidth?: number } & SelfProps) {
+  const averageOn = useGpsAverage((s) => s.phase !== 'off');
   // See-through, so it hides less of the map; its text is outlined to read over bright ground.
+  const shape = inline ? 'rounded-xl bg-surface-glass px-2' : 'mx-2 rounded-2xl bg-surface-glass px-3';
   return (
-    <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={inline ? 'rounded-xl bg-surface-glass px-2' : 'mx-2 rounded-2xl bg-surface-glass px-3'}>
+    <View testID="readout-dock" style={maxWidth === undefined ? undefined : { maxWidth }} className={averageOn ? `${shape} overflow-hidden border-2 border-averaged` : shape}>
+      {averageOn ? <AverageHeader inline={inline} minimal={minimal} /> : null}
       {showCenter ? <CenterRow inline={inline} minimal={minimal} /> : null}
       {showCenter ? <View testID="dock-divider" className="h-px bg-divider" /> : null}
       <SelfRow inline={inline} minimal={minimal} following={following} disabled={disabled} onRecenter={onRecenter} onSetLocation={onSetLocation} />
+      {averageOn ? <AverageActions inline={inline} /> : null}
     </View>
   );
 }
@@ -124,8 +131,8 @@ const BEARING_TEMPLATE: Record<AngleUnit, string> = { deg: '000°', mil: '0000 m
 /** The longest altitude and accuracy (to 9,999 m / 99,999 ft). */
 const ALTITUDE_TEMPLATE: Record<AltitudeUnit, string> = { m: 'ALT 0000 m', ft: 'ALT 00000 ft' };
 const ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: '±0000 m', ft: '±00000 ft' };
-/** Averaging adds AVG before the accuracy. */
-const AVERAGED_ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: 'AVG ±0000 m', ft: 'AVG ±00000 ft' };
+/** A held average (paused) adds HELD before the accuracy. */
+const HELD_ACCURACY_TEMPLATE: Record<AltitudeUnit, string> = { m: 'HELD ±0000 m', ft: 'HELD ±00000 ft' };
 
 /** A typical full-length grid, held invisibly while there is no fix so the row is as tall (and, inline, as wide) as with one. */
 const GRID_TEMPLATE_AT: LatLon = { lat: -38.88888, lon: -177.88888 };
@@ -174,10 +181,15 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
   const me = useMeState();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const unit = useSettings((s) => s.altitudeUnit);
+  const phase = useGpsAverage((s) => s.phase);
   const shown = me.kind === 'fix' ? me.fix : null;
   const setting = me.kind === 'set';
-  // Average mode recolors the lead (triangle and tag) and prefixes the accuracy with AVG, like OP mode recolors its lead.
-  const lead = shown?.averaged ? colors.averaged : colors.friendly;
+  // An averaged position leads with an orange AVG (like OP mode recolors its lead); held while paused, it shows a pause
+  // icon and HELD before the accuracy. The grid stays friendly blue: it is still your position.
+  const averaged = shown?.averaged === true;
+  const held = averaged && phase !== 'averaging';
+  const lead = averaged ? colors.averaged : colors.friendly;
+  const leadIcon = held ? 'pause-circle-outline' : averaged ? 'crosshairs-gps' : 'navigation';
   // Without a fix, invisible stand-ins hold the space the grid and its details will take, so the card does not grow when GPS arrives.
   const detailPlaceholder = (template: string) => (
     <Placeholder>
@@ -217,7 +229,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
         inline={inline}
         minimal={minimal}
         tight
-        lead={<CardLead icon={<Icon testID="me-icon" name="navigation" size={inline ? 12 : 14} color={lead} outline />} tag="ME" tagColor={lead} tagStyle={halo} outline />}
+        lead={<CardLead icon={<Icon testID="me-icon" name={leadIcon} size={inline ? 12 : 14} color={lead} outline />} tag={averaged ? 'AVG' : 'ME'} tagColor={lead} tagStyle={halo} outline />}
         top={
           shown && !shown.manual ? (
             <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
@@ -237,14 +249,17 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
           ) : setting ? (
             inline ? hint : stackedHint
           ) : shown ? (
-            <Reserve inline={inline} template={(shown.averaged ? AVERAGED_ACCURACY_TEMPLATE : ACCURACY_TEMPLATE)[unit]}>
-              <View accessible={shown.averaged} accessibilityLabel={shown.averaged ? `Averaged accuracy ±${formatLength(shown.accuracyM, unit)}` : undefined} className="flex-row items-center gap-1">
-                {shown.averaged ? (
-                  <OutlinedText testID="gps-avg" color={colors.averaged} style={halo} className="font-mono-bold text-xs">
-                    AVG
+            <Reserve inline={inline} template={(held ? HELD_ACCURACY_TEMPLATE : ACCURACY_TEMPLATE)[unit]}>
+              <View
+                accessible={averaged}
+                accessibilityLabel={averaged ? `${held ? 'Held average' : 'Averaged'}, accuracy ±${formatLength(shown.accuracyM, unit)}` : undefined}
+                className="flex-row items-center gap-1">
+                {held ? (
+                  <OutlinedText testID="gps-held" color={colors.averaged} style={halo} className="font-mono-bold text-xs">
+                    HELD
                   </OutlinedText>
                 ) : null}
-                <OutlinedText testID="gps-accuracy" accessibilityLabel={shown.averaged ? undefined : `Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
+                <OutlinedText testID="gps-accuracy" accessibilityLabel={averaged ? undefined : `Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
                   {`±${formatLength(shown.accuracyM, unit)}`}
                 </OutlinedText>
               </View>

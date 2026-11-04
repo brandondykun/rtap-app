@@ -21,8 +21,17 @@ const dy = CONE_R * Math.cos((25 * Math.PI) / 180);
 const cone = `<path d="M${C} ${C} L${C - dx} ${C - dy} A${CONE_R} ${CONE_R} 0 0 1 ${C + dx} ${C - dy} Z" fill="${colors.self}" fill-opacity="0.35"/>`;
 // White-ringed disc (ring uses the primary text color) with a dark north-pointing arrow.
 const disc = `<circle cx="${C}" cy="${C}" r="11" fill="${colors.self}" stroke="${colors.text}" stroke-width="3"/>`;
-const arrow = `<path d="M${C} ${C - 8} L${C + 6} ${C + 7} L${C} ${C + 3.5} L${C - 6} ${C + 7} Z" fill="${colors['surface-input']}"/>`;
+const selfArrowPath = `M${C} ${C - 8} L${C + 6} ${C + 7} L${C} ${C + 3.5} L${C - 6} ${C + 7} Z`;
+const arrow = `<path d="${selfArrowPath}" fill="${colors['surface-input']}"/>`;
 const dot = `<circle cx="${C}" cy="${C}" r="3" fill="${colors['surface-input']}"/>`;
+// Averaged position (Average mode): the plain icon, with an orange arrow or dot laid inside its dark one, leaving a thin
+// dark border so the orange stands off the blue disc. The orange arrow is the dark arrow's own shape with a dark stroke,
+// clipped to that shape: half the stroke shows as an even inner border and nothing grows past the plain icon.
+const averagedArrow =
+  arrow +
+  `<clipPath id="arrow"><path d="${selfArrowPath}"/></clipPath>` +
+  `<path d="${selfArrowPath}" fill="${colors.averaged}" stroke="${colors['surface-input']}" stroke-width="1.6" stroke-linejoin="round" clip-path="url(#arrow)"/>`;
+const averagedDot = dot + `<circle cx="${C}" cy="${C}" r="2.2" fill="${colors.averaged}"/>`;
 
 const svg = (body: string) => `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">${body}</svg>`;
 
@@ -36,6 +45,8 @@ function writeScaled(name: string, source: string) {
 mkdirSync(OUT_DIR, { recursive: true });
 writeScaled('self', svg(cone + disc + arrow));
 writeScaled('self-no-heading', svg(disc + dot));
+writeScaled('self-averaged', svg(cone + disc + averagedArrow));
+writeScaled('self-averaged-no-heading', svg(disc + averagedDot));
 // Position set by hand: a dashed ring around a small dot, so it never passes for a live GPS fix (and has no heading).
 const manualRing = `<circle cx="${C}" cy="${C}" r="11" fill="${colors['surface-input']}" fill-opacity="0.6" stroke="${colors.self}" stroke-width="3" stroke-dasharray="5 3"/>`;
 const manualDot = `<circle cx="${C}" cy="${C}" r="3" fill="${colors.self}"/>`;

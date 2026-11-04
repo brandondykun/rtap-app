@@ -1,4 +1,4 @@
-import { estimateAccuracyM } from '@/features/location/gps-average-math';
+import { type AverageSample, clusterStats, estimateAccuracyM, fixCountOf, sampleFromFix } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
 import { DROP_BACK_MS, INITIAL_GPS_AVERAGE, MAX_SAMPLES, useGpsAverage } from './gps-average';
@@ -149,6 +149,117 @@ describe('gps average store', () => {
     expect(g()).toMatchObject(INITIAL_GPS_AVERAGE);
   });
 
+  it('dates the pause by the newest fix, on the fix clock, so a fix from before it never resumes (clock skew)', () => {
+    // Android fixes carry satellite time: here two seconds ahead of the phone's clock.
+    const SKEW = 2000;
+    const paused = () => {
+      useGpsAverage.setState(INITIAL_GPS_AVERAGE);
+      g().start();
+      for (let i = 0; i < 5; i++) {
+        g().noteLive(fix(i * 10_000 + SKEW));
+        g().addFix(fix(i * 10_000 + SKEW), 0);
+      }
+      // The motion sensor notices the move at phone time 41 s: before the last fix's own time (42 s).
+      g().pause(41_000);
+    };
+    paused();
+    expect(g().pausedAt).toBe(40_000 + SKEW);
+    // The last fix before the move, on the spot: it must not resume.
+    expect(g().resume(fix(40_000 + SKEW))).toBe('away');
+    paused();
+    expect(g().resume(fix(41_000 + SKEW))).toBe('resumed');
+  });
+
+  it('counts the fixes averaged, through thinning, less the ones a pause drops', () => {
+    g().start();
+    for (let i = 0; i < 10; i++) g().addFix(fix(i * 10_000), 0);
+    // Unusable: not counted.
+    g().addFix(fix(95_000, 80), 0);
+    expect(g().fixCount).toBe(10);
+    // Drops the fixes at 80 s and 90 s.
+    g().pause(95_000);
+    expect(g().samples).toHaveLength(8);
+    expect(g().fixCount).toBe(8);
+
+    useGpsAverage.setState(INITIAL_GPS_AVERAGE);
+    g().start();
+    for (let i = 0; i <= MAX_SAMPLES + 2; i++) g().addFix(fix(i * 1000), 0);
+    expect(g().fixCount).toBe(MAX_SAMPLES + 3);
+    expect(g().samples.length).toBeLessThanOrEqual(MAX_SAMPLES);
+  });
+
+  it('holds the average while paused or away, not while averaging or off', () => {
+    g().start();
+    for (let i = 0; i < 5; i++) g().addFix(fix(i * 10_000), 0);
+    expect(g().held(1)).toBeNull();
+    g().pause(100_000);
+    expect(g().held(123)).toMatchObject({ averaged: true, timestamp: 123, accuracyM: estimateAccuracyM(g().samples) });
+    expect(g().held(123)?.position.lat).toBeCloseTo(HERE.lat, 8);
+    useGpsAverage.setState({ phase: 'away' });
+    expect(g().held(123)).not.toBeNull();
+    g().stop();
+    expect(g().held(123)).toBeNull();
+  });
+
+  it('runs the stopwatch while averaging, stops it on pause, and restarts it on Resume, a new average or start', () => {
+    jest.useFakeTimers({ now: 1_000_000 });
+    try {
+      g().start();
+      expect(g()).toMatchObject({ elapsedMs: 0, runningSince: 1_000_000 });
+      for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
+      jest.advanceTimersByTime(90_000);
+      g().pause(100_000);
+      expect(g()).toMatchObject({ elapsedMs: 90_000, runningSince: null });
+      jest.advanceTimersByTime(5000);
+      expect(g().resume(fix(120_000, 5, FAR))).toBe('away');
+      expect(g().runningSince).toBeNull();
+      useGpsAverage.setState({ phase: 'paused' });
+      expect(g().resume(fix(120_000))).toBe('resumed');
+      expect(g()).toMatchObject({ elapsedMs: 90_000, runningSince: 1_095_000 });
+      g().restartHere();
+      expect(g()).toMatchObject({ elapsedMs: 0, runningSince: 1_095_000 });
+      g().stop();
+      expect(g()).toMatchObject({ elapsedMs: 0, runningSince: null });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('keeps the newest live fix through start, restart and stop', () => {
+    g().noteLive(fix(1000, 5, FAR));
+    g().start();
+    expect(g().live?.position).toEqual(FAR);
+    g().restartHere();
+    expect(g().live?.position).toEqual(FAR);
+    g().stop();
+    expect(g().live?.position).toEqual(FAR);
+  });
+
+  it('keeps every averaged fix for the map, trimmed with the samples on a pause', () => {
+    g().start();
+    for (let i = 0; i < 2000; i++) g().addFix(fix(i * 1000), 0);
+    // Too poor to average: not drawn.
+    g().addFix(fix(2_000_500, 80), 0);
+    expect(g().fixes).toHaveLength(2000);
+    expect(g().fixes[0]).toEqual({ lat: HERE.lat, lon: HERE.lon, accuracyM: 5, at: 0 });
+    g().pause(1_990_000);
+    expect(g().fixes).toHaveLength(g().fixCount);
+    expect(g().fixes.every((f) => f.at < 1_975_000)).toBe(true);
+  });
+
+  it('switches the fixes on the map, keeping the choice for a new average but not past off', () => {
+    g().start();
+    g().toggleFixes();
+    expect(g().showFixes).toBe(true);
+    g().addFix(fix(0), 0);
+    g().restartHere();
+    expect(g()).toMatchObject({ showFixes: true, fixes: [] });
+    g().stop();
+    expect(g().showFixes).toBe(false);
+    g().start();
+    expect(g().showFixes).toBe(false);
+  });
+
   it('ignores fixes while paused or away', () => {
     g().start();
     g().addFix(fix(0), 0);
@@ -160,7 +271,7 @@ describe('gps average store', () => {
     expect(g().samples).toHaveLength(1);
   });
 
-  it('thins to at most 600 samples, keeping the first and the newest, and stays cheap per fix', () => {
+  it('thins to at most 600 samples, holding every fix from the first to the newest, and stays cheap per fix', () => {
     g().start();
     const last = MAX_SAMPLES + 2;
     const startedAt = performance.now();
@@ -168,7 +279,54 @@ describe('gps average store', () => {
     expect(performance.now() - startedAt).toBeLessThan(200);
     const next = g().samples;
     expect(next.length).toBeLessThanOrEqual(MAX_SAMPLES);
-    expect(next[0].at).toBe(0);
+    expect(next[0].merged?.firstAt).toBe(0);
     expect(next[next.length - 1].at).toBe(last * 1000);
+    expect(fixCountOf(next)).toBe(last + 1);
+  });
+
+  it('averages a long run exactly as if every fix were kept: same center, altitude, spread and ±', () => {
+    // An hour at 1 fix/s, with scatter and accuracy that wander, and some fixes without altitude.
+    const noisy = (i: number): SelfPosition => ({
+      position: { lat: HERE.lat + (4 * Math.sin(i * 0.37) + 2 * Math.sin(i * 0.011)) / 111_320, lon: HERE.lon + (4 * Math.cos(i * 0.53)) / 86_600 },
+      accuracyM: 4 + 3 * Math.abs(Math.sin(i * 0.07)),
+      altitudeM: i % 7 === 0 ? null : 10 + Math.sin(i * 0.2),
+      timestamp: i * 1000,
+    });
+    g().start();
+    const raw: AverageSample[] = [];
+    for (let i = 0; i < 3600; i++) {
+      const before = g().fixCount;
+      g().addFix(noisy(i), 0);
+      // Only the fixes the store took (none is an outlier here, but stay honest).
+      if (g().fixCount > before) raw.push(sampleFromFix(noisy(i))!);
+    }
+    expect(g().samples.length).toBeLessThanOrEqual(MAX_SAMPLES);
+    expect(g().fixCount).toBe(raw.length);
+    const thinned = clusterStats(g().samples)!;
+    const all = clusterStats(raw)!;
+    expect(thinned.count).toBe(all.count);
+    expect(thinned.center.position.lat).toBeCloseTo(all.center.position.lat, 10);
+    expect(thinned.center.position.lon).toBeCloseTo(all.center.position.lon, 10);
+    expect(thinned.center.altitudeM).toBeCloseTo(all.center.altitudeM!, 8);
+    expect(thinned.spreadM).toBeCloseTo(all.spreadM, 6);
+    expect(thinned.accuracyM).toBeCloseTo(all.accuracyM, 6);
+  });
+
+  it('weighs the whole run evenly, not the last few minutes', () => {
+    // Half an hour 2 m north of HERE, then half an hour 2 m south: the average sits on HERE.
+    g().start();
+    for (let i = 0; i < 3600; i++) g().addFix(fix(i * 1000, 5, { lat: HERE.lat + (i < 1800 ? 2 : -2) / 111_320, lon: HERE.lon }), 0);
+    expect(clusterStats(g().samples)!.center.position.lat).toBeCloseTo(HERE.lat, 9);
+  });
+
+  it('trims a pause from thinned samples and counts exactly the fixes it keeps', () => {
+    g().start();
+    for (let i = 0; i < 2000; i++) g().addFix(fix(i * 1000), 0);
+    g().pause(1_990_000);
+    const kept = g().samples;
+    expect(kept.every((s) => s.at < 1_975_000)).toBe(true);
+    expect(g().fixCount).toBe(fixCountOf(kept));
+    // At most a merged pair's worth more than the 15 s drop-back.
+    expect(g().fixCount).toBeGreaterThanOrEqual(1975 - 4);
   });
 });

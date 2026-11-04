@@ -13,6 +13,7 @@ export const __props: Record<string, Record<string, Props>> = {
   SymbolLayer: {},
   LineLayer: {},
   FillLayer: {},
+  CircleLayer: {},
   RasterDemSource: {},
   Terrain: {},
   Atmosphere: {},
@@ -61,6 +62,11 @@ export function LineLayer(props: Props) {
 
 export function FillLayer(props: Props) {
   __props.FillLayer[props.id ?? 'main'] = props;
+  return null;
+}
+
+export function CircleLayer(props: Props) {
+  __props.CircleLayer[props.id ?? 'main'] = props;
   return null;
 }
 

@@ -5,6 +5,7 @@ import { Linking, StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
+import { AVERAGE_HELP } from '@/features/location/average-help';
 import { OVERLAYS_HELP } from '@/features/overlays/overlays-help';
 import { TOOLBAR_HELP } from '@/features/toolbar/toolbar-help';
 
@@ -27,6 +28,15 @@ describe('AboutScreen', () => {
     for (const h of OVERLAYS_HELP) expect(screen.getByTestId(`overlay-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
   });
 
+  it('explains Average mode: what it does, how long, the display, moving, away, the fixes and its orange', async () => {
+    await renderWithProviders(<AboutScreen />);
+    // The section title, and the color guide's orange row.
+    expect(screen.getAllByText('Average mode')).toHaveLength(2);
+    expect(screen.getByTestId('about-average')).toBeTruthy();
+    expect(AVERAGE_HELP).toHaveLength(7);
+    for (const h of AVERAGE_HELP) expect(screen.getByTestId(`average-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
+  });
+
   it('explains the value colors, each sample drawn in its own color', async () => {
     await renderWithProviders(<AboutScreen />);
     expect(screen.getByText('Reading the colors')).toBeTruthy();
@@ -36,7 +46,7 @@ describe('AboutScreen', () => {
       expect(screen.getByTestId(`color-sample-${g.name}`)).toHaveStyle({ color: colors[g.token] });
     }
     // The guide's colors are the ones the readouts use.
-    expect(VALUE_COLOR_GUIDE.map((g) => g.token)).toEqual(['friendly', 'text', 'value-distance', 'value-bearing', 'value-altitude', 'value-accuracy']);
+    expect(VALUE_COLOR_GUIDE.map((g) => g.token)).toEqual(['friendly', 'text', 'value-distance', 'value-bearing', 'value-altitude', 'value-accuracy', 'averaged']);
   });
 
   it('shows the identity card: amber mark, RTAP, tagline, builders and version', async () => {

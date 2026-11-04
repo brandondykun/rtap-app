@@ -1,3 +1,4 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import * as Reanimated from 'react-native-reanimated';
@@ -350,6 +351,17 @@ describe('Toolbar', () => {
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onAverage={onAverage} />);
     expect(screen.getByLabelText('AVG')).not.toBeSelected();
     expect(screen.getByLabelText('AVG').props.className).not.toContain('bg-accent-subtle');
+  });
+
+  it('shows a pause icon on AVG while the average is held', async () => {
+    // The icon font draws each icon as one glyph.
+    const glyph = (name: keyof typeof MaterialCommunityIcons.glyphMap) => String.fromCodePoint(Number(MaterialCommunityIcons.glyphMap[name]));
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} averageOn onAverage={jest.fn()} />);
+    expect(screen.getByLabelText('AVG')).toHaveTextContent(new RegExp(`^${glyph('crosshairs-gps')}`));
+    await screen.unmount();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} averageOn averageHeld onAverage={jest.fn()} />);
+    expect(screen.getByLabelText('AVG')).toHaveTextContent(new RegExp(`^${glyph('pause-circle-outline')}`));
+    expect(screen.getByLabelText('AVG')).toBeSelected();
   });
 
   it('has a LABELS toggle that swaps its icon, with no highlight', async () => {

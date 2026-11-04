@@ -1,6 +1,5 @@
 import { act, screen } from '@testing-library/react-native';
 
-import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
 import { INITIAL_MEASURE, useMeasure } from '@/stores/measure';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
@@ -15,7 +14,6 @@ beforeEach(() => {
   useMeasure.setState(INITIAL_MEASURE);
   useQuickPlot.setState(INITIAL_QUICK_PLOT);
   useMenu.setState(INITIAL_MENU);
-  useGpsAverage.setState(INITIAL_GPS_AVERAGE);
 });
 
 describe('MapTopLeft', () => {
@@ -55,20 +53,5 @@ describe('MapTopLeft', () => {
     await renderWithProviders(<MapTopLeft panel={null} />);
     await act(async () => usePresence.getState().setLocationStatus('denied'));
     expect(screen.queryByTestId('location-banner')).toBeNull();
-  });
-
-  it('shows the average banner even while a panel is open', async () => {
-    useGpsAverage.setState({ phase: 'paused' });
-    await renderWithProviders(<MapTopLeft panel={{ side: 'left', size: 320 }} />);
-    expect(screen.getByTestId('average-banner')).toBeTruthy();
-  });
-
-  it('hides the averaging banner while the quick plot entry is open, and shows it again after', async () => {
-    useGpsAverage.setState({ phase: 'paused' });
-    useQuickPlot.getState().open();
-    await renderWithProviders(<MapTopLeft panel={null} />);
-    expect(screen.queryByTestId('average-banner')).toBeNull();
-    await act(async () => useQuickPlot.setState(INITIAL_QUICK_PLOT));
-    expect(screen.getByTestId('average-banner')).toBeTruthy();
   });
 });

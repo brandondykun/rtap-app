@@ -15,6 +15,7 @@ export const palette = {
   'amber-500': '#f59e0b',
   'amber-950': '#451a03',
   'orange-600': '#ea580c',
+  'orange-950': '#431407',
   'green-300': '#86efac',
   'green-400': '#4ade80',
   'red-50': '#fef2f2',
@@ -70,6 +71,8 @@ const dark = {
   'value-accuracy': 'stone-400',
   /** Average mode's state color on the ME row (triangle, ME tag, AVG). Reserved for it: a state, never a value. */
   averaged: 'orange-600',
+  /** Behind Average mode's status line on the grid display, as accent-subtle is to accent. */
+  'averaged-subtle': 'orange-950',
   friendly: 'sky-300',
   hostile: 'red-400',
   neutral: 'green-300',

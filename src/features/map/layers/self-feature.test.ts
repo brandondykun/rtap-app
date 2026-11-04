@@ -17,6 +17,12 @@ describe('selfFeatureCollection', () => {
     expect(f.properties).toEqual({ icon: MAP_IMAGE_IDS.selfNoHeading, heading: 0 });
   });
 
+  it('draws an averaged position with the orange icons, keeping the heading', () => {
+    const at = { lat: 38.9, lon: -77 };
+    expect(selfFeatureCollection(at, 90, false, true).features[0].properties).toEqual({ icon: MAP_IMAGE_IDS.selfAveraged, heading: 90 });
+    expect(selfFeatureCollection(at, null, false, true).features[0].properties).toEqual({ icon: MAP_IMAGE_IDS.selfAveragedNoHeading, heading: 0 });
+  });
+
   it('draws a manual position with its own icon and no heading, even if a heading is known', () => {
     const [f] = selfFeatureCollection({ lat: 1, lon: 2 }, 90, true).features;
     expect(f.properties).toEqual({ icon: MAP_IMAGE_IDS.selfManual, heading: 0 });

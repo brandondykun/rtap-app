@@ -51,6 +51,7 @@ import { PlaceBar } from './controls/PlaceBar';
 import { ManualPreviewLayer } from './layers/ManualPreviewLayer';
 import { OpEyeSlider } from './op/OpEyeSlider';
 import { Crosshair } from './interaction/Crosshair';
+import { AverageFixesLayer } from './layers/AverageFixesLayer';
 import { DraftLayer } from './layers/DraftLayer';
 import { DraftLineLayer } from './layers/DraftLineLayer';
 import { DraftPolygonLayer } from './layers/DraftPolygonLayer';
@@ -130,6 +131,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useSelfLocation();
   useAverageWatch();
   const averageOn = useGpsAverage((s) => s.phase !== 'off');
+  const averageHeld = useGpsAverage((s) => s.phase === 'paused' || s.phase === 'away');
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.
@@ -568,6 +570,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         {measuring ? <MeasureLayer /> : null}
         {plotTemp ? <QuickPlotLayer /> : null}
         <ManualPreviewLayer />
+        <AverageFixesLayer />
         <SelfLayer onPress={opPicking ? stakeOnSelf : measuring ? (at) => useMeasure.getState().place(at) : undefined} />
       </MapCanvas>
       </OpGestures>
@@ -588,6 +591,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onMeasure={toggleMeasure}
         onPlot={toggleQuickPlot}
         averageOn={averageOn}
+        averageHeld={averageHeld}
         onAverage={() => (useGpsAverage.getState().phase === 'off' ? startAveraging() : useGpsAverage.getState().stop())}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}

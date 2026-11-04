@@ -18,9 +18,12 @@ import {
   type ScreenOrientation as Orientation,
 } from './heading';
 
-/** Averaging wants every reading (no distance filter); otherwise a 1 m filter saves battery. */
-export function watchOptions(averaging: boolean): Location.LocationOptions {
-  return { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: averaging ? 0 : 1, timeInterval: 1000 };
+/**
+ * Average mode wants every reading (no distance filter): to average, and while paused so a user standing back on the
+ * spot still gets the fresh fix Resume needs. Otherwise a 1 m filter saves battery.
+ */
+export function watchOptions(averageOn: boolean): Location.LocationOptions {
+  return { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: averageOn ? 0 : 1, timeInterval: 1000 };
 }
 
 function orientationName(o: ScreenOrientation.Orientation): Orientation {
@@ -58,10 +61,10 @@ export function useSelfLocation(): void {
     // The heading follows the screen, not the phone's top edge (landscape is 90° off otherwise).
     let orientation: Orientation = 'unknown';
     let lastEvent: Location.LocationHeadingObject | null = null;
-    // The newest GPS fix as it came, so "me" can drop back to it the moment averaging stops.
+    // The newest GPS fix as it came, so "me" can drop back to it the moment Average mode turns off.
     let lastLive: SelfPosition | null = null;
 
-    const isAveraging = () => useGpsAverage.getState().phase === 'averaging';
+    const averageOn = () => useGpsAverage.getState().phase !== 'off';
     const manualSource = () => useMyLocation.getState().source === 'manual';
 
     const onPosition = (loc: Location.LocationObject) => {
@@ -72,12 +75,14 @@ export function useSelfLocation(): void {
         timestamp: loc.timestamp,
         altitudeM: Number.isFinite(loc.coords.altitude) ? loc.coords.altitude : null,
       };
-      // Before addFix: a pause it triggers republishes this fix.
       lastLive = live;
       const average = useGpsAverage.getState();
-      // Nothing averaged yet, paused or away: the live fix is "me".
+      // Before addFix: a pause it triggers is dated by this fix.
+      average.noteLive(live);
       const published = average.phase === 'averaging' ? average.addFix(live, loc.coords.speed ?? null) : null;
-      usePresence.getState().setSelfPosition(published ?? live);
+      // Paused or away (including a pause this fix just caused), the average is held as "me"; with nothing averaged
+      // yet, or Average mode off, the live fix is.
+      usePresence.getState().setSelfPosition(published ?? useGpsAverage.getState().held(live.timestamp) ?? live);
     };
 
     const onHeading = (event: Location.LocationHeadingObject, force = false) => {
@@ -146,7 +151,7 @@ export function useSelfLocation(): void {
           usePresence.getState().setLocationStatus('denied');
           return;
         }
-        const position = await Location.watchPositionAsync(watchOptions(isAveraging()), onPosition);
+        const position = await Location.watchPositionAsync(watchOptions(averageOn()), onPosition);
         if (disposed || manualSource()) {
           position.remove();
           return;
@@ -178,19 +183,19 @@ export function useSelfLocation(): void {
       if (restarting || subscriptions.length === 0) return;
       restarting = true;
       try {
-        let averaging = isAveraging();
-        // Re-check after the await: the phase may have flipped again while the watch was starting.
+        let on = averageOn();
+        // Re-check after the await: Average mode may have flipped again while the watch was starting.
         for (;;) {
           const old = subscriptions[0];
-          const next = await Location.watchPositionAsync(watchOptions(averaging), onPosition);
+          const next = await Location.watchPositionAsync(watchOptions(on), onPosition);
           if (disposed || manualSource() || subscriptions[0] !== old) {
             next.remove();
             return;
           }
           old.remove();
           subscriptions[0] = next;
-          if (averaging === isAveraging()) return;
-          averaging = isAveraging();
+          if (on === averageOn()) return;
+          on = averageOn();
         }
       } catch (e) {
         console.warn('[location] could not restart the position watch', e);
@@ -198,18 +203,25 @@ export function useSelfLocation(): void {
         restarting = false;
       }
     };
-    let wasAveraging = isAveraging();
-    const averageWatch = useGpsAverage.subscribe(() => {
-      const now = isAveraging();
-      if (now === wasAveraging) return;
-      wasAveraging = now;
-      // Paused (by any signal) or off: the average must not stay up as "me" until the next fix, since the user may
-      // have moved. Fall back to the last live fix, or to nothing.
-      const presence = usePresence.getState();
-      if (!now && presence.selfPosition?.averaged) {
-        if (lastLive) presence.setSelfPosition(lastLive);
-        else presence.clearSelfPosition();
+    let wasOn = averageOn();
+    const averageWatch = useGpsAverage.subscribe((state, prev) => {
+      if (state.phase !== prev.phase) {
+        const presence = usePresence.getState();
+        // Paused by any signal (the motion sensor, leaving the app): hold the average now, not at the next fix.
+        const held = state.held(lastLive?.timestamp ?? Date.now());
+        if (held) presence.setSelfPosition(held);
+        // Off, or a new average with nothing in it yet: the average must not stay up as "me". Fall back to the last
+        // live fix, or to nothing.
+        else if (state.phase !== 'averaging' || state.samples.length === 0) {
+          if (presence.selfPosition?.averaged) {
+            if (lastLive) presence.setSelfPosition(lastLive);
+            else presence.clearSelfPosition();
+          }
+        }
       }
+      const on = averageOn();
+      if (on === wasOn) return;
+      wasOn = on;
       void restartPosition();
     });
 

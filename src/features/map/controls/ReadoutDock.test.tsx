@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 
 import { describeReadout, formatCoordinate } from '@/features/map/interaction/readout';
+import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { INITIAL_OP, useOp } from '@/stores/op';
@@ -26,6 +27,7 @@ beforeEach(() => {
   useSettings.setState(DEFAULT_SETTINGS);
   useOp.setState(INITIAL_OP);
   useMyLocation.setState(DEFAULT_MY_LOCATION);
+  useGpsAverage.setState(INITIAL_GPS_AVERAGE);
 });
 
 describe('ReadoutDock', () => {
@@ -199,44 +201,69 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±15 ft');
   });
 
-  describe('while averaging', () => {
-    const averaging = () => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 2, timestamp: 1, altitudeM: 142, averaged: true });
+  describe('in Average mode', () => {
+    const averaged = () => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 2, timestamp: 1, altitudeM: 142, averaged: true });
+    const averaging = () => {
+      useGpsAverage.getState().start();
+      averaged();
+    };
+    const paused = () => {
+      useGpsAverage.setState({ phase: 'paused', fixCount: 86, pausedAt: 1 });
+      averaged();
+    };
 
-    it('colors the ME icon and tag orange while averaged, keeping the grid friendly blue and ALT white', async () => {
+    it('leads the ME row with an orange AVG while averaged, keeping the grid friendly blue and ALT white', async () => {
       averaging();
       await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
       const c = themeColors('dark');
       expect(screen.getByTestId('me-icon')).toHaveStyle({ color: c.averaged });
-      expect(screen.getByText('ME')).toHaveStyle({ color: c.averaged });
+      expect(screen.getByText('AVG')).toHaveStyle({ color: c.averaged });
+      expect(screen.queryByText('ME')).toBeNull();
       expect(screen.getByTestId('gps-position')).toHaveStyle({ color: c.friendly });
       expect(screen.getByTestId('gps-altitude')).toHaveStyle({ color: c['value-altitude'] });
-    });
-
-    it('shows AVG before the accuracy while averaged', async () => {
-      averaging();
-      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
-      const c = themeColors('dark');
-      expect(screen.getByTestId('gps-avg')).toHaveTextContent('AVG');
-      expect(screen.getByTestId('gps-avg')).toHaveStyle({ color: c.averaged });
       expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±2 m');
       expect(screen.getByTestId('gps-accuracy')).toHaveStyle({ color: c['value-accuracy'] });
-      expect(screen.getByLabelText('Averaged accuracy ±2 m')).toBeTruthy();
+      expect(screen.getByLabelText('Averaged, accuracy ±2 m')).toBeTruthy();
+      expect(screen.queryByTestId('gps-held')).toBeNull();
     });
 
-    it('shows AVG before the accuracy in feet too', async () => {
-      useSettings.getState().setAltitudeUnit('ft');
+    it('frames the dock in orange with the status line on top, and no buttons while averaging', async () => {
       averaging();
-      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} inline />);
-      expect(screen.getByTestId('gps-avg')).toHaveTextContent('AVG');
-      expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±7 ft');
-      expect(screen.getByLabelText('Averaged accuracy ±7 ft')).toBeTruthy();
-      expect(screen.getAllByTestId('detail-reserve', HIDDEN).map((n) => n.props.children)).toContain('AVG ±00000 ft');
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+      expect(screen.getByTestId('readout-dock').props.className).toContain('border-averaged');
+      expect(screen.getByTestId('average-header')).toHaveTextContent(/AVERAGE MODE.*hold still/);
+      expect(screen.getByTestId('average-detail')).toHaveTextContent('0:00 · 0 fixes');
+      expect(screen.queryByTestId('average-actions')).toBeNull();
     });
 
-    it('looks as before when not averaged', async () => {
+    it('marks a held average with HELD before the accuracy, and offers Resume and Discard below the grids', async () => {
+      paused();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+      const c = themeColors('dark');
+      expect(screen.getByTestId('gps-held')).toHaveTextContent('HELD');
+      expect(screen.getByTestId('gps-held')).toHaveStyle({ color: c.averaged });
+      expect(screen.getByLabelText('Held average, accuracy ±2 m')).toBeTruthy();
+      expect(screen.getByTestId('average-header')).toHaveTextContent(/PAUSED.*you moved/);
+      expect(screen.getByTestId('average-detail')).toHaveTextContent('86 fixes kept');
+      expect(screen.getByRole('button', { name: 'Resume' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Discard' })).toBeTruthy();
+    });
+
+    it('keeps HELD in feet too, reserving its width inline', async () => {
+      useSettings.getState().setAltitudeUnit('ft');
+      paused();
+      await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} inline />);
+      expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±7 ft');
+      expect(screen.getByLabelText('Held average, accuracy ±7 ft')).toBeTruthy();
+      expect(screen.getAllByTestId('detail-reserve', HIDDEN).map((n) => n.props.children)).toContain('HELD ±00000 ft');
+    });
+
+    it('looks as before when Average mode is off', async () => {
       fix(142.4);
       await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} />);
-      expect(screen.queryByTestId('gps-avg')).toBeNull();
+      expect(screen.queryByTestId('gps-held')).toBeNull();
+      expect(screen.queryByTestId('average-header')).toBeNull();
+      expect(screen.getByTestId('readout-dock').props.className).not.toContain('border-averaged');
       expect(screen.getByText('ME')).toHaveStyle({ color: themeColors('dark').friendly });
       expect(screen.getByTestId('me-icon')).toHaveStyle({ color: themeColors('dark').friendly });
     });

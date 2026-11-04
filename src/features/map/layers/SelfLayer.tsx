@@ -12,7 +12,8 @@ export function SelfLayer({ onPress }: { onPress?: (at: LatLon) => void }) {
   const position = usePresence((s) => s.selfPosition?.position ?? null);
   const heading = usePresence((s) => s.selfHeading);
   const manual = usePresence((s) => s.selfPosition?.manual === true);
-  const shape = useMemo(() => selfFeatureCollection(position, heading, manual), [position, heading, manual]);
+  const averaged = usePresence((s) => s.selfPosition?.averaged === true);
+  const shape = useMemo(() => selfFeatureCollection(position, heading, manual, averaged), [position, heading, manual, averaged]);
   return (
     // Only touchable when asked: a touchable source swallows taps on symbols near it (rnmapbox iOS).
     <ShapeSource id="self" shape={shape} onPress={onPress && position ? () => onPress(position) : undefined}>

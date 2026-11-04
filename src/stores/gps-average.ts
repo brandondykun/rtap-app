@@ -4,23 +4,31 @@ import {
   type AverageSample,
   clusterStats,
   type ClusterStats,
+  fixCountOf,
   isFarFromStats,
   isOnSpot,
   isOutlierFromStats,
   MOVED_FIXES,
   MOVED_SPEED_MPS,
+  mergeSamples,
   sampleFromFix,
   trimFrom,
 } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
-/** Off: not averaging. Paused: moved off the spot, waiting. Away: back with a live fix that is not on the spot. */
+/**
+ * Off: not averaging. Paused: moved off the spot, waiting. Away: back with a live fix that is not on the spot. Paused and
+ * away hold the average as "me" until Resume, a new average, or off.
+ */
 export type AveragePhase = 'off' | 'averaging' | 'paused' | 'away';
 
 /** When the move is only noticed by GPS, readings this far before it was noticed are dropped too. */
 export const DROP_BACK_MS = 15000;
-/** Each fix runs a few O(n) passes over the samples, so long averages are thinned to this many. */
+/** Each fix runs a few O(n) passes over the samples, so long averages are thinned to this many (merged, not dropped). */
 export const MAX_SAMPLES = 600;
+
+/** An averaged fix as drawn on the map. */
+export type AverageFix = { lat: number; lon: number; accuracyM: number; at: number };
 
 type GpsAverageValues = {
   phase: AveragePhase;
@@ -30,8 +38,22 @@ type GpsAverageValues = {
   /** Timestamp of the first fix in the current run of far-from-cluster fixes. */
   farSince: number | null;
   farCount: number;
-  /** When averaging paused: a fix from before then says nothing about where the user is now. */
+  /**
+   * The newest fix's time when averaging paused (the fix clock, which can differ from the phone's): only a later fix
+   * says where the user is now.
+   */
   pausedAt: number | null;
+  /** The newest GPS fix as it came, kept through every phase: the user's real position while the average is held. */
+  live: SelfPosition | null;
+  /** Fixes averaged in this run (the samples hold them all, some merged by thinning). */
+  fixCount: number;
+  /** Every fix averaged in this run, one by one, for the map (the samples merge them on long runs). */
+  fixes: AverageFix[];
+  /** Draw the fixes on the map: switched from the fix count, kept through a new average, forgotten when turned off. */
+  showFixes: boolean;
+  /** The stopwatch, in phone time: what earlier stretches of averaging added up to, and when the current one began. */
+  elapsedMs: number;
+  runningSince: number | null;
 };
 type GpsAverageActions = {
   start: () => void;
@@ -43,6 +65,11 @@ type GpsAverageActions = {
   /** Resumes when the live fix (taken since the pause) is back on the spot; otherwise goes away. */
   resume: (live: SelfPosition | null) => 'resumed' | 'away';
   restartHere: () => void;
+  /** Records the newest GPS fix, before it is averaged. */
+  noteLive: (fix: SelfPosition) => void;
+  /** The average to hold as "me" while paused or away (null when off, averaging, or nothing was averaged). */
+  held: (timestamp: number) => SelfPosition | null;
+  toggleFixes: () => void;
 };
 
 export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
@@ -52,9 +79,16 @@ export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
   farSince: null,
   farCount: 0,
   pausedAt: null,
+  live: null,
+  fixCount: 0,
+  fixes: [],
+  showFixes: false,
+  elapsedMs: 0,
+  runningSince: null,
 };
 
-const FRESH: GpsAverageValues = { ...INITIAL_GPS_AVERAGE, phase: 'averaging' };
+/** A new run, keeping the newest fix (it dates a pause that comes before the run's first fix). */
+const newRun = (live: SelfPosition | null): GpsAverageValues => ({ ...INITIAL_GPS_AVERAGE, phase: 'averaging', live, runningSince: Date.now() });
 
 function averaged(stats: ClusterStats | null, timestamp: number): SelfPosition | null {
   if (stats === null) return null;
@@ -68,19 +102,21 @@ function averaged(stats: ClusterStats | null, timestamp: number): SelfPosition |
 }
 
 /**
- * Appends, thinning to every other sample past the cap while keeping the first and the newest. Thinning widens the gaps
- * between old samples, so after a long average some of its time may count short (MAX_SAMPLE_GAP_S): conservative.
+ * Appends, past the cap merging consecutive pairs into one sample each. Every fix keeps its full weight however long
+ * the average runs: older stretches are only held more coarsely, which matters just for how much a pause trims.
  */
 function append(samples: AverageSample[], s: AverageSample): AverageSample[] {
   if (samples.length < MAX_SAMPLES) return [...samples, s];
-  return [...samples.filter((_, i) => i % 2 === 0), s];
+  const thinned: AverageSample[] = [];
+  for (let i = 0; i < samples.length; i += 2) thinned.push(i + 1 < samples.length ? mergeSamples(samples[i], samples[i + 1]) : samples[i]);
+  return [...thinned, s];
 }
 
 /** Average mode: the fixes averaged so far and whether the device has moved off the spot. Lives only in memory. */
 export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set, get) => ({
   ...INITIAL_GPS_AVERAGE,
-  start: () => set(FRESH),
-  stop: () => set(INITIAL_GPS_AVERAGE),
+  start: () => set(newRun(get().live)),
+  stop: () => set({ ...INITIAL_GPS_AVERAGE, live: get().live }),
   addFix: (fix, speedMps) => {
     const { phase, samples, farCount, farSince } = get();
     if (phase !== 'averaging') return null;
@@ -110,15 +146,31 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
       return averaged(stats, fix.timestamp);
     }
     const next = append(samples, sample);
-    set({ samples: next, farCount: 0, farSince: null });
+    const drawn: AverageFix = { lat: sample.lat, lon: sample.lon, accuracyM: sample.accuracyM, at: sample.at };
+    set({ samples: next, fixCount: get().fixCount + 1, fixes: [...get().fixes, drawn], farCount: 0, farSince: null });
     return averaged(clusterStats(next), fix.timestamp);
   },
   markStill: (at) => set({ lastStillAt: at }),
   pause: (detectedAt) => {
-    const { phase, samples, lastStillAt } = get();
+    const { phase, samples, fixes, lastStillAt, live, elapsedMs, runningSince } = get();
     if (phase !== 'averaging') return;
     const cutoff = Math.min(detectedAt, lastStillAt ?? detectedAt - DROP_BACK_MS);
-    set({ phase: 'paused', samples: trimFrom(samples, cutoff), farCount: 0, farSince: null, pausedAt: detectedAt });
+    const kept = trimFrom(samples, cutoff);
+    // The samples run in time order, so the kept fixes are those up to the last kept sample's newest.
+    const keptUntil = kept.length === 0 ? -Infinity : kept[kept.length - 1].at;
+    set({
+      phase: 'paused',
+      samples: kept,
+      fixCount: fixCountOf(kept),
+      fixes: fixes.filter((f) => f.at <= keptUntil),
+      farCount: 0,
+      farSince: null,
+      // On the fix clock when there is a fix: Android fixes carry satellite time, which can run ahead of the phone's.
+      pausedAt: live?.timestamp ?? detectedAt,
+      // The stopwatch stops when the pause is noticed.
+      elapsedMs: elapsedMs + (runningSince === null ? 0 : Math.max(0, Date.now() - runningSince)),
+      runningSince: null,
+    });
   },
   resume: (live) => {
     const { phase, samples, pausedAt } = get();
@@ -127,8 +179,15 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
     const fresh = live !== null && !live.averaged && (pausedAt === null || live.timestamp > pausedAt);
     const sample = fresh ? sampleFromFix(live) : null;
     const onSpot = sample !== null && isOnSpot(samples, sample);
-    set({ phase: onSpot ? 'averaging' : 'away', farCount: 0, farSince: null, pausedAt: onSpot ? null : pausedAt });
+    set({ phase: onSpot ? 'averaging' : 'away', farCount: 0, farSince: null, pausedAt: onSpot ? null : pausedAt, runningSince: onSpot ? Date.now() : null });
     return onSpot ? 'resumed' : 'away';
   },
-  restartHere: () => set(FRESH),
+  restartHere: () => set({ ...newRun(get().live), showFixes: get().showFixes }),
+  noteLive: (fix) => set({ live: fix }),
+  held: (timestamp) => {
+    const { phase, samples } = get();
+    if (phase !== 'paused' && phase !== 'away') return null;
+    return averaged(clusterStats(samples), timestamp);
+  },
+  toggleFixes: () => set({ showFixes: !get().showFixes }),
 }));

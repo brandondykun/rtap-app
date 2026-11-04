@@ -8,8 +8,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
+import { AVERAGE_HELP } from '@/features/location/average-help';
 import { SETTINGS_HELP, type SettingHelp } from '@/features/menus/menus/settings-help';
-import { OVERLAYS_HELP } from '@/features/overlays/overlays-help';
+import { OVERLAYS_HELP, type OverlayHelp } from '@/features/overlays/overlays-help';
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_COLOR_GUIDE, type ValueColorGuide } from '@/theme/value-colors';
@@ -104,14 +105,12 @@ export function AboutScreen() {
 
           <View className="gap-2">
             <SectionTitle>Overlays</SectionTitle>
-            <View testID="about-overlays" className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
-              {OVERLAYS_HELP.map((h, i) => (
-                <View key={h.title} testID={`overlay-help-${h.title}`} accessible className={`gap-0.5 px-4 py-3 ${i === 0 ? '' : 'border-t border-border'}`}>
-                  <Text className="text-base font-bold uppercase tracking-widest text-text">{h.title}</Text>
-                  <Text className="text-base text-text">{h.help}</Text>
-                </View>
-              ))}
-            </View>
+            <HelpList testID="about-overlays" itemTestID="overlay-help" items={OVERLAYS_HELP} />
+          </View>
+
+          <View className="gap-2">
+            <SectionTitle>Average mode</SectionTitle>
+            <HelpList testID="about-average" itemTestID="average-help" items={AVERAGE_HELP} />
           </View>
 
           <View className="gap-2">
@@ -156,6 +155,20 @@ export function AboutScreen() {
           </Text>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+/** Titled points in one card, each read out as one item. */
+function HelpList({ testID, itemTestID, items }: { testID: string; itemTestID: string; items: readonly OverlayHelp[] }) {
+  return (
+    <View testID={testID} className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+      {items.map((h, i) => (
+        <View key={h.title} testID={`${itemTestID}-${h.title}`} accessible className={`gap-0.5 px-4 py-3 ${i === 0 ? '' : 'border-t border-border'}`}>
+          <Text className="text-base font-bold uppercase tracking-widest text-text">{h.title}</Text>
+          <Text className="text-base text-text">{h.help}</Text>
+        </View>
+      ))}
     </View>
   );
 }

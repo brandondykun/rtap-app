@@ -27,7 +27,7 @@ export function gridTextClass(friendly: boolean): string {
 /** One line of the About page's color guide: a sample value in its color, what it is and where it shows. */
 export type ValueColorGuide = { name: string; token: SemanticToken; sample: string; help: string };
 
-/** What each value color means, for the About page (the same rule as AGENTS.md, Value colors). */
+/** What each value color means, then Average mode's orange (a state), for the About page (the same rule as AGENTS.md, Value colors). */
 export const VALUE_COLOR_GUIDE: readonly ValueColorGuide[] = [
   { name: 'Friendly grid', token: 'friendly', sample: '18S UJ 23812 05625', help: 'Your position (ME) and friendly units: the same blue as friendly symbols.' },
   { name: 'Other grid', token: 'text', sample: '18S UJ 24000 06250', help: 'The crosshair (CTR), the OP, hostile, neutral and unknown units, points and shapes.' },
@@ -35,4 +35,5 @@ export const VALUE_COLOR_GUIDE: readonly ValueColorGuide[] = [
   { name: 'Direction', token: 'value-bearing', sample: '298°', help: 'Bearings, in degrees or mils, with their north reference.' },
   { name: 'Altitude', token: 'value-altitude', sample: 'ALT 104 m', help: 'ALT: your altitude, the OP\'s and units\' and points\' ground altitude, the OP eye height and ceilings.' },
   { name: 'Accuracy', token: 'value-accuracy', sample: '±3 m', help: 'How close your GPS fix is: quieter than the values themselves.' },
+  { name: 'Average mode', token: 'averaged', sample: 'AVG', help: 'Not a value: orange shows Average mode is on. It frames the grid display, tags your row AVG (HELD while paused) and draws the averaged fixes on the map. Your grid stays blue.' },
 ];

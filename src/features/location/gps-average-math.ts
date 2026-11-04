@@ -25,7 +25,34 @@ const OUTLIER_MIN_SAMPLES = 5;
 const WGS84_A = 6_378_137;
 const WGS84_E2 = 6.69437999014e-3;
 
-export type AverageSample = { lat: number; lon: number; altitudeM: number | null; accuracyM: number; at: number };
+/**
+ * One fix, or several merged by thinning (`merged`). A merged sample sits at its fixes' weighted mean and keeps what the
+ * stats need of them (weight, count, scatter, time), so thinning changes nothing about the average or its ±.
+ */
+export type AverageSample = {
+  lat: number;
+  lon: number;
+  /** For a merged sample, the weighted mean of its fixes that had one. */
+  altitudeM: number | null;
+  /** For a merged sample, its fixes' pooled accuracy. */
+  accuracyM: number;
+  /** For a merged sample, its newest fix's time. */
+  at: number;
+  merged?: MergedFixes;
+};
+
+type MergedFixes = {
+  count: number;
+  firstAt: number;
+  /** Total inverse-variance weight. */
+  weight: number;
+  /** Total weight of the fixes with an altitude. */
+  altitudeWeight: number;
+  /** Weighted sum of the fixes' squared distances (m²) from the sample's position. */
+  scatterM2: number;
+  /** Time averaged between its first and newest fix (gaps capped as in clusterStats). */
+  activeMs: number;
+};
 
 type Center = { position: LatLon; altitudeM: number | null };
 
@@ -82,9 +109,57 @@ export function sampleFromFix(fix: SelfPosition, maxAccuracyM = MAX_SAMPLE_ACCUR
   return { lat, lon, altitudeM: altitudeM !== null && Number.isFinite(altitudeM) ? altitudeM : null, accuracyM, at: fix.timestamp };
 }
 
-/** Inverse-variance weight: a ±2 m fix counts sixteen times a ±8 m one. */
+/** Inverse-variance weight: a ±2 m fix counts sixteen times a ±8 m one. A merged sample weighs all its fixes. */
 function weight(s: AverageSample): number {
-  return 1 / (s.accuracyM * s.accuracyM);
+  return s.merged?.weight ?? 1 / (s.accuracyM * s.accuracyM);
+}
+
+function altitudeWeight(s: AverageSample): number {
+  return s.merged?.altitudeWeight ?? (s.altitudeM === null ? 0 : weight(s));
+}
+
+const fixesIn = (s: AverageSample) => s.merged?.count ?? 1;
+const firstAt = (s: AverageSample) => s.merged?.firstAt ?? s.at;
+/** Time averaged from one sample's newest fix to the next sample's first. */
+const gapMs = (from: AverageSample, to: AverageSample) => Math.min(firstAt(to) - from.at, MAX_SAMPLE_GAP_S * 1000);
+
+/** The fixes the samples hold (more than the samples once thinning has merged some). */
+export function fixCountOf(samples: readonly AverageSample[]): number {
+  let n = 0;
+  for (const s of samples) n += fixesIn(s);
+  return n;
+}
+
+/**
+ * One sample standing for two consecutive ones: at their weighted mean, with their scatter carried over (parallel axis),
+ * so the stats of a thinned list equal those of all its fixes.
+ */
+export function mergeSamples(a: AverageSample, b: AverageSample): AverageSample {
+  const frame = frameAt(a);
+  const wa = weight(a);
+  const wb = weight(b);
+  const w = wa + wb;
+  const bn = northM(frame, b.lat);
+  const be = eastM(frame, b.lon);
+  const altA = altitudeWeight(a);
+  const altB = altitudeWeight(b);
+  const altW = altA + altB;
+  const count = fixesIn(a) + fixesIn(b);
+  return {
+    lat: frame.lat + (wb * bn) / w / frame.mPerDegLat,
+    lon: wrapLon(frame.lon + (wb * be) / w / frame.mPerDegLon),
+    altitudeM: altW > 0 ? ((altA > 0 ? altA * a.altitudeM! : 0) + (altB > 0 ? altB * b.altitudeM! : 0)) / altW : null,
+    accuracyM: Math.sqrt(count / w),
+    at: b.at,
+    merged: {
+      count,
+      firstAt: firstAt(a),
+      weight: w,
+      altitudeWeight: altW,
+      scatterM2: (a.merged?.scatterM2 ?? 0) + (b.merged?.scatterM2 ?? 0) + ((wa * wb) / w) * (bn * bn + be * be),
+      activeMs: (a.merged?.activeMs ?? 0) + (b.merged?.activeMs ?? 0) + gapMs(a, b),
+    },
+  };
 }
 
 /**
@@ -107,27 +182,28 @@ export function clusterStats(samples: readonly AverageSample[]): ClusterStats | 
     sumW += w;
     sumN += w * northM(frame, s.lat);
     sumE += w * eastM(frame, s.lon);
-    if (s.altitudeM !== null) {
-      sumAltW += w;
-      sumAlt += w * s.altitudeM;
+    const altW = altitudeWeight(s);
+    if (altW > 0) {
+      sumAltW += altW;
+      sumAlt += altW * s.altitudeM!;
     }
-    if (i > 0) activeMs += Math.min(s.at - samples[i - 1].at, MAX_SAMPLE_GAP_S * 1000);
+    activeMs += s.merged?.activeMs ?? 0;
+    if (i > 0) activeMs += gapMs(samples[i - 1], s);
   }
   const centerNorthM = sumN / sumW;
   const centerEastM = sumE / sumW;
   let sumSq = 0;
-  if (samples.length > 1) {
-    for (const s of samples) {
-      const dn = northM(frame, s.lat) - centerNorthM;
-      const de = eastM(frame, s.lon) - centerEastM;
-      sumSq += weight(s) * (dn * dn + de * de);
-    }
+  for (const s of samples) {
+    const dn = northM(frame, s.lat) - centerNorthM;
+    const de = eastM(frame, s.lon) - centerEastM;
+    sumSq += (s.merged?.scatterM2 ?? 0) + weight(s) * (dn * dn + de * de);
   }
-  const spread = Math.sqrt(sumSq / sumW);
-  const pooled = 1 / Math.sqrt(sumW / samples.length);
+  const count = fixCountOf(samples);
+  const spread = count > 1 ? Math.sqrt(sumSq / sumW) : 0;
+  const pooled = 1 / Math.sqrt(sumW / count);
   const shrunk = pooled / Math.sqrt(Math.max(1, activeMs / 1000 / CORRELATION_S));
   return {
-    count: samples.length,
+    count,
     center: {
       position: { lat: frame.lat + centerNorthM / frame.mPerDegLat, lon: wrapLon(frame.lon + centerEastM / frame.mPerDegLon) },
       altitudeM: sumAltW > 0 ? sumAlt / sumAltW : null,
@@ -189,7 +265,7 @@ export function isOnSpot(samples: readonly AverageSample[], live: AverageSample)
   return !isFarFromCluster(samples, live);
 }
 
-/** Samples recorded before the cutoff (a timestamp). */
+/** Samples recorded before the cutoff (a timestamp). A merged sample goes whole once any of its fixes is at or past it. */
 export function trimFrom(samples: readonly AverageSample[], cutoffAt: number): AverageSample[] {
   return samples.filter((s) => s.at < cutoffAt);
 }
