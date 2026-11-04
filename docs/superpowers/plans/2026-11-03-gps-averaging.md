@@ -22,6 +22,7 @@
 - AVG is a toggle beside LABELS/3D (not an `activeTool`), lit (`active`) while on. Picking other tools never ends it. OP mode doesn't end it.
 - No elapsed time shown. Map dot look unchanged.
 - Builds older than f9afc5a have no expo-sensors native code: never crash, fall back to GPS-only movement detection.
+- Foreground only (`watchPositionAsync` stops in the background). The screen is kept awake while averaging (`expo-keep-awake`, already in the build: a direct dependency since this plan, native fingerprint unchanged); locking the phone or leaving the app still pauses. Background location is a future, separate feature (location sharing while locked).
 - New theme tokens: add to `tokens.ts` palette + theme, `semantic-token-names.json`; Metro needs `npx expo start -c`.
 - Run `npx tsc --noEmit`, `npx expo lint`, and the touched tests before each commit. No commit attribution trailers.
 
@@ -148,7 +149,7 @@
 - [ ] **Step 4:** → PASS; also `npx jest src/features/map` (consumers of `selfPosition` unaffected).
 - [ ] **Step 5:** Commit `feat(location): publish the averaged position as me`.
 
-### Task 5: Average controller (accelerometer, background)
+### Task 5: Average controller (accelerometer, background, keep awake)
 
 **Files:**
 - Create: `src/features/location/use-average-watch.ts`
@@ -157,17 +158,18 @@
 
 **Interfaces:**
 - Consumes: Task 2 `createMotionDetector`, `loadAccelerometer`, `ACCEL_INTERVAL_MS`; Task 3 store.
-- Produces: `useAverageWatch(): void` — while phase is `averaging`: subscribe the accelerometer (if `loadAccelerometer()` and `isAvailableAsync()`), feed `createMotionDetector`; `'still'` → `markStill(at)`; `'moving'` → `pause(at)` plus `Haptics.notificationAsync(Warning)`. Unsubscribe otherwise. `AppState` change to `background` while averaging → `pause(Date.now())`. GPS-detected pauses (Task 3) also get the haptic: fire it on any phase change `averaging → paused`, not in the accelerometer path only.
+- Produces: `useAverageWatch(): void` — while phase is `averaging`: subscribe the accelerometer (if `loadAccelerometer()` and `isAvailableAsync()`), feed `createMotionDetector`; `'still'` → `markStill(at)`; `'moving'` → `pause(at)` plus `Haptics.notificationAsync(Warning)`. Unsubscribe otherwise. `AppState` change to `background` while averaging → `pause(Date.now())`. Keep the screen awake while phase is `averaging` (`activateKeepAwakeAsync('gps-average')` / `deactivateKeepAwake('gps-average')` from `expo-keep-awake`, tag `'gps-average'`), released on paused, away and off. GPS-detected pauses (Task 3) also get the haptic: fire it on any phase change `averaging → paused`, not in the accelerometer path only.
 
 - [ ] **Step 1: Write the failing tests** (`renderHook`, drive the `expo-sensors` mock from Task 2):
   - `pauses when the phone is carried, with a warning haptic`.
   - `does not listen to the accelerometer unless averaging`.
   - `pauses when the app goes to the background` (Review Focus 1).
   - `keeps working with GPS alone when the accelerometer can't load` (`loadAccelerometer` → null: no throw, store untouched).
+  - `keeps the screen awake only while averaging` (mock `expo-keep-awake`: activated on start with tag `gps-average`, deactivated on pause and on stop).
 - [ ] **Step 2:** `npx jest src/features/location/use-average-watch.test.tsx` → FAIL.
 - [ ] **Step 3:** Implement; mount in `MissionMap` next to the other app-wide hooks.
 - [ ] **Step 4:** → PASS.
-- [ ] **Step 5:** Commit `feat(location): pause averaging on movement or leaving the app`.
+- [ ] **Step 5:** Commit `feat(location): pause averaging on movement or leaving the app, screen kept awake`.
 
 ### Task 6: `averaged` color and the readout indicator
 

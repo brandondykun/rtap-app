@@ -28,7 +28,8 @@ accuracy gain is only a meter or two.
 - No change to the self dot's look on the map (user: keep it the same). It moves to the averaged position; that is all.
 - No "plot averaged position" button or saving an averaged point (Option B was not chosen).
 - No raw GNSS measurements (Android's raw API); the fused fixes the app already receives are enough.
-- No background averaging; foreground only, screen on.
+- No background averaging; foreground only. The screen is kept awake while averaging so it doesn't auto-lock;
+  locking it or leaving the app pauses. (Background location comes later with location sharing while locked.)
 - The Panel keyboard rework on `react-native-keyboard-controller` is a separate project (the library is installed, f9afc5a).
 
 ## Anti-goals (would make it a failure even if it "works")
