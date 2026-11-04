@@ -50,6 +50,26 @@ jest.mock('expo-screen-orientation', () => {
   };
 });
 
+jest.mock('expo-sensors', () => {
+  let listener: ((m: { x: number; y: number; z: number }) => void) | null = null;
+  return {
+    Accelerometer: {
+      addListener: jest.fn((cb: (m: { x: number; y: number; z: number }) => void) => {
+        listener = cb;
+        return {
+          remove: () => {
+            if (listener === cb) listener = null;
+          },
+        };
+      }),
+      setUpdateInterval: jest.fn(),
+      isAvailableAsync: async () => true,
+    },
+    /** Test helper: deliver an accelerometer reading to the subscribed listener (no-op when none). */
+    __emit: (reading: { x: number; y: number; z: number }) => listener?.(reading),
+  };
+});
+
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 require('react-native-gesture-handler/jestSetup');
