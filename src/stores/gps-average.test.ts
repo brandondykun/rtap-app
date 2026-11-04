@@ -112,12 +112,20 @@ describe('gps average store', () => {
   });
 
   it('thins to at most 600 samples, keeping the first and the newest', () => {
-    g().start();
-    const n = MAX_SAMPLES + 50;
-    for (let i = 0; i < n; i++) g().addFix(fix(i * 1000), 0);
-    const { samples } = g();
-    expect(samples.length).toBeLessThanOrEqual(MAX_SAMPLES);
-    expect(samples[0].at).toBe(0);
-    expect(samples[samples.length - 1].at).toBe((n - 1) * 1000);
+    // Preloaded, since 600 real addFix calls cost seconds of geodesic passes.
+    const samples = Array.from({ length: MAX_SAMPLES }, (_, i) => ({
+      lat: HERE.lat,
+      lon: HERE.lon,
+      altitudeM: 10,
+      accuracyM: 5,
+      at: i * 1000,
+    }));
+    useGpsAverage.setState({ phase: 'averaging', samples });
+    const last = MAX_SAMPLES + 2;
+    for (let i = MAX_SAMPLES; i <= last; i++) g().addFix(fix(i * 1000), 0);
+    const next = g().samples;
+    expect(next.length).toBeLessThanOrEqual(MAX_SAMPLES);
+    expect(next[0].at).toBe(0);
+    expect(next[next.length - 1].at).toBe(last * 1000);
   });
 });
