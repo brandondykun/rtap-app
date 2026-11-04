@@ -10,6 +10,8 @@ export type SelfPosition = {
   altitudeM?: number | null;
   /** Set by hand (Manual source), not a GPS fix. */
   manual?: boolean;
+  /** Set only on a position averaged by Average mode, not a single GPS fix. */
+  averaged?: boolean;
 };
 export type LocationStatus = 'unknown' | 'granted' | 'denied' | 'unavailable';
 
