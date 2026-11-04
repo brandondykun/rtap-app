@@ -4,6 +4,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
+import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 
 import { useSelfLocation } from './use-self-location';
@@ -37,6 +38,7 @@ function grant() {
 beforeEach(() => {
   jest.clearAllMocks();
   usePresence.setState(INITIAL_PRESENCE);
+  useGpsAverage.setState(INITIAL_GPS_AVERAGE);
   useMyLocation.setState(DEFAULT_MY_LOCATION);
   mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'denied', granted: false } as never);
   mocked.requestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied', granted: false } as never);
@@ -129,6 +131,85 @@ describe('useSelfLocation', () => {
     await act(async () => {});
     await act(async () => fake.heading({ trueHeading: 350, magHeading: 0, accuracy: 1 }));
     expect(usePresence.getState().selfHeading).toBe(80);
+  });
+
+  describe('with Average mode on', () => {
+    const fix = (latitude: number, timestamp: number, accuracy = 5) => ({ coords: { latitude, longitude: -77, accuracy, altitude: null }, timestamp });
+
+    it('publishes the averaged position while averaging, marked averaged', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => fake.position(fix(38.9, 1000)));
+      await act(async () => fake.position(fix(38.9000002, 2000)));
+      expect(usePresence.getState().selfPosition).toMatchObject({ averaged: true, timestamp: 2000 });
+      expect(usePresence.getState().selfPosition?.position.lat).toBeCloseTo(38.9, 5);
+    });
+
+    it('publishes the live fix until a usable sample is averaged', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => fake.position({ coords: { latitude: 38.9, longitude: -77, accuracy: null }, timestamp: 1000 }));
+      const published = usePresence.getState().selfPosition;
+      expect(published).toMatchObject({ position: { lat: 38.9, lon: -77 }, accuracyM: null, timestamp: 1000 });
+      expect(published?.averaged).toBeUndefined();
+    });
+
+    it('publishes the live fix, plain, while paused', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => fake.position(fix(38.9, 1000)));
+      await act(async () => useGpsAverage.getState().pause(1000));
+      await act(async () => fake.position(fix(38.91, 2000)));
+      const published = usePresence.getState().selfPosition;
+      expect(published).toMatchObject({ position: { lat: 38.91, lon: -77 }, timestamp: 2000 });
+      expect(published?.averaged).toBeUndefined();
+    });
+
+    it('restarts the GPS watch with distanceInterval 0 while averaging, and 1 after', async () => {
+      const fake = grant();
+      await render(<Probe />);
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1, timeInterval: 1000 }), expect.any(Function));
+      await act(async () => useGpsAverage.getState().start());
+      expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(2);
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 0 }), expect.any(Function));
+      expect(fake.removes.position).toHaveBeenCalledTimes(1);
+      // The compass keeps running.
+      expect(mocked.watchHeadingAsync).toHaveBeenCalledTimes(1);
+      expect(fake.removes.heading).not.toHaveBeenCalled();
+      await act(async () => useGpsAverage.getState().pause(1000));
+      expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(3);
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1 }), expect.any(Function));
+    });
+
+    it('turns averaging off when the source switches to Manual', async () => {
+      grant();
+      await render(<Probe />);
+      await act(async () => useGpsAverage.getState().start());
+      await act(async () => useMyLocation.getState().setManual({ lat: 1, lon: 2 }));
+      expect(useGpsAverage.getState().phase).toBe('off');
+    });
+
+    it('turns averaging off when location goes off (denied)', async () => {
+      useGpsAverage.getState().start();
+      await render(<Probe />);
+      await act(async () => {});
+      expect(usePresence.getState().locationStatus).toBe('denied');
+      expect(useGpsAverage.getState().phase).toBe('off');
+    });
+
+    it('turns averaging off when location goes off (unavailable)', async () => {
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      mocked.requestForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+      mocked.watchPositionAsync.mockRejectedValueOnce(new Error('Location services are disabled'));
+      useGpsAverage.getState().start();
+      await render(<Probe />);
+      await act(async () => {});
+      expect(usePresence.getState().locationStatus).toBe('unavailable');
+      expect(useGpsAverage.getState().phase).toBe('off');
+    });
   });
 
   describe('with Manual chosen', () => {

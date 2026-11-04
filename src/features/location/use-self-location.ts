@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { normalizeDeg } from '@/lib/geo/units/angle';
+import { useGpsAverage } from '@/stores/gps-average';
 import { useMyLocation } from '@/stores/my-location';
-import { usePresence } from '@/stores/presence';
+import { usePresence, type SelfPosition } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
 import {
@@ -16,6 +17,11 @@ import {
   type HeadingSample,
   type ScreenOrientation as Orientation,
 } from './heading';
+
+/** Averaging wants every reading (no distance filter); otherwise a 1 m filter saves battery. */
+export function watchOptions(averaging: boolean): Location.LocationOptions {
+  return { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: averaging ? 0 : 1, timeInterval: 1000 };
+}
 
 function orientationName(o: ScreenOrientation.Orientation): Orientation {
   switch (o) {
@@ -53,16 +59,21 @@ export function useSelfLocation(): void {
     let orientation: Orientation = 'unknown';
     let lastEvent: Location.LocationHeadingObject | null = null;
 
+    const isAveraging = () => useGpsAverage.getState().phase === 'averaging';
     const manualSource = () => useMyLocation.getState().source === 'manual';
 
     const onPosition = (loc: Location.LocationObject) => {
       if (manualSource()) return;
-      usePresence.getState().setSelfPosition({
+      const live: SelfPosition = {
         position: { lat: loc.coords.latitude, lon: loc.coords.longitude },
         accuracyM: loc.coords.accuracy ?? null,
         timestamp: loc.timestamp,
         altitudeM: Number.isFinite(loc.coords.altitude) ? loc.coords.altitude : null,
-      });
+      };
+      const average = useGpsAverage.getState();
+      // Nothing averaged yet, paused or away: the live fix is "me".
+      const published = average.phase === 'averaging' ? average.addFix(live, loc.coords.speed ?? null) : null;
+      usePresence.getState().setSelfPosition(published ?? live);
     };
 
     const onHeading = (event: Location.LocationHeadingObject, force = false) => {
@@ -100,6 +111,7 @@ export function useSelfLocation(): void {
 
     const applyManual = async () => {
       stopGps();
+      useGpsAverage.getState().stop();
       const presence = usePresence.getState();
       if (presence.selfHeading !== null) presence.setSelfHeading(null);
       const { manual } = useMyLocation.getState();
@@ -125,13 +137,11 @@ export function useSelfLocation(): void {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (disposed || manualSource()) return;
         if (status !== 'granted') {
+          useGpsAverage.getState().stop();
           usePresence.getState().setLocationStatus('denied');
           return;
         }
-        const position = await Location.watchPositionAsync(
-          { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 1 },
-          onPosition,
-        );
+        const position = await Location.watchPositionAsync(watchOptions(isAveraging()), onPosition);
         if (disposed || manualSource()) {
           position.remove();
           return;
@@ -148,11 +158,48 @@ export function useSelfLocation(): void {
         }
       } catch (e) {
         console.warn('[location] unavailable', e);
-        if (!disposed) usePresence.getState().setLocationStatus('unavailable');
+        if (!disposed) {
+          useGpsAverage.getState().stop();
+          usePresence.getState().setLocationStatus('unavailable');
+        }
       } finally {
         starting = false;
       }
     };
+
+    // Only the position watch restarts (the heading watch is untouched), and only while it is running.
+    let restarting = false;
+    const restartPosition = async () => {
+      if (restarting || subscriptions.length === 0) return;
+      restarting = true;
+      try {
+        let averaging = isAveraging();
+        // Re-check after the await: the phase may have flipped again while the watch was starting.
+        for (;;) {
+          const old = subscriptions[0];
+          const next = await Location.watchPositionAsync(watchOptions(averaging), onPosition);
+          if (disposed || manualSource() || subscriptions[0] !== old) {
+            next.remove();
+            return;
+          }
+          old.remove();
+          subscriptions[0] = next;
+          if (averaging === isAveraging()) return;
+          averaging = isAveraging();
+        }
+      } catch (e) {
+        console.warn('[location] could not restart the position watch', e);
+      } finally {
+        restarting = false;
+      }
+    };
+    let wasAveraging = isAveraging();
+    const averageWatch = useGpsAverage.subscribe(() => {
+      const now = isAveraging();
+      if (now === wasAveraging) return;
+      wasAveraging = now;
+      void restartPosition();
+    });
 
     const start = () => (manualSource() ? applyManual() : startGps());
 
@@ -183,6 +230,7 @@ export function useSelfLocation(): void {
       orientationChange.remove();
       appState.remove();
       source();
+      averageWatch();
       stopGps();
       usePresence.getState().reset();
     };
