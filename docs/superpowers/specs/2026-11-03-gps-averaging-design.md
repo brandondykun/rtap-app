@@ -47,8 +47,10 @@ accuracy gain is only a meter or two.
   source is Manual.
 - `expo-sensors` is installed (f9afc5a) for movement detection; the iOS motion permission text says what it is for.
   Builds older than f9afc5a lack its native code: there, fall back to GPS-only movement detection (never crash).
-- Value colors (map/AGENTS.md): amber is reserved for distances. Averaging gets a new value color: orange-600, added to
-  the palette/tokens and documented in AGENTS.md's Value colors section.
+- Value colors (map/AGENTS.md): amber is reserved for distances. Averaging gets its own color, orange-600, as a
+  **state** token (e.g. `averaged`), not a new value kind: it marks that ME is averaged, it doesn't color a value.
+  Added to the palette/tokens and documented in AGENTS.md next to the Value colors table as reserved for Average mode.
+  (Builder-check call.)
 - Readout outline standard: readout text and icons get a 1px outline, no dark backing (like OP mode's amber binoculars
   and "OP").
 
@@ -57,9 +59,10 @@ accuracy gain is only a meter or two.
 - **Start:** a toolbar tool. Starting shows the message "Keep the device still. Averaging gets more accurate over a
   few minutes." every time, closable each time (×), staying up until closed. Averaging starts at once; the message is
   a notice, not a confirmation.
-- **Indicator:** the ME readout row turns orange while averaging, and the accuracy reads "AVG ±2 m" with "AVG" bold in
-  the same orange (orange-600). Works in both the portrait (two-line) and landscape (one-line) dock without changing
-  the row's size.
+- **Indicator:** while averaging, the ME row's navigation triangle and "ME" tag turn orange (orange-600), outlined with
+  no fill (readout outline standard, as OP mode recolors its lead), and the accuracy reads "AVG ±2 m" with "AVG" bold
+  in the same orange. The grid stays friendly blue and ALT stays white (value colors unchanged). Works in both the
+  portrait (two-line) and landscape (one-line) dock without changing the row's size.
 - **Moving:** when movement is detected, averaging **pauses** and the user chooses **Resume** or **Discard**.
   - Readings that could be bad are thrown out: on pause, drop the fixes from just before detection as well.
   - While paused, ME shows the **current live location** (plain ME, no orange).
@@ -108,6 +111,15 @@ accuracy gain is only a meter or two.
   indicator. While paused or off, the live fix is published as today.
 - Average-mode state (off / averaging / paused, samples) lives in its own small store; the averaging math is pure
   functions with unit tests.
+
+### Toolbar and other modes (calls made after the builder check)
+
+- AVG is a **toggle that runs alongside the tools** (like LABELS and 3D), not an exclusive `activeTool`: picking
+  POINT, MEASURE, PLOT and so on must not end averaging, since a steady origin is what those need. Unlike LABELS/3D it
+  is lit while on, so its state is visible.
+- **OP mode:** averaging keeps running. While OP is on, the ME row shows the OP as today (no AVG indicator there);
+  leaving OP mode brings the averaged ME row back.
+- **Switching the location source to Manual** turns Average mode off.
 
 ## Left to the builder
 
