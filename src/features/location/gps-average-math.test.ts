@@ -37,6 +37,18 @@ describe('sampleFromFix', () => {
     expect(sampleFromFix(fix(31))).toBeNull();
     expect(sampleFromFix(fix(5))).toEqual({ lat: BASE.lat, lon: BASE.lon, altitudeM: 55, accuracyM: 5, at: 1234 });
   });
+
+  it('rejects zero and negative accuracy', () => {
+    expect(sampleFromFix(fix(0))).toBeNull();
+    expect(sampleFromFix(fix(-1))).toBeNull();
+  });
+
+  it('rejects non-finite coordinates or timestamp, and drops a non-finite altitude', () => {
+    expect(sampleFromFix({ ...fix(5), position: { lat: NaN, lon: BASE.lon } })).toBeNull();
+    expect(sampleFromFix({ ...fix(5), position: { lat: BASE.lat, lon: Infinity } })).toBeNull();
+    expect(sampleFromFix({ ...fix(5), timestamp: NaN })).toBeNull();
+    expect(sampleFromFix({ ...fix(5), altitudeM: NaN })?.altitudeM).toBeNull();
+  });
 });
 
 describe('weightedCenter', () => {
