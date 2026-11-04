@@ -61,7 +61,13 @@
           "locationWhenInUsePermission": "RTAP uses your location while you use the app to show your position and heading on the map and the distance and bearing from you to points you plot.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false,
-          "motionUsagePermission": "RTAP does not use motion activity data. This permission is never requested."
+          "motionUsagePermission": "RTAP uses motion to notice when you move while it averages your GPS position."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "RTAP uses motion to notice when you move while it averages your GPS position."
         }
       ],
       [
