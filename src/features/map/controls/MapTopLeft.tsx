@@ -31,8 +31,9 @@ export function MapTopLeft({ panel }: { panel: PanelFrame | null }) {
         left: Math.max(insets.left, drawer) + EDGE,
         right: insets.right + EDGE + CONTROL_SIZE + GAP,
       }}>
-      {/* Average mode's paused/away question stays up with a panel open: averaging waits on it. */}
-      <AverageBanner marginTop={Math.max(0, bannerTop(toolbar) - top)} />
+      {/* Average mode's paused/away question stays up with a panel open: averaging waits on it. It hides for the quick
+          plot entry card, which sits in the same spot (ME already shows the live fix meanwhile). */}
+      {plotEntryOpen ? null : <AverageBanner marginTop={Math.max(0, bannerTop(toolbar) - top)} />}
       {/* The notice hides while a panel is open. It sits below the logo row, itself under the toolbar. */}
       {panelOpen || plotEntryOpen ? null : <LocationBanner marginTop={Math.max(0, bannerTop(toolbar) - top)} />}
     </View>

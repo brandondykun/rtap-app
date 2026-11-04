@@ -62,4 +62,13 @@ describe('MapTopLeft', () => {
     await renderWithProviders(<MapTopLeft panel={{ side: 'left', size: 320 }} />);
     expect(screen.getByTestId('average-banner')).toBeTruthy();
   });
+
+  it('hides the averaging banner while the quick plot entry is open, and shows it again after', async () => {
+    useGpsAverage.setState({ phase: 'paused' });
+    useQuickPlot.getState().open();
+    await renderWithProviders(<MapTopLeft panel={null} />);
+    expect(screen.queryByTestId('average-banner')).toBeNull();
+    await act(async () => useQuickPlot.setState(INITIAL_QUICK_PLOT));
+    expect(screen.getByTestId('average-banner')).toBeTruthy();
+  });
 });
