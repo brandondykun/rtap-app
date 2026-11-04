@@ -9,6 +9,8 @@ import { hiddenFilter } from '@/features/map-items/selectors';
 import { createMission } from '@/features/missions/commands';
 import { getMissionCamera } from '@/features/missions/repository';
 import { elevationAt } from '@/features/map/terrain/elevation';
+import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
+import { useToast } from '@/stores/toast';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MANUAL_ENTRY, useManualEntry } from '@/stores/manual-entry';
 import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
@@ -54,6 +56,8 @@ beforeEach(() => {
   // A real phone has a GPS fix only with location on: tests that publish a fix run with permission granted.
   jest.mocked(Location.requestForegroundPermissionsAsync).mockResolvedValue({ status: 'granted', granted: true } as never);
   useMyLocation.setState(DEFAULT_MY_LOCATION);
+  useGpsAverage.setState(INITIAL_GPS_AVERAGE);
+  useToast.setState({ toast: null });
 });
 
 describe('MapScreen', () => {
@@ -66,6 +70,47 @@ describe('MapScreen', () => {
     mapboxMock().__map.queryTerrainElevation.mockResolvedValueOnce(205);
     expect(await elevationAt({ lat: 38.9, lon: -77 })).toBe(205);
     expect(mapboxMock().__map.queryTerrainElevation).toHaveBeenCalledWith([-77, 38.9]);
+  });
+
+  async function openMap() {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+  }
+
+  it('starts averaging from AVG and shows the keep-still message, closable', async () => {
+    await openMap();
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    expect(useGpsAverage.getState().phase).toBe('averaging');
+    expect(screen.getByLabelText('AVG')).toBeSelected();
+    expect(useToast.getState().toast).toEqual(expect.objectContaining({ message: 'Keep the device still. Averaging gets more accurate over a few minutes.', kind: 'info', sticky: true }));
+    expect(screen.getByText('Keep the device still. Averaging gets more accurate over a few minutes.')).toBeTruthy();
+  });
+
+  it('turns averaging off from the toolbar while paused', async () => {
+    await openMap();
+    await act(async () => useGpsAverage.getState().start());
+    await act(async () => useGpsAverage.getState().pause(Date.now()));
+    expect(useGpsAverage.getState().phase).toBe('paused');
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    expect(useGpsAverage.getState().phase).toBe('off');
+  });
+
+  it('does not average on the Manual source, and says why', async () => {
+    await openMap();
+    await act(async () => useMyLocation.setState({ source: 'manual' }));
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    expect(useGpsAverage.getState().phase).toBe('off');
+    expect(useToast.getState().toast).toEqual(expect.objectContaining({ message: 'Averaging needs GPS. Switch your location to GPS first.', sticky: false }));
+  });
+
+  it('keeps averaging when another tool is picked', async () => {
+    await openMap();
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    await fireEvent.press(screen.getByLabelText('POINT'));
+    expect(useGpsAverage.getState().phase).toBe('averaging');
   });
 
   it('tilts the map into 3D from the toolbar and back to flat', async () => {

@@ -25,6 +25,9 @@ type Props = {
   onMeasure?: () => void;
   onLayers?: () => void;
   onPlot?: () => void;
+  /** The AVG toggle, after PLOT: lit while the position is being averaged. */
+  averageOn?: boolean;
+  onAverage?: () => void;
   /** The LABELS toggle, the last tool: a label icon while map labels show, a crossed-out one while hidden. */
   labelsOn?: boolean;
   onLabels?: () => void;
@@ -54,7 +57,7 @@ export function landscapeToolbarWidth({ natural, windowWidth, insetRight, panelI
  * covers it. Tools scroll horizontally in portrait if they overflow. In landscape, while the menu drawer is open, the
  * bar narrows to the space right of it (with the drawer's slide) and its tools scroll there if they no longer fit.
  */
-export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, labelsOn = true, onLabels, threeDOn = false, onThreeD, onOp, panelInset = 0 }: Props) {
+export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine, onPolygon, onMeasure, onLayers, onPlot, averageOn = false, onAverage, labelsOn = true, onLabels, threeDOn = false, onThreeD, onOp, panelInset = 0 }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const height = useToolbarHeight();
@@ -119,6 +122,7 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
     tool('polygon', <ToolButton icon="pentagon-outline" label="POLYGON" active={activeTool === 'polygon'} onPress={onPolygon} />),
     tool('measure', <ToolButton icon="ruler" label="MEASURE" active={activeTool === 'measure'} onPress={onMeasure} />),
     tool('plot', <ToolButton icon="target" label="PLOT" active={activeTool === 'plot'} onPress={onPlot} />),
+    tool('avg', <ToolButton icon="crosshairs-gps" label="AVG" active={averageOn} toggled={averageOn} onPress={onAverage} />),
     // Toggles, not tools: their icons show the state, with no highlight.
     tool('labels', <ToolButton icon={labelsOn ? 'label-outline' : 'label-off-outline'} label="LABELS" toggled={labelsOn} onPress={onLabels} />),
     tool('3d', <ToolButton icon={threeDOn ? 'video-3d' : 'video-3d-off'} label="3D" toggled={threeDOn} onPress={onThreeD} />),

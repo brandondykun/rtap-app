@@ -16,7 +16,7 @@ describe('TOOLBAR_HELP', () => {
     const byGroup = (g: string) => TOOLBAR_HELP.filter((h) => h.group === g).map((h) => h.label);
     expect(HELP_GROUPS.map((g) => g.title)).toEqual(['Plot on the map', 'Read the map', 'App']);
     expect(byGroup('plot')).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'PLOT']);
-    expect(byGroup('read')).toEqual(['MEASURE', 'LAYERS', 'LABELS', '3D', 'OP']);
+    expect(byGroup('read')).toEqual(['MEASURE', 'AVG', 'LAYERS', 'LABELS', '3D', 'OP']);
     expect(TOOLBAR_HELP.find((h) => h.label === 'OP')?.help).toBe('Look out over the 3D map from a spot you pick.');
     expect(byGroup('app')).toEqual(['Menu']);
   });

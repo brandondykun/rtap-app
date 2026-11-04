@@ -7,6 +7,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { ManualLocationEntry } from '@/features/location/ManualLocationEntry';
+import { startAveraging } from '@/features/location/average-actions';
 import { useAverageWatch } from '@/features/location/use-average-watch';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { draftSidc } from '@/features/map-items/draft-sidc';
@@ -26,6 +27,7 @@ import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
 import { useDraft } from '@/stores/draft';
+import { useGpsAverage } from '@/stores/gps-average';
 import { useInteraction } from '@/stores/interaction';
 import { useMeasure } from '@/stores/measure';
 import { useOp } from '@/stores/op';
@@ -127,6 +129,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   }, [saver]);
   useSelfLocation();
   useAverageWatch();
+  const averageOn = useGpsAverage((s) => s.phase !== 'off');
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.
@@ -584,6 +587,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onPolygon={() => toggleAdd('polygon.add')}
         onMeasure={toggleMeasure}
         onPlot={toggleQuickPlot}
+        averageOn={averageOn}
+        onAverage={() => (useGpsAverage.getState().phase === 'off' ? startAveraging() : useGpsAverage.getState().stop())}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         labelsOn={labelsOn}

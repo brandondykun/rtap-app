@@ -336,12 +336,28 @@ describe('Toolbar', () => {
     expect(onPlot).toHaveBeenCalled();
   });
 
+  it('shows AVG lit while averaging, between PLOT and LABELS', async () => {
+    const onAverage = jest.fn();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} averageOn onAverage={onAverage} />);
+    const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
+    expect(order.slice(order.indexOf('PLOT'), order.indexOf('LABELS') + 1)).toEqual(['PLOT', 'AVG', 'LABELS']);
+    const on = screen.getByLabelText('AVG');
+    expect(on).toBeSelected();
+    expect(on.props.className).toContain('bg-accent-subtle');
+    await fireEvent.press(on);
+    expect(onAverage).toHaveBeenCalled();
+    await screen.unmount();
+    await renderWithProviders(<Toolbar landscape={false} activeTool={null} onAverage={onAverage} />);
+    expect(screen.getByLabelText('AVG')).not.toBeSelected();
+    expect(screen.getByLabelText('AVG').props.className).not.toContain('bg-accent-subtle');
+  });
+
   it('has a LABELS toggle that swaps its icon, with no highlight', async () => {
     const onLabels = jest.fn();
     await renderWithProviders(<Toolbar landscape={false} activeTool={null} onPlot={jest.fn()} labelsOn onLabels={onLabels} />);
     const order = screen.getAllByRole('button').map((b) => b.props.accessibilityLabel as string);
     // Settings lives in the Menu.
-    expect(order.slice(-4)).toEqual(['PLOT', 'LABELS', '3D', 'OP']);
+    expect(order.slice(-5)).toEqual(['PLOT', 'AVG', 'LABELS', '3D', 'OP']);
     expect(screen.queryByLabelText('Settings')).toBeNull();
     expect(screen.getByText('LABELS')).toBeTruthy();
     const on = screen.getByLabelText('LABELS');
