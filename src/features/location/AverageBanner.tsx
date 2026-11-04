@@ -35,7 +35,7 @@ function AverageCard({ paused, marginTop }: { paused: boolean; marginTop: number
           </>
         ) : (
           <>
-            {/* Starting can only be refused on the Manual source, which cannot happen mid-average: then nothing changes. */}
+            {/* Starting is only refused without GPS (Manual, or location off), which turns Average mode off anyway. */}
             <MenuButton compact label="Start new average here" icon="crosshairs-gps" onPress={() => void startAveraging()} />
             <MenuButton compact label="Turn off" icon="close" onPress={stop} />
           </>
