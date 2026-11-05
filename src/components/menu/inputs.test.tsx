@@ -9,6 +9,17 @@ import { filterOptions, MenuSelect, SEARCH_MIN_OPTIONS } from './MenuSelect';
 import { PanelScrollContext } from './panel-header-slot';
 
 describe('menu inputs', () => {
+  it('shows no suggestion strip over the keyboard unless a field asks for it', async () => {
+    await renderWithProviders(
+      <>
+        <TextField accessibilityLabel="Plain" value="" onChangeText={() => {}} />
+        <TextField accessibilityLabel="Prose" value="" onChangeText={() => {}} autoCorrect spellCheck />
+      </>,
+    );
+    expect(screen.getByLabelText('Plain').props).toMatchObject({ autoCorrect: false, spellCheck: false, textContentType: 'none' });
+    expect(screen.getByLabelText('Prose').props).toMatchObject({ autoCorrect: true, spellCheck: true });
+  });
+
   it('TextField passes text through', async () => {
     const onChangeText = jest.fn();
     await renderWithProviders(<TextField accessibilityLabel="Name" value="HOS-1" onChangeText={onChangeText} />);

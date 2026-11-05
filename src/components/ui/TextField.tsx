@@ -55,6 +55,11 @@ export function TextField({ invalid = false, mono = false, dense = false, nested
       multiline={multiline}
       // Android landscape would otherwise swap the screen for a full-screen editor (hiding the map and menus).
       disableFullscreenUI
+      // No suggestion strip over the keyboard (iOS's predictive / AutoFill bar): it takes room the menu and map need.
+      // All three are needed, or iOS keeps the strip; a field can turn them back on.
+      autoCorrect={false}
+      spellCheck={false}
+      textContentType="none"
       // A fixed height and no line-height keep single-line text vertically centred on iOS
       // (Tailwind's text-lg adds a 28 pt line-height that pushes TextInput text down). Multiline text and its
       // placeholder start at the top: Android would otherwise centre them vertically.
