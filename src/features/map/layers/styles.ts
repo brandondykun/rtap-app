@@ -151,6 +151,11 @@ export function makeDraftLabelStyle(colors: Record<SemanticToken, string>, textS
   };
 }
 
+/** A ring around the measure dot picked to move. */
+export function makeMeasurePickedStyle(colors: Record<SemanticToken, string>): CircleLayerStyle {
+  return { circleRadius: 11, circleOpacity: 0, circleStrokeColor: colors.accent, circleStrokeWidth: 2.5, circlePitchAlignment: 'map' };
+}
+
 /** Dashed amber range line from the user to the draft. */
 export function makeRangeLineStyle(colors: Record<SemanticToken, string>): LineLayerStyle {
   return { lineColor: colors.accent, lineWidth: 2, lineDasharray: [2, 2] };

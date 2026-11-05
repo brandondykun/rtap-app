@@ -873,6 +873,19 @@ describe('MapScreen', () => {
       expect(useMeasure.getState().end).toEqual({ lat: 38.95, lon: -77 });
     });
 
+    it('once both are set a map tap moves nothing; a tapped dot is moved by the next tap, then let go', async () => {
+      await openMap();
+      await fireEvent.press(screen.getByLabelText('MEASURE'));
+      await mapTap(-77, 38.9);
+      await mapTap(-77, 38.95);
+      await mapTap(-77, 38.97);
+      expect(useMeasure.getState()).toMatchObject({ start: { lat: 38.9, lon: -77 }, end: { lat: 38.95, lon: -77 } });
+      await act(async () => (mapboxMock().__props.ShapeSource['measure-points'].onPress as (e: unknown) => void)({ features: [{ properties: { point: 'end' } }] }));
+      expect(screen.getByTestId('measure-bar')).toHaveTextContent(/Set end/);
+      await mapTap(-77, 38.97);
+      expect(useMeasure.getState()).toMatchObject({ start: { lat: 38.9, lon: -77 }, end: { lat: 38.97, lon: -77 }, editing: null });
+    });
+
     it('a tap on my marker snaps to my position, and opening a menu stops measuring', async () => {
       await openMap();
       await act(async () => usePresence.getState().setSelfPosition({ position: { lat: 38.9, lon: -77 }, accuracyM: 5, timestamp: 1 }));

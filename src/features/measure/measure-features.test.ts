@@ -16,4 +16,19 @@ describe('measureFeatures', () => {
     expect(chip.properties.label).toBe('1.11 km · 000° TRUE');
     expect((chip.geometry.coordinates as number[])[1]).toBeCloseTo(38.905, 3);
   });
+
+  it('names each dot and rings only the one picked to move', () => {
+    const dots = (editing: 'start' | 'end' | null) =>
+      measureFeatures(A, B, 'x', undefined, editing)
+        .features.filter((f) => f.properties.role === 'dot')
+        .map((f) => [f.properties.point, f.properties.picked]);
+    expect(dots(null)).toEqual([
+      ['start', false],
+      ['end', false],
+    ]);
+    expect(dots('end')).toEqual([
+      ['start', false],
+      ['end', true],
+    ]);
+  });
 });

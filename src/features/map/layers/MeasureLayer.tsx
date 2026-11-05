@@ -1,49 +1,73 @@
-import { LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
+import { CircleLayer, LineLayer, ShapeSource, SymbolLayer } from '@rnmapbox/maps';
 import { useMemo, type ComponentProps } from 'react';
 
 import { measureFeatures } from '@/features/measure/measure-features';
 import { measureParts, measureReadout } from '@/features/measure/measure-readout';
+import type { MeasurePoint } from '@/features/measure/measure-step';
 import { useMeasure } from '@/stores/measure';
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { MAP_IMAGE_IDS } from '../images/map-images';
 import { useOpSymbolStyle } from './op-symbol-scale';
-import { makeLineHaloStyle, makeMeasureChipStyle } from './styles';
+import { makeLineHaloStyle, makeMeasureChipStyle, makeMeasurePickedStyle } from './styles';
 
 type Filter = ComponentProps<typeof LineLayer>['filter'];
 const LINE = ['==', ['get', 'role'], 'line'] as unknown as Filter;
-const DOTS = ['==', ['get', 'role'], 'dot'] as unknown as Filter;
 const CHIP = ['==', ['get', 'role'], 'chip'] as unknown as Filter;
+const PICKED = ['==', ['get', 'picked'], true] as unknown as Filter;
 const DOT_STYLE = { iconImage: MAP_IMAGE_IDS.lineVertex, iconSize: 0.7, iconAllowOverlap: true, iconIgnorePlacement: true } as const;
+/** A finger-sized target around each dot (points), so picking one is easy. */
+export const MEASURE_DOT_HITBOX = { width: 44, height: 44 };
 
-/** The measure line from start to end; only the start dot until the end is set. */
+/**
+ * The measure line from start to end (only the start dot until the end is set), its readout chip at the middle, and the
+ * dots, which a tap picks to move (ringed while picked). The dots have a source of their own, so only they take taps:
+ * a tap anywhere else, even on the line, still sets the point being set.
+ */
 export function MeasureLayer() {
   const { colors } = useTheme();
   const iconStyle = useOpSymbolStyle(DOT_STYLE);
   const start = useMeasure((s) => s.start);
   const end = useMeasure((s) => s.end);
+  const editing = useMeasure((s) => s.editing);
   const angleUnit = useSettings((s) => s.angleUnit);
   const northRef = useSettings((s) => s.northRef);
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
-  const shape = useMemo(() => {
+  const { shape, dots } = useMemo(() => {
     const s = { angleUnit, northRef, declinationOverrideDeg };
     const label = start && end ? measureReadout(start, end, s) : '';
-    return measureFeatures(start, end, label, start && end ? measureParts(start, end, s) : undefined);
-  }, [start, end, angleUnit, northRef, declinationOverrideDeg]);
+    const all = measureFeatures(start, end, label, start && end ? measureParts(start, end, s) : undefined, editing);
+    return {
+      shape: { ...all, features: all.features.filter((f) => f.properties.role !== 'dot') },
+      dots: { ...all, features: all.features.filter((f) => f.properties.role === 'dot') },
+    };
+  }, [start, end, editing, angleUnit, northRef, declinationOverrideDeg]);
   const styles = useMemo(() => {
     // Measure is drawn in amber over the same dark halo as lines (halo uses the normal 3 pt width).
     const line = { lineColor: colors.accent, lineWidth: 3, lineCap: 'round' as const, lineJoin: 'round' as const };
-    return { halo: makeLineHaloStyle(colors), line, chip: makeMeasureChipStyle(colors) };
+    return { halo: makeLineHaloStyle(colors), line, chip: makeMeasureChipStyle(colors), picked: makeMeasurePickedStyle(colors) };
   }, [colors]);
   const chipStyle = useOpSymbolStyle(styles.chip);
 
   return (
-    <ShapeSource id="measure" shape={shape}>
-      <LineLayer id="measure-halo" style={styles.halo} filter={LINE} />
-      <LineLayer id="measure-line" style={styles.line} filter={LINE} />
-      <SymbolLayer id="measure-dots" style={iconStyle} filter={DOTS} />
-      <SymbolLayer id="measure-chip" style={chipStyle} filter={CHIP} />
-    </ShapeSource>
+    <>
+      <ShapeSource id="measure" shape={shape}>
+        <LineLayer id="measure-halo" style={styles.halo} filter={LINE} />
+        <LineLayer id="measure-line" style={styles.line} filter={LINE} />
+        <SymbolLayer id="measure-chip" style={chipStyle} filter={CHIP} />
+      </ShapeSource>
+      <ShapeSource
+        id="measure-points"
+        shape={dots}
+        hitbox={MEASURE_DOT_HITBOX}
+        onPress={(e) => {
+          const point = e.features[0]?.properties?.point as MeasurePoint | undefined;
+          if (point === 'start' || point === 'end') useMeasure.getState().pick(point);
+        }}>
+        <CircleLayer id="measure-picked" style={styles.picked} filter={PICKED} />
+        <SymbolLayer id="measure-dots" style={iconStyle} />
+      </ShapeSource>
+    </>
   );
 }

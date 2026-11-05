@@ -7,13 +7,19 @@ import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
-import { MeasureLayer } from './MeasureLayer';
+import { MEASURE_DOT_HITBOX, MeasureLayer } from './MeasureLayer';
 import { opSize, opTextSize } from './op-symbol-scale';
 
 jest.mock('@rnmapbox/maps');
 
 type Shape = { features: { properties: { role: string; label?: string }; geometry: { coordinates: unknown } }[] };
-const shape = () => mapboxMock().__props.ShapeSource.measure.shape as Shape;
+const source = (id: string) => mapboxMock().__props.ShapeSource[id].shape as Shape;
+/** Both sources together, in drawing order: the line, the dots, then the chip. */
+const roles = () => {
+  const [main, dots] = [source('measure').features, source('measure-points').features];
+  return [...main.filter((f) => f.properties.role === 'line'), ...dots, ...main.filter((f) => f.properties.role === 'chip')].map((f) => f.properties.role);
+};
+const shape = () => source('measure');
 
 beforeEach(() => {
   useMeasure.setState(INITIAL_MEASURE);
@@ -28,15 +34,33 @@ describe('MeasureLayer', () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     useInteraction.getState().setCamera({ center: { lat: 38.91, lon: -77 }, zoom: 14, bearing: 0 });
     await renderWithProviders(<MeasureLayer />);
-    expect(shape().features.map((f) => f.properties.role)).toEqual(['dot']);
+    expect(roles()).toEqual(['dot']);
     await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.92, lon: -77 }, zoom: 14, bearing: 0 }));
-    expect(shape().features.map((f) => f.properties.role)).toEqual(['dot']);
+    expect(roles()).toEqual(['dot']);
     await act(async () => useMeasure.getState().place({ lat: 38.91, lon: -77 }));
-    expect(shape().features.map((f) => f.properties.role)).toEqual(['line', 'dot', 'dot', 'chip']);
+    expect(roles()).toEqual(['line', 'dot', 'dot', 'chip']);
     expect(shape().features.find((f) => f.properties.role === 'chip')!.properties.label).toBe('1.11 km · 000° TRUE');
     const props = mapboxMock().__props;
     for (const id of ['measure-halo', 'measure-line']) expect(props.LineLayer[id]).toBeDefined();
     for (const id of ['measure-dots', 'measure-chip']) expect(props.SymbolLayer[id]).toBeDefined();
+  });
+
+  it('a tap on a dot picks it to move (and again lets it go); only the dots take taps', async () => {
+    useMeasure.getState().startMeasure();
+    useMeasure.getState().place({ lat: 38.9, lon: -77 });
+    useMeasure.getState().place({ lat: 38.91, lon: -77 });
+    await renderWithProviders(<MeasureLayer />);
+    const props = mapboxMock().__props;
+    expect(props.ShapeSource.measure.onPress).toBeUndefined();
+    expect(props.ShapeSource['measure-points'].hitbox).toEqual(MEASURE_DOT_HITBOX);
+    const tap = (point: string) => (props.ShapeSource['measure-points'].onPress as (e: unknown) => void)({ features: [{ properties: { point } }] });
+    await act(async () => tap('end'));
+    expect(useMeasure.getState().editing).toBe('end');
+    const picked = () => source('measure-points').features.map((f) => (f.properties as { picked?: boolean }).picked);
+    expect(picked()).toEqual([false, true]);
+    expect(props.CircleLayer['measure-picked'].style).toMatchObject({ circleStrokeColor: expect.any(String), circleOpacity: 0 });
+    await act(async () => tap('end'));
+    expect(useMeasure.getState().editing).toBeNull();
   });
 
   it('in OP mode sizes the dots by zoom, and back to normal after', async () => {

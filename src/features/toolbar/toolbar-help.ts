@@ -19,7 +19,7 @@ export const TOOLBAR_HELP: readonly ToolbarHelp[] = [
   { group: 'plot', label: 'LINE', icon: 'vector-polyline', help: 'Draw a phase line or route, point by point.' },
   { group: 'plot', label: 'POLYGON', icon: 'pentagon-outline', help: 'Outline an area, like an objective or boundary.' },
   { group: 'plot', label: 'PLOT', icon: 'target', help: 'Type a grid to drop a temp point, then save it or discard it.' },
-  { group: 'read', label: 'MEASURE', icon: 'ruler', help: 'Distance and bearing between two places.' },
+  { group: 'read', label: 'MEASURE', icon: 'ruler', help: 'Distance and bearing between two places. Once both are set, tap either point to move it.' },
   { group: 'read', label: 'AVG', icon: 'crosshairs-gps', help: 'Average your GPS position while you stay still, for a steadier, more accurate ME. If you move it pauses, holding the average until you resume or discard it.' },
   { group: 'read', label: 'LAYERS', icon: 'layers-outline', help: 'Show or hide units, points, lines and polygons one at a time, or turn whole overlays (groups of items, like the phases of an operation) on and off.' },
   { group: 'read', label: 'LABELS', icon: 'label-outline', help: 'Turn the names on map items on or off.' },
