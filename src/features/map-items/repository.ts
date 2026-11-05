@@ -1,4 +1,4 @@
-import { distinctUntilChanged, map, type Observable, shareReplay } from 'rxjs';
+import { distinctUntilChanged, map, type Observable, shareReplay, tap } from 'rxjs';
 
 import { isKnownSidc } from '@/features/symbology/categories';
 import { DEFAULT_SIDC } from '@/features/symbology/presets';
@@ -130,6 +130,8 @@ const sameItems = (a: MapItemSnapshot[], b: MapItemSnapshot[]) =>
 const sameIds = (a: string[], b: string[]) => a.join('|') === b.join('|');
 
 const shared = new WeakMap<AppDb, Map<string, Observable<unknown>>>();
+/** The last value each shared query gave, kept after it stops: read without subscribing (`peekMissionItem`). */
+const latest = new WeakMap<AppDb, Map<string, unknown>>();
 
 /**
  * One live query per database and key, however many components subscribe (the map's layers all watch the same
@@ -141,10 +143,27 @@ function sharedWatch<T>(db: AppDb, key: string, make: () => Observable<T>): Obse
   if (!byKey) shared.set(db, (byKey = new Map()));
   let observable = byKey.get(key) as Observable<T> | undefined;
   if (!observable) {
-    observable = make().pipe(shareReplay({ bufferSize: 1, refCount: true }));
+    observable = make().pipe(
+      tap((value) => {
+        let values = latest.get(db);
+        if (!values) latest.set(db, (values = new Map()));
+        values.set(key, value);
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
     byKey.set(key, observable);
   }
   return observable;
+}
+
+/**
+ * The item as the mission's shared item query last saw it (the map's layers keep that query running), at once, with no
+ * query of its own: a menu opening on an item tapped on the map has its details from the first frame. Undefined when that
+ * query has not seen it. It can be a moment stale; `observeItem` is the live answer.
+ */
+export function peekMissionItem(db: AppDb, missionId: string, id: string): MapItemSnapshot | undefined {
+  const items = latest.get(db)?.get(`items:${missionId}`) as MapItemSnapshot[] | undefined;
+  return items?.find((i) => i.id === id);
 }
 
 export function observeMissionItems(db: AppDb, missionId: string): Observable<MapItemSnapshot[]> {

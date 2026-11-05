@@ -9,16 +9,15 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TextField } from '@/components/ui/TextField';
 import { notifyError } from '@/features/feedback/feedback';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
-import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { useMenu } from '@/stores/menu';
 
 import { createOverlay, deleteOverlay, MAX_OVERLAY_NAME, renameOverlay, setOverlayHidden } from './commands';
 import { setBaseHidden } from '@/features/missions/commands';
 
-import { observeBaseHidden, observeMissionOverlays, type Overlay } from './repository';
+import type { Overlay } from './repository';
+import { useBaseHidden, useMissionOverlays } from './use-mission-overlays';
 
-const NO_OVERLAYS: Overlay[] = [];
 
 /**
  * The mission's overlays: add one by name, show or hide each, tap one to rename it, delete one (its items stay, back in the
@@ -29,8 +28,8 @@ const NAME_TAKEN_DETAIL = 'Choose a different name.';
 
 export function OverlaysMenu({ missionId }: MenuComponentProps<'overlays'>) {
   const ctx = useCommandContext();
-  const overlays = useObservable(() => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, [ctx, missionId]);
-  const baseHidden = useObservable(() => observeBaseHidden(ctx.db, missionId), false, [ctx, missionId]);
+  const overlays = useMissionOverlays(missionId);
+  const baseHidden = useBaseHidden(missionId);
   const back = useMenu((s) => s.back);
   const close = useMenu((s) => s.closeMenu);
   const drilled = useMenu((s) => s.stack.length > 1);

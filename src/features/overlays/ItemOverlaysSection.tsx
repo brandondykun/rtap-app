@@ -7,9 +7,9 @@ import { useCommandContext } from '@/lib/db/command-context-provider';
 
 import { moveItemToBase, setItemInOverlay } from './commands';
 import { OverlayChips } from './OverlayChips';
-import { BASE_OVERLAY_ID, baseOverlay, observeBaseHidden, observeItemOverlayIds, observeMissionOverlays, type Overlay } from './repository';
+import { BASE_OVERLAY_ID, baseOverlay, observeItemOverlayIds, type Overlay } from './repository';
+import { useBaseHidden, useMissionOverlays } from './use-mission-overlays';
 
-const NO_OVERLAYS: Overlay[] = [];
 const NO_IDS: string[] = [];
 
 /** "Phase 1", "Phase 1 and Phase 2", "Phase 1, Phase 2 and Fires". */
@@ -53,9 +53,9 @@ function OverlayPicker({
   onToggle: (overlay: Overlay, inOverlay: boolean) => void;
   onBase: () => void;
 }) {
-  const ctx = useCommandContext();
-  const overlays = useObservable(() => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, [ctx, missionId]);
-  const baseHidden = useObservable(() => observeBaseHidden(ctx.db, missionId), false, [ctx, missionId]);
+  // Remembered, so the section is there from the menu's first frame (a section arriving late moved the sheet).
+  const overlays = useMissionOverlays(missionId);
+  const baseHidden = useBaseHidden(missionId);
   if (overlays.length === 0) return null;
   const inSet = new Set(inIds);
   const chosen = overlays.filter((o) => inSet.has(o.id));

@@ -17,6 +17,7 @@ import { observeMissionSidcs } from '@/features/map-items/repository';
 import { MeasureBar } from '@/features/measure/MeasureBar';
 import type { MissionCamera } from '@/features/missions/repository';
 import { MenuHost } from '@/features/menus/MenuHost';
+import { useKeepOverlaysAtHand } from '@/features/overlays/use-mission-overlays';
 import { QuickPlotCard } from '@/features/quick-plot/QuickPlotCard';
 import { QuickPlotEntry } from '@/features/quick-plot/QuickPlotEntry';
 import type { ItemRef } from '@/features/symbology/categories';
@@ -96,6 +97,8 @@ function isViewingItem(): boolean {
 
 export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {
   const ctx = useCommandContext();
+  // Menus opened over the map (an item's Overlays, Layers) have the mission's overlays from their first frame.
+  useKeepOverlaysAtHand(missionId);
   const { width, height } = useWindowDimensions();
   const landscape = isLandscape(width, height);
   const toolbar = useToolbarHeight();

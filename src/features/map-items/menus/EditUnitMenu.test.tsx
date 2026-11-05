@@ -1,6 +1,6 @@
 import { TextInput } from 'react-native';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, NEVER, Subject } from 'rxjs';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
@@ -11,12 +11,16 @@ import { makeTestContext } from '@/lib/db/test-database';
 import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { INITIAL_MENU, useMenu } from '@/stores/menu';
 import { useToast } from '@/stores/toast';
+import { createOverlay } from '@/features/overlays/commands';
+import * as overlaysRepository from '@/features/overlays/repository';
+import { useKeepOverlaysAtHand } from '@/features/overlays/use-mission-overlays';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { deleteItem, placePoint } from '../commands';
 import { pointCoord } from '../geometry';
 import { EditUnitMenu } from './EditUnitMenu';
-import { findItem, observeHiddenItemIds, observeRingItemIds } from '../repository';
+import * as repository from '../repository';
+import { findItem, observeHiddenItemIds, observeMissionItems, observeRingItemIds, peekMissionItem, type MapItemSnapshot } from '../repository';
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true }) }));
 
@@ -42,6 +46,84 @@ async function openEditor() {
 }
 
 describe('EditUnitMenu', () => {
+  it('has its Overlays section from the first frame when the map keeps the overlays at hand', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    await createOverlay(ctx, { missionId: 'm1', name: 'Phase 1' });
+    function MapScreen() {
+      useKeepOverlaysAtHand('m1');
+      return <MenuHost landscape={false} missionId="m1" />;
+    }
+    await renderWithProviders(<MapScreen />, ctx);
+    // The map screen has the overlays: an item menu's own overlay query never answering changes nothing.
+    await waitFor(async () => expect(await firstValueFrom(overlaysRepository.observeMissionOverlays(ctx.db, 'm1'))).toHaveLength(1));
+    const spy = jest.spyOn(overlaysRepository, 'observeMissionOverlays').mockReturnValue(NEVER);
+    try {
+      await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+      expect(await screen.findByTestId('item-title')).toBeTruthy();
+      expect(screen.getByTestId('item-overlays')).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('selecting another unit while one is open shows the new one', async () => {
+    const { ctx } = await openEditor();
+    const other = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-9' });
+    if (!other.ok) throw new Error('setup');
+    // The map's layers keep the mission's items query running, so the new menu starts from the map's copy.
+    const map = observeMissionItems(ctx.db, 'm1').subscribe();
+    await waitFor(() => expect(peekMissionItem(ctx.db, 'm1', other.value.id)).toBeDefined());
+    try {
+      await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: other.value.id }));
+      expect(await screen.findByTestId('item-title')).toHaveAccessibleName(/^HOS-9, /);
+      expect(screen.queryByTestId('item-loading')).toBeNull();
+      expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: other.value.id });
+    } finally {
+      map.unsubscribe();
+    }
+  });
+
+  it('opens straight onto the details when the map already has the unit, with no empty frame', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    // The map's layers keep the mission's items query running.
+    const map = observeMissionItems(ctx.db, 'm1').subscribe();
+    await waitFor(() => expect(peekMissionItem(ctx.db, 'm1', r.value.id)).toBeDefined());
+    // The menu's own query has not answered yet: what shows comes from the map's copy.
+    jest.spyOn(repository, 'observeItem').mockReturnValue(NEVER);
+    try {
+      await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+      await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+      expect(screen.getByTestId('item-title')).toHaveAccessibleName(/^FRD-2, /);
+      expect(screen.queryByTestId('item-loading')).toBeNull();
+    } finally {
+      map.unsubscribe();
+      jest.mocked(repository.observeItem).mockRestore();
+    }
+  });
+
+  it('shows it is loading, not an empty menu, while reading a unit the map does not have at hand', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });
+    if (!r.ok) throw new Error('setup');
+    const slow = new Subject<MapItemSnapshot | null>();
+    jest.spyOn(repository, 'observeItem').mockReturnValue(slow);
+    try {
+      await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+      await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+      expect(screen.getByLabelText('Loading the unit')).toBeTruthy();
+      expect(screen.queryByTestId('item-title')).toBeNull();
+      await act(async () => slow.next((await findItem(ctx.db, r.value.id))!));
+      expect(screen.getByTestId('item-title')).toBeTruthy();
+      expect(screen.queryByTestId('item-loading')).toBeNull();
+    } finally {
+      jest.mocked(repository.observeItem).mockRestore();
+    }
+  });
+
   it('opens to the condensed view with Close and Edit, not the form', async () => {
     await openEditor();
     expect(screen.getByTestId('item-title')).toHaveAccessibleName(/^FRD-2, Friendly · /);

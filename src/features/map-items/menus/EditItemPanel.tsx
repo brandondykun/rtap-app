@@ -1,5 +1,5 @@
-import { useContext, useEffect, useRef, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { useContext, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { PanelScrollContext } from '@/components/menu/panel-header-slot';
@@ -10,9 +10,10 @@ import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { draftRanges, useDraft } from '@/stores/draft';
 import { useMenu } from '@/stores/menu';
+import { useTheme } from '@/theme/ThemeProvider';
 
 import { deleteItem } from '../commands';
-import { observeHiddenItemIds, observeItem, type MapItemSnapshot } from '../repository';
+import { observeHiddenItemIds, observeItem, peekMissionItem, type MapItemSnapshot } from '../repository';
 import { formatRangeText, RANGE_FIELDS } from '../unit-ranges';
 import { ITEM_ADAPTERS } from './item-adapters';
 import { ITEM_COPY, openItemMenu } from './item-menus';
@@ -30,6 +31,7 @@ type Props = { category: ItemCategory; itemId: string; missionId: string; form: 
  */
 export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
+  const { colors } = useTheme();
   const adapter = ITEM_ADAPTERS[category];
   const GONE = `That ${noun} no longer exists.`;
   const ctx = useCommandContext();
@@ -38,8 +40,9 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   // Drilled into from another menu (Layers): leaving goes back there instead of closing.
   const drilled = useMenu((s) => s.stack.length > 1);
   const close = drilled ? back : closeMenu;
-  // undefined = still loading; null = missing or deleted.
-  const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, itemId), undefined, [ctx, itemId]);
+  // undefined = still loading; null = missing or deleted. It starts from the map's copy of the item (when the map has it),
+  // so the menu opens with its details instead of empty until its own query answers.
+  const item = useObservable<MapItemSnapshot | null | undefined>(() => observeItem(ctx.db, itemId), peekMissionItem(ctx.db, missionId, itemId), [ctx, itemId]);
   const hiddenIds = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
   const ready = useDraft((s) => s.mode === 'edit' && s.itemId === itemId);
   const valid = useDraft((s) => adapter.canSave(s));
@@ -52,7 +55,8 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   const leaving = useRef(false);
   const busy = useRef(false);
 
-  useEffect(() => {
+  // Before the first paint: an item already at hand (the map's copy) is shown in the very first frame, not after an empty one.
+  useLayoutEffect(() => {
     if (item === undefined || leaving.current) return;
     if (!item) {
       leaving.current = true;
@@ -77,7 +81,9 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
     }
   }, [item, close, back, drilled, category, GONE, adapter]);
 
-  useEffect(() => () => useDraft.getState().clear(), []);
+  // A layout effect, like the selecting one above: when another item's menu replaces this one, this clears the draft before
+  // that menu fills it. (A plain effect's clean-up would run after, wiping the new item.)
+  useLayoutEffect(() => () => useDraft.getState().clear(), []);
 
   // Saving or cancelling swaps the long form for the short view: start it at the top, not part-way down.
   const panelScroll = useContext(PanelScrollContext);
@@ -179,7 +185,12 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
         <View testID="edit-form" className="pt-3">
           {form}
         </View>
-      ) : null}
+      ) : (
+        // Still reading the item (one the map did not have at hand): say so rather than open empty.
+        <View testID="item-loading" className="items-center py-10">
+          <ActivityIndicator accessibilityLabel={`Loading the ${noun}`} color={colors['text-muted']} />
+        </View>
+      )}
     </View>
   );
 }

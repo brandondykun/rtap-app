@@ -27,7 +27,8 @@ import { useMenu } from '@/stores/menu';
 import { useSettings, type CoordinateFormat } from '@/stores/settings';
 import { LayersOverlaysSection } from '@/features/overlays/LayersOverlaysSection';
 import { setAllOverlaysHidden, setOverlayHidden } from '@/features/overlays/commands';
-import { BASE_OVERLAY_ID, baseOverlay, observeBaseHidden, observeBaseItemCount, observeMissionOverlays, observeOverlayHiddenItemIds, type Overlay } from '@/features/overlays/repository';
+import { BASE_OVERLAY_ID, baseOverlay, observeBaseItemCount, observeOverlayHiddenItemIds } from '@/features/overlays/repository';
+import { useBaseHidden, useMissionOverlays } from '@/features/overlays/use-mission-overlays';
 import { setBaseHidden } from '@/features/missions/commands';
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_TEXT_CLASS } from '@/theme/value-colors';
@@ -48,7 +49,6 @@ const tabCount = (n: number) => (n > 99 ? '99+' : String(n));
 
 // `label` is the screen-reader name; `short` is what the tab shows, so all four fit on one line.
 /** The Units tab's filter chips, in the order of the design: friendly and hostile first. */
-const NO_OVERLAYS: Overlay[] = [];
 
 const CHIP_AFFILIATIONS: readonly Affiliation[] = ['friend', 'hostile', 'unknown', 'neutral'];
 const NO_AFFILIATION_COUNTS: Record<Affiliation, number> = { friend: 0, hostile: 0, neutral: 0, unknown: 0 };
@@ -84,8 +84,8 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const items = useRememberedObservable(ctx.db, `layers.items:${missionId}`, () => observeMissionItems(ctx.db, missionId), NO_ITEMS, []);
   const hidden = useRememberedObservable(ctx.db, 'layers.hidden', () => observeHiddenItemIds(ctx.db), NO_IDS, []);
   const ringIds = useRememberedObservable(ctx.db, 'layers.rings', () => observeRingItemIds(ctx.db), NO_IDS, []);
-  const namedOverlays = useRememberedObservable(ctx.db, `layers.overlays:${missionId}`, () => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, []);
-  const baseHidden = useRememberedObservable(ctx.db, `layers.baseHidden:${missionId}`, () => observeBaseHidden(ctx.db, missionId), false, []);
+  const namedOverlays = useMissionOverlays(missionId);
+  const baseHidden = useBaseHidden(missionId);
   const baseCount = useRememberedObservable(ctx.db, `layers.baseCount:${missionId}`, () => observeBaseItemCount(ctx.db, missionId), 0, []);
   // The base first: the items in no overlay, shown or hidden like any overlay.
   const overlays = useMemo(() => [baseOverlay(missionId, baseHidden, baseCount), ...namedOverlays], [missionId, baseHidden, baseCount, namedOverlays]);
