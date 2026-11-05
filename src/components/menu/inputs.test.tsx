@@ -125,7 +125,7 @@ describe('menu inputs', () => {
     const undo = jest.fn();
     const anchorFocus = jest.fn(() => undo);
     await renderWithProviders(
-      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop: jest.fn(), anchorFocus }}>
+      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop: jest.fn(), anchorFocus, scrollFocusedToTop: jest.fn() }}>
         <MenuSelect label="Letter" options={LETTERS} value="alpha" onChange={jest.fn()} />
       </PanelScrollContext.Provider>,
     );

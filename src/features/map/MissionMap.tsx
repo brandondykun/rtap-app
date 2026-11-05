@@ -88,10 +88,10 @@ const SAME_TOUCH_MS = 400;
 const SUSPECT_CLOSE_MS = 2000;
 const ITEM_VIEW_MENUS = new Set(['unit.edit', 'point.edit', 'line.edit', 'polygon.edit']);
 
-/** An item's menu is open read-only (selected), not being edited. */
+/** An item's menu is open read-only (selected), not being edited, its notes included. */
 function isViewingItem(): boolean {
   const id = topMenu(useMenu.getState())?.id;
-  return id !== undefined && ITEM_VIEW_MENUS.has(id) && useDraft.getState().locked;
+  return id !== undefined && ITEM_VIEW_MENUS.has(id) && useDraft.getState().locked && !useDraft.getState().notesEditing;
 }
 
 export function MissionMap({ missionId, savedCamera }: { missionId: string; savedCamera: MissionCamera | null }) {

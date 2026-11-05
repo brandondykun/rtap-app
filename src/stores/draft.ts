@@ -45,8 +45,8 @@ export type DraftValues = {
   rangeText: Record<RangeField, string>;
   /** View-only: an existing point shown selected; nothing in the draft can change until Edit. */
   locked: boolean;
-  /** Set by tapping the notes in the view: the form's notes field focuses itself (and scrolls into view) once it appears. */
-  focusNotes: boolean;
+  /** Editing just the notes, in place in the view (tapping them there): the rest of the item stays read-only. */
+  notesEditing: boolean;
   /** Waiting for the user to tap the map where the point should go (the Map button). */
   picking: boolean;
   /** Line drafts (category 'line'): the points, the selected point, and where the next one goes. */
@@ -96,10 +96,10 @@ type DraftActions = {
   refocus: () => void;
   /** Centers the map on a point (tapping one in the polygon view), keeping the zoom. */
   lookAt: (at: LatLon) => void;
-  /** Unlocks the form and asks its notes field to take focus (tapping the notes in the view). */
+  /** Turns the view's notes into a field, in place (tapping them in the view). */
   editNotes: () => void;
-  /** True once after `editNotes`: the notes field calls this when it mounts and focuses itself if it gets true. */
-  takeNotesFocus: () => boolean;
+  /** Ends editing the notes in place, putting back `notes` (what is stored, on Cancel). Save ends it with `setLocked`. */
+  stopEditingNotes: (notes: string) => void;
   setCoordInputValid: (valid: boolean) => void;
   setAffiliation: (affiliation: Affiliation) => void;
   setUnitType: (unitType: UnitType) => void;
@@ -158,7 +158,7 @@ export const INITIAL_DRAFT: DraftValues = {
   elevation: null,
   rangeText: { threatRangeM: '', horizontalRangeM: '', verticalRangeFt: '' },
   locked: false,
-  focusNotes: false,
+  notesEditing: false,
   picking: false,
   vertices: [],
   selectedVertex: null,
@@ -272,12 +272,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
     // Any move ends a pending map pick (the pick itself arrives through here too).
     set((s) => (isValid(coord) && !s.locked ? { coord, coordSource: source, coordRev: s.coordRev + 1, picking: false } : {})),
   focusItem: () => set((s) => (s.coord ? { coordRev: s.coordRev + 1, coordSource: 'item' } : {})),
-  editNotes: () => set({ locked: false, focusNotes: true }),
-  takeNotesFocus: () => {
-    if (!useDraft.getState().focusNotes) return false;
-    set({ focusNotes: false });
-    return true;
-  },
+  editNotes: () => set((s) => (s.locked ? { notesEditing: true } : {})),
+  stopEditingNotes: (notes) => set({ notesEditing: false, notes }),
   setCoordInputValid: (coordInputValid) => set({ coordInputValid }),
   setAffiliation: (affiliation) =>
     set((s) => ({
@@ -310,7 +306,8 @@ export const useDraft = create<DraftValues & DraftActions>()((set) => ({
       return { focusBounds: (shape.length >= 2 ? boundsAround(shape) : null) ?? s.focusBounds, focusRev: s.focusRev + 1 };
     }),
   lookAt: (at) => set((s) => ({ lookTarget: at, lookRev: s.lookRev + 1 })),
-  setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking })),
+  // Locking (Save, Cancel) or unlocking (Edit) also ends editing the notes in place.
+  setLocked: (locked) => set((s) => ({ locked, picking: locked ? false : s.picking, notesEditing: false })),
   setPicking: (picking) => set((s) => ({ picking: picking && !s.locked && s.mode !== null })),
   startAddLine: () =>
     set((s) => ({

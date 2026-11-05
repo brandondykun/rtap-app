@@ -24,7 +24,10 @@ const NO_IDS: string[] = [];
 
 type Props = { category: ItemCategory; itemId: string; missionId: string; form: ReactNode };
 
-/** Item view: every item opens as a condensed view (Edit unlocks the form). Save or Cancel locks it again. */
+/**
+ * Item view: every item opens as a condensed view (Edit unlocks the form). Save or Cancel locks it again. Tapping the
+ * notes edits just them, in place in the view, with Cancel / Save in the header.
+ */
 export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   const { noun, title } = ITEM_COPY[category];
   const adapter = ITEM_ADAPTERS[category];
@@ -42,6 +45,8 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
   const valid = useDraft((s) => adapter.canSave(s));
   // Opens view-only; Edit unlocks the form, Save or Cancel locks it again.
   const locked = useDraft((s) => s.locked);
+  // Only the notes open, in place in the view (tapping them there): Cancel / Save without leaving the view.
+  const notesEditing = useDraft((s) => s.notesEditing);
   const started = useRef(false);
   // Set before we close or delete ourselves, so the item vanishing is not reported as "missing".
   const leaving = useRef(false);
@@ -84,7 +89,7 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
     wasLocked.current = locked;
   }, [ready, locked, panelScroll]);
 
-  const canSave = ready && !locked && valid;
+  const canSave = ready && (!locked || notesEditing) && valid;
 
   const save = async () => {
     if (busy.current || !canSave) return;
@@ -139,7 +144,13 @@ export function EditItemPanel({ category, itemId, missionId, form }: Props) {
 
   return (
     <View>
-      {locked ? (
+      {notesEditing ? (
+        <MenuHeader
+          title={title}
+          leading={{ label: 'Cancel', onPress: () => useDraft.getState().stopEditingNotes(item?.notes ?? '') }}
+          trailing={{ label: 'Save', icon: 'check', onPress: () => void save(), disabled: !canSave }}
+        />
+      ) : locked ? (
         <MenuHeader
           title={title}
           leading={drilled ? { label: 'Back', icon: 'chevron-left', iconOnly: true, onPress: back } : { label: 'Close', icon: 'close', iconOnly: true, onPress: closeMenu }}

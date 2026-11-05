@@ -190,7 +190,12 @@ export function Panel({
       if (focusAnchors.current.get(field) === anchor) focusAnchors.current.delete(field);
     };
   }, []);
-  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, anchorFocus }), [scrollToEnd, scrollToTop, anchorFocus]);
+  // Calls through a ref: `scrollFocusedToTop` is defined further down, with the keyboard handling.
+  const scrollFocusedRef = useRef<() => void>(() => {});
+  const panelScroll = useMemo<PanelScroll>(
+    () => ({ scrollToEnd, scrollToTop, anchorFocus, scrollFocusedToTop: () => scrollFocusedRef.current() }),
+    [scrollToEnd, scrollToTop, anchorFocus],
+  );
   const viewportHeight = useRef(0);
   const scrollY = useRef(0);
   /** What the content scrolls in, measured to find where a focused field sits in it. */
@@ -305,6 +310,9 @@ export function Panel({
       });
     });
   }, []);
+  useEffect(() => {
+    scrollFocusedRef.current = scrollFocusedToTop;
+  }, [scrollFocusedToTop]);
   /** The keyboard is opening and the scroll waits for the content's new room to be laid out. */
   const scrollOnceInset = useRef(false);
   useEffect(() => {

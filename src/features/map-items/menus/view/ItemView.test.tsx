@@ -155,7 +155,7 @@ describe('ItemView', () => {
     await open(composeSidc('friend', 'armor'), { notes: 'hull down' });
     expect(screen.getByText('hull down')).toBeTruthy();
     const notes = screen.getByLabelText('Notes: hull down');
-    expect(notes.props.accessibilityHint).toBe('Opens the editor');
+    expect(notes.props.accessibilityHint).toBe('Edits the notes');
     expect(screen.getByText('hull down')).toHaveProp('numberOfLines', 6);
   });
 });

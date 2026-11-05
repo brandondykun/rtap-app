@@ -16,6 +16,8 @@ export type PanelScroll = {
    * keeps the dropdown above it in view). Returns the undo.
    */
   anchorFocus: (field: object, anchor: View) => () => void;
+  /** Brings the focused field to the panel's top, as when the keyboard opens (for when no keyboard shows: a hardware one). */
+  scrollFocusedToTop: () => void;
 };
 
 /** Set by the Panel. Null outside a Panel. */

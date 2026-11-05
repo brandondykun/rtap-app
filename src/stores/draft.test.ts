@@ -347,12 +347,33 @@ describe('unit ranges in the draft', () => {
 });
 
 describe('editNotes', () => {
-  it('unlocks the form and leaves a one-time request for the notes field', () => {
-    useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: '' });
+  const view = () => useDraft.getState().startEdit({ itemId: 'i1', coord: A, category: 'unit', pointType: 'checkpoint', affiliation: 'friend', unitType: 'armor', echelon: 'unspecified', name: 'FRD-1', notes: 'old' });
+
+  it('opens just the notes, leaving the rest of the item read-only', () => {
+    view();
     useDraft.getState().editNotes();
-    expect(useDraft.getState()).toMatchObject({ locked: false, focusNotes: true });
-    expect(useDraft.getState().takeNotesFocus()).toBe(true);
-    expect(useDraft.getState().takeNotesFocus()).toBe(false);
+    expect(useDraft.getState()).toMatchObject({ locked: true, notesEditing: true });
+  });
+
+  it('Cancel puts back what is stored; Save (locking) and Edit end it too', () => {
+    view();
+    useDraft.getState().editNotes();
+    useDraft.getState().setNotes('new');
+    useDraft.getState().stopEditingNotes('old');
+    expect(useDraft.getState()).toMatchObject({ notesEditing: false, notes: 'old' });
+    useDraft.getState().editNotes();
+    useDraft.getState().setLocked(true);
+    expect(useDraft.getState().notesEditing).toBe(false);
+    useDraft.getState().editNotes();
+    useDraft.getState().setLocked(false);
+    expect(useDraft.getState().notesEditing).toBe(false);
+  });
+
+  it('does nothing in the form, where the notes are already a field', () => {
+    view();
+    useDraft.getState().setLocked(false);
+    useDraft.getState().editNotes();
+    expect(useDraft.getState().notesEditing).toBe(false);
   });
 });
 

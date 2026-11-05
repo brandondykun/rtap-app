@@ -148,18 +148,39 @@ describe('EditUnitMenu', () => {
     expect((await findItem(ctx.db, id))?.sidc).toBe(composeSidc('friend', 'armor', 'company'));
   });
 
-  it('tapping the notes in the view opens the form with the notes field focused', async () => {
+  it('tapping the notes in the view edits them right there, with Cancel / Save in the header, not the form', async () => {
     const focus = jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
     try {
-      await openEditor();
-      // The unit has notes, so the preview reads them out ("Notes: …"); with none it's "Add notes".
-      await fireEvent.press(screen.getByLabelText(/^(Add notes|Notes: )/));
-      expect(screen.getByRole('header')).toHaveTextContent('Edit unit');
-      expect(screen.getByLabelText('Notes')).toHaveProp('editable', true);
+      const { ctx, id } = await openEditor();
+      await fireEvent.press(screen.getByLabelText('Notes: hull down'));
+      // Still the view: its title and actions stay, no other field opens.
+      expect(screen.getByRole('header')).toHaveTextContent('Unit');
+      expect(screen.getByTestId('item-title')).toBeTruthy();
+      expect(screen.queryByLabelText('Name')).toBeNull();
+      expect(screen.getByLabelText('Notes')).toHaveProp('value', 'hull down');
       expect(focus).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Cancel')).toBeTruthy();
+      await fireEvent.changeText(screen.getByLabelText('Notes'), 'dug in');
+      await fireEvent.press(screen.getByLabelText('Save'));
+      await waitFor(async () => expect((await findItem(ctx.db, id))?.notes).toBe('dug in'));
+      expect(await screen.findByLabelText('Notes: dug in')).toBeTruthy();
+      expect(screen.getByLabelText('Edit')).toBeTruthy();
     } finally {
       focus.mockRestore();
     }
+  });
+
+  it('Cancel puts back the stored notes and leaves the view as it was', async () => {
+    jest.spyOn(TextInput.prototype, 'focus').mockImplementation(() => {});
+    const { ctx, id } = await openEditor();
+    await fireEvent.press(screen.getByLabelText('Notes: hull down'));
+    await fireEvent.changeText(screen.getByLabelText('Notes'), 'scrap this');
+    await fireEvent.press(screen.getByText('Cancel'));
+    expect(screen.getByLabelText('Notes: hull down')).toBeTruthy();
+    expect(useDraft.getState()).toMatchObject({ notes: 'hull down', notesEditing: false, locked: true });
+    expect((await findItem(ctx.db, id))?.notes).toBe('hull down');
+    expect(useMenu.getState().stack).toHaveLength(1);
+    jest.mocked(TextInput.prototype.focus).mockRestore();
   });
 
   it('jumps back to the top of the menu when Save or Cancel closes the form', async () => {
@@ -168,7 +189,7 @@ describe('EditUnitMenu', () => {
     if (!r.ok) throw new Error('setup');
     const scrollToTop = jest.fn();
     await renderWithProviders(
-      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop, anchorFocus: jest.fn() }}>
+      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop, anchorFocus: jest.fn(), scrollFocusedToTop: jest.fn() }}>
         <EditUnitMenu params={{ itemId: r.value.id }} missionId="m1" />
       </PanelScrollContext.Provider>,
       ctx,
