@@ -134,6 +134,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const longPressAddUnit = useSettings((s) => s.longPressAddUnit);
   const setLongPressAddUnit = useSettings((s) => s.setLongPressAddUnit);
+  const keyboardSuggestions = useSettings((s) => s.keyboardSuggestions);
+  const setKeyboardSuggestions = useSettings((s) => s.setKeyboardSuggestions);
   const showCenterGrid = useSettings((s) => s.showCenterGrid);
   const setShowCenterGrid = useSettings((s) => s.setShowCenterGrid);
   const minimalLandscapeGrids = useSettings((s) => s.minimalLandscapeGrids);
@@ -328,6 +330,10 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
         <MenuSection label="Panel background">
           <MenuSegmented<PanelBackground> options={PANEL_BACKGROUND_OPTIONS} value={panelBackground} onChange={setPanelBackground} />
           <Text className="text-xs text-text-muted">How much the toolbar, readouts and map buttons hide the map. Heavier reads better over snow.</Text>
+        </MenuSection>
+        <MenuSection label="Keyboard">
+          <MenuToggle label="Keyboard suggestions" value={keyboardSuggestions} onValueChange={setKeyboardSuggestions} />
+          <Text className="text-xs text-text-muted">Autocorrect and the suggestion bar above the keyboard. Off leaves more of the screen. Names and grids never autocorrect.</Text>
         </MenuSection>
       </MenuGroup>
     </View>

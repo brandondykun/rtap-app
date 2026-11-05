@@ -35,6 +35,8 @@ type SettingsValues = {
   showZoomButtons: boolean;
   /** Long-press on the map adds an enemy unit (or moves the one being added or edited, or adds a drawing point); off ignores long-press. */
   longPressAddUnit: boolean;
+  /** The keyboard's suggestion strip (autocorrect, spell check, AutoFill) on text fields; off by default, it takes room. */
+  keyboardSuggestions: boolean;
   /** The crosshair (map center) readout card. */
   showCenterGrid: boolean;
   /** Landscape: the readout shows only the center grid and yours, no distance, bearing, altitude or accuracy. */
@@ -73,6 +75,7 @@ type SettingsActions = {
   setShowLineDistances: (show: boolean) => void;
   setShowZoomButtons: (show: boolean) => void;
   setLongPressAddUnit: (on: boolean) => void;
+  setKeyboardSuggestions: (on: boolean) => void;
   setShowCenterGrid: (show: boolean) => void;
   setMinimalLandscapeGrids: (on: boolean) => void;
   setShowToolbarText: (show: boolean) => void;
@@ -107,6 +110,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   showLineDistances: true,
   showZoomButtons: true,
   longPressAddUnit: false,
+  keyboardSuggestions: false,
   showCenterGrid: true,
   minimalLandscapeGrids: false,
   showToolbarText: true,
@@ -156,6 +160,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     showLineDistances: typeof p.showLineDistances === 'boolean' ? p.showLineDistances : current.showLineDistances,
     showZoomButtons: typeof p.showZoomButtons === 'boolean' ? p.showZoomButtons : current.showZoomButtons,
     longPressAddUnit: typeof p.longPressAddUnit === 'boolean' ? p.longPressAddUnit : current.longPressAddUnit,
+    keyboardSuggestions: typeof p.keyboardSuggestions === 'boolean' ? p.keyboardSuggestions : current.keyboardSuggestions,
     showCenterGrid: typeof p.showCenterGrid === 'boolean' ? p.showCenterGrid : current.showCenterGrid,
     minimalLandscapeGrids: typeof p.minimalLandscapeGrids === 'boolean' ? p.minimalLandscapeGrids : current.minimalLandscapeGrids,
     showToolbarText: typeof p.showToolbarText === 'boolean' ? p.showToolbarText : current.showToolbarText,
@@ -186,6 +191,7 @@ export const useSettings = create<SettingsState>()(
       setShowLineDistances: (showLineDistances) => set({ showLineDistances }),
       setShowZoomButtons: (showZoomButtons) => set({ showZoomButtons }),
       setLongPressAddUnit: (longPressAddUnit) => set({ longPressAddUnit }),
+      setKeyboardSuggestions: (keyboardSuggestions) => set({ keyboardSuggestions }),
       setShowCenterGrid: (showCenterGrid) => set({ showCenterGrid }),
       setMinimalLandscapeGrids: (minimalLandscapeGrids) => set({ minimalLandscapeGrids }),
       setShowToolbarText: (showToolbarText) => set({ showToolbarText }),
@@ -217,7 +223,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, gridStrength, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, keyboardSuggestions, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, gridStrength, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -227,6 +233,7 @@ export const useSettings = create<SettingsState>()(
         showLineDistances,
         showZoomButtons,
         longPressAddUnit,
+        keyboardSuggestions,
         showCenterGrid,
         minimalLandscapeGrids,
         showToolbarText,

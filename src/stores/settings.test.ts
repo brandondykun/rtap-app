@@ -79,6 +79,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ showZoomButtons: false });
   });
 
+  it('sets and persists keyboard suggestions (off by default)', () => {
+    expect(useSettings.getState().keyboardSuggestions).toBe(false);
+    useSettings.getState().setKeyboardSuggestions(true);
+    expect(useSettings.getState().keyboardSuggestions).toBe(true);
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ keyboardSuggestions: true });
+  });
+
   it('sets and persists long-press to add unit (off by default)', () => {
     expect(useSettings.getState().longPressAddUnit).toBe(false);
     useSettings.getState().setLongPressAddUnit(true);

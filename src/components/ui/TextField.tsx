@@ -1,9 +1,13 @@
 import { useRef, useState, type Ref } from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
+import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { Icon, type IconName } from './Icon';
+
+/** Keeps the keyboard's suggestion strip away (see the Keyboard suggestions setting). */
+const NO_SUGGESTIONS = { autoCorrect: false, spellCheck: false, textContentType: 'none' } as const;
 
 type Props = Omit<TextInputProps, 'style'> & {
   invalid?: boolean;
@@ -25,6 +29,7 @@ type Props = Omit<TextInputProps, 'style'> & {
  */
 export function TextField({ invalid = false, mono = false, dense = false, nested = false, clearable = false, icon, ref, onFocus, onBlur, multiline, ...rest }: Props) {
   const { colors } = useTheme();
+  const suggestions = useSettings((s) => s.keyboardSuggestions);
   const [focused, setFocused] = useState(false);
   const inner = useRef<TextInput>(null);
   const border = invalid ? 'border-danger' : focused ? 'border-accent' : 'border-border';
@@ -55,11 +60,9 @@ export function TextField({ invalid = false, mono = false, dense = false, nested
       multiline={multiline}
       // Android landscape would otherwise swap the screen for a full-screen editor (hiding the map and menus).
       disableFullscreenUI
-      // No suggestion strip over the keyboard (iOS's predictive / AutoFill bar): it takes room the menu and map need.
-      // All three are needed, or iOS keeps the strip; a field can turn them back on.
-      autoCorrect={false}
-      spellCheck={false}
-      textContentType="none"
+      // No suggestion strip over the keyboard (iOS's predictive / AutoFill bar) unless Settings asks for it: it takes room
+      // the menu and map need. All three are needed, or iOS keeps the strip. A field's own choice (names: never) wins.
+      {...(suggestions ? null : NO_SUGGESTIONS)}
       // A fixed height and no line-height keep single-line text vertically centred on iOS
       // (Tailwind's text-lg adds a 28 pt line-height that pushes TextInput text down). Multiline text and its
       // placeholder start at the top: Android would otherwise centre them vertically.

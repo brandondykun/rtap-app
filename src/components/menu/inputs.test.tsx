@@ -1,7 +1,8 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { TextField } from '@/components/ui/TextField';
+import { useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MenuSegmented } from './MenuSegmented';
@@ -18,6 +19,23 @@ describe('menu inputs', () => {
     );
     expect(screen.getByLabelText('Plain').props).toMatchObject({ autoCorrect: false, spellCheck: false, textContentType: 'none' });
     expect(screen.getByLabelText('Prose').props).toMatchObject({ autoCorrect: true, spellCheck: true });
+  });
+
+  it('leaves the suggestion strip to the keyboard when Settings turns suggestions on, except where a field turns it off', async () => {
+    await act(async () => useSettings.setState({ keyboardSuggestions: true }));
+    try {
+      await renderWithProviders(
+        <>
+          <TextField accessibilityLabel="Notes" value="" onChangeText={() => {}} />
+          <TextField accessibilityLabel="Name" value="" onChangeText={() => {}} autoCorrect={false} />
+        </>,
+      );
+      expect(screen.getByLabelText('Notes').props.autoCorrect).toBeUndefined();
+      expect(screen.getByLabelText('Notes').props.textContentType).toBeUndefined();
+      expect(screen.getByLabelText('Name').props.autoCorrect).toBe(false);
+    } finally {
+      useSettings.setState({ keyboardSuggestions: false });
+    }
   });
 
   it('TextField passes text through', async () => {

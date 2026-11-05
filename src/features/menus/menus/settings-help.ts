@@ -64,4 +64,5 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
     choices: 'Clear · Light · Heavy · Solid',
     help: 'How much the toolbar, readouts and map buttons hide the map. Heavier reads better over snow.',
   },
+  { name: 'Keyboard suggestions', help: 'Autocorrect and the suggestion bar above the keyboard. Off leaves more of the screen. Names and grids never autocorrect.' },
 ];
