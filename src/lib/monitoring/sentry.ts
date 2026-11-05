@@ -37,4 +37,13 @@ function redactEvent(event: ErrorEvent): ErrorEvent {
   return event;
 }
 
+/**
+ * Something that looks like a bug being chased, not an error: a warning in the Metro log while developing (Sentry is off
+ * then), a Sentry message in release builds. `data` must not say where the user is (it is not redacted).
+ */
+export function reportSuspect(message: string, data: Record<string, number | string>) {
+  if (__DEV__) console.warn(message, data);
+  else Sentry.captureMessage(message, { level: 'warning', extra: data });
+}
+
 export const wrapRoot = Sentry.wrap;

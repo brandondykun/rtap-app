@@ -23,9 +23,9 @@ beforeEach(() => {
   useSettings.setState(DEFAULT_SETTINGS);
 });
 
-async function openEditor() {
+async function openEditor(points = [p(0), p(1), p(2)]) {
   const ctx = makeTestContext();
-  const r = await placeLine(ctx, { missionId: 'm1', points: [p(0), p(1), p(2)], lineType: 'phase-line', name: 'RED' });
+  const r = await placeLine(ctx, { missionId: 'm1', points, lineType: 'phase-line', name: 'RED' });
   if (!r.ok) throw new Error('setup');
   await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
   await act(async () => useMenu.getState().openMenu('line.edit', { itemId: r.value.id }));
@@ -52,6 +52,17 @@ describe('EditLineMenu', () => {
     await fireEvent.press(screen.getByLabelText('Points, 3'));
     await fireEvent.press(screen.getByLabelText(/^Point 2,/));
     expect(useDraft.getState().lookTarget).toEqual(p(1));
+  });
+
+  it('lists every point of a long line, follows the coordinate format, and closes', async () => {
+    await openEditor(Array.from({ length: 60 }, (_, i) => p(i)));
+    await fireEvent.press(screen.getByLabelText('Points, 60'));
+    expect(await screen.findByLabelText(/^Point 60,/)).toBeTruthy();
+    expect(screen.getAllByLabelText(/^Point \d+,/)).toHaveLength(60);
+    await act(async () => useSettings.setState({ coordinateFormat: 'latlon' }));
+    expect(screen.getByLabelText(/^Point 1,/).props.accessibilityLabel).toContain('38.9');
+    await fireEvent.press(screen.getByLabelText('Points, 60'));
+    expect(screen.queryByLabelText(/^Point 1,/)).toBeNull();
   });
 
   it('edits and saves back to the view, and Cancel restores', async () => {

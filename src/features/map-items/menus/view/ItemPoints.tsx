@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useDeferredValue, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
@@ -7,17 +7,23 @@ import { formatCoordinate } from '@/features/map/interaction/readout';
 import type { LatLon } from '@/lib/geo/types';
 import { formatDistance } from '@/lib/geo/format/measure';
 import { useDraft } from '@/stores/draft';
-import { useSettings } from '@/stores/settings';
+import { useSettings, type CoordinateFormat } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { segmentLengths } from '../../line-measure';
 
-/** A collapsed "Points · n" row that opens the read-only list of a line or polygon's points; pressing one centers the map on it. */
+/**
+ * A collapsed "Points · n" row that opens the read-only list of a line or polygon's points; pressing one centers the map on
+ * it. A long list is built in the background (a deferred render React can interrupt), so the tap answers at once instead
+ * of freezing the app while dozens of rows are made.
+ */
 export function ItemPoints({ points }: { points: LatLon[] }) {
   const { colors } = useTheme();
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
   const [open, setOpen] = useState(false);
-  const segs = segmentLengths(points);
+  // Closing hides the list at once; opening shows it once the background render is done.
+  const listOpen = useDeferredValue(open) && open;
+  const segs = useMemo(() => segmentLengths(points), [points]);
   return (
     <View className="overflow-hidden rounded-xl border border-border bg-surface-raised">
       <Pressable
@@ -39,20 +45,26 @@ export function ItemPoints({ points }: { points: LatLon[] }) {
           <Icon name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors['text-muted']} />
         </View>
       </Pressable>
-      {open ? (
+      {listOpen ? (
         <View>
           {points.map((p, i) => (
-            <MenuVertexRow
-              key={i}
-              number={i + 1}
-              title={formatCoordinate(p, coordinateFormat)}
-              detail={i === 0 ? 'start' : `+${formatDistance(segs[i - 1])}`}
-              detailKind={i === 0 ? undefined : 'distance'}
-              onPress={() => useDraft.getState().lookAt(p)}
-            />
+            <PointRow key={i} index={i} lat={p.lat} lon={p.lon} segmentM={i === 0 ? null : segs[i - 1]} coordinateFormat={coordinateFormat} />
           ))}
         </View>
       ) : null}
     </View>
   );
 }
+
+/** One point, by value: the item re-reading from the database (a new array of equal points) does not redraw the rows. */
+const PointRow = memo(function PointRow({ index, lat, lon, segmentM, coordinateFormat }: { index: number; lat: number; lon: number; segmentM: number | null; coordinateFormat: CoordinateFormat }) {
+  return (
+    <MenuVertexRow
+      number={index + 1}
+      title={formatCoordinate({ lat, lon }, coordinateFormat)}
+      detail={segmentM === null ? 'start' : `+${formatDistance(segmentM)}`}
+      detailKind={segmentM === null ? undefined : 'distance'}
+      onPress={() => useDraft.getState().lookAt({ lat, lon })}
+    />
+  );
+});

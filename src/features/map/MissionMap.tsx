@@ -26,6 +26,7 @@ import { useToolbarHeight } from '@/features/toolbar/use-toolbar-height';
 import { useObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import type { LatLon } from '@/lib/geo/types';
+import { reportSuspect } from '@/lib/monitoring/sentry';
 import { useDraft } from '@/stores/draft';
 import { useGpsAverage } from '@/stores/gps-average';
 import { useInteraction } from '@/stores/interaction';
@@ -82,6 +83,8 @@ function isNear(a: LatLon, b: LatLon) {
 
 /** A map tap this soon after an item tap is the same touch reported twice, not a tap on a blank spot. */
 const SAME_TOUCH_MS = 400;
+/** A blank-map tap closing an item menu this soon after the item was tapped may be that same tap arriving late. */
+const SUSPECT_CLOSE_MS = 2000;
 const ITEM_VIEW_MENUS = new Set(['unit.edit', 'point.edit', 'line.edit', 'polygon.edit']);
 
 /** An item's menu is open read-only (selected), not being edited. */
@@ -427,6 +430,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const lastItemPressAt = useRef(0);
   // Map button: the next tap on the map (or on a point) places the draft there.
   const onMapPress = (coord: LatLon) => {
+    const sinceItemPressMs = Date.now() - lastItemPressAt.current;
     const manual = useManualEntry.getState();
     if (manual.phase === 'choosing') {
       manual.choose(coord);
@@ -451,8 +455,10 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     else if (placingCategory) placeAt(placingCategory, coord);
     else if (isDrawing()) placeDraftPoint(coord);
     else if (useDraft.getState().picking) useDraft.getState().setCoord(coord, 'press');
-    else if (isViewingItem() && Date.now() - lastItemPressAt.current > SAME_TOUCH_MS) {
+    else if (isViewingItem() && sinceItemPressMs > SAME_TOUCH_MS) {
       // A tap on a blank spot clears the selection (an item being viewed, not one being edited).
+      // Chasing item menus that close by themselves: the item's own tap, reported late by a busy app, would land here.
+      if (sinceItemPressMs < SUSPECT_CLOSE_MS) reportSuspect('Item menu closed by a map tap soon after the item was tapped', { sinceItemPressMs, menu: topMenu(useMenu.getState())?.id ?? 'none' });
       useMenu.getState().closeMenu();
     }
   };
