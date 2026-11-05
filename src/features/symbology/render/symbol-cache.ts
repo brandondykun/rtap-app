@@ -1,7 +1,7 @@
 import { Directory, File } from 'expo-file-system';
 
 /** Bump whenever symbol drawing or colors change: older cached images are deleted on first use. */
-export const SYMBOL_RENDER_VERSION = 2;
+export const SYMBOL_RENDER_VERSION = 3;
 
 export type SymbolImage = { uri: string; scale: number };
 

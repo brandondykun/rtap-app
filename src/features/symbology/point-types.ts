@@ -8,13 +8,25 @@ export type PointType =
   | 'rally-point'
   | 'linkup-point'
   | 'target-reference-point'
-  | 'target';
+  | 'target'
+  | 'coordination-point'
+  | 'decision-point'
+  | 'waypoint'
+  | 'casualty-collection-point'
+  | 'combat-outpost'
+  | 'forward-observer-position'
+  | 'key-terrain';
 
 /** The app's landing-zone code: milsymbol has no LZ point, so render/symbol-svg.ts draws it. */
 export const LANDING_ZONE_SIDC = 'GFGPAAL-------X';
+/** 2525C has no key terrain point: 2525D's code (control measure 132100). */
+export const KEY_TERRAIN_SIDC = '10032500001321000000';
 
-/** A point type. `drawAs`: another SIDC whose graphic the renderer draws for it (stand-in artwork). */
-export type PointTypeInfo = { id: PointType; label: string; prefix: string; sidc: string; drawAs?: string };
+/**
+ * A point type. `drawAs`: another SIDC whose graphic the renderer draws for it (stand-in artwork). `ownColors`: drawn
+ * in the standard's colors, not the app's one point color, where the color has meaning (key terrain is purple).
+ */
+export type PointTypeInfo = { id: PointType; label: string; prefix: string; sidc: string; drawAs?: string; ownColors?: boolean };
 
 const TRP_SIDC = 'GFGPDPT-------X';
 
@@ -29,6 +41,14 @@ export const POINT_TYPES: readonly PointTypeInfo[] = [
   { id: 'target-reference-point', label: 'Target reference point', prefix: 'TRP', sidc: TRP_SIDC },
   // Artillery point target (2525C fire support). Drawn as the TRP until it gets its own graphic.
   { id: 'target', label: 'Target', prefix: 'TGT', sidc: 'GFFPPTS-------X', drawAs: TRP_SIDC },
+  { id: 'coordination-point', label: 'Coordination point', prefix: 'CRD', sidc: 'GFGPGPPO------X' },
+  { id: 'decision-point', label: 'Decision point', prefix: 'DP', sidc: 'GFGPGPPD------X' },
+  { id: 'waypoint', label: 'Waypoint', prefix: 'WP', sidc: 'GFGPGPPW------X' },
+  // 2525C combat service support point.
+  { id: 'casualty-collection-point', label: 'Casualty collection point', prefix: 'CCP', sidc: 'GFSPPY--------X' },
+  { id: 'combat-outpost', label: 'Combat outpost', prefix: 'COP', sidc: 'GFGPDPOC------X' },
+  { id: 'forward-observer-position', label: 'Forward observer position', prefix: 'FO', sidc: 'GFGPDPOF------X' },
+  { id: 'key-terrain', label: 'Key terrain', prefix: 'KT', sidc: KEY_TERRAIN_SIDC, ownColors: true },
 ];
 
 export const POINT_SIDCS: readonly string[] = POINT_TYPES.map((t) => t.sidc);

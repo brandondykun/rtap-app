@@ -158,6 +158,6 @@ describe('AddPointMenu', () => {
     await fireEvent.press(screen.getByLabelText('Point type: Checkpoint'));
     const labels = selectOptionLabels();
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
-    expect(labels).toHaveLength(9);
+    expect(labels).toHaveLength(16);
   });
 });

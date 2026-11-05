@@ -1,6 +1,5 @@
 import { View } from 'react-native';
 
-import { MenuColumns } from '@/components/menu/MenuColumns';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { MenuSelect } from '@/components/menu/MenuSelect';
@@ -52,14 +51,13 @@ export function UnitForm({ missionId, mode }: { missionId: string; mode: DraftMo
           disabled={locked}
         />
       </MenuSection>
-      <MenuColumns inset>
-        <MenuSection flush label="Unit type">
-          <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
-        </MenuSection>
-        <MenuSection flush label="Echelon">
-          <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
-        </MenuSection>
-      </MenuColumns>
+      {/* Each on its own row: side by side, long type names were cut off. */}
+      <MenuSection label="Unit type">
+        <MenuSelect<UnitType> label="Unit type" options={UNIT_OPTIONS} value={unitType} onChange={setUnitType} disabled={locked} />
+      </MenuSection>
+      <MenuSection label="Echelon">
+        <MenuSelect<Echelon> label="Echelon" options={ECHELON_OPTIONS} value={echelon} onChange={setEchelon} disabled={locked} />
+      </MenuSection>
       <UnitRangesSection mode={mode} />
       <NotesSection />
     </View>

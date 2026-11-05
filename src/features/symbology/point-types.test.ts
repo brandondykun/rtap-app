@@ -12,6 +12,13 @@ describe('point types', () => {
       ['linkup-point', 'LU'],
       ['target-reference-point', 'TRP'],
       ['target', 'TGT'],
+      ['coordination-point', 'CRD'],
+      ['decision-point', 'DP'],
+      ['waypoint', 'WP'],
+      ['casualty-collection-point', 'CCP'],
+      ['combat-outpost', 'COP'],
+      ['forward-observer-position', 'FO'],
+      ['key-terrain', 'KT'],
     ]);
   });
 

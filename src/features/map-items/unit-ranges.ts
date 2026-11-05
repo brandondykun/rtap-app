@@ -10,8 +10,11 @@ export const MAX_VERTICAL_RANGE_FT = 100_000;
 
 export const RANGE_FIELDS: readonly RangeField[] = ['threatRangeM', 'horizontalRangeM', 'verticalRangeFt'];
 
+/** Indirect fire units: a threat range, drawn as the ring. */
+const THREAT_RANGE_TYPES: ReadonlySet<UnitType> = new Set(['artillery', 'mortar']);
+
 export function rangeFieldsFor(unitType: UnitType): readonly RangeField[] {
-  if (unitType === 'artillery') return ['threatRangeM'];
+  if (THREAT_RANGE_TYPES.has(unitType)) return ['threatRangeM'];
   if (unitType === 'air-defense') return ['horizontalRangeM', 'verticalRangeFt'];
   return [];
 }
@@ -48,7 +51,7 @@ export function formatRangeText(v: number | null): string {
 
 export function ringRadiusM(item: Pick<MapItemSnapshot, 'sidc' | 'threatRangeM' | 'horizontalRangeM'>): number | null {
   const parts = item.sidc ? decomposeSidc(item.sidc) : null;
-  if (parts?.unitType === 'artillery') return item.threatRangeM;
+  if (parts && THREAT_RANGE_TYPES.has(parts.unitType)) return item.threatRangeM;
   if (parts?.unitType === 'air-defense') return item.horizontalRangeM;
   return null;
 }

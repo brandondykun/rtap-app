@@ -86,6 +86,8 @@ function evaluate(expr: unknown, props: Record<string, unknown>): unknown {
       }
       return evaluate(args[args.length - 1], props);
     }
+    case 'any':
+      return args.some((a) => evaluate(a, props));
     case '==':
       return evaluate(args[0], props) === evaluate(args[1], props);
     case 'slice':
@@ -236,19 +238,21 @@ describe('label text sizes', () => {
     }
   });
 
-  it('puts labels of pin-shaped points (CKP, SP, RP, RLY, LU) closer: the pin draws above its tip, not around it', () => {
+  it('puts labels of pin-shaped points (CP, SP, RP, RLY, LU, CCP) closer: the pin draws above its tip, not around it', () => {
     const style = makePointLabelStyle(colors);
-    const pins = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
-    const op = sidcForPointType('observation-post');
-    const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s) && s !== op);
+    const pins = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point', 'casualty-collection-point'] as const).map(sidcForPointType);
+    const ops = (['observation-post', 'forward-observer-position'] as const).map(sidcForPointType);
+    const others = POINT_TYPES.map((t) => t.sidc).filter((s) => !pins.includes(s) && !ops.includes(s));
     for (const sidc of pins) expect(pointGap(style, sidc)).toBeLessThan(8);
     for (const sidc of [...others, FRIENDLY_UNIT, 'SNGPUCI----D---', 'SUGPUCI----D---']) expect(pointGap(style, sidc)).toBeCloseTo(15.6);
   });
 
-  it('puts the OP label a little higher and hostile unit labels a little lower than the rest', () => {
+  it('puts the OP and FO labels a little higher and hostile unit labels a little lower than the rest', () => {
     const style = makePointLabelStyle(colors);
     expect(pointGap(style, sidcForPointType('observation-post'))).toBeCloseTo(9.6);
-    for (const sidc of [HOSTILE_UNIT, 'SHGPUCA----E---']) expect(pointGap(style, sidc)).toBeCloseTo(18.6);
+    expect(pointGap(style, sidcForPointType('forward-observer-position'))).toBeCloseTo(9.6);
+    for (const sidc of [HOSTILE_UNIT, 'SHGPUCA----E---', '10061000141215000000']) expect(pointGap(style, sidc)).toBeCloseTo(18.6);
+    expect(pointGap(style, '10031000141215000000')).toBeCloseTo(15.6);
   });
 });
 

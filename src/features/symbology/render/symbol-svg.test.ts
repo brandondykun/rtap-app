@@ -3,7 +3,7 @@ import ms from 'milsymbol';
 import { mapColors } from '@/theme/tokens';
 
 import { composeSidc, ECHELONS } from '../presets';
-import { LANDING_ZONE_SIDC, POINT_TYPES } from '../point-types';
+import { KEY_TERRAIN_SIDC, LANDING_ZONE_SIDC, POINT_TYPES } from '../point-types';
 import { isPointSidc, symbolSvg } from './symbol-svg';
 
 const colors = mapColors('dark');
@@ -18,14 +18,14 @@ describe('symbolSvg', () => {
 
   it('draws an echelon marking above the frame for every echelon but unspecified', () => {
     const plain = symbolSvg(composeSidc('friend', 'infantry'));
-    for (const e of ECHELONS.filter((x) => x.id !== 'unspecified')) {
-      expect(symbolSvg(composeSidc('friend', 'infantry', e.id))).not.toBe(plain);
-    }
+    const drawn = ECHELONS.filter((x) => x.id !== 'unspecified').map((e) => symbolSvg(composeSidc('friend', 'infantry', e.id)));
+    for (const svg of drawn) expect(svg).not.toBe(plain);
+    expect(new Set(drawn).size).toBe(drawn.length);
   });
 
-  it('draws any SIDC milsymbol knows, even one the app never composes (Corps)', () => {
-    expect(() => symbolSvg('SFGPUCI----J---')).not.toThrow();
-    expect(symbolSvg('SFGPUCI----J---')).toMatch(/^<svg/);
+  it('draws any SIDC milsymbol knows, even one the app never composes (a mobility amplifier)', () => {
+    expect(() => symbolSvg('SFGPUCI---MO---')).not.toThrow();
+    expect(symbolSvg('SFGPUCI---MO---')).toMatch(/^<svg/);
   });
 
   it('centers point graphics on their anchor and draws the LZ by hand', () => {
@@ -35,6 +35,9 @@ describe('symbolSvg', () => {
     expect(checkpoint).toContain('<g transform="translate(');
     expect(checkpoint).toContain(colors['point-symbol-halo']);
     expect(symbolSvg(LANDING_ZONE_SIDC)).toContain('>LZ</text>');
+    // Key terrain keeps 2525D's purple (it has meaning), with the usual dark halo.
+    expect(symbolSvg(KEY_TERRAIN_SIDC)).toContain('rgb(128,0,128)');
+    expect(symbolSvg(KEY_TERRAIN_SIDC)).toContain(`stroke="${mapColors('dark')['point-symbol-halo']}"`);
   });
 
   // Skia's SVG module ignores dominant-baseline and paint-order: the output must not rely on them.

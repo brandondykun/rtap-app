@@ -27,8 +27,8 @@ export const LABEL_TEXT_SIZES: Record<LabelSize, number> = { small: 10, medium: 
 const POINT_LABEL_GAP_PT = 15.6;
 /** Pin-shaped points mark the spot with their tip, so nothing draws below it: their label sits closer. */
 const PIN_LABEL_GAP_PT = 5;
-const PIN_POINT_SIDCS = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point'] as const).map(sidcForPointType);
-/** The OP's triangle ends a little above the usual symbol bottom; the hostile diamond reaches a little below it. */
+const PIN_POINT_SIDCS = (['checkpoint', 'start-point', 'release-point', 'rally-point', 'linkup-point', 'casualty-collection-point'] as const).map(sidcForPointType);
+/** The OP's triangle (and the FO's, the same shape) ends a little above the usual symbol bottom; the hostile diamond reaches a little below it. */
 const OP_LABEL_GAP_PT = 9.6;
 const HOSTILE_UNIT_LABEL_GAP_PT = 18.6;
 const LINE_LABEL_GAP_PT = 10.8;
@@ -65,9 +65,15 @@ export function makePointLabelStyle(colors: Record<SemanticToken, string>, textS
       ['get', 'sidc'],
       PIN_POINT_SIDCS,
       below(PIN_LABEL_GAP_PT),
-      sidcForPointType('observation-post'),
+      [sidcForPointType('observation-post'), sidcForPointType('forward-observer-position')],
       below(OP_LABEL_GAP_PT),
-      ['case', ['==', ['slice', ['get', 'sidc'], 0, 2], 'SH'], below(HOSTILE_UNIT_LABEL_GAP_PT), below(POINT_LABEL_GAP_PT)],
+      // Hostile units: 2525C SH…, or a 2525D 20-digit land unit with hostile identity (1006…).
+      [
+        'case',
+        ['any', ['==', ['slice', ['get', 'sidc'], 0, 2], 'SH'], ['==', ['slice', ['get', 'sidc'], 0, 4], '1006']],
+        below(HOSTILE_UNIT_LABEL_GAP_PT),
+        below(POINT_LABEL_GAP_PT),
+      ],
     ] as SymbolLayerStyle['textOffset'],
     iconImage: MAP_IMAGE_IDS.labelChip,
     iconTextFit: 'both',

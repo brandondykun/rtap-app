@@ -24,7 +24,7 @@ export type MapItemRecord = {
   style: string | null;
   /** Ground elevation in meters above sea level where a unit was placed; null when unknown or not a unit. */
   elevationM: number | null;
-  /** Artillery threat range in meters; null when not set. */
+  /** Artillery or mortar threat range in meters; null when not set. */
   threatRangeM: number | null;
   /** Air defense horizontal range in meters; null when not set. */
   horizontalRangeM: number | null;

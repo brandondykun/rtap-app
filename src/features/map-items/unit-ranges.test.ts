@@ -12,6 +12,7 @@ import {
 describe('unit ranges', () => {
   it('rangeFieldsFor maps unit types to fields', () => {
     expect(rangeFieldsFor('artillery')).toEqual(['threatRangeM']);
+    expect(rangeFieldsFor('mortar')).toEqual(['threatRangeM']);
     expect(rangeFieldsFor('air-defense')).toEqual(['horizontalRangeM', 'verticalRangeFt']);
     expect(rangeFieldsFor('infantry')).toEqual([]);
   });
@@ -59,6 +60,7 @@ describe('unit ranges', () => {
 
   it('ringRadiusM', () => {
     expect(ringRadiusM({ sidc: composeSidc('hostile', 'artillery'), threatRangeM: 18000, horizontalRangeM: null })).toBe(18000);
+    expect(ringRadiusM({ sidc: composeSidc('friend', 'mortar'), threatRangeM: 5600, horizontalRangeM: null })).toBe(5600);
     expect(ringRadiusM({ sidc: composeSidc('hostile', 'air-defense'), threatRangeM: null, horizontalRangeM: 8000 })).toBe(8000);
     expect(ringRadiusM({ sidc: composeSidc('hostile', 'infantry'), threatRangeM: 5, horizontalRangeM: null })).toBeNull();
   });

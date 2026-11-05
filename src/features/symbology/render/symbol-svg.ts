@@ -2,6 +2,7 @@ import ms from 'milsymbol';
 
 import { mapColors } from '@/theme/tokens';
 
+import { affiliationOf, type Affiliation } from '../presets';
 import { drawSidcFor, LANDING_ZONE_SIDC, POINT_TYPES, type PointTypeInfo } from '../point-types';
 
 const colors = mapColors('dark');
@@ -20,7 +21,7 @@ const POINT_HALO_PX = POINT_OUTLINE_WIDTH * POINT_LINE_SCALE * PX_PER_UNIT;
 /** Thicker strokes reach past milsymbol's own bounds: pad the canvas and let them draw there. */
 const STROKE_PAD = POINT_HALO_PX + POINT_LINE_PX;
 
-const UNIT_FILL: Record<string, string> = { F: colors.friendly, H: colors.hostile, N: colors.neutral, U: colors.unknown };
+const UNIT_FILL: Record<Affiliation, string> = { friend: colors.friendly, hostile: colors.hostile, neutral: colors.neutral, unknown: colors.unknown };
 const POINT_BY_SIDC = new Map<string, PointTypeInfo>(POINT_TYPES.map((t) => [t.sidc, t]));
 
 export function isPointSidc(sidc: string): boolean {
@@ -83,12 +84,12 @@ export function symbolSvg(sidc: string): string {
   if (point) {
     const symbol = new ms.Symbol(drawSidcFor(point), {
       size: SYMBOL_SIZE,
-      monoColor: POINT_COLOR,
+      ...(point.ownColors ? {} : { monoColor: POINT_COLOR }),
       outlineColor: colors['point-symbol-halo'],
       outlineWidth: POINT_OUTLINE_WIDTH,
     });
     return centeredOnAnchor(symbol, POINT_LINE_SCALE, STROKE_PAD);
   }
-  const unit = new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: UNIT_FILL[sidc[1]] ?? colors.unknown, strokeWidth: UNIT_STROKE_WIDTH });
+  const unit = new ms.Symbol(sidc, { size: SYMBOL_SIZE, fillColor: UNIT_FILL[affiliationOf(sidc) ?? 'unknown'], strokeWidth: UNIT_STROKE_WIDTH });
   return centeredOnAnchor(unit, 1, 0);
 }

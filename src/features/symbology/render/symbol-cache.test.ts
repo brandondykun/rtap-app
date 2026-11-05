@@ -47,8 +47,8 @@ describe('symbol cache', () => {
     expect(rasterize).toHaveBeenLastCalledWith(expect.any(String), 3, false);
   });
 
-  it('stores images under render version 2 (units are now anchor-centered)', () => {
-    expect(SYMBOL_RENDER_VERSION).toBe(2);
+  it('stores images under render version 3 (key terrain in its own purple)', () => {
+    expect(SYMBOL_RENDER_VERSION).toBe(3);
   });
 
   it('deletes other version folders on first use', async () => {

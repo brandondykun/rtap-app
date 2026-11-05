@@ -269,6 +269,23 @@ describe('AddUnitMenu', () => {
   it('lists unit types alphabetically', async () => {
     await open();
     await fireEvent.press(screen.getByLabelText('Unit type: Unspecified'));
-    expect(selectOptionLabels()).toEqual(['Air defense', 'Armor', 'Artillery', 'Engineer', 'Infantry', 'Medical', 'Reconnaissance', 'Unspecified']);
+    expect(selectOptionLabels()).toEqual([
+      'Air defense',
+      'Anti-armor',
+      'Armor',
+      'Artillery',
+      'Engineer',
+      'Field artillery observer',
+      'Infantry',
+      'Joint fire support',
+      'Light infantry',
+      'Mechanized infantry',
+      'Medical',
+      'Mortar',
+      'Motorized infantry',
+      'Reconnaissance',
+      'Sniper',
+      'Unspecified',
+    ]);
   });
 });
