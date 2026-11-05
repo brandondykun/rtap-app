@@ -15,6 +15,7 @@ import { useAutoName } from './form/use-auto-name';
 const TYPE_OPTIONS = POINT_TYPES.map((t) => ({
   value: t.id,
   label: t.label,
+  keywords: t.prefix,
   icon: <SymbolImage sidc={t.sidc} width={32} height={26} />,
 })).sort((a, b) => a.label.localeCompare(b.label));
 

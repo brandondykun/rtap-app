@@ -168,7 +168,7 @@ describe('EditUnitMenu', () => {
     if (!r.ok) throw new Error('setup');
     const scrollToTop = jest.fn();
     await renderWithProviders(
-      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop }}>
+      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop, anchorFocus: jest.fn() }}>
         <EditUnitMenu params={{ itemId: r.value.id }} missionId="m1" />
       </PanelScrollContext.Provider>,
       ctx,

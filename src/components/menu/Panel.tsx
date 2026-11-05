@@ -179,7 +179,15 @@ export function Panel({
       top();
     });
   }, [setScrolled]);
-  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop }), [scrollToEnd, scrollToTop]);
+  /** Focused fields that bring something else to the panel's top (a dropdown's search box: the dropdown). */
+  const focusAnchors = useRef(new Map<object, View>());
+  const anchorFocus = useCallback((field: object, anchor: View) => {
+    focusAnchors.current.set(field, anchor);
+    return () => {
+      if (focusAnchors.current.get(field) === anchor) focusAnchors.current.delete(field);
+    };
+  }, []);
+  const panelScroll = useMemo<PanelScroll>(() => ({ scrollToEnd, scrollToTop, anchorFocus }), [scrollToEnd, scrollToTop, anchorFocus]);
   const viewportHeight = useRef(0);
   const scrollY = useRef(0);
   /** What the content scrolls in, measured to find where a focused field sits in it. */
@@ -275,8 +283,9 @@ export function Panel({
   // not laid out yet, or iOS moving a multiline field to its cursor at the same time). Android reports the keyboard only
   // once it is up.
   const scrollFocusedToTop = useCallback(() => {
-    const field = TextInput.State.currentlyFocusedInput() as View | null;
-    if (!field) return;
+    const focused = TextInput.State.currentlyFocusedInput() as View | null;
+    if (!focused) return;
+    const field = focusAnchors.current.get(focused) ?? focused;
     // Where the field sits in the content does not move with the sheet or the scroll, unlike where it is on screen.
     const content = (scroller.current as { getInnerViewRef?: () => View | null } | null)?.getInnerViewRef?.();
     if (content) {

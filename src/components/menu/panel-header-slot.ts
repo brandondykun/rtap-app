@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, View } from 'react-native';
 
 import type { MenuHeaderProps } from './MenuHeader';
 
@@ -11,6 +11,11 @@ export type PanelScroll = {
   scrollToEnd: () => void;
   /** Jumps back to the top (a menu swapping a long form for a short view). */
   scrollToTop: () => void;
+  /**
+   * While `field` has the keyboard, the panel brings `anchor` to its top instead of the field (a dropdown's search box
+   * keeps the dropdown above it in view). Returns the undo.
+   */
+  anchorFocus: (field: object, anchor: View) => () => void;
 };
 
 /** Set by the Panel. Null outside a Panel. */

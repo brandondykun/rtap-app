@@ -25,7 +25,7 @@ import { useAutoName } from './form/use-auto-name';
 import { LineSample } from './LineSample';
 
 // Listed alphabetically in the dropdown.
-const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, icon: <LineSample lineType={t.id} /> })).sort((a, b) => a.label.localeCompare(b.label));
+const TYPE_OPTIONS = LINE_TYPES.map((t) => ({ value: t.id, label: t.label, keywords: t.prefix ?? undefined, icon: <LineSample lineType={t.id} /> })).sort((a, b) => a.label.localeCompare(b.label));
 
 /** Zone and 100 km square at the map center: typed points are most likely nearby. */
 const centerSquare = () => squareFieldsFor(useInteraction.getState().cameraCenter);

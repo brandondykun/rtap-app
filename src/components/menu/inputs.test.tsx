@@ -5,7 +5,8 @@ import { TextField } from '@/components/ui/TextField';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { MenuSegmented } from './MenuSegmented';
-import { MenuSelect } from './MenuSelect';
+import { filterOptions, MenuSelect, SEARCH_MIN_OPTIONS } from './MenuSelect';
+import { PanelScrollContext } from './panel-header-slot';
 
 describe('menu inputs', () => {
   it('TextField passes text through', async () => {
@@ -77,6 +78,53 @@ describe('menu inputs', () => {
     expect(screen.getAllByText('ICON-A')).toHaveLength(2);
   });
 
+
+  const LETTERS = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel'].map((label) => ({ value: label.toLowerCase(), label, keywords: label.slice(0, 2).toUpperCase() + 'X' }));
+
+  it('filters options by label or keywords, ignoring case and spaces', () => {
+    expect(filterOptions(LETTERS, '').map((o) => o.label)).toHaveLength(8);
+    expect(filterOptions(LETTERS, ' o ').map((o) => o.label)).toEqual(['Bravo', 'Echo', 'Foxtrot', 'Golf', 'Hotel']);
+    expect(filterOptions(LETTERS, 'chx').map((o) => o.label)).toEqual(['Charlie']);
+    expect(filterOptions(LETTERS, 'zulu')).toEqual([]);
+  });
+
+  it('MenuSelect searches a long list only, and starts each opening unfiltered', async () => {
+    expect(LETTERS).toHaveLength(SEARCH_MIN_OPTIONS);
+    const onChange = jest.fn();
+    const first = await renderWithProviders(<MenuSelect label="Letter" options={LETTERS} value="alpha" onChange={onChange} />);
+    await fireEvent.press(screen.getByLabelText('Letter: Alpha'));
+    await fireEvent.changeText(screen.getByLabelText('Search letter'), 'ot');
+    expect(screen.queryByText('Bravo')).toBeNull();
+    expect(screen.getByText('Hotel')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Search letter'), 'zulu');
+    expect(screen.getByText('No matches')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Search letter'), 'fo');
+    await fireEvent.press(screen.getByText('Foxtrot'));
+    expect(onChange).toHaveBeenCalledWith('foxtrot');
+    await fireEvent.press(screen.getByLabelText('Letter: Alpha'));
+    expect(screen.getByLabelText('Search letter')).toHaveProp('value', '');
+    expect(screen.getByText('Bravo')).toBeTruthy();
+    await first.unmount();
+    await renderWithProviders(<MenuSelect label="Short" options={LETTERS.slice(0, SEARCH_MIN_OPTIONS - 1)} value="alpha" onChange={jest.fn()} />);
+    await fireEvent.press(screen.getByLabelText('Short: Alpha'));
+    expect(screen.queryByLabelText('Search short')).toBeNull();
+  });
+
+  it('MenuSelect keeps itself at the panel top while its search has the keyboard, until it closes', async () => {
+    const undo = jest.fn();
+    const anchorFocus = jest.fn(() => undo);
+    await renderWithProviders(
+      <PanelScrollContext.Provider value={{ scrollToEnd: jest.fn(), scrollToTop: jest.fn(), anchorFocus }}>
+        <MenuSelect label="Letter" options={LETTERS} value="alpha" onChange={jest.fn()} />
+      </PanelScrollContext.Provider>,
+    );
+    expect(anchorFocus).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Letter: Alpha'));
+    expect(anchorFocus).toHaveBeenCalledTimes(1);
+    expect(undo).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText('Letter: Alpha'));
+    expect(undo).toHaveBeenCalledTimes(1);
+  });
 
   it('TextField never switches Android to full-screen text editing in landscape', async () => {
     await renderWithProviders(<TextField accessibilityLabel="Field" value="" onChangeText={jest.fn()} />);
