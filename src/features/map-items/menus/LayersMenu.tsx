@@ -19,7 +19,7 @@ import { lineTypeInfo } from '@/features/symbology/line-types';
 import { polygonTypeInfo } from '@/features/symbology/polygon-types';
 import { AFFILIATION_LABELS, affiliationOf, composeSidc, type Affiliation } from '@/features/symbology/presets';
 import { SymbolImage } from '@/features/symbology/SymbolImage';
-import { useObservable } from '@/hooks/use-observable';
+import { useRememberedObservable } from '@/hooks/use-observable';
 import { useCommandContext } from '@/lib/db/command-context-provider';
 import { formatDistance } from '@/lib/geo/format/measure';
 import { useLayersView } from '@/stores/layers-view';
@@ -79,15 +79,17 @@ export function LayersMenu({ missionId }: MenuComponentProps<'layers'>) {
   const ctx = useCommandContext();
   const close = useMenu((s) => s.closeMenu);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
-  const items = useObservable(() => observeMissionItems(ctx.db, missionId), NO_ITEMS, [ctx, missionId]);
-  const hidden = useObservable(() => observeHiddenItemIds(ctx.db), NO_IDS, [ctx]);
-  const ringIds = useObservable(() => observeRingItemIds(ctx.db), NO_IDS, [ctx]);
-  const namedOverlays = useObservable(() => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, [ctx, missionId]);
-  const baseHidden = useObservable(() => observeBaseHidden(ctx.db, missionId), false, [ctx, missionId]);
-  const baseCount = useObservable(() => observeBaseItemCount(ctx.db, missionId), 0, [ctx, missionId]);
+  // Opened again, it starts from what it showed last while the queries run again, rather than empty (only the built-in
+  // base overlay showing, then the rest popping in).
+  const items = useRememberedObservable(ctx.db, `layers.items:${missionId}`, () => observeMissionItems(ctx.db, missionId), NO_ITEMS, []);
+  const hidden = useRememberedObservable(ctx.db, 'layers.hidden', () => observeHiddenItemIds(ctx.db), NO_IDS, []);
+  const ringIds = useRememberedObservable(ctx.db, 'layers.rings', () => observeRingItemIds(ctx.db), NO_IDS, []);
+  const namedOverlays = useRememberedObservable(ctx.db, `layers.overlays:${missionId}`, () => observeMissionOverlays(ctx.db, missionId), NO_OVERLAYS, []);
+  const baseHidden = useRememberedObservable(ctx.db, `layers.baseHidden:${missionId}`, () => observeBaseHidden(ctx.db, missionId), false, []);
+  const baseCount = useRememberedObservable(ctx.db, `layers.baseCount:${missionId}`, () => observeBaseItemCount(ctx.db, missionId), 0, []);
   // The base first: the items in no overlay, shown or hidden like any overlay.
   const overlays = useMemo(() => [baseOverlay(missionId, baseHidden, baseCount), ...namedOverlays], [missionId, baseHidden, baseCount, namedOverlays]);
-  const overlayHidden = useObservable(() => observeOverlayHiddenItemIds(ctx.db, missionId), NO_IDS, [ctx, missionId]);
+  const overlayHidden = useRememberedObservable(ctx.db, `layers.overlayHidden:${missionId}`, () => observeOverlayHiddenItemIds(ctx.db, missionId), NO_IDS, []);
   const overlayHiddenSet = useMemo(() => new Set(overlayHidden), [overlayHidden]);
   // Kept for an item drilled into and back out of.
   const [query, setQuery] = useMenuEntryState('query', '');
