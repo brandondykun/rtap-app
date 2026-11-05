@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { isLandscape } from '@/features/map/layout';
 import { getAppCommandContext } from '@/lib/db/app-command-context';
@@ -64,12 +65,16 @@ function RootLayout() {
   if (!ready) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <CommandContextProvider value={getAppCommandContext()}>
-        <ThemeProvider theme="dark">
-          <StatusBar style="light" hidden={hideStatusBar} />
-          <ThemedStack />
-        </ThemeProvider>
-      </CommandContextProvider>
+      {/* Reports the keyboard as it starts to open on Android too (the menu panel follows it). The app is edge to edge:
+          without the translucent flags Android would move it out from under the status and navigation bars. */}
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent preserveEdgeToEdge>
+        <CommandContextProvider value={getAppCommandContext()}>
+          <ThemeProvider theme="dark">
+            <StatusBar style="light" hidden={hideStatusBar} />
+            <ThemedStack />
+          </ThemeProvider>
+        </CommandContextProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

@@ -15,6 +15,7 @@ import {
   MENU_DETENTS,
   MIN_HALF_HEIGHT,
   PEEK_HEIGHT,
+  keyboardRoom,
   snapIndex,
 } from './panel-geometry';
 
@@ -71,6 +72,18 @@ describe('panel geometry', () => {
     // The menu content (minus the hide rail and the section's side padding) fits zone, square and two 5-digit fields.
     const SECTION_PADDING = 32;
     expect(DRAWER_MIN_WIDTH - RAIL_WIDTH - SECTION_PADDING).toBeGreaterThanOrEqual(MGRS_ROW_MIN_WIDTH);
+  });
+
+  describe('keyboardRoom', () => {
+    it('is the keyboard and its bar while it is up, nothing once it is down', () => {
+      expect(keyboardRoom(300, 42)).toBe(342);
+      expect(keyboardRoom(0, 42)).toBe(0);
+    });
+
+    it('shrinks with the keyboard as it goes down, the bar with it, reaching 0 together', () => {
+      expect(keyboardRoom(150, 42, 0.5)).toBe(171);
+      expect(keyboardRoom(0, 42, 0)).toBe(0);
+    });
   });
 
   describe('snapIndex', () => {

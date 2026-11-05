@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { KeyboardController, KeyboardEvents, useKeyboardHandler } from 'react-native-keyboard-controller';
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +15,7 @@ import {
   fitToContent,
   fieldTopScrollY,
   focusedFieldScrollY,
+  keyboardRoom as keyboardRoomFor,
   MINIMIZED_BAR_HEIGHT,
   MINIMIZED_BAR_MARGIN,
   MINIMIZED_BAR_SIDE,
@@ -26,6 +28,7 @@ import {
   type Detent,
   type PanelFrame,
 } from './panel-geometry';
+import { KEYBOARD_BAR_HEIGHT, KeyboardBarGroup } from './KeyboardBar';
 import { MenuHeaderRow, type MenuHeaderProps } from './MenuHeader';
 import { PanelHeaderSlot, PanelScrollContext, PanelScrollerContext, type PanelScroll, type PanelScrollable, type PanelScroller } from './panel-header-slot';
 
@@ -173,8 +176,8 @@ export function Panel({
     };
     top();
     // Closing the keyboard (it is often still up, from the form) resizes the content's inset and can move it again.
-    if (!Keyboard.isVisible()) return;
-    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+    if (!KeyboardController.isVisible()) return;
+    const hidden = KeyboardEvents.addListener('keyboardDidHide', () => {
       hidden.remove();
       top();
     });
@@ -255,17 +258,16 @@ export function Panel({
     offset.set(withTiming(hidden ? (landscape ? -target : target) : 0, { duration: SLIDE_MS }));
   }, [hidden, target, landscape, offset]);
 
-  // Keep a focused field visible: the sheet opens fully while the keyboard is up.
+  // Keep a focused field visible: the sheet opens fully while the keyboard is up, growing as the keyboard starts to open
+  // (on Android too: the keyboard controller reports it then, where React Native waits until it is up).
   useEffect(() => {
     if (landscape || !detents.includes('full')) return;
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const show = Keyboard.addListener(showEvent, () => {
+    const show = KeyboardEvents.addListener('keyboardWillShow', () => {
       if (restore.current === null) restore.current = detentRef.current;
       setKeyboardUp(true);
       setDetent('full');
     });
-    const hide = Keyboard.addListener(hideEvent, () => {
+    const hide = KeyboardEvents.addListener('keyboardWillHide', () => {
       if (restore.current !== null && detents.includes(restore.current)) setDetent(restore.current);
       restore.current = null;
       setKeyboardUp(false);
@@ -278,10 +280,10 @@ export function Panel({
 
   // Typing into a field: it scrolls to the top of the panel as the keyboard opens, so what is typed shows above the
   // keyboard (landscape leaves little room). Where it lands depends only on the content, not the sheet's height, so it
-  // need not wait for the sheet to grow, only for the room at the end to be laid out. iOS starts as the keyboard starts
-  // to open, in one movement with it, and scrolls there again once it is up: the first scroll can fall short (the room
-  // not laid out yet, or iOS moving a multiline field to its cursor at the same time). Android reports the keyboard only
-  // once it is up.
+  // need not wait for the sheet to grow, only for the room at the end to be laid out. It starts as the keyboard starts to
+  // open, in one movement with it, on both platforms (the keyboard controller reports Android's keyboard then too), and
+  // scrolls there again once it is up: the first scroll can fall short (the room not laid out yet, or iOS moving a
+  // multiline field to its cursor at the same time); when it did not, the second goes nowhere.
   const scrollFocusedToTop = useCallback(() => {
     const focused = TextInput.State.currentlyFocusedInput() as View | null;
     if (!focused) return;
@@ -311,8 +313,16 @@ export function Panel({
     requestAnimationFrame(scrollFocusedToTop);
   }, [keyboardInset, scrollFocusedToTop]);
   useEffect(() => {
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
-      const inset = e.endCoordinates.height;
+    const show = KeyboardEvents.addListener('keyboardWillShow', (e) => {
+      // The panel's own scroll view gets its room on the UI thread as the keyboard starts (`keyboardRoom`): the scroll
+      // need only wait a frame, not for a render.
+      if (!ownScroll) {
+        requestAnimationFrame(scrollFocusedToTop);
+        return;
+      }
+      // A self-scrolling menu's room is set here, and scrolled to once it is laid out. The keyboard bar rides on top of
+      // the keyboard and covers the panel too.
+      const inset = e.height + KEYBOARD_BAR_HEIGHT;
       // The same room as before (shown again without hiding) is already laid out.
       if (inset === keyboardInsetRef.current) requestAnimationFrame(scrollFocusedToTop);
       else {
@@ -320,18 +330,46 @@ export function Panel({
         setKeyboardInset(inset);
       }
     });
-    const settled = Platform.OS === 'ios' ? Keyboard.addListener('keyboardDidShow', () => requestAnimationFrame(scrollFocusedToTop)) : null;
+    const settled = KeyboardEvents.addListener('keyboardDidShow', () => requestAnimationFrame(scrollFocusedToTop));
     // Once the keyboard is down: taken away as it closes, the content would shrink under it and jump.
-    const hide = Keyboard.addListener('keyboardDidHide', () => {
+    const hide = KeyboardEvents.addListener('keyboardDidHide', () => {
       scrollOnceInset.current = false;
       setKeyboardInset(0);
     });
     return () => {
       show.remove();
-      settled?.remove();
+      settled.remove();
       hide.remove();
     };
-  }, [scrollFocusedToTop]);
+  }, [scrollFocusedToTop, ownScroll]);
+
+  // The room under the panel's own scroll content, on the UI thread: it grows at once as the keyboard starts to open (the
+  // field needs it to scroll to the top, hidden behind the keyboard anyway) and shrinks frame by frame as the keyboard
+  // goes down, so the content follows the keyboard instead of jumping once it is gone. A self-scrolling menu keeps the
+  // JS-side room (`keyboardInset`).
+  const keyboardRoom = useSharedValue(0);
+  const keyboardShrinking = useSharedValue(false);
+  useKeyboardHandler(
+    {
+      onStart: (e) => {
+        'worklet';
+        const room = keyboardRoomFor(e.height, KEYBOARD_BAR_HEIGHT);
+        keyboardShrinking.set(room < keyboardRoom.get());
+        if (!keyboardShrinking.get()) keyboardRoom.set(room);
+      },
+      onMove: (e) => {
+        'worklet';
+        if (keyboardShrinking.get()) keyboardRoom.set(keyboardRoomFor(e.height, KEYBOARD_BAR_HEIGHT, e.progress));
+      },
+      onEnd: (e) => {
+        'worklet';
+        keyboardRoom.set(keyboardRoomFor(e.height, KEYBOARD_BAR_HEIGHT));
+        keyboardShrinking.set(false);
+      },
+    },
+    [],
+  );
+  const keyboardRoomStyle = useAnimatedStyle(() => ({ height: keyboardRoom.get() }));
 
   const pan = Gesture.Pan()
     .enabled(!landscape && !hidden)
@@ -384,6 +422,9 @@ export function Panel({
       contentContainerStyle: { paddingBottom: insets.bottom + 16 + keyboardInset, paddingTop: landscape && headerless ? 12 : 0 },
     };
   }, [onContentSizeChange, insets.bottom, keyboardInset, landscape, headerless, setScrolled]);
+  // The panel's own scroll view: the content's padding and size come from the wrapper around it, the keyboard room after it.
+  const { onContentSizeChange: _measuredByWrapper, contentContainerStyle: _paddedByWrapper, ...ownScrollerProps } = scrollerProps;
+  const contentPadding = { paddingBottom: insets.bottom + 16, paddingTop: landscape && headerless ? 12 : 0 };
   const content = (
     <PanelHeaderSlot.Provider value={setHeader}>
       <PanelScrollContext.Provider value={panelScroll}>{children}</PanelScrollContext.Provider>
@@ -451,16 +492,26 @@ export function Panel({
             </GestureDetector>
           </View>
         ) : null}
-        {ownScroll ? (
-          // The content is its own scroller (a virtualized list inside a scroll view would draw every row).
-          <View ref={viewport} testID="menu-panel-scroll-host" style={{ flex: 1 }}>
-            <PanelScrollerContext.Provider value={scrollerProps}>{content}</PanelScrollerContext.Provider>
-          </View>
-        ) : (
-          <View ref={viewport} testID="menu-panel-viewport" collapsable={false} style={{ flex: 1 }}>
-            <ScrollView {...scrollerProps}>{content}</ScrollView>
-          </View>
-        )}
+        {/* The keyboard bar's previous / next stay among this menu's fields. */}
+        <KeyboardBarGroup testID="menu-panel-fields" style={{ flex: 1 }}>
+          {ownScroll ? (
+            // The content is its own scroller (a virtualized list inside a scroll view would draw every row).
+            <View ref={viewport} testID="menu-panel-scroll-host" style={{ flex: 1 }}>
+              <PanelScrollerContext.Provider value={scrollerProps}>{content}</PanelScrollerContext.Provider>
+            </View>
+          ) : (
+            <View ref={viewport} testID="menu-panel-viewport" collapsable={false} style={{ flex: 1 }}>
+              <ScrollView {...ownScrollerProps}>
+                {/* Measured on its own, without the keyboard room after it: that room changes every frame as the keyboard
+                    closes, and the sheet must not refit to it. */}
+                <View testID="menu-panel-content" style={contentPadding} onLayout={(e) => onContentSizeChange(0, e.nativeEvent.layout.height)}>
+                  {content}
+                </View>
+                <Animated.View testID="menu-panel-keyboard-room" style={keyboardRoomStyle} />
+              </ScrollView>
+            </View>
+          )}
+        </KeyboardBarGroup>
       </View>
       {landscape ? (
         // The whole right edge hides the drawer; the menu content gives up this width.

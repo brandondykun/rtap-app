@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, Keyboard, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { KeyboardBar } from '@/components/menu/KeyboardBar';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
@@ -655,6 +656,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       <MapTopLeft panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />
+      {/* Over everything: previous / next / Done on top of the keyboard, for any field on the map screen. */}
+      <KeyboardBar landscape={landscape} />
     </View>
   );
 }

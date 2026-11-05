@@ -108,3 +108,13 @@ export function focusedFieldScrollY(scrollY: number, field: { x: number; y: numb
   if (field.x < viewport.x || field.x >= viewport.x + viewport.width) return null;
   return fieldTopScrollY(scrollY + field.y - viewport.y);
 }
+
+/**
+ * The room left under the content for a keyboard of `height` (0: none), with `bar` points of keyboard bar riding on top
+ * of it. `progress` is how far up the keyboard is (1 up, 0 down): the bar's share goes as the keyboard does, so the room
+ * reaches 0 together with it.
+ */
+export function keyboardRoom(height: number, bar: number, progress = height > 0 ? 1 : 0): number {
+  'worklet';
+  return height + bar * progress;
+}

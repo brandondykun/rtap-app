@@ -27,7 +27,7 @@ describe('MenuHost', () => {
     expect(screen.getByText('Switch mission')).toBeTruthy();
     // The sheet opens once it knows how tall its pinned header and content are.
     await fireEvent(screen.getByTestId('menu-panel-header'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 52 } } });
-    await fireEvent(screen.getByTestId('menu-panel-scroll'), 'contentSizeChange', 390, 200);
+    await fireEvent(screen.getByTestId('menu-panel-content'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 200 } } });
     expect(useMenu.getState().panelFrame).toMatchObject({ side: 'bottom' });
   });
 

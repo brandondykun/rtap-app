@@ -20,6 +20,17 @@ jest.mock('expo-sqlite/kv-store', () => {
 
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
 
+jest.mock('react-native-keyboard-controller', () => {
+  const mock = require('react-native-keyboard-controller/jest');
+  // Plain functions, not the mock's jest.fn: Jest 29's restoreAllMocks strips a jest.fn's return value. Tests spy on them.
+  return {
+    ...mock,
+    KeyboardEvents: { addListener: () => ({ remove: () => {} }) },
+    FocusedInputEvents: { addListener: () => ({ remove: () => {} }) },
+    KeyboardController: { ...mock.KeyboardController, isVisible: () => false, setFocusTo: () => {}, dismiss: async () => {} },
+  };
+});
+
 jest.mock('expo-location', () => ({
   Accuracy: { BestForNavigation: 6, High: 4 },
   requestForegroundPermissionsAsync: jest.fn(async () => ({ status: 'denied', granted: false })),
