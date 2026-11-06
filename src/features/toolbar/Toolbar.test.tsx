@@ -215,6 +215,19 @@ describe('Toolbar', () => {
       expect(screen.queryByTestId('toolbar-shade-end')).toBeNull();
     });
 
+    it('does not re-aim for a sub-point change in its tools: Android measured them a pixel apart at each width, so it wobbled', async () => {
+      await render(554.6666);
+      const timing = jest.spyOn(Reanimated, 'withTiming');
+      await fireEvent(screen.getByTestId('toolbar-tools'), 'contentSizeChange', 555.0476, 40);
+      await fireEvent(screen.getByTestId('toolbar-tools'), 'contentSizeChange', 554.6666, 40);
+      // (The divider's color fades with withTiming too: only a width counts here.)
+      expect(timing).not.toHaveBeenCalledWith(expect.any(Number), expect.anything());
+      // A real change (a tool added, toolbar text switched on) still animates.
+      await fireEvent(screen.getByTestId('toolbar-tools'), 'contentSizeChange', 600, 40);
+      expect(timing).toHaveBeenCalledWith(ownWidth(600), expect.anything());
+      timing.mockRestore();
+    });
+
     it('is hidden until its width is known', async () => {
       await renderWithProviders(<Harness />);
       expect(style().opacity).toBe(0);

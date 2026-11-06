@@ -83,7 +83,9 @@ export function Toolbar({ landscape, activeTool, onMenu, onUnit, onPoint, onLine
   const aimedAt = useRef(0);
   const aim = useCallback(
     (to: number, animated = true) => {
-      if (to === aimedAt.current) return;
+      // Nor at a width under a point off: Android measures the tools a pixel apart at each width, and re-aiming for
+      // that wobbled the bar between the two for good.
+      if (Math.abs(to - aimedAt.current) < SLACK) return;
       // The first width is set at once, not grown from nothing.
       width.set(aimedAt.current === 0 || !animated ? to : withTiming(to, { duration: SQUEEZE_MS }));
       aimedAt.current = to;
