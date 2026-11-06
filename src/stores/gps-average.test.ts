@@ -1,4 +1,4 @@
-import { type AverageSample, clusterStats, estimateAccuracyM, fixCountOf, sampleFromFix } from '@/features/location/gps-average-math';
+import { type AverageSample, clusterStats, estimateAccuracyM, fixCountOf, MOVED_FIXES_STILL, sampleFromFix, STILL_RECENT_MS } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
 import { DROP_BACK_MS, INITIAL_GPS_AVERAGE, MAX_SAMPLES, useGpsAverage } from './gps-average';
@@ -90,6 +90,43 @@ describe('gps average store', () => {
     expect(g().phase).toBe('averaging');
     expect(g().farCount).toBe(0);
     expect(g().samples).toHaveLength(10);
+  });
+
+  it('ignores the speed while the motion sensor says the phone lies still (Android reports some standing still)', () => {
+    g().start();
+    for (let i = 0; i < 10; i++) g().addFix(fix(i * 1000), 0);
+    g().markStill(Date.now());
+    for (let i = 0; i < 5; i++) g().addFix(fix(10_000 + i * 1000), 1.4);
+    expect(g().phase).toBe('averaging');
+    expect(g().farCount).toBe(0);
+    expect(g().samples).toHaveLength(15);
+  });
+
+  it('takes a long run of far fixes to pause while the phone lies still: a GPS wander is not a move', () => {
+    g().start();
+    for (let i = 0; i < 10; i++) g().addFix(fix(i * 10_000), 0);
+    g().markStill(Date.now());
+    for (let i = 0; i < MOVED_FIXES_STILL - 1; i++) g().addFix(fix(100_000 + i * 1000, 5, FAR), 0);
+    expect(g().phase).toBe('averaging');
+    // Back near the cluster: the wander is over and its count starts again.
+    g().addFix(fix(120_000), 0);
+    expect(g().farCount).toBe(0);
+    for (let i = 0; i < MOVED_FIXES_STILL; i++) g().addFix(fix(130_000 + i * 1000, 5, FAR), 0);
+    expect(g().phase).toBe('paused');
+  });
+
+  it('counts the speed and a short run of far fixes again once the phone has not been still for a while', () => {
+    jest.useFakeTimers({ now: 1_000_000 });
+    try {
+      g().start();
+      for (let i = 0; i < 10; i++) g().addFix(fix(i * 1000), 0);
+      g().markStill(Date.now());
+      jest.setSystemTime(1_000_000 + STILL_RECENT_MS + 1);
+      for (let i = 0; i < 3; i++) g().addFix(fix(10_000 + i * 1000), 1.4);
+      expect(g().phase).toBe('paused');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('uses the last still moment from the motion sensor as the cutoff when known', () => {

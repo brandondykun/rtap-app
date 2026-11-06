@@ -12,6 +12,10 @@ export const CORRELATION_S = 60;
 export const OUTLIER_FACTOR = 3;
 /** Consecutive far-from-cluster fixes that count as having moved. */
 export const MOVED_FIXES = 3;
+/** Far fixes in a row that count as having moved while the motion sensor says the phone lies still: GPS wander alone. */
+export const MOVED_FIXES_STILL = 10;
+/** The motion sensor said still this recently (ms, phone clock): the phone is lying where it was set. */
+export const STILL_RECENT_MS = 3000;
 /** Ground speed above this counts as moving. */
 export const MOVED_SPEED_MPS = 0.5;
 /** A longer gap between samples (paused, or fixes rejected) counts only this long toward the time averaged. */

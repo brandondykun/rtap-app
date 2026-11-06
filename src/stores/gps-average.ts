@@ -9,9 +9,11 @@ import {
   isOnSpot,
   isOutlierFromStats,
   MOVED_FIXES,
+  MOVED_FIXES_STILL,
   MOVED_SPEED_MPS,
   mergeSamples,
   sampleFromFix,
+  STILL_RECENT_MS,
   trimFrom,
 } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
@@ -118,8 +120,11 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
   start: () => set(newRun(get().live)),
   stop: () => set({ ...INITIAL_GPS_AVERAGE, live: get().live }),
   addFix: (fix, speedMps) => {
-    const { phase, samples, farCount, farSince } = get();
+    const { phase, samples, farCount, farSince, lastStillAt } = get();
     if (phase !== 'averaging') return null;
+    // The motion sensor says the phone lies still: its speed is noise then (Android reports some standing still), and
+    // only a long run of far fixes counts as a move, not the GPS wandering while it sits.
+    const still = lastStillAt !== null && Date.now() - lastStillAt <= STILL_RECENT_MS;
     // The samples' center, spread and accuracy, worked out once for all the checks below.
     const stats = clusterStats(samples);
     const sample = sampleFromFix(fix);
@@ -128,11 +133,11 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
     // Without a valid time it cannot date the move, so it does not count.
     const far =
       Number.isFinite(fix.timestamp) &&
-      ((stats !== null && judged !== null && isFarFromStats(stats, judged)) || (speedMps !== null && speedMps > MOVED_SPEED_MPS));
+      ((stats !== null && judged !== null && isFarFromStats(stats, judged)) || (!still && speedMps !== null && speedMps > MOVED_SPEED_MPS));
     if (far) {
       const count = farCount + 1;
       const since = farSince ?? fix.timestamp;
-      if (count >= MOVED_FIXES) {
+      if (count >= (still ? MOVED_FIXES_STILL : MOVED_FIXES)) {
         get().pause(since);
         return null;
       }
