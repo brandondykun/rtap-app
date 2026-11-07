@@ -3,7 +3,7 @@ import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 import { useToast } from '@/stores/toast';
 
-import { AVERAGE_START_MESSAGE, startAveraging } from './average-actions';
+import { AVERAGE_START_MESSAGE, AVERAGE_START_TITLE, startAveraging } from './average-actions';
 
 beforeEach(() => {
   useMyLocation.setState(DEFAULT_MY_LOCATION);
@@ -16,7 +16,7 @@ describe('startAveraging', () => {
   it('starts averaging on GPS and shows the sticky keep-still message', () => {
     expect(startAveraging()).toBe(true);
     expect(useGpsAverage.getState().phase).toBe('averaging');
-    expect(useToast.getState().toast).toEqual(expect.objectContaining({ message: AVERAGE_START_MESSAGE, kind: 'info', sticky: true }));
+    expect(useToast.getState().toast).toEqual(expect.objectContaining({ title: AVERAGE_START_TITLE, message: AVERAGE_START_MESSAGE, kind: 'average', sticky: true }));
   });
 
   it('stays off on the Manual source and says why', () => {

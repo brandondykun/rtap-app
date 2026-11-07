@@ -15,6 +15,7 @@ import {
   selfCardClearance,
   TOOLBAR_HEIGHT,
   TOOLBAR_HEIGHT_ICONS,
+  toastTop,
   toolbarHeight,
 } from './layout';
 
@@ -53,6 +54,15 @@ describe('map layout', () => {
   it('puts the logo row below the toolbar (so the landscape toolbar, however wide, never covers it), and the location banner below both', () => {
     expect(ornamentRowTop()).toBeGreaterThanOrEqual(EDGE + TOOLBAR_HEIGHT + GAP);
     expect(bannerTop()).toBeGreaterThanOrEqual(ornamentRowTop() + LOGO_ROW_HEIGHT);
+  });
+
+  it('puts a toast below the logo row and the north button in portrait, where they sit under the toolbar', () => {
+    // The north button (the taller of the two) starts at the logo row's top.
+    expect(toastTop(TOOLBAR_HEIGHT, false)).toBe(ornamentRowTop() + CONTROL_SIZE + GAP);
+    expect(toastTop(TOOLBAR_HEIGHT, false)).toBeGreaterThanOrEqual(ornamentRowTop() + LOGO_ROW_HEIGHT + GAP);
+    // Landscape: right under the toolbar, as before (the north button sits beside the toolbar there).
+    expect(toastTop(TOOLBAR_HEIGHT, true)).toBe(EDGE + TOOLBAR_HEIGHT + GAP);
+    expect(toastTop(TOOLBAR_HEIGHT_ICONS, false)).toBe(toastTop(TOOLBAR_HEIGHT, false) - (TOOLBAR_HEIGHT - TOOLBAR_HEIGHT_ICONS));
   });
 
   it('pads the camera by the panel area', () => {

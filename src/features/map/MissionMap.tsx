@@ -66,7 +66,7 @@ import { PointsLayer } from './layers/PointsLayer';
 import { PolygonsLayer } from './layers/PolygonsLayer';
 import { RingsLayer } from './layers/RingsLayer';
 import { SelfLayer } from './layers/SelfLayer';
-import { cameraPaddingFor, EDGE, GAP, isLandscape } from './layout';
+import { cameraPaddingFor, isLandscape, toastTop } from './layout';
 import { useElevationSource } from './terrain/elevation';
 import { THREE_D_PITCH, THREE_D_TILT_MS } from './terrain/three-d';
 
@@ -662,7 +662,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
       {plotTemp && !plotEntryOpen && landscape ? <QuickPlotCard landscape panel={panel} /> : null}
       <MapTopLeft panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
-      <Toast top={insets.top + EDGE + toolbar + GAP} />
+      <Toast top={insets.top + toastTop(toolbar, landscape)} landscape={landscape} />
       {/* Over everything: previous / next / Done on top of the keyboard, for any field on the map screen. */}
       <KeyboardBar landscape={landscape} />
     </View>

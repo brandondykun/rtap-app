@@ -5,7 +5,8 @@ import { usePresence } from '@/stores/presence';
 import { useToast } from '@/stores/toast';
 
 /** Shown, until closed, when averaging starts: a moving device just keeps pausing it. */
-export const AVERAGE_START_MESSAGE = 'Keep the device still. Averaging gets more accurate over a few minutes.';
+export const AVERAGE_START_TITLE = 'HOLD STILL';
+export const AVERAGE_START_MESSAGE = 'Accuracy improves over a few minutes';
 
 /** Stops waiting to hide the last keep-still message (one at a time, however often averaging restarts). */
 let unwatchStartMessage: (() => void) | null = null;
@@ -44,7 +45,7 @@ export function startAveraging(): boolean {
     return false;
   }
   useGpsAverage.getState().start();
-  useToast.getState().show(AVERAGE_START_MESSAGE, 'info', { sticky: true });
+  useToast.getState().show(AVERAGE_START_MESSAGE, 'average', { sticky: true, title: AVERAGE_START_TITLE });
   const shown = useToast.getState().toast;
   if (shown) hideStartMessageWhenOff(shown.id);
   return true;

@@ -85,8 +85,8 @@ describe('MapScreen', () => {
     await fireEvent.press(screen.getByLabelText('AVG'));
     expect(useGpsAverage.getState().phase).toBe('averaging');
     expect(screen.getByLabelText('AVG')).toBeSelected();
-    expect(useToast.getState().toast).toEqual(expect.objectContaining({ message: 'Keep the device still. Averaging gets more accurate over a few minutes.', kind: 'info', sticky: true }));
-    expect(screen.getByText('Keep the device still. Averaging gets more accurate over a few minutes.')).toBeTruthy();
+    expect(useToast.getState().toast).toEqual(expect.objectContaining({ title: 'HOLD STILL', message: 'Accuracy improves over a few minutes', kind: 'average', sticky: true }));
+    expect(screen.getByText('HOLD STILL')).toBeTruthy();
   });
 
   it('pauses from AVG rather than turning off, offering Resume and Stop, so a stray tap loses nothing', async () => {

@@ -56,6 +56,14 @@ export function topLeftStackTop(toolbar: number = TOOLBAR_HEIGHT): number {
   return ornamentRowTop(toolbar) + LOGO_WORDMARK_HEIGHT;
 }
 
+/**
+ * A toast's top (from the safe area). Portrait: below the Mapbox logo row and the north button beside it, which sit
+ * under the toolbar there and must stay visible. Landscape: right under the toolbar.
+ */
+export function toastTop(toolbar: number, landscape: boolean): number {
+  return landscape ? EDGE + toolbar + GAP : ornamentRowTop(toolbar) + Math.max(CONTROL_SIZE, LOGO_ROW_HEIGHT) + GAP;
+}
+
 /** Location banner top (from the safe area): below the Mapbox logo row (itself under the toolbar). */
 export function bannerTop(toolbar: number = TOOLBAR_HEIGHT): number {
   return ornamentRowTop(toolbar) + LOGO_ROW_HEIGHT;
