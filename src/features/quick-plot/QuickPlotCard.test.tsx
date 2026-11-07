@@ -23,28 +23,31 @@ describe('QuickPlotCard', () => {
   it('shows the grid and clears', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
-    expect(screen.getByText('TEMP')).toBeTruthy();
+    expect(screen.getByText('TEMP POINT')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Clear'));
     expect(useQuickPlot.getState().temp).toBeNull();
   });
 
-  it('offers just Save and Clear, then only Save unit, Save point and Cancel, Cancel last (far right on one line)', async () => {
+  it('offers Clear and Save, then Unit and Point under SAVE TEMP POINT AS, with the grid still showing', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     const labels = () => within(screen.getByTestId('quick-plot-card-buttons')).getAllByRole('button').map((b) => b.props.accessibilityLabel);
     expect(labels()).toEqual(['Clear', 'Save']);
+    expect(screen.getByText('TEMP POINT')).toBeTruthy();
+    expect(screen.getByText('not saved')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Save'));
-    expect(labels()).toEqual(['Save unit', 'Save point', 'Cancel']);
-    // Just the buttons: no TEMP, grid or altitude.
-    expect(screen.queryByText('TEMP')).toBeNull();
-    expect(screen.queryByText(formatCoordinate(T, 'mgrs'))).toBeNull();
-    expect(screen.queryByTestId('quick-plot-altitude')).toBeNull();
+    expect(labels()).toEqual(['Unit', 'Point']);
+    expect(screen.getByText('SAVE TEMP POINT AS')).toBeTruthy();
+    expect(screen.queryByText('TEMP POINT')).toBeNull();
+    expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
+    expect(screen.getByTestId('quick-plot-altitude')).toBeTruthy();
     // Still the same point: nothing saved or cleared yet.
     expect(useQuickPlot.getState().temp).toEqual(T);
   });
 
-  it('Cancel clears the point, as Clear does', async () => {
+  it('the header ✕ clears the point, as Clear does', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     await fireEvent.press(screen.getByLabelText('Save'));
+    expect(within(screen.getByTestId('quick-plot-header')).getByLabelText('Cancel')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Cancel'));
     expect(useQuickPlot.getState().temp).toBeNull();
   });
@@ -54,12 +57,12 @@ describe('QuickPlotCard', () => {
     await fireEvent.press(screen.getByLabelText('Save'));
     await act(async () => useQuickPlot.getState().plot({ lat: 38.92, lon: -77 }));
     expect(screen.getByLabelText('Save')).toBeTruthy();
-    expect(screen.queryByLabelText('Save unit')).toBeNull();
+    expect(screen.queryByLabelText('Unit')).toBeNull();
   });
 
   it.each([
-    ['Save unit', 'unit.add'],
-    ['Save point', 'point.add'],
+    ['Unit', 'unit.add'],
+    ['Point', 'point.add'],
   ] as const)('%s opens %s at the temporary point and ends quick plot', async (label, id) => {
     await renderWithProviders(<QuickPlotCard landscape />);
     await fireEvent.press(screen.getByLabelText('Save'));
@@ -69,27 +72,31 @@ describe('QuickPlotCard', () => {
   });
 
 
-  it.each([[false], [true]])('leaves the zoom column clear (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
+  it('in landscape leaves the zoom column clear', async () => {
+    await renderWithProviders(<QuickPlotCard landscape />);
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ right: EDGE + CONTROL_SIZE + GAP });
   });
 
-  it('sits above your grid card in portrait and beside it in landscape', async () => {
+  it('in landscape sits beside your grid card', async () => {
     useMapChrome.getState().setSelfCard({ width: 250, height: 64 });
-    await renderWithProviders(<QuickPlotCard landscape={false} />);
-    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE + 64 + GAP, right: EDGE + CONTROL_SIZE + GAP });
-    await screen.unmount();
     await renderWithProviders(<QuickPlotCard landscape />);
-    // Landscape: your card is bottom right under zoom, so the card sits left of it.
+    // Your card is bottom right under zoom, so the card sits left of it.
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ bottom: EDGE, left: EDGE, right: EDGE + 250 + GAP });
   });
 
-  it('centers in portrait and sits flush bottom left in landscape, where the center card goes', async () => {
+  it('in portrait spans the controls\' width as far in as the grid display, up to a tablet\'s max width, centered', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
-    expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-center');
-    // Centered on the screen: as far in from the left as the zoom column keeps it from the right.
-    expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: EDGE + CONTROL_SIZE + GAP, right: EDGE + CONTROL_SIZE + GAP });
-    await screen.unmount();
+    const slot = screen.getByTestId('quick-plot-card-slot');
+    // Not positioned itself: MissionMap puts it in the map controls' bar slot.
+    expect(slot.props.className).not.toContain('absolute');
+    expect(slot.props.className).toMatch(/\bself-stretch\b/);
+    expect(slot.props.className).toMatch(/\bitems-center\b/);
+    // The grid display's 8 pt margin (mx-2).
+    expect(slot.props.className).toMatch(/\bpx-2\b/);
+    expect(screen.getByTestId('quick-plot-card')).toHaveStyle({ width: '100%', maxWidth: 520 });
+  });
+
+  it('in landscape sits flush bottom left, where the center card goes', async () => {
     await renderWithProviders(<QuickPlotCard landscape />);
     expect(screen.getByTestId('quick-plot-card-slot').props.className).toContain('items-start');
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: EDGE, bottom: EDGE });
@@ -100,62 +107,14 @@ describe('QuickPlotCard', () => {
     expect(screen.getByTestId('quick-plot-card-slot')).toHaveStyle({ left: 320 + EDGE });
   });
 
-  it.each([[false], [true]])('fits its content, its buttons sharing the row under the grid, with nothing beside the grid (landscape=%s)', async (landscape) => {
+  it.each([[false], [true]])('shares each row of buttons evenly, under the grid and its altitude (landscape=%s)', async (landscape) => {
     await renderWithProviders(<QuickPlotCard landscape={landscape} />);
-    expect(screen.getByTestId('quick-plot-card').props.style).not.toHaveProperty('width');
-    for (const label of ['Clear', 'Save']) expect(screen.getByLabelText(label).props.className).toContain('flex-1');
-    // Every button is in the row: the old trash beside the grid is gone.
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    const row = within(screen.getByTestId('quick-plot-grid-row'));
+    expect(row.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
+    expect(row.getByTestId('quick-plot-altitude')).toBeTruthy();
+    for (const label of ['Clear', 'Save']) expect(screen.getByLabelText(label).props.className).toMatch(/\bflex-1\b/);
     await fireEvent.press(screen.getByLabelText('Save'));
-    // Never flex-1 after Save: its zero basis let the labels shrink, and Cancel, alone in a column, stretched tall.
-    for (const label of ['Save unit', 'Save point', 'Cancel']) expect(screen.getByLabelText(label).props.className).not.toContain('flex-1');
-  });
-
-  /** After Save in portrait, with the three measured `lineWidth` wide on one line. */
-  async function savingInPortrait(lineWidth: number) {
-    await renderWithProviders(<QuickPlotCard landscape={false} />);
-    await fireEvent.press(screen.getByLabelText('Save'));
-    // Unseen until measured, so it never shows one layout and then the other.
-    expect(screen.getByTestId('quick-plot-card')).toHaveStyle({ opacity: 0 });
-    const measure = screen.getByTestId('quick-plot-card-measure', { includeHiddenElements: true });
-    await fireEvent(measure, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: lineWidth, height: 40 } } });
-    expect(screen.getByTestId('quick-plot-card')).not.toHaveStyle({ opacity: 0 });
-  }
-
-  it('in landscape puts all three on one line, Cancel at the far right, never wrapping (that left a gap below)', async () => {
-    await renderWithProviders(<QuickPlotCard landscape />);
-    await fireEvent.press(screen.getByLabelText('Save'));
-    const row = screen.getByTestId('quick-plot-card-buttons');
-    expect(row.props.className).toMatch(/\bflex-row\b/);
-    expect(row.props.className).not.toContain('flex-wrap');
-    expect(within(row).getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Save unit', 'Save point', 'Cancel']);
-    expect(screen.queryByTestId('quick-plot-card-saves')).toBeNull();
-    expect(screen.queryByTestId('quick-plot-card-measure', { includeHiddenElements: true })).toBeNull();
-    for (const label of ['Save unit', 'Save point', 'Cancel']) expect(screen.getByLabelText(label).props.className).toMatch(/\bgrow\b/);
-  });
-
-  it('in portrait puts all three on one line when they fit', async () => {
-    await savingInPortrait(120);
-    expect(screen.getByTestId('quick-plot-card-buttons').props.className).toMatch(/\bflex-row\b/);
-    expect(screen.queryByTestId('quick-plot-card-saves')).toBeNull();
-  });
-
-  it('in portrait puts Cancel below the saves when the line would not fit, across the card but no taller', async () => {
-    await savingInPortrait(5000);
-    expect(screen.getByTestId('quick-plot-card-buttons').props.className).not.toMatch(/\bflex-row\b/);
-    const saves = within(screen.getByTestId('quick-plot-card-saves'));
-    for (const label of ['Save unit', 'Save point']) expect(saves.getByLabelText(label)).toBeTruthy();
-    expect(saves.queryByLabelText('Cancel')).toBeNull();
-    // Stretched across by the column, not grown: growing in a column made it tall.
-    expect(screen.getByLabelText('Cancel').props.className).not.toMatch(/\b(grow|flex-1)\b/);
-  });
-
-  it.each([[false], [true]])('puts the grid on its own line, above the buttons (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<QuickPlotCard landscape={landscape} />);
-    const buttons = within(screen.getByTestId('quick-plot-card-buttons'));
-    for (const label of ['Clear', 'Save']) expect(buttons.getByLabelText(label)).toBeTruthy();
-    expect(buttons.queryByText(formatCoordinate(T, 'mgrs'))).toBeNull();
-    expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toBeTruthy();
+    for (const label of ['Unit', 'Point']) expect(screen.getByLabelText(label).props.className).toMatch(/\bflex-1\b/);
   });
 
   it.each([[false], [true]])('sizes its buttons as on the other map cards: 40 pt tall, 8 pt corners (landscape=%s)', async (landscape) => {
@@ -163,34 +122,36 @@ describe('QuickPlotCard', () => {
     const asOtherCards = (label: string) => expect(screen.getByLabelText(label).props.className).toMatch(/\bh-10\b.*\brounded-lg\b/);
     ['Clear', 'Save'].forEach(asOtherCards);
     await fireEvent.press(screen.getByLabelText('Save'));
-    ['Cancel', 'Save unit', 'Save point'].forEach(asOtherCards);
+    ['Unit', 'Point'].forEach(asOtherCards);
   });
 
-  it('gives every button label the same size, the amber ones a weight heavier', async () => {
+  it('gives every button label the same size, the amber one a weight heavier', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     const size = (label: string) => within(screen.getByLabelText(label)).getByText(label).props.className as string;
-    expect(size('Save')).toMatch(/\btext-sm\b/);
-    expect(size('Clear')).toMatch(/\btext-sm\b/);
+    expect(size('Save')).toMatch(/\btext-sm\b.*\bfont-bold\b/);
+    expect(size('Clear')).toMatch(/\btext-sm\b.*\bfont-semibold\b/);
     await fireEvent.press(screen.getByLabelText('Save'));
-    for (const label of ['Save unit', 'Save point', 'Cancel']) {
-      expect(size(label)).toMatch(/\btext-sm\b/);
-      expect(size(label)).not.toMatch(/\btext-(lg|base|xl)\b/);
-    }
-    expect(size('Save point')).toMatch(/\bfont-bold\b/);
-    for (const label of ['Save unit', 'Cancel']) expect(size(label)).toMatch(/\bfont-semibold\b/);
+    for (const label of ['Unit', 'Point']) expect(size(label)).toMatch(/\btext-sm\b.*\bfont-semibold\b/);
   });
 
-  it('keeps the grid as far in from the right border as TEMP is from the left', async () => {
+  it('heads the card with an amber strip, its text lined up with the grid, like the Average header', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
-    expect(screen.getByTestId('quick-plot-header').props.className).toMatch(/\bpx-2\b/);
+    const header = screen.getByTestId('quick-plot-header').props.className as string;
+    expect(header).toMatch(/\bbg-accent-header\b/);
+    // Over near-black, so the see-through amber reads a shade darker than accent-subtle.
+    expect(screen.getByTestId('quick-plot-header').parent?.props.className).toMatch(/\bborder-b\b.*\bborder-accent-header-line\b.*\bbg-surface-input\b/);
+    // 16 pt in, as the grid is (the body's 8 pt plus its own 8 pt).
+    expect(header).toMatch(/\bpl-4\b/);
+    expect(screen.getByTestId('quick-plot-grid-row').props.className).toMatch(/\bpx-2\b/);
+    expect(screen.getByText('TEMP POINT').props.className).toMatch(/\bfont-mono-bold\b.*\btext-xs\b.*\btext-accent\b/);
   });
 
-  it('reads TEMP, then the grid, then its altitude under it', async () => {
+  it('reads TEMP POINT, then the grid, then its altitude', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
-    expect(screen.getByTestId('quick-plot-card')).toHaveTextContent(new RegExp(`^TEMP${formatCoordinate(T, 'mgrs')}ALT`));
+    expect(screen.getByTestId('quick-plot-card')).toHaveTextContent(new RegExp(`TEMP POINTnot saved${formatCoordinate(T, 'mgrs')}ALT`));
   });
 
-  it('shows the ground altitude under the grid once the terrain answers, a dash until then', async () => {
+  it('shows the ground altitude beside the grid once the terrain answers, a dash until then', async () => {
     jest.useFakeTimers();
     const source = jest.fn(async () => 312.4);
     setElevationSource(source);
@@ -199,7 +160,8 @@ describe('QuickPlotCard', () => {
       expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT —');
       await act(async () => jest.advanceTimersByTime(400));
       expect(screen.getByTestId('quick-plot-altitude')).toHaveTextContent('ALT 312 m');
-      expect(screen.getByTestId('quick-plot-altitude').props.className).toContain('text-value-altitude');
+      // ALT muted, the value in the altitude color, as in the readout dock.
+      expect(within(screen.getByTestId('quick-plot-altitude')).getByText('312 m').props.className).toContain('text-value-altitude');
       // Found on the first lookup: no second one.
       await act(async () => jest.advanceTimersByTime(2000));
       expect(source).toHaveBeenCalledTimes(1);
@@ -225,19 +187,20 @@ describe('QuickPlotCard', () => {
     }
   });
 
-  it('is see-through, keeps its amber border and outlines the grid', async () => {
+  it('is see-through, framed in dark grey, not amber, and outlines the grid', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     const card = screen.getByTestId('quick-plot-card').props.className as string;
     expect(card).toContain('bg-surface-glass');
-    expect(card).toContain('border-accent');
+    expect(card).toMatch(/\bborder border-border\b/);
+    expect(card).not.toContain('border-accent');
     expect(screen.getByText(formatCoordinate(T, 'mgrs'))).toHaveStyle({ textShadowRadius: 3 });
   });
 
-  it('has the other map cards\' 16 pt corners and 8 pt inset (1 pt border, 7 pt padding), concentric with its buttons', async () => {
+  it('has the other map cards\' 16 pt corners, and an 8 pt inset around its 8 pt buttons, concentric', async () => {
     await renderWithProviders(<QuickPlotCard landscape={false} />);
     const card = screen.getByTestId('quick-plot-card').props.className as string;
     expect(card).toMatch(/\brounded-2xl\b/);
-    expect(card).toMatch(/\bp-\[7px\]/);
-    expect(card).toMatch(/\bborder\b/);
+    expect(card).toMatch(/\boverflow-hidden\b/);
+    expect(screen.getByTestId('quick-plot-card-buttons').parent?.props.className).toMatch(/\bp-2\b/);
   });
 });

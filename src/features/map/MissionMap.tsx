@@ -150,6 +150,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const plotEntryOpen = useQuickPlot((s) => s.entryOpen);
   const plotTemp = useQuickPlot((s) => s.temp);
   const quickPlotting = plotEntryOpen || plotTemp !== null;
+  // Portrait: the temp card rides in the controls' bar slot, so the zoom buttons stack above it and the dock below.
+  const portraitTempCard = plotTemp !== null && !plotEntryOpen && !landscape;
   const placing = usePlacing((s) => s.category);
   const opPhase = useOp((s) => s.phase);
   const opPicking = opPhase === 'picking';
@@ -632,9 +634,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
           ) : undefined
         }
         landscape={landscape}
-        // The temp card sits beside the dock (landscape) or above it (portrait), which keeps its CTR row either way.
+        // The temp card sits beside the dock (landscape) or over it (portrait, as a bar), which keeps its CTR row either way.
         showCenter={showCenterGrid}
-        barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing || measuring)}
+        barOverDock={!lineDrawing && (!!placing || opPicking || manualChoosing || measuring || portraitTempCard)}
         bar={
           lineDrawing ? (
             <LineDrawBar />
@@ -650,12 +652,14 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
             />
           ) : measuring ? (
             <MeasureBar />
+          ) : portraitTempCard ? (
+            <QuickPlotCard landscape={false} />
           ) : null
         }
       />
       {plotEntryOpen ? <QuickPlotEntry landscape={landscape} /> : null}
       <ManualLocationEntry landscape={landscape} />
-      {plotTemp && !plotEntryOpen ? <QuickPlotCard landscape={landscape} panel={panel} /> : null}
+      {plotTemp && !plotEntryOpen && landscape ? <QuickPlotCard landscape panel={panel} /> : null}
       <MapTopLeft panel={panel} />
       <MenuHost landscape={landscape} missionId={missionId} />
       <Toast top={insets.top + EDGE + toolbar + GAP} />

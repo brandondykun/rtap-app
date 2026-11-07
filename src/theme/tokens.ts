@@ -13,6 +13,7 @@ export const palette = {
   'stone-950': '#0c0a09',
   'neutral-950': '#0a0a0a',
   'amber-500': '#f59e0b',
+  'amber-800': '#92400e',
   'amber-950': '#451a03',
   'orange-600': '#ea580c',
   'orange-950': '#431407',
@@ -52,6 +53,10 @@ const dark = {
   'text-muted': 'stone-400',
   accent: 'amber-500',
   'accent-subtle': 'amber-950',
+  /** The quick-plot card's header strip: accent-subtle a shade darker, laid over surface-input (no darker amber in the palette). */
+  'accent-header': { color: 'amber-950', alpha: 0.7 },
+  /** The line under accent-header: a darker amber than accent, so it divides without glaring. */
+  'accent-header-line': 'amber-800',
   'on-accent': 'neutral-950',
   success: 'green-400',
   danger: 'red-500',

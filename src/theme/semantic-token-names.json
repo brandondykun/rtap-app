@@ -13,6 +13,8 @@
   "text-muted",
   "accent",
   "accent-subtle",
+  "accent-header",
+  "accent-header-line",
   "on-accent",
   "success",
   "danger",

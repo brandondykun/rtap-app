@@ -781,7 +781,7 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('Plot'));
     };
 
-    it('PLOT closes a menu, plots a temporary point, moves the map, and Save, then Save point, opens Add point there', async () => {
+    it('PLOT closes a menu, plots a temporary point, moves the map, and Save, then Point, opens Add point there', async () => {
       await openMap();
       await fireEvent.press(screen.getByLabelText('LAYERS'));
       await fireEvent.press(screen.getByLabelText('PLOT'));
@@ -792,13 +792,16 @@ describe('MapScreen', () => {
       await plotGrid({ lat: 38.91, lon: -77 });
       expect(screen.queryByTestId('quick-plot-entry')).toBeNull();
       expect(screen.getByTestId('quick-plot-card')).toBeTruthy();
-      // Portrait: the dock keeps the center grid under the card.
+      // Portrait: the dock keeps the center grid under the card, which floats over it in the controls' bar slot, so the
+      // zoom buttons stack above it.
       expect(screen.getByTestId('dock-center')).toBeTruthy();
+      expect(within(screen.getByTestId('bar-over-dock')).getByTestId('quick-plot-card')).toBeTruthy();
+      expect(screen.getByLabelText('Zoom in')).toBeTruthy();
       const temp = useQuickPlot.getState().temp!;
       const moved = mapboxMock().__camera.setCamera.mock.calls.map((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate);
       expect(moved).toContainEqual([temp.lon, temp.lat]);
       await fireEvent.press(screen.getByLabelText('Save'));
-      await fireEvent.press(screen.getByLabelText('Save point'));
+      await fireEvent.press(screen.getByLabelText('Point'));
       await waitFor(() => expect(useMenu.getState().stack).toEqual([{ id: 'point.add', params: { at: temp } }]));
       expect(useDraft.getState().coord).toEqual(temp);
       expect(screen.queryByTestId('quick-plot-card')).toBeNull();
