@@ -102,11 +102,26 @@ describe('MgrsInput', () => {
   });
 
 
-  it('offers the return key only when the form submits on it', async () => {
-    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} />);
-    expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
-    screen.unmount();
-    await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} onSubmit={jest.fn()} />);
-    expect(screen.getByLabelText('Northing')).toHaveProp('returnKeyType', 'done');
+  it('offers the return key on Android only when the form submits on it', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    try {
+      await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} />);
+      expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
+      await screen.unmount();
+      await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} onSubmit={jest.fn()} />);
+      expect(screen.getByLabelText('Northing')).toHaveProp('returnKeyType', 'done');
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  it('never gives the iPhone number pad a return key type, which would add React Native\'s own Done toolbar under ours', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    try {
+      await renderWithProviders(<MgrsInput value={EMPTY_MGRS} onChange={jest.fn()} status={{ status: 'empty' }} onSubmit={jest.fn()} />);
+      expect(screen.getByLabelText('Northing').props.returnKeyType).toBeUndefined();
+    } finally {
+      jest.restoreAllMocks();
+    }
   });
 });

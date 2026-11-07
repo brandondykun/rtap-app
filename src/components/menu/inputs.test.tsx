@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { TextField } from '@/components/ui/TextField';
 import { useSettings } from '@/stores/settings';
@@ -10,6 +10,40 @@ import { filterOptions, MenuSelect, SEARCH_MIN_OPTIONS } from './MenuSelect';
 import { PanelScrollContext } from './panel-header-slot';
 
 describe('menu inputs', () => {
+  it('gives no iPhone number pad a return key, which would add React Native\'s own Done toolbar under the KeyboardBar', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    try {
+      await renderWithProviders(
+        <>
+          <TextField accessibilityLabel="Number" value="" onChangeText={() => {}} keyboardType="number-pad" returnKeyType="done" />
+          <TextField accessibilityLabel="Decimal" value="" onChangeText={() => {}} keyboardType="decimal-pad" enterKeyHint="done" />
+          <TextField accessibilityLabel="Mode" value="" onChangeText={() => {}} inputMode="numeric" inputAccessoryViewButtonLabel="Go" />
+          <TextField accessibilityLabel="Text" value="" onChangeText={() => {}} returnKeyType="done" />
+        </>,
+      );
+      for (const label of ['Number', 'Decimal', 'Mode']) {
+        const props = screen.getByLabelText(label).props;
+        expect(props.returnKeyType).toBeUndefined();
+        expect(props.enterKeyHint).toBeUndefined();
+        expect(props.inputAccessoryViewButtonLabel).toBeUndefined();
+      }
+      // A keyboard with its own return key keeps it.
+      expect(screen.getByLabelText('Text')).toHaveProp('returnKeyType', 'done');
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
+  it('keeps the return key on Android\'s number pad, which has one', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    try {
+      await renderWithProviders(<TextField accessibilityLabel="Number" value="" onChangeText={() => {}} keyboardType="number-pad" returnKeyType="done" />);
+      expect(screen.getByLabelText('Number')).toHaveProp('returnKeyType', 'done');
+    } finally {
+      jest.restoreAllMocks();
+    }
+  });
+
   it('shows no suggestion strip over the keyboard unless a field asks for it', async () => {
     await renderWithProviders(
       <>

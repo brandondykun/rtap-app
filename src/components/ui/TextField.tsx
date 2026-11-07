@@ -1,5 +1,5 @@
 import { useRef, useState, type Ref } from 'react';
-import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useSettings } from '@/stores/settings';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -8,6 +8,22 @@ import { Icon, type IconName } from './Icon';
 
 /** Keeps the keyboard's suggestion strip away (see the Keyboard suggestions setting). */
 const NO_SUGGESTIONS = { autoCorrect: false, spellCheck: false, textContentType: 'none' } as const;
+
+/** Keyboards (and input modes) that are an iPhone number pad: no return key. */
+const NUMBER_PAD_KEYBOARDS = new Set<TextInputProps['keyboardType']>(['number-pad', 'decimal-pad', 'numeric', 'phone-pad']);
+const NUMBER_PAD_MODES = new Set<TextInputProps['inputMode']>(['numeric', 'decimal', 'tel']);
+
+/**
+ * On an iPhone number pad, a return key type (or accessory button label) makes React Native add its own toolbar with a
+ * Done button over the keyboard, which stacks under the KeyboardBar's Done. The pad has no return key to show anyway, so
+ * the field drops both there; Android's number pad has a return key and keeps them.
+ */
+export function withoutNumberPadReturnKey<T extends Pick<TextInputProps, 'keyboardType' | 'inputMode' | 'returnKeyType' | 'enterKeyHint' | 'inputAccessoryViewButtonLabel'>>(props: T): T {
+  if (Platform.OS !== 'ios') return props;
+  if (!NUMBER_PAD_KEYBOARDS.has(props.keyboardType) && !NUMBER_PAD_MODES.has(props.inputMode)) return props;
+  const { returnKeyType: _r, enterKeyHint: _e, inputAccessoryViewButtonLabel: _l, ...rest } = props;
+  return rest as T;
+}
 
 type Props = Omit<TextInputProps, 'style'> & {
   invalid?: boolean;
@@ -68,7 +84,7 @@ export function TextField({ invalid = false, mono = false, dense = false, nested
       // placeholder start at the top: Android would otherwise centre them vertically.
       style={{ textAlignVertical: multiline ? 'top' : 'center' }}
       className={`${nested ? 'rounded-lg' : 'rounded-xl'} border bg-surface-input ${dense ? 'px-2' : 'px-3'} ${showIcon ? 'pl-11' : ''} ${clearable ? 'pr-11' : ''} text-[18px] text-text ${multiline ? 'min-h-24 py-3' : 'h-12 py-0'} ${mono ? 'font-mono' : ''} ${border}`}
-      {...rest}
+      {...withoutNumberPadReturnKey(rest)}
     />
   );
   if (!clearable && !showIcon) return input;
