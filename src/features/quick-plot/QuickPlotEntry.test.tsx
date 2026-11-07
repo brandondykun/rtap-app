@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react-native';
 import { Platform, TextInput } from 'react-native';
 
 import { mgrsFieldsFor } from '@/components/menu/mgrs-fields';
+import { DIGIT_FIELD_WIDTH } from '@/components/menu/MgrsInput';
 import { bannerTop, EDGE } from '@/features/map/layout';
 import { INITIAL_INTERACTION, useInteraction } from '@/stores/interaction';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
@@ -75,8 +76,8 @@ describe('QuickPlotEntry', () => {
   });
 
 
-  it.each([[false], [true]])('has no Clear button, and puts Cancel and Plot side by side below the grid (landscape=%s)', async (landscape) => {
-    await renderWithProviders(<QuickPlotEntry landscape={landscape} />);
+  it('has no Clear button, and puts Cancel and Plot side by side below the grid in portrait', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
     expect(screen.queryByLabelText('Clear grid')).toBeNull();
     const row = within(screen.getByTestId('quick-plot-row'));
     expect(row.queryByLabelText('Plot')).toBeNull();
@@ -84,8 +85,8 @@ describe('QuickPlotEntry', () => {
     expect(actions.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['Cancel', 'Plot']);
   });
 
-  describe('on Android in landscape, where the keyboard is taller', () => {
-    beforeEach(() => jest.replaceProperty(Platform, 'OS', 'android'));
+  describe.each([['android'], ['ios']] as const)('on %s in landscape, where the keyboard leaves little height', (os) => {
+    beforeEach(() => jest.replaceProperty(Platform, 'OS', os));
     afterEach(() => jest.restoreAllMocks());
 
     const typeValidGrid = async () => {
@@ -105,6 +106,14 @@ describe('QuickPlotEntry', () => {
       expect(within(screen.getByTestId('quick-plot-entry')).getByTestId('mgrs-status')).toHaveTextContent(/^Valid/);
     });
 
+    it('fits the easting and northing to their five digits on that line, the card no wider than it all', async () => {
+      mockWindowWidth = 2000;
+      await typeValidGrid();
+      expect(screen.getByTestId('mgrs-easting')).toHaveStyle({ width: DIGIT_FIELD_WIDTH });
+      expect(screen.getByTestId('mgrs-northing')).toHaveStyle({ width: DIGIT_FIELD_WIDTH });
+      expect(screen.getByTestId('quick-plot-entry')).toHaveStyle({ width: ONE_LINE_MIN_WIDTH });
+    });
+
     it('keeps Cancel and Plot below the grid when the line would not fit', async () => {
       mockWindowWidth = ONE_LINE_MIN_WIDTH + 2 * EDGE - 1;
       await typeValidGrid();
@@ -119,10 +128,10 @@ describe('QuickPlotEntry', () => {
     });
   });
 
-  it('keeps Cancel and Plot below the grid on iOS in landscape, even with room', async () => {
-    mockWindowWidth = 2000;
-    await renderWithProviders(<QuickPlotEntry landscape />);
-    expect(within(screen.getByTestId('quick-plot-row')).queryByLabelText('Plot')).toBeNull();
+  it('labels Plot the size of Cancel beside it, a weight heavier on its amber', async () => {
+    await renderWithProviders(<QuickPlotEntry landscape={false} />);
+    expect(within(screen.getByLabelText('Plot')).getByText('Plot').props.className).toMatch(/\btext-sm\b.*\bfont-bold\b/);
+    expect(within(screen.getByLabelText('Cancel')).getByText('Cancel').props.className).toMatch(/\btext-sm\b.*\bfont-semibold\b/);
   });
 
   it('plots as the finger lands on Plot, so a press cancelled mid-touch (focus jumping fields on iOS) still plots', async () => {

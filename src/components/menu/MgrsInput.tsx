@@ -24,16 +24,18 @@ type Props = {
   nested?: boolean;
   /** Show the validation line under the fields (default). Off when the caller renders its own status. */
   showStatus?: boolean;
+  /** Easting and northing just wide enough for their five digits, instead of sharing the row (quick plot's one line). */
+  fitDigits?: boolean;
 };
 
 // Widths (pt) that show '18S' and 'UJ' in full at the 18 pt mono font with dense padding.
 const ZONE_WIDTH = 56;
 const SQUARE_WIDTH = 46;
 /** Five 18 pt mono digits plus the dense field's padding and border, with a little slack for the cursor. */
-const DIGIT_FIELD_MIN_WIDTH = 76;
+export const DIGIT_FIELD_WIDTH = 76;
 const FIELD_GAP = 8;
 /** The narrowest the grid row can be without cutting off digits (the landscape drawer must allow it). */
-export const MGRS_ROW_MIN_WIDTH = ZONE_WIDTH + SQUARE_WIDTH + 2 * DIGIT_FIELD_MIN_WIDTH + 3 * FIELD_GAP;
+export const MGRS_ROW_MIN_WIDTH = ZONE_WIDTH + SQUARE_WIDTH + 2 * DIGIT_FIELD_WIDTH + 3 * FIELD_GAP;
 
 /**
  * Android only opens the keyboard for a field focused once its window is ready: focused on mount, the cursor shows but
@@ -45,7 +47,7 @@ const letters = (s: string) => s.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 const digits = (s: string) => s.replace(/\D/g, '');
 
 /** Four-field MGRS entry (zone+band, 100 km square, easting, northing) with a validation line. */
-export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false, showStatus = true }: Props) {
+export function MgrsInput({ value, onChange, status, validDetail, disabled = false, onSubmit, autoFocus, nested = false, showStatus = true, fitDigits = false }: Props) {
   const zone = useRef<TextInput>(null);
   const square = useRef<TextInput>(null);
   const easting = useRef<TextInput>(null);
@@ -110,20 +112,22 @@ export function MgrsInput({ value, onChange, status, validDetail, disabled = fal
   const onNorthingKey = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => hopBack(e, 'northing', value.northing);
 
   const invalid = status.status === 'invalid';
+  const digitField = fitDigits ? { width: DIGIT_FIELD_WIDTH } : { flex: 1 };
   return (
     <View className="gap-2">
       <View className="flex-row gap-2">
-        {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest. */}
+        {/* Zone and square are fixed widths that fit their 3 and 2 characters; the digit fields share the rest (or fit
+            their five digits). */}
         <View style={{ width: ZONE_WIDTH }}>
           <TextField nested={nested} editable={!disabled} ref={zone} mono dense accessibilityLabel="MGRS zone" value={value.zoneBand} onChangeText={onZone} autoCapitalize="characters" autoCorrect={false} invalid={invalid} placeholder="18S" />
         </View>
         <View style={{ width: SQUARE_WIDTH }}>
           <TextField nested={nested} editable={!disabled} ref={square} onKeyPress={onSquareKey} mono dense accessibilityLabel="100 km square" value={value.square} onChangeText={onSquare} autoCapitalize="characters" autoCorrect={false} maxLength={2} invalid={invalid} placeholder="UJ" />
         </View>
-        <View style={{ flex: 1 }}>
+        <View testID="mgrs-easting" style={digitField}>
           <TextField nested={nested} editable={!disabled} ref={easting} onKeyPress={onEastingKey} mono dense accessibilityLabel="Easting" value={value.easting} onChangeText={onEasting} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" />
         </View>
-        <View style={{ flex: 1 }}>
+        <View testID="mgrs-northing" style={digitField}>
           <TextField nested={nested} editable={!disabled} ref={northing} onKeyPress={onNorthingKey} mono dense accessibilityLabel="Northing" value={value.northing} onChangeText={onNorthing} keyboardType="number-pad" maxLength={5} invalid={invalid} placeholder="00000" returnKeyType={onSubmit ? 'done' : undefined} onSubmitEditing={onSubmit} />
         </View>
       </View>

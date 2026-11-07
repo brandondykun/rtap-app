@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Keyboard, Platform, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { Keyboard, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MenuButton } from '@/components/menu/MenuButton';
@@ -21,17 +21,15 @@ const LANDSCAPE_WIDTH = 520;
 const PORTRAIT_MARGIN = 6;
 /** Cancel and Plot, each, when they share the grid's line. */
 const ONE_LINE_ACTION_WIDTH = 104;
-/** The card's padding, the grid, Cancel and Plot, and the gaps between them. */
+/** The card's padding, the grid (its digit fields fitted to five digits), Cancel and Plot, and the gaps between them. */
 export const ONE_LINE_MIN_WIDTH = 2 * 8 + MGRS_ROW_MIN_WIDTH + 8 + 2 * ONE_LINE_ACTION_WIDTH + 8;
-/** Wide enough for roomy digit fields, no wider. */
-const ONE_LINE_MAX_WIDTH = 640;
 
 /**
- * Android's landscape keyboard is tall enough to reach the buttons below the grid (and to cover them once the valid
- * line shows), so there Cancel and Plot join the grid's line when it fits, leaving only the valid line below.
+ * In landscape the keyboard leaves little height (Android's reaches the buttons below the grid, and covers them once the
+ * valid line shows), so Cancel and Plot join the grid's line when it fits, leaving only the valid line below.
  */
 function oneLineFits(landscape: boolean, available: number): boolean {
-  return landscape && Platform.OS === 'android' && available >= ONE_LINE_MIN_WIDTH;
+  return landscape && available >= ONE_LINE_MIN_WIDTH;
 }
 
 /** Quick plot grid entry: centered under the toolbar (above the keyboard), four MGRS fields, then Cancel and Plot. */
@@ -61,7 +59,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
   const oneLine = oneLineFits(landscape, available);
   // Portrait uses slimmer side margins than the map's usual edge so the four fields get more room.
   const cardWidth = oneLine
-    ? Math.min(ONE_LINE_MAX_WIDTH, available)
+    ? ONE_LINE_MIN_WIDTH
     : landscape
       ? Math.min(LANDSCAPE_WIDTH, available)
       : width - insets.left - insets.right - 2 * PORTRAIT_MARGIN;
@@ -86,6 +84,7 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       autoFocus={parts.square ? 'easting' : 'zone'}
       nested
       showStatus={!oneLine}
+      fitDigits={oneLine}
     />
   );
   const cancelButton = <MenuButton compact label="Cancel" icon="close" onPress={close} />;
@@ -100,10 +99,12 @@ export function QuickPlotEntry({ landscape }: { landscape: boolean }) {
       // activate without a touch; plotting twice is harmless (the box has closed by then).
       onPressIn={plot}
       onPress={plot}
-      className={`active:opacity-60 h-10 flex-1 flex-row items-center justify-center gap-2 rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
-      {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. */}
-      <CrosshairGlyph size={20} color={colors['on-accent']} dotColor={colors['on-accent']} />
-      <Text className="text-lg font-bold text-on-accent">Plot</Text>
+      className={`active:opacity-60 h-10 flex-1 flex-row items-center justify-center gap-1.5 rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
+      {/* On the amber button an amber dot would vanish: one dark color for the whole crosshair. The label is Cancel's
+          size, a weight heavier: dark on amber reads lighter than light on dark. The crosshair fills its square
+          more than Cancel's ✕, so it is drawn a little smaller to look the same size. */}
+      <CrosshairGlyph size={14} color={colors['on-accent']} dotColor={colors['on-accent']} />
+      <Text className="text-sm font-bold text-on-accent">Plot</Text>
     </Pressable>
   );
 

@@ -107,6 +107,13 @@ describe('ManualLocationEntry', () => {
     }
   });
 
+  it('labels Set the size of Cancel beside it, a weight heavier on its amber', async () => {
+    await renderWithProviders(<ManualLocationEntry landscape={false} />);
+    await act(async () => useManualEntry.getState().open('map', null));
+    expect(within(screen.getByLabelText('Set')).getByText('Set').props.className).toMatch(/\btext-sm\b.*\bfont-bold\b/);
+    expect(within(screen.getByLabelText('Cancel')).getByText('Cancel').props.className).toMatch(/\btext-sm\b.*\bfont-semibold\b/);
+  });
+
   it('dims Set only lightly while the grid is invalid', async () => {
     useManualEntry.getState().open('map', null);
     await renderWithProviders(<ManualLocationEntry landscape={false} />);

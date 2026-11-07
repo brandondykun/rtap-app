@@ -99,7 +99,8 @@ function EntryBox({ landscape, from, hidden }: { landscape: boolean; from: LatLo
             disabled={!valid}
             onPress={set}
             className={`active:opacity-60 h-10 flex-1 items-center justify-center rounded-lg bg-accent ${valid ? '' : 'opacity-70'}`}>
-            <Text className="text-lg font-bold text-on-accent">Set</Text>
+            {/* Cancel's size, a weight heavier: dark on amber reads lighter than light on dark. */}
+            <Text className="text-sm font-bold text-on-accent">Set</Text>
           </Pressable>
         </View>
         <Text style={halo} className="px-1 text-xs text-text">
