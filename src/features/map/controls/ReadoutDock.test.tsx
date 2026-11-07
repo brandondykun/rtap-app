@@ -236,7 +236,7 @@ describe('ReadoutDock', () => {
       expect(screen.queryByTestId('average-actions')).toBeNull();
     });
 
-    it('marks a held average with HELD before the accuracy, and offers Resume and Discard below the grids', async () => {
+    it('marks a held average with HELD before the accuracy, and offers Resume and Stop below the grids', async () => {
       paused();
       await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
       const c = themeColors('dark');
@@ -246,7 +246,7 @@ describe('ReadoutDock', () => {
       expect(screen.getByTestId('average-header')).toHaveTextContent(/PAUSED.*you moved/);
       expect(screen.getByTestId('average-detail')).toHaveTextContent('86 fixes kept');
       expect(screen.getByRole('button', { name: 'Resume' })).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Discard' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
     });
 
     it('keeps HELD in feet too, reserving its width inline', async () => {

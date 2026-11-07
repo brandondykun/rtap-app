@@ -133,6 +133,15 @@ describe('AverageHeader', () => {
     expect(screen.queryByTestId('average-blink')).toBeNull();
   });
 
+  it('paused from AVG: asks for Resume or Stop, not that the user moved', async () => {
+    useGpsAverage.getState().start();
+    for (let i = 0; i < 5; i++) useGpsAverage.getState().addFix(fix(i * 10_000), 0);
+    useGpsAverage.getState().pauseByUser();
+    await renderWithProviders(<AverageHeader inline={false} />);
+    expect(screen.getByTestId('average-header')).toHaveTextContent(/PAUSED.*Resume or Stop/);
+    expect(screen.getByTestId('average-header')).not.toHaveTextContent(/moved/);
+  });
+
   it('paused: no distance until a fix since the pause says where the user is', async () => {
     pauseAt(fix(40_000));
     await renderWithProviders(<AverageHeader inline={false} />);
@@ -157,10 +166,10 @@ describe('AverageActions', () => {
     expect(screen.queryByTestId('average-actions')).toBeNull();
   });
 
-  it('paused: Discard turns Average mode off', async () => {
+  it('paused: Stop turns Average mode off', async () => {
     pauseAt(fix(120_000));
     await renderWithProviders(<AverageActions inline={false} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Discard' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Stop' }));
     expect(useGpsAverage.getState().phase).toBe('off');
   });
 

@@ -76,6 +76,7 @@ export function AverageHeader({ inline, minimal = false }: { inline: boolean; mi
   const fixCount = useGpsAverage((s) => s.fixCount);
   const live = useGpsAverage((s) => s.live);
   const pausedAt = useGpsAverage((s) => s.pausedAt);
+  const pausedBy = useGpsAverage((s) => s.pausedBy);
   const showFixes = useGpsAverage((s) => s.showFixes);
   const stats = useMemo(() => clusterStats(samples), [samples]);
   const elapsedMs = useAverageStopwatchMs();
@@ -102,7 +103,7 @@ export function AverageHeader({ inline, minimal = false }: { inline: boolean; mi
   } else {
     title = 'PAUSED';
     lead = <Icon name="pause-circle" size={16} color={colors.averaged} />;
-    note = fromAverage ? <>you moved {distance(fromAverage)}</> : 'you moved';
+    note = pausedBy === 'user' ? 'Resume or Stop' : fromAverage ? <>you moved {distance(fromAverage)}</> : 'you moved';
     detail = `${fixes(fixCount)} kept`;
   }
 
@@ -164,7 +165,7 @@ export function AverageActions({ inline }: { inline: boolean }) {
   return (
     <View testID="average-actions" className={`flex-row gap-2 ${inline ? 'pb-2 pt-1' : 'pb-3 pt-1'}`}>
       <ActionButton primary inline={inline} label="Resume" icon="play" onPress={() => useGpsAverage.getState().resume()} />
-      <ActionButton inline={inline} label="Discard" icon="close" onPress={() => useGpsAverage.getState().stop()} />
+      <ActionButton inline={inline} label="Stop" icon="stop" onPress={() => useGpsAverage.getState().stop()} />
     </View>
   );
 }

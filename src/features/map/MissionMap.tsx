@@ -8,7 +8,7 @@ import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { Toast } from '@/components/ui/Toast';
 import { notifyPlaced, notifySelected } from '@/features/feedback/feedback';
 import { ManualLocationEntry } from '@/features/location/ManualLocationEntry';
-import { startAveraging } from '@/features/location/average-actions';
+import { toggleAveraging } from '@/features/location/average-actions';
 import { useAverageWatch } from '@/features/location/use-average-watch';
 import { useSelfLocation } from '@/features/location/use-self-location';
 import { draftSidc } from '@/features/map-items/draft-sidc';
@@ -602,7 +602,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onPlot={toggleQuickPlot}
         averageOn={averageOn}
         averageHeld={averageHeld}
-        onAverage={() => (useGpsAverage.getState().phase === 'off' ? startAveraging() : useGpsAverage.getState().stop())}
+        onAverage={toggleAveraging}
         onLayers={toggleLayers}
         onMenu={() => useMenu.getState().openMenu('app.root', {})}
         labelsOn={labelsOn}

@@ -16,7 +16,7 @@ export const AVERAGE_HELP: readonly OverlayHelp[] = [
   },
   {
     title: 'If you move',
-    help: 'Averaging pauses on its own when the GPS or the motion sensor shows you moving, and drops the readings from just before. ME stays on the averaged spot, marked HELD, and the top line says how far you are from it. Tap Resume to carry on (GPS can wander while you stand still, so Resume trusts you), or Discard to turn Average mode off.',
+    help: 'Averaging pauses on its own when the GPS or the motion sensor shows you moving, and drops the readings from just before. ME stays on the averaged spot, marked HELD, and the top line says how far you are from it. Tap Resume to carry on (GPS can wander while you stand still, so Resume trusts you), or Stop to turn Average mode off and go back to your live position. Tapping AVG pauses it the same way but keeps every reading, so a stray tap never loses the average.',
   },
   {
     title: 'Seeing the fixes',

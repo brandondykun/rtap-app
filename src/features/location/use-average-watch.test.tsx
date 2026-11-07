@@ -63,6 +63,14 @@ describe('useAverageWatch', () => {
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Warning);
   });
 
+  it('does not buzz when the user paused it from AVG', async () => {
+    await renderHook(() => useAverageWatch());
+    await act(async () => useGpsAverage.getState().start());
+    await act(async () => useGpsAverage.getState().pauseByUser());
+    expect(useGpsAverage.getState().phase).toBe('paused');
+    expect(Haptics.notificationAsync).not.toHaveBeenCalled();
+  });
+
   it('does not listen to the accelerometer unless averaging', async () => {
     await renderHook(() => useAverageWatch());
     await flush();

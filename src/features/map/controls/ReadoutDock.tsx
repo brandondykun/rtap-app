@@ -26,7 +26,7 @@ import { glassHalo } from '@/components/ui/glass';
  * - portrait: docked full width at the bottom, each row's details stacked on the right;
  * - `inline` (landscape): bottom right, as wide as its content, each row's details on one line after its grid;
  *   `minimal` drops the details, leaving only each row's lead and grid.
- * In Average mode an orange border and a status line frame it, and while paused its Resume/Discard buttons sit below.
+ * In Average mode an orange border and a status line frame it, and while paused its Resume/Stop buttons sit below.
  */
 export function ReadoutDock({
   showCenter,

@@ -22,6 +22,16 @@ function hideStartMessageWhenOff(id: number) {
   unwatchStartMessage = unwatch;
 }
 
+/**
+ * The AVG toggle: starts averaging, or pauses it. It never turns Average mode off (a stray tap would lose the average):
+ * only Stop, under the grids, does. While paused it does nothing; Resume and Stop are showing.
+ */
+export function toggleAveraging(): void {
+  const { phase, pauseByUser } = useGpsAverage.getState();
+  if (phase === 'off') startAveraging();
+  else if (phase === 'averaging') pauseByUser();
+}
+
 /** Starts averaging, unless there is no GPS to average (manual position, or location off). Returns whether it started. */
 export function startAveraging(): boolean {
   if (useMyLocation.getState().source === 'manual') {

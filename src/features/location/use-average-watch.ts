@@ -16,11 +16,11 @@ const KEEP_AWAKE_TAG = 'gps-average';
 export function useAverageWatch(): void {
   const averaging = useGpsAverage((s) => s.phase === 'averaging');
 
-  // Any averaging -> paused change buzzes, whether the accelerometer or GPS noticed the move.
+  // A pause for a move buzzes, whether the accelerometer or GPS noticed it; one from AVG does not (the user tapped it).
   useEffect(
     () =>
       useGpsAverage.subscribe((state, prev) => {
-        if (prev.phase === 'averaging' && state.phase === 'paused') notifyWarning();
+        if (prev.phase === 'averaging' && state.phase === 'paused' && state.pausedBy === 'move') notifyWarning();
       }),
     [],
   );

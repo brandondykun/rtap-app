@@ -17,7 +17,7 @@ import {
 } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
-/** Off: not averaging. Paused: moved off the spot, holding the average as "me" until Resume or off. */
+/** Off: not averaging. Paused: moved off the spot, or paused from AVG, holding the average as "me" until Resume or off. */
 export type AveragePhase = 'off' | 'averaging' | 'paused';
 
 /** When the move is only noticed by GPS, readings this far before it was noticed are dropped too. */
@@ -46,6 +46,8 @@ type GpsAverageValues = {
    * says where the user is now.
    */
   pausedAt: number | null;
+  /** What paused averaging: a move (sensor, GPS, or leaving the app), or the user tapping AVG. Null unless paused. */
+  pausedBy: 'move' | 'user' | null;
   /** The newest GPS fix as it came, kept through every phase: the user's real position while the average is held. */
   live: SelfPosition | null;
   /** Fixes averaged in this run (the samples hold them all, some merged by thinning). */
@@ -65,6 +67,8 @@ type GpsAverageActions = {
   addFix: (fix: SelfPosition, speedMps: number | null) => SelfPosition | null;
   markStill: (at: number) => void;
   pause: (detectedAt: number) => void;
+  /** Paused from AVG, so a stray tap loses nothing: every fix kept, until Resume or Stop. */
+  pauseByUser: () => void;
   /** Carries on averaging, on the user's word that they are still on the spot. */
   resume: () => void;
   restartHere: () => void;
@@ -83,6 +87,7 @@ export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
   farCount: 0,
   resumed: false,
   pausedAt: null,
+  pausedBy: null,
   live: null,
   fixCount: 0,
   fixes: [],
@@ -168,6 +173,7 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
     const keptUntil = kept.length === 0 ? -Infinity : kept[kept.length - 1].at;
     set({
       phase: 'paused',
+      pausedBy: 'move',
       samples: kept,
       fixCount: fixCountOf(kept),
       fixes: fixes.filter((f) => f.at <= keptUntil),
@@ -181,10 +187,25 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
       runningSince: null,
     });
   },
+  pauseByUser: () => {
+    const { phase, live, elapsedMs, runningSince } = get();
+    if (phase !== 'averaging') return;
+    // Nothing trimmed: the user has not moved, and every fix up to the tap counts.
+    set({
+      phase: 'paused',
+      pausedBy: 'user',
+      farCount: 0,
+      farSince: null,
+      resumed: false,
+      pausedAt: live?.timestamp ?? Date.now(),
+      elapsedMs: elapsedMs + (runningSince === null ? 0 : Math.max(0, Date.now() - runningSince)),
+      runningSince: null,
+    });
+  },
   resume: () => {
     if (get().phase !== 'paused') return;
     // No check of the live fix: the user knows they have not moved better than a wandering GPS does.
-    set({ phase: 'averaging', farCount: 0, farSince: null, resumed: true, pausedAt: null, runningSince: Date.now() });
+    set({ phase: 'averaging', farCount: 0, farSince: null, resumed: true, pausedAt: null, pausedBy: null, runningSince: Date.now() });
   },
   restartHere: () => set({ ...newRun(get().live), showFixes: get().showFixes }),
   noteLive: (fix) => set({ live: fix }),

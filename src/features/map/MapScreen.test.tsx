@@ -89,12 +89,18 @@ describe('MapScreen', () => {
     expect(screen.getByText('Keep the device still. Averaging gets more accurate over a few minutes.')).toBeTruthy();
   });
 
-  it('turns averaging off from the toolbar while paused', async () => {
+  it('pauses from AVG rather than turning off, offering Resume and Stop, so a stray tap loses nothing', async () => {
     await openMap();
-    await act(async () => useGpsAverage.getState().start());
-    await act(async () => useGpsAverage.getState().pause(Date.now()));
-    expect(useGpsAverage.getState().phase).toBe('paused');
     await fireEvent.press(screen.getByLabelText('AVG'));
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    expect(useGpsAverage.getState()).toMatchObject({ phase: 'paused', pausedBy: 'user' });
+    // Another tap while paused does not turn it off either: only Stop does.
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    expect(useGpsAverage.getState().phase).toBe('paused');
+    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(useGpsAverage.getState().phase).toBe('averaging');
+    await fireEvent.press(screen.getByLabelText('AVG'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Stop' }));
     expect(useGpsAverage.getState().phase).toBe('off');
   });
 

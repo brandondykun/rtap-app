@@ -138,6 +138,32 @@ describe('gps average store', () => {
     expect(g().samples).toHaveLength(6);
   });
 
+  it('a pause from AVG keeps every fix, stops the stopwatch and says the user paused it', () => {
+    jest.useFakeTimers({ now: 1_000_000 });
+    try {
+      g().start();
+      for (let i = 0; i < 10; i++) g().addFix(fix(i * 1000), 0);
+      g().noteLive(fix(9000));
+      jest.advanceTimersByTime(30_000);
+      g().pauseByUser();
+      expect(g()).toMatchObject({ phase: 'paused', pausedBy: 'user', fixCount: 10, elapsedMs: 30_000, runningSince: null, pausedAt: 9000 });
+      expect(g().samples).toHaveLength(10);
+      // Held as "me" until Resume or Stop.
+      expect(g().held(10_000)?.averaged).toBe(true);
+      g().resume();
+      expect(g()).toMatchObject({ phase: 'averaging', pausedBy: null });
+      // A move noticed afterwards is the move's pause.
+      g().pause(20_000);
+      expect(g().pausedBy).toBe('move');
+      // Only while averaging.
+      g().stop();
+      g().pauseByUser();
+      expect(g().phase).toBe('off');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('Resume always carries on, wherever the GPS puts the user, and does nothing unless paused', () => {
     g().start();
     for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
