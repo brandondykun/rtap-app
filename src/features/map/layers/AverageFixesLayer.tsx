@@ -6,7 +6,7 @@ import { usePresence } from '@/stores/presence';
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { averageFixFeatures, averageRingFeatures } from './average-fixes-features';
-import { makeAverageFixDotStyle, makeAverageFixRingStyle, makeAverageRingStyle } from './styles';
+import { makeAverageFixDotStyle, makeAverageRingStyle } from './styles';
 
 /**
  * The fixes behind the averaged position, while Average mode is on and they are switched on from the fix count. Always
@@ -24,13 +24,12 @@ export function AverageFixesLayer() {
     [shown, average?.position, average?.accuracyM],
   );
   const styles = useMemo(
-    () => ({ fixRing: makeAverageFixRingStyle(colors), dot: makeAverageFixDotStyle(colors), ring: makeAverageRingStyle(colors) }),
+    () => ({ dot: makeAverageFixDotStyle(colors), ring: makeAverageRingStyle(colors) }),
     [colors],
   );
   return (
     <>
       <ShapeSource id="average-fixes" shape={points}>
-        <CircleLayer id="average-fix-rings" style={styles.fixRing} />
         <CircleLayer id="average-fix-dots" style={styles.dot} />
       </ShapeSource>
       <ShapeSource id="average-ring" shape={ring}>

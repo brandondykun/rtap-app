@@ -91,23 +91,10 @@ export const SELF_STYLE: SymbolLayerStyle = {
 };
 
 /**
- * Average mode's fixes (switched on from the fix count): a small orange dot for each fix and a faint ring of its accuracy
- * to true scale, with a dashed ring of the average's own ±. Orange marks Average mode; the rings are accuracy, so gray.
+ * Average mode's fixes (switched on from the fix count): a small orange dot for each fix, with a dashed ring of the
+ * average's own ±. Orange marks Average mode; the ring is accuracy, so gray. No ring per fix: thousands of them, each
+ * filling its circle, stalled panning and zooming.
  */
-export const AVERAGE_FIX_RING_OPACITY = 0.3;
-
-export function makeAverageFixRingStyle(colors: Record<SemanticToken, string>): CircleLayerStyle {
-  return {
-    // A radius in meters: points at zoom 0, doubling with each zoom level.
-    circleRadius: ['interpolate', ['exponential', 2], ['zoom'], 0, ['get', 'accuracyPt0'], 24, ['*', ['get', 'accuracyPt0'], 2 ** 24]] as CircleLayerStyle['circleRadius'],
-    circleOpacity: 0,
-    circleStrokeColor: colors['value-accuracy'],
-    circleStrokeWidth: 1,
-    circleStrokeOpacity: AVERAGE_FIX_RING_OPACITY,
-    circlePitchAlignment: 'map',
-  };
-}
-
 export function makeAverageFixDotStyle(colors: Record<SemanticToken, string>): CircleLayerStyle {
   return {
     circleRadius: 2.5,

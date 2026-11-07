@@ -24,7 +24,7 @@ export const AVERAGE_HELP: readonly OverlayHelp[] = [
   },
   {
     title: 'Seeing the fixes',
-    help: 'Tap the fix count to show the fixes on the map: an orange dot for each fix in the average, a faint ring for its accuracy, and a dashed ring for the average’s own ±. Tap it again to hide them. A tight cluster means a good average.',
+    help: 'Tap the fix count to show the fixes on the map: an orange dot for each fix in the average and a dashed ring for the average’s own ±. Tap it again to hide them. A tight cluster means a good average.',
   },
   {
     title: 'Orange means Average mode',

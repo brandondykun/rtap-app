@@ -38,7 +38,7 @@ describe('AverageFixesLayer', () => {
     expect(shape('average-ring').features).toEqual([]);
   });
 
-  it('draws each fix with its accuracy ring and the average’s ± ring when switched on', async () => {
+  it('draws a dot for each fix and only the average’s ± ring when switched on', async () => {
     await renderWithProviders(<AverageFixesLayer />);
     await averageThree();
     await act(async () => useGpsAverage.getState().toggleFixes());
@@ -46,7 +46,8 @@ describe('AverageFixesLayer', () => {
     expect(shape('average-ring').features).toHaveLength(1);
     const { CircleLayer, LineLayer } = mapboxMock().__props;
     expect(CircleLayer['average-fix-dots'].style).toMatchObject({ circleColor: themeColors('dark').averaged });
-    expect(CircleLayer['average-fix-rings'].style).toMatchObject({ circleStrokeColor: themeColors('dark')['value-accuracy'], circleOpacity: 0 });
+    // No ring per fix: thousands of them stalled panning and zooming.
+    expect(Object.keys(CircleLayer)).toEqual(['average-fix-dots']);
     expect(LineLayer['average-ring-line'].style).toMatchObject({ lineDasharray: [3, 2] });
   });
 
