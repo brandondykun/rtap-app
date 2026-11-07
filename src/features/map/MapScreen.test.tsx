@@ -781,7 +781,7 @@ describe('MapScreen', () => {
       await fireEvent.press(screen.getByLabelText('Plot'));
     };
 
-    it('PLOT closes a menu, plots a temporary point, moves the map, and Save point opens Add point there', async () => {
+    it('PLOT closes a menu, plots a temporary point, moves the map, and Save, then Save point, opens Add point there', async () => {
       await openMap();
       await fireEvent.press(screen.getByLabelText('LAYERS'));
       await fireEvent.press(screen.getByLabelText('PLOT'));
@@ -797,6 +797,7 @@ describe('MapScreen', () => {
       const temp = useQuickPlot.getState().temp!;
       const moved = mapboxMock().__camera.setCamera.mock.calls.map((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate);
       expect(moved).toContainEqual([temp.lon, temp.lat]);
+      await fireEvent.press(screen.getByLabelText('Save'));
       await fireEvent.press(screen.getByLabelText('Save point'));
       await waitFor(() => expect(useMenu.getState().stack).toEqual([{ id: 'point.add', params: { at: temp } }]));
       expect(useDraft.getState().coord).toEqual(temp);
