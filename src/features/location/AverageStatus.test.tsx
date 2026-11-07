@@ -92,8 +92,8 @@ describe('AverageHeader', () => {
       expect(useGpsAverage.getState().elapsedMs).toBe(60_500);
       await act(async () => jest.advanceTimersByTime(600_000));
       expect(useGpsAverage.getState().elapsedMs).toBe(60_500);
-      // Resume (forced here: the store's own resume needs a fix on the spot) carries on from 1:00.5.
-      await act(async () => useGpsAverage.setState({ phase: 'averaging', runningSince: Date.now() }));
+      // Resume carries on from 1:00.5.
+      await act(async () => useGpsAverage.getState().resume());
       await act(async () => jest.advanceTimersByTime(0));
       expect(screen.getByTestId('average-detail')).toHaveTextContent('1:00 · 0 fixes');
       await act(async () => jest.advanceTimersByTime(30_000));
@@ -139,13 +139,6 @@ describe('AverageHeader', () => {
     expect(screen.getByTestId('average-header')).toHaveTextContent(/you moved\W*5 fixes kept/);
     expect(screen.queryByTestId('average-distance')).toBeNull();
   });
-
-  it('away: how far the user is from the average', async () => {
-    pauseAt(fix(120_000, FAR));
-    useGpsAverage.getState().resume(fix(120_000, FAR));
-    await renderWithProviders(<AverageHeader inline={false} />);
-    expect(screen.getByTestId('average-header')).toHaveTextContent(/AWAY.*60 m from your average/);
-  });
 });
 
 describe('AverageActions', () => {
@@ -156,28 +149,12 @@ describe('AverageActions', () => {
     expect(screen.queryByTestId('average-actions')).toBeNull();
   });
 
-  it('paused: Resume carries on when back on the spot', async () => {
-    pauseAt(fix(120_000));
+  it('paused: Resume carries on, even where the GPS says the user moved off the spot', async () => {
+    pauseAt(fix(120_000, FAR));
     await renderWithProviders(<AverageActions inline={false} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
     expect(useGpsAverage.getState().phase).toBe('averaging');
     expect(screen.queryByTestId('average-actions')).toBeNull();
-  });
-
-  it('paused: Resume elsewhere switches to the away buttons', async () => {
-    pauseAt(fix(120_000, FAR));
-    await renderWithProviders(<AverageActions inline={false} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
-    expect(useGpsAverage.getState().phase).toBe('away');
-    expect(screen.getByRole('button', { name: 'Start new average here' })).toBeTruthy();
-  });
-
-  it('paused: Resume with no fix since the pause does not carry on', async () => {
-    // The last fix before the phone was carried off, on the spot but old.
-    pauseAt(fix(40_000));
-    await renderWithProviders(<AverageActions inline={false} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
-    expect(useGpsAverage.getState().phase).toBe('away');
   });
 
   it('paused: Discard turns Average mode off', async () => {
@@ -187,20 +164,4 @@ describe('AverageActions', () => {
     expect(useGpsAverage.getState().phase).toBe('off');
   });
 
-  it('away: Start new average here restarts, Turn off stops', async () => {
-    pauseAt(fix(120_000, FAR));
-    useGpsAverage.getState().resume(fix(120_000, FAR));
-    const { unmount } = await renderWithProviders(<AverageActions inline={false} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Start new average here' }));
-    expect(useGpsAverage.getState().phase).toBe('averaging');
-    expect(useGpsAverage.getState().samples).toHaveLength(0);
-    expect(useToast.getState().toast?.message).toMatch(/Keep the device still/);
-    await unmount();
-
-    pauseAt(fix(120_000, FAR));
-    useGpsAverage.getState().resume(fix(120_000, FAR));
-    await renderWithProviders(<AverageActions inline={false} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Turn off' }));
-    expect(useGpsAverage.getState().phase).toBe('off');
-  });
 });

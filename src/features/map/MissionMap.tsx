@@ -138,7 +138,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   useSelfLocation();
   useAverageWatch();
   const averageOn = useGpsAverage((s) => s.phase !== 'off');
-  const averageHeld = useGpsAverage((s) => s.phase === 'paused' || s.phase === 'away');
+  const averageHeld = useGpsAverage((s) => s.phase === 'paused');
   const panel = useMenu((s) => s.panelFrame);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.

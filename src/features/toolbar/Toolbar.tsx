@@ -27,7 +27,7 @@ type Props = {
   onPlot?: () => void;
   /** The AVG toggle, after PLOT: lit while the position is being averaged. */
   averageOn?: boolean;
-  /** Averaging is paused (or away) and holding its average: the toggle shows a pause icon. */
+  /** Averaging is paused and holding its average: the toggle shows a pause icon. */
   averageHeld?: boolean;
   onAverage?: () => void;
   /** The LABELS toggle, the last tool: a label icon while map labels show, a crossed-out one while hidden. */

@@ -16,11 +16,7 @@ export const AVERAGE_HELP: readonly OverlayHelp[] = [
   },
   {
     title: 'If you move',
-    help: 'Averaging pauses on its own when the GPS or the motion sensor shows you moving, and drops the readings from just before. ME stays on the averaged spot, marked HELD, and the top line says how far you are from it. Go back and tap Resume to carry on, or Discard to turn Average mode off.',
-  },
-  {
-    title: 'Away from the spot',
-    help: 'Resume only carries on when a fresh GPS fix puts you back on the spot. Otherwise you are away: tap Start new here to begin a new average where you stand, or Turn off.',
+    help: 'Averaging pauses on its own when the GPS or the motion sensor shows you moving, and drops the readings from just before. ME stays on the averaged spot, marked HELD, and the top line says how far you are from it. Tap Resume to carry on (GPS can wander while you stand still, so Resume trusts you), or Discard to turn Average mode off.',
   },
   {
     title: 'Seeing the fixes',

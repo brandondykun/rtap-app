@@ -6,7 +6,6 @@ import {
   clusterStats,
   estimateAccuracyM,
   isFarFromCluster,
-  isOnSpot,
   isOutlier,
   sampleFromFix,
   spreadM,
@@ -158,20 +157,6 @@ describe('clusterStats', () => {
     // Equal weights: the center is halfway, so the spread is half the distance between them.
     const geodesicM = inverse({ lat: a.lat, lon: a.lon }, { lat: b.lat, lon: b.lon }).distanceM;
     expect(Math.abs(spreadM([a, b]) - geodesicM / 2)).toBeLessThan(0.001);
-  });
-});
-
-describe('isOnSpot', () => {
-  const cluster = steady(10, 4, 9);
-
-  it('is true back at the cluster, false 50 m away, false when the live fix is worse than 30 m', () => {
-    expect(isOnSpot(cluster, at(1, 4, 20_000))).toBe(true);
-    expect(isOnSpot(cluster, at(50, 4, 20_000))).toBe(false);
-    expect(isOnSpot(cluster, at(0, 31, 20_000))).toBe(false);
-  });
-
-  it('is false with no samples', () => {
-    expect(isOnSpot([], at(0, 4, 0))).toBe(false);
   });
 });
 

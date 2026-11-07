@@ -6,7 +6,6 @@ import {
   type ClusterStats,
   fixCountOf,
   isFarFromStats,
-  isOnSpot,
   isOutlierFromStats,
   MOVED_FIXES,
   MOVED_FIXES_STILL,
@@ -18,11 +17,8 @@ import {
 } from '@/features/location/gps-average-math';
 import type { SelfPosition } from '@/stores/presence';
 
-/**
- * Off: not averaging. Paused: moved off the spot, waiting. Away: back with a live fix that is not on the spot. Paused and
- * away hold the average as "me" until Resume, a new average, or off.
- */
-export type AveragePhase = 'off' | 'averaging' | 'paused' | 'away';
+/** Off: not averaging. Paused: moved off the spot, holding the average as "me" until Resume or off. */
+export type AveragePhase = 'off' | 'averaging' | 'paused';
 
 /** When the move is only noticed by GPS, readings this far before it was noticed are dropped too. */
 export const DROP_BACK_MS = 15000;
@@ -40,6 +36,11 @@ type GpsAverageValues = {
   /** Timestamp of the first fix in the current run of far-from-cluster fixes. */
   farSince: number | null;
   farCount: number;
+  /**
+   * Resumed by the user, who knows they are on the spot whatever the GPS says: until a fix lands back on it, a GPS that
+   * has wandered off does not pause again by distance alone.
+   */
+  resumed: boolean;
   /**
    * The newest fix's time when averaging paused (the fix clock, which can differ from the phone's): only a later fix
    * says where the user is now.
@@ -64,12 +65,12 @@ type GpsAverageActions = {
   addFix: (fix: SelfPosition, speedMps: number | null) => SelfPosition | null;
   markStill: (at: number) => void;
   pause: (detectedAt: number) => void;
-  /** Resumes when the live fix (taken since the pause) is back on the spot; otherwise goes away. */
-  resume: (live: SelfPosition | null) => 'resumed' | 'away';
+  /** Carries on averaging, on the user's word that they are still on the spot. */
+  resume: () => void;
   restartHere: () => void;
   /** Records the newest GPS fix, before it is averaged. */
   noteLive: (fix: SelfPosition) => void;
-  /** The average to hold as "me" while paused or away (null when off, averaging, or nothing was averaged). */
+  /** The average to hold as "me" while paused (null when off, averaging, or nothing was averaged). */
   held: (timestamp: number) => SelfPosition | null;
   toggleFixes: () => void;
 };
@@ -80,6 +81,7 @@ export const INITIAL_GPS_AVERAGE: GpsAverageValues = {
   lastStillAt: null,
   farSince: null,
   farCount: 0,
+  resumed: false,
   pausedAt: null,
   live: null,
   fixCount: 0,
@@ -120,7 +122,7 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
   start: () => set(newRun(get().live)),
   stop: () => set({ ...INITIAL_GPS_AVERAGE, live: get().live }),
   addFix: (fix, speedMps) => {
-    const { phase, samples, farCount, farSince, lastStillAt } = get();
+    const { phase, samples, farCount, farSince, lastStillAt, resumed } = get();
     if (phase !== 'averaging') return null;
     // The motion sensor says the phone lies still: its speed is noise then (Android reports some standing still), and
     // only a long run of far fixes counts as a move, not the GPS wandering while it sits.
@@ -130,10 +132,11 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
     const sample = sampleFromFix(fix);
     // A fix too poor to average still shows a move when its speed says so or it lands far beyond its own noise.
     const judged = sample ?? sampleFromFix(fix, Infinity);
+    const offSpot = stats !== null && judged !== null && isFarFromStats(stats, judged);
+    // Back on the spot after a Resume: the GPS agrees again, so distance counts again.
+    if (resumed && judged !== null && !offSpot) set({ resumed: false });
     // Without a valid time it cannot date the move, so it does not count.
-    const far =
-      Number.isFinite(fix.timestamp) &&
-      ((stats !== null && judged !== null && isFarFromStats(stats, judged)) || (!still && speedMps !== null && speedMps > MOVED_SPEED_MPS));
+    const far = Number.isFinite(fix.timestamp) && ((offSpot && !resumed) || (!still && speedMps !== null && speedMps > MOVED_SPEED_MPS));
     if (far) {
       const count = farCount + 1;
       const since = farSince ?? fix.timestamp;
@@ -170,6 +173,7 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
       fixes: fixes.filter((f) => f.at <= keptUntil),
       farCount: 0,
       farSince: null,
+      resumed: false,
       // On the fix clock when there is a fix: Android fixes carry satellite time, which can run ahead of the phone's.
       pausedAt: live?.timestamp ?? detectedAt,
       // The stopwatch stops when the pause is noticed.
@@ -177,21 +181,16 @@ export const useGpsAverage = create<GpsAverageValues & GpsAverageActions>()((set
       runningSince: null,
     });
   },
-  resume: (live) => {
-    const { phase, samples, pausedAt } = get();
-    if (phase !== 'paused') return 'away';
-    // Only a fix taken since the pause shows where the user is now; an older one (or the average itself) proves nothing.
-    const fresh = live !== null && !live.averaged && (pausedAt === null || live.timestamp > pausedAt);
-    const sample = fresh ? sampleFromFix(live) : null;
-    const onSpot = sample !== null && isOnSpot(samples, sample);
-    set({ phase: onSpot ? 'averaging' : 'away', farCount: 0, farSince: null, pausedAt: onSpot ? null : pausedAt, runningSince: onSpot ? Date.now() : null });
-    return onSpot ? 'resumed' : 'away';
+  resume: () => {
+    if (get().phase !== 'paused') return;
+    // No check of the live fix: the user knows they have not moved better than a wandering GPS does.
+    set({ phase: 'averaging', farCount: 0, farSince: null, resumed: true, pausedAt: null, runningSince: Date.now() });
   },
   restartHere: () => set({ ...newRun(get().live), showFixes: get().showFixes }),
   noteLive: (fix) => set({ live: fix }),
   held: (timestamp) => {
     const { phase, samples } = get();
-    if (phase !== 'paused' && phase !== 'away') return null;
+    if (phase !== 'paused') return null;
     return averaged(clusterStats(samples), timestamp);
   },
   toggleFixes: () => set({ showFixes: !get().showFixes }),

@@ -138,39 +138,43 @@ describe('gps average store', () => {
     expect(g().samples).toHaveLength(6);
   });
 
-  it('resumes on the spot, and goes away when elsewhere or without a usable fix', () => {
-    const paused = () => {
-      useGpsAverage.setState({ ...INITIAL_GPS_AVERAGE, phase: 'averaging' });
-      for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
-      g().pause(100_000);
-    };
-    paused();
-    expect(g().pausedAt).toBe(100_000);
-    expect(g().resume(fix(120_000))).toBe('resumed');
-    expect(g().phase).toBe('averaging');
-    expect(g().pausedAt).toBeNull();
-    paused();
-    expect(g().resume(fix(120_000, 5, FAR))).toBe('away');
-    expect(g().phase).toBe('away');
-    paused();
-    expect(g().resume(null)).toBe('away');
-    paused();
-    expect(g().resume(fix(120_000, 80))).toBe('away');
+  it('Resume always carries on, wherever the GPS puts the user, and does nothing unless paused', () => {
+    g().start();
+    for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
+    g().noteLive(fix(120_000, 5, FAR));
+    g().pause(100_000);
+    expect(g().pausedAt).toBe(120_000);
+    g().resume();
+    expect(g()).toMatchObject({ phase: 'averaging', pausedAt: null, resumed: true, farCount: 0 });
+    g().stop();
+    g().resume();
+    expect(g().phase).toBe('off');
   });
 
-  it('does not resume on a fix from before the pause, or on an averaged position', () => {
-    const paused = () => {
-      useGpsAverage.setState({ ...INITIAL_GPS_AVERAGE, phase: 'averaging' });
-      for (let i = 0; i < 5; i++) g().addFix(fix(i * 1000), 0);
-      g().pause(100_000);
-    };
-    paused();
-    // The last fix before the phone was carried off: on the spot, but it says nothing about where the user is now.
-    expect(g().resume(fix(90_000))).toBe('away');
-    paused();
-    expect(g().resume(fix(100_000))).toBe('away');
-    paused();
-    expect(g().resume({ ...fix(120_000), averaged: true })).toBe('away');
+  it('after Resume, a GPS still off the spot does not pause by distance until a fix is back on it', () => {
+    g().start();
+    for (let i = 0; i < 10; i++) g().addFix(fix(i * 10_000), 0);
+    g().pause(100_000);
+    const kept = g().samples.length;
+    g().resume();
+    // The GPS is still where it wandered: no pause, however many fixes, and none of them averaged.
+    for (let i = 0; i < 20; i++) g().addFix(fix(110_000 + i * 1000, 5, FAR), 0);
+    expect(g().phase).toBe('averaging');
+    expect(g().samples).toHaveLength(kept);
+    // Back on the spot: distance counts again.
+    g().addFix(fix(140_000), 0);
+    expect(g().resumed).toBe(false);
+    for (let i = 0; i < 3; i++) g().addFix(fix(150_000 + i * 1000, 5, FAR), 0);
+    expect(g().phase).toBe('paused');
+  });
+
+  it('after Resume, the speed still pauses when the phone is not lying still', () => {
+    g().start();
+    for (let i = 0; i < 10; i++) g().addFix(fix(i * 1000), 0);
+    g().pause(20_000);
+    g().resume();
+    for (let i = 0; i < 3; i++) g().addFix(fix(30_000 + i * 1000), 1.4);
+    expect(g().phase).toBe('paused');
   });
 
   it('restartHere starts fresh; stop clears everything', () => {
@@ -186,7 +190,7 @@ describe('gps average store', () => {
     expect(g()).toMatchObject(INITIAL_GPS_AVERAGE);
   });
 
-  it('dates the pause by the newest fix, on the fix clock, so a fix from before it never resumes (clock skew)', () => {
+  it('dates the pause by the newest fix, on the fix clock, so a fix from before it never counts as current (clock skew)', () => {
     // Android fixes carry satellite time: here two seconds ahead of the phone's clock.
     const SKEW = 2000;
     const paused = () => {
@@ -201,10 +205,6 @@ describe('gps average store', () => {
     };
     paused();
     expect(g().pausedAt).toBe(40_000 + SKEW);
-    // The last fix before the move, on the spot: it must not resume.
-    expect(g().resume(fix(40_000 + SKEW))).toBe('away');
-    paused();
-    expect(g().resume(fix(41_000 + SKEW))).toBe('resumed');
   });
 
   it('counts the fixes averaged, through thinning, less the ones a pause drops', () => {
@@ -225,15 +225,13 @@ describe('gps average store', () => {
     expect(g().samples.length).toBeLessThanOrEqual(MAX_SAMPLES);
   });
 
-  it('holds the average while paused or away, not while averaging or off', () => {
+  it('holds the average while paused, not while averaging or off', () => {
     g().start();
     for (let i = 0; i < 5; i++) g().addFix(fix(i * 10_000), 0);
     expect(g().held(1)).toBeNull();
     g().pause(100_000);
     expect(g().held(123)).toMatchObject({ averaged: true, timestamp: 123, accuracyM: estimateAccuracyM(g().samples) });
     expect(g().held(123)?.position.lat).toBeCloseTo(HERE.lat, 8);
-    useGpsAverage.setState({ phase: 'away' });
-    expect(g().held(123)).not.toBeNull();
     g().stop();
     expect(g().held(123)).toBeNull();
   });
@@ -248,10 +246,8 @@ describe('gps average store', () => {
       g().pause(100_000);
       expect(g()).toMatchObject({ elapsedMs: 90_000, runningSince: null });
       jest.advanceTimersByTime(5000);
-      expect(g().resume(fix(120_000, 5, FAR))).toBe('away');
       expect(g().runningSince).toBeNull();
-      useGpsAverage.setState({ phase: 'paused' });
-      expect(g().resume(fix(120_000))).toBe('resumed');
+      g().resume();
       expect(g()).toMatchObject({ elapsedMs: 90_000, runningSince: 1_095_000 });
       g().restartHere();
       expect(g()).toMatchObject({ elapsedMs: 0, runningSince: 1_095_000 });
@@ -297,14 +293,11 @@ describe('gps average store', () => {
     expect(g().showFixes).toBe(false);
   });
 
-  it('ignores fixes while paused or away', () => {
+  it('ignores fixes while paused', () => {
     g().start();
     g().addFix(fix(0), 0);
     g().pause(100_000);
     expect(g().addFix(fix(20_000), 0)).toBeNull();
-    expect(g().samples).toHaveLength(1);
-    useGpsAverage.setState({ phase: 'away' });
-    expect(g().addFix(fix(30_000), 0)).toBeNull();
     expect(g().samples).toHaveLength(1);
   });
 

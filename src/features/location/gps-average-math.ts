@@ -263,12 +263,6 @@ export function isFarFromCluster(samples: readonly AverageSample[], s: AverageSa
   return stats !== null && isFarFromStats(stats, s);
 }
 
-/** The live fix is good enough to judge and still within the cluster. */
-export function isOnSpot(samples: readonly AverageSample[], live: AverageSample): boolean {
-  if (live.accuracyM > MAX_SAMPLE_ACCURACY_M || samples.length === 0) return false;
-  return !isFarFromCluster(samples, live);
-}
-
 /** Samples recorded before the cutoff (a timestamp). A merged sample goes whole once any of its fixes is at or past it. */
 export function trimFrom(samples: readonly AverageSample[], cutoffAt: number): AverageSample[] {
   return samples.filter((s) => s.at < cutoffAt);

@@ -19,8 +19,8 @@ import {
 } from './heading';
 
 /**
- * Average mode wants every reading (no distance filter): to average, and while paused so a user standing back on the
- * spot still gets the fresh fix Resume needs. Otherwise a 1 m filter saves battery.
+ * Average mode wants every reading (no distance filter): to average, and while paused so how far the user is from
+ * the average stays current. Otherwise a 1 m filter saves battery.
  */
 export function watchOptions(averageOn: boolean): Location.LocationOptions {
   return { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: averageOn ? 0 : 1, timeInterval: 1000 };
@@ -80,7 +80,7 @@ export function useSelfLocation(): void {
       // Before addFix: a pause it triggers is dated by this fix.
       average.noteLive(live);
       const published = average.phase === 'averaging' ? average.addFix(live, loc.coords.speed ?? null) : null;
-      // Paused or away (including a pause this fix just caused), the average is held as "me"; with nothing averaged
+      // Paused (including a pause this fix just caused), the average is held as "me"; with nothing averaged
       // yet, or Average mode off, the live fix is.
       usePresence.getState().setSelfPosition(published ?? useGpsAverage.getState().held(live.timestamp) ?? live);
     };

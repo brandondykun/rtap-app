@@ -3,7 +3,6 @@ import { Pressable, Text, View } from 'react-native';
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { startAveraging } from '@/features/location/average-actions';
 import { clusterStats } from '@/features/location/gps-average-math';
 import { inverse } from '@/lib/geo/measure/geodesic';
 import { formatDistance } from '@/lib/geo/format/measure';
@@ -67,8 +66,8 @@ function BlinkingDot({ color }: { color: string }) {
 }
 
 /**
- * Average mode's status line, across the top of the grid display: averaging (time spent and fixes so far), paused
- * (how far the user is from the held average) or away. It spans the dock's side padding; `minimal` drops the counts.
+ * Average mode's status line, across the top of the grid display: averaging (time spent and fixes so far) or paused
+ * (how far the user is from the held average). It spans the dock's side padding; `minimal` drops the counts.
  */
 export function AverageHeader({ inline, minimal = false }: { inline: boolean; minimal?: boolean }) {
   const { colors } = useTheme();
@@ -84,7 +83,7 @@ export function AverageHeader({ inline, minimal = false }: { inline: boolean; mi
 
   // Only a fix since the pause says where the user is now.
   const fresh = live !== null && (pausedAt === null || live.timestamp > pausedAt);
-  const fromAverage = phase !== 'averaging' && fresh && stats ? formatDistance(inverse(live.position, stats.center.position).distanceM) : null;
+  const fromAverage = phase === 'paused' && fresh && stats ? formatDistance(inverse(live.position, stats.center.position).distanceM) : null;
   const distance = (text: string) => (
     <Text testID="average-distance" style={{ color: colors['value-distance'] }} className="font-mono">
       {text}
@@ -101,17 +100,9 @@ export function AverageHeader({ inline, minimal = false }: { inline: boolean; mi
     note = 'hold still';
     detail = `${formatElapsed(elapsedMs / 1000)} · ${fixes(fixCount)}`;
   } else {
-    const paused = phase === 'paused';
-    title = paused ? 'PAUSED' : 'AWAY';
-    const icon: IconName = paused ? 'pause-circle' : 'map-marker-alert';
-    lead = <Icon name={icon} size={16} color={colors.averaged} />;
-    note = paused ? (
-      fromAverage ? <>you moved {distance(fromAverage)}</> : 'you moved'
-    ) : fromAverage ? (
-      <>{distance(fromAverage)} from your average</>
-    ) : (
-      'not on the spot'
-    );
+    title = 'PAUSED';
+    lead = <Icon name="pause-circle" size={16} color={colors.averaged} />;
+    note = fromAverage ? <>you moved {distance(fromAverage)}</> : 'you moved';
     detail = `${fixes(fixCount)} kept`;
   }
 
@@ -163,26 +154,17 @@ function ActionButton({ label, text = label, icon, primary = false, inline, onPr
   );
 }
 
-/** Below the grids while paused or away: what to do next. Averaging stays paused until answered. */
+/**
+ * Below the grids while paused: what to do next. Averaging stays paused until answered. Resume always carries on: the
+ * pause may be the GPS wandering, and the user knows better whether they moved.
+ */
 export function AverageActions({ inline }: { inline: boolean }) {
-  const phase = useGpsAverage((s) => s.phase);
-  if (phase !== 'paused' && phase !== 'away') return null;
-  const stop = () => useGpsAverage.getState().stop();
+  const paused = useGpsAverage((s) => s.phase === 'paused');
+  if (!paused) return null;
   return (
     <View testID="average-actions" className={`flex-row gap-2 ${inline ? 'pb-2 pt-1' : 'pb-3 pt-1'}`}>
-      {phase === 'paused' ? (
-        <>
-          {/* Resume ignores any fix from before the pause, and the held average itself. */}
-          <ActionButton primary inline={inline} label="Resume" icon="play" onPress={() => useGpsAverage.getState().resume(useGpsAverage.getState().live)} />
-          <ActionButton inline={inline} label="Discard" icon="close" onPress={stop} />
-        </>
-      ) : (
-        <>
-          {/* Starting is only refused without GPS (Manual, or location off), which turns Average mode off anyway. */}
-          <ActionButton primary inline={inline} label="Start new average here" text="Start new here" icon="crosshairs-gps" onPress={() => void startAveraging()} />
-          <ActionButton inline={inline} label="Turn off" icon="close" onPress={stop} />
-        </>
-      )}
+      <ActionButton primary inline={inline} label="Resume" icon="play" onPress={() => useGpsAverage.getState().resume()} />
+      <ActionButton inline={inline} label="Discard" icon="close" onPress={() => useGpsAverage.getState().stop()} />
     </View>
   );
 }

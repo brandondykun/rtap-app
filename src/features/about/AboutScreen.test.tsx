@@ -28,12 +28,12 @@ describe('AboutScreen', () => {
     for (const h of OVERLAYS_HELP) expect(screen.getByTestId(`overlay-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
   });
 
-  it('explains Average mode: what it does, how long, the display, moving, away, the fixes and its orange', async () => {
+  it('explains Average mode: what it does, how long, the display, moving, the fixes and its orange', async () => {
     await renderWithProviders(<AboutScreen />);
     // The section title, and the color guide's orange row.
     expect(screen.getAllByText('Average mode')).toHaveLength(2);
     expect(screen.getByTestId('about-average')).toBeTruthy();
-    expect(AVERAGE_HELP).toHaveLength(7);
+    expect(AVERAGE_HELP).toHaveLength(6);
     for (const h of AVERAGE_HELP) expect(screen.getByTestId(`average-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
   });
 
