@@ -229,13 +229,19 @@ describe('useSelfLocation', () => {
       expect(usePresence.getState().selfPosition).toBeNull();
     });
 
-    it('restarts the GPS watch with distanceInterval 0 while Average mode is on (paused too), and 1 after', async () => {
+    it('restarts the GPS watch with distanceInterval 0 and the finest accuracy while Average mode is on (paused too), and back after', async () => {
       const fake = grant();
       await render(<Probe />);
-      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1, timeInterval: 1000 }), expect.any(Function));
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(
+        expect.objectContaining({ accuracy: Location.Accuracy.Highest, distanceInterval: 1, timeInterval: 1000 }),
+        expect.any(Function),
+      );
       await act(async () => useGpsAverage.getState().start());
       expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(2);
-      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 0 }), expect.any(Function));
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(
+        expect.objectContaining({ accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0 }),
+        expect.any(Function),
+      );
       expect(fake.removes.position).toHaveBeenCalledTimes(1);
       // The compass keeps running.
       expect(mocked.watchHeadingAsync).toHaveBeenCalledTimes(1);
@@ -245,7 +251,10 @@ describe('useSelfLocation', () => {
       expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(2);
       await act(async () => useGpsAverage.getState().stop());
       expect(mocked.watchPositionAsync).toHaveBeenCalledTimes(3);
-      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(expect.objectContaining({ distanceInterval: 1 }), expect.any(Function));
+      expect(mocked.watchPositionAsync).toHaveBeenLastCalledWith(
+        expect.objectContaining({ accuracy: Location.Accuracy.Highest, distanceInterval: 1 }),
+        expect.any(Function),
+      );
     });
 
     it('turns averaging off when the source switches to Manual', async () => {

@@ -21,9 +21,16 @@ import {
 /**
  * Average mode wants every reading (no distance filter): to average, and while paused so how far the user is from
  * the average stays current. Otherwise a 1 m filter saves battery.
+ *
+ * Accuracy only changes iOS (Android uses GPS at either): Best everyday, Best for Navigation (which also keeps extra
+ * sensors running, and which Apple means for a phone on a charger) only while averaging, where precision matters most.
  */
 export function watchOptions(averageOn: boolean): Location.LocationOptions {
-  return { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: averageOn ? 0 : 1, timeInterval: 1000 };
+  return {
+    accuracy: averageOn ? Location.Accuracy.BestForNavigation : Location.Accuracy.Highest,
+    distanceInterval: averageOn ? 0 : 1,
+    timeInterval: 1000,
+  };
 }
 
 function orientationName(o: ScreenOrientation.Orientation): Orientation {
