@@ -1,7 +1,7 @@
 import { Canvas, DashPathEffect, Group, Path } from '@shopify/react-native-skia';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -79,15 +79,17 @@ export function LandingScreen() {
     router.replace('/');
   };
 
-  // A little shorter than the wordmark's capitals, and raised a touch (a twelfth of its height): centered on the line,
-  // it sat low beside them.
+  // A little shorter than the wordmark's capitals, and on iOS raised a touch (a twelfth of its height): centered on the
+  // line, it sat low beside them there. Android sets the capitals lower in their line, so there it drops a touch instead
+  // (a twenty-fourth).
   const logo = landscape ? (compact ? 32 : 40) : compact ? 40 : 48;
+  const logoRaise = Platform.OS === 'android' ? -logo / 24 : logo / 12;
   const wordmark = landscape ? (compact ? 48 : 60) : compact ? 56 : 72;
   const title = (
     <View testID="landing-title">
       <Text className="font-mono-bold text-sm tracking-[5px] text-accent">◆ TACTICAL MAPPING</Text>
       <View className="mt-2 flex-row items-center gap-3">
-        <Image testID="landing-logo" source={LOGO_MARK} accessibilityLabel="RTAP logo" resizeMode="contain" style={{ width: logo * LOGO_ASPECT, height: logo, transform: [{ translateY: -logo / 12 }] }} />
+        <Image testID="landing-logo" source={LOGO_MARK} accessibilityLabel="RTAP logo" resizeMode="contain" style={{ width: logo * LOGO_ASPECT, height: logo, transform: [{ translateY: -logoRaise }] }} />
         <Text accessibilityRole="header" style={{ fontSize: wordmark, lineHeight: Math.round(wordmark * 1.16) }} className="font-mono-bold tracking-[6px] text-text">
           RTAP
         </Text>

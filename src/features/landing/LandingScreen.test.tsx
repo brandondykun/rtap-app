@@ -1,5 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { formatDistance } from '@/lib/geo/format/measure';
 import { DEFAULT_PROFILE, useProfile } from '@/stores/profile';
@@ -42,6 +42,16 @@ describe('LandingScreen', () => {
     for (const text of ['MGRS grids to the meter', 'Units, points, lines and areas', 'Range and azimuth at a glance']) {
       const box = features.getByText(text).parent!.children[0];
       expect(typeof box === 'object' && box.props.className).toMatch(/\brounded-lg border border-border\b/);
+    }
+  });
+
+  it('sits the logo a little lower on Android, where the capitals sit lower in their line', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    try {
+      await renderWithProviders(<LandingScreen />);
+      expect(screen.getByLabelText('RTAP logo')).toHaveStyle({ height: 48, transform: [{ translateY: 2 }] });
+    } finally {
+      jest.restoreAllMocks();
     }
   });
 
