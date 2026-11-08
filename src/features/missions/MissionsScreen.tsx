@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Icon } from '@/components/ui/Icon';
 import { PERF_SEED_COUNT, seedPerformanceMission } from '@/features/dev/commands';
+import { DevMenu } from '@/features/dev/DevMenu';
 import { notifySuccess } from '@/features/feedback/feedback';
 import { isLandscape } from '@/features/map/layout';
 import { useObservable } from '@/hooks/use-observable';
@@ -154,22 +155,22 @@ export function MissionsScreen() {
         onNew={openCreate}
         extra={
           __DEV__ ? (
-            <View className="flex-row items-center gap-4">
-              <Pressable accessibilityRole="button" onPress={() => void seed()} hitSlop={8} className="active:opacity-60">
-                <Text className="text-xs uppercase tracking-wider text-text-muted">Seed 5k</Text>
-              </Pressable>
-              {/* Shows the first-launch callsign sheet again. */}
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  useProfile.getState().resetProfile();
-                  router.push('/callsign');
-                }}
-                hitSlop={8}
-                className="active:opacity-60">
-                <Text className="text-xs uppercase tracking-wider text-text-muted">Reset callsign</Text>
-              </Pressable>
-            </View>
+            <DevMenu
+              actions={[
+                { label: 'Seed 5k', icon: 'database-plus-outline', onPress: () => void seed() },
+                {
+                  // Shows the first-launch callsign sheet again.
+                  label: 'Reset callsign',
+                  icon: 'account-edit-outline',
+                  onPress: () => {
+                    useProfile.getState().resetProfile();
+                    router.push('/callsign');
+                  },
+                },
+                // Shows the first-launch landing screen again (the missions route sends it there).
+                { label: 'Landing', icon: 'rocket-launch-outline', onPress: () => useProfile.getState().resetLanding() },
+              ]}
+            />
           ) : null
         }
       />

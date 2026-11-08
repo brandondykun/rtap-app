@@ -55,9 +55,18 @@ describe('MissionsScreen callsign screen', () => {
   it('in development, Reset callsign clears it and opens the sheet as on first launch', async () => {
     useProfile.getState().setCallsign('HAWK');
     await renderWithProviders(<MissionsScreen />);
-    await fireEvent.press(await screen.findByRole('button', { name: 'Reset callsign' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Developer menu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Reset callsign' }));
     expect(useProfile.getState()).toMatchObject({ callsign: null, callsignPrompted: false });
     expect(mockRouter.push).toHaveBeenCalledWith('/callsign');
+  });
+
+  it('in development, Landing shows the landing screen again', async () => {
+    useProfile.getState().markLandingSeen();
+    await renderWithProviders(<MissionsScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Developer menu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Landing' }));
+    expect(useProfile.getState().landingSeen).toBe(false);
   });
 
   it('does not open it once it has been answered', async () => {
@@ -201,9 +210,18 @@ describe('MissionsScreen', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/missions/new');
   });
 
+  it('in development, keeps the header to one small Developer menu button, its actions inside', async () => {
+    await renderWithProviders(<MissionsScreen />);
+    await screen.findByRole('button', { name: 'Developer menu' });
+    for (const name of ['Seed 5k', 'Reset callsign', 'Landing']) expect(screen.queryByRole('button', { name })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Developer menu' }));
+    expect(screen.getByTestId('dev-menu')).toBeTruthy();
+  });
+
   it('seeds a 5k performance mission in development builds', async () => {
     await renderWithProviders(<MissionsScreen />);
-    await fireEvent.press(await screen.findByText('Seed 5k'));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Developer menu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Seed 5k' }));
     expect(mockSeed).toHaveBeenCalledWith(expect.anything(), { count: 5000 });
     expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/missions/[missionId]', params: { missionId: 'seeded' } });
   });
