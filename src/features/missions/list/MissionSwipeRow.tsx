@@ -1,9 +1,17 @@
-import { useRef, type ReactNode } from 'react';
-import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { useRef, type ReactNode } from "react";
+import {
+  Pressable,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { Icon } from '@/components/ui/Icon';
-import { useTheme } from '@/theme/ThemeProvider';
+import { Icon } from "@/components/ui/Icon";
+import { useTheme } from "@/theme/ThemeProvider";
 
 type Props = {
   name: string;
@@ -19,7 +27,16 @@ type Props = {
 };
 
 /** A mission card that opens on tap and swipes left for Edit and Delete. */
-export function MissionSwipeRow({ name, onPress, onRename, onDelete, onOpenActions, className, fill, children }: Props) {
+export function MissionSwipeRow({
+  name,
+  onPress,
+  onRename,
+  onDelete,
+  onOpenActions,
+  className,
+  fill,
+  children,
+}: Props) {
   const row = useRef<SwipeableMethods>(null);
   const { colors } = useTheme();
   const grow: StyleProp<ViewStyle> = fill ? { flex: 1 } : undefined;
@@ -40,7 +57,8 @@ export function MissionSwipeRow({ name, onPress, onRename, onDelete, onOpenActio
             accessibilityRole="button"
             accessibilityLabel={`Edit ${name}`}
             onPress={onRename}
-            className="w-20 items-center justify-center gap-1 rounded-2xl border border-border bg-surface-raised active:opacity-60">
+            className="w-20 items-center justify-center gap-1 rounded-2xl border border-border bg-surface-raised active:opacity-60"
+          >
             <Icon name="pencil-outline" size={20} color={colors.text} />
             <Text className="font-semibold text-text">Edit</Text>
           </Pressable>
@@ -48,29 +66,42 @@ export function MissionSwipeRow({ name, onPress, onRename, onDelete, onOpenActio
             accessibilityRole="button"
             accessibilityLabel={`Delete ${name}`}
             onPress={onDelete}
-            className="w-20 items-center justify-center gap-1 rounded-2xl bg-danger active:opacity-60">
+            className="w-20 items-center justify-center gap-1 rounded-2xl bg-danger active:opacity-60"
+          >
             <Icon name="trash-can-outline" size={20} color={colors.text} />
             <Text className="font-bold text-text">Delete</Text>
           </Pressable>
         </View>
-      )}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${name}`}
-        // Swiping is hard to find with VoiceOver, so Rename and Delete are also accessibility actions.
-        accessibilityActions={[
-          { name: 'rename', label: 'Rename' },
-          { name: 'delete', label: 'Delete' },
-        ]}
-        onAccessibilityAction={(e) => {
-          if (e.nativeEvent.actionName === 'rename') onRename();
-          if (e.nativeEvent.actionName === 'delete') onDelete();
-        }}
-        onPress={onPress}
+      )}
+    >
+      {/*
+        An opaque backing in the screen's color: the card dims as it is pressed (as it is held before a swipe), and
+        without it Edit and Delete, laid out behind, would show through it.
+      */}
+      <View
+        testID="mission-card-backing"
         style={grow}
-        className={`active:opacity-60 ${className}`}>
-        {children}
-      </Pressable>
+        className="rounded-2xl bg-surface"
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${name}`}
+          // Swiping is hard to find with VoiceOver, so Rename and Delete are also accessibility actions.
+          accessibilityActions={[
+            { name: "rename", label: "Rename" },
+            { name: "delete", label: "Delete" },
+          ]}
+          onAccessibilityAction={(e) => {
+            if (e.nativeEvent.actionName === "rename") onRename();
+            if (e.nativeEvent.actionName === "delete") onDelete();
+          }}
+          onPress={onPress}
+          style={grow}
+          className={`active:opacity-60 ${className}`}
+        >
+          {children}
+        </Pressable>
+      </View>
     </ReanimatedSwipeable>
   );
 }

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
@@ -59,6 +59,13 @@ describe('MissionCard', () => {
     expect(h.onDelete).toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText('Edit FTIG'));
     expect(h.onRename).toHaveBeenCalled();
+  });
+
+  it('sits the card on an opaque backing, so Delete never shows through it as it dims under a press', async () => {
+    await renderWithProviders(<MissionCard mission={mission()} counts={counts} now={NOW} {...handlers()} />);
+    const backing = screen.getByTestId('mission-card-backing');
+    expect(backing.props.className).toMatch(/\bbg-surface\b/);
+    expect(within(backing).getByLabelText('Open FTIG').props.className).toContain('active:opacity-60');
   });
 });
 
