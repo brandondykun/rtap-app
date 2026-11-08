@@ -94,7 +94,12 @@ jest.mock('@shopify/flash-list/dist/recyclerview/utils/measureLayout', () => ({
 }));
 jest.mock('expo-file-system', () => jest.requireActual('./__mocks__/expo-file-system'));
 jest.mock('expo-image-manipulator', () => jest.requireActual('./__mocks__/expo-image-manipulator'));
-jest.mock('@shopify/react-native-skia', () => ({ Skia: {}, ImageFormat: { PNG: 4 } }));
+// The drawing components render as plain views carrying their props (the landing screen's contours and measure line).
+jest.mock('@shopify/react-native-skia', () => {
+  const { View } = require('react-native');
+  const stub = (name: string) => (props: Record<string, unknown>) => require('react').createElement(View, { ...props, testID: props.testID ?? `skia-${name}` });
+  return { Skia: {}, ImageFormat: { PNG: 4 }, Canvas: stub('canvas'), Path: stub('path'), Group: stub('group'), DashPathEffect: stub('dash') };
+});
 jest.mock('@/features/symbology/render/get-symbol-image', () => ({ getSymbolImage: jest.fn(async () => null) }));
 
 jest.mock('@sentry/react-native', () => ({

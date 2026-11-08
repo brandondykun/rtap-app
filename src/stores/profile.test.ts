@@ -42,6 +42,25 @@ describe('profile store', () => {
     expect(stored()).toMatchObject({ callsign: null, callsignPrompted: false });
   });
 
+  it('remembers the landing screen was seen, and shows it again on reset', () => {
+    useProfile.getState().markLandingSeen();
+    expect(stored()).toMatchObject({ landingSeen: true });
+    useProfile.getState().resetLanding();
+    expect(stored()).toMatchObject({ landingSeen: false });
+  });
+
+  it('keeps the landing screen seen when the callsign is reset', () => {
+    useProfile.getState().markLandingSeen();
+    useProfile.getState().resetProfile();
+    expect(useProfile.getState().landingSeen).toBe(true);
+  });
+
+  it('shows the landing screen to someone whose stored profile predates it', async () => {
+    Storage.setItemSync('profile', JSON.stringify({ state: { callsign: 'VIPER 6', callsignPrompted: true }, version: 1 }));
+    await useProfile.persist.rehydrate();
+    expect(useProfile.getState()).toMatchObject({ callsign: 'VIPER 6', landingSeen: false });
+  });
+
   it('ignores a stored callsign that is not valid', async () => {
     Storage.setItemSync('profile', JSON.stringify({ state: { callsign: 'bad_one', callsignPrompted: 'yes' }, version: 1 }));
     await useProfile.persist.rehydrate();

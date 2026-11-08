@@ -38,6 +38,8 @@ function ThemedStack() {
   } as const;
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }}>
+      {/* First launch: it fades in and out, with nothing to swipe back to. */}
+      <Stack.Screen name="welcome" options={{ animation: 'fade', gestureEnabled: false }} />
       <Stack.Screen name="missions/new" options={missionSheet} />
       <Stack.Screen name="missions/rename/[missionId]" options={missionSheet} />
       {/* Room to explain: a full sheet, the same in portrait and landscape. */}
