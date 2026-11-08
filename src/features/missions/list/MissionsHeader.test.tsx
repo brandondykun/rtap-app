@@ -44,9 +44,13 @@ describe('MissionsHeader in landscape', () => {
     // The title only takes its own width, so the field never slides over it.
     expect(classes('missions-title')).toContain('shrink-0');
     expect(classes('missions-title')).not.toContain('flex-1');
-    expect(screen.getByTestId('missions-title')).toHaveTextContent('Missions', { exact: true });
+    // The subtitle and dev button hide but keep their room, so the row keeps its height and New stays still.
     expect(screen.queryByText('Seed 5k')).toBeNull();
     expect(screen.queryByText('3 missions')).toBeNull();
+    const hidden = screen.getAllByTestId('missions-hidden', { includeHiddenElements: true });
+    expect(hidden.map((h) => h.props.className)).toEqual(['opacity-0', 'opacity-0']);
+    for (const h of hidden) expect(h.props.pointerEvents).toBe('none');
+    expect(screen.getByText('3 missions', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByLabelText('Search by name')).toBeTruthy();
   });
 

@@ -99,13 +99,20 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
     // running under them.
     return (
       <View testID="missions-header" className="flex-row items-center gap-3 px-4 pb-3 pt-4">
-        {/* While searching only MISSIONS stays, at its own width; the field takes the rest of the row. */}
+        {/*
+          While searching only MISSIONS shows, at its own width; the field takes the rest of the row. The subtitle and
+          dev button only hide, keeping their room, so the row keeps its height and New stays still.
+        */}
         <View testID="missions-title" className={searching ? 'shrink-0' : 'flex-1'}>
           <View testID="missions-title-row" className="flex-row flex-wrap items-center gap-x-3">
             <Text className="text-3xl font-bold uppercase tracking-widest text-text">Missions</Text>
-            {searching ? null : extra}
+            {extra ? <Hideable hidden={searching}>{extra}</Hideable> : null}
           </View>
-          {showControls && !searching ? <Text className="text-base text-text-muted">{subtitle}</Text> : null}
+          {showControls ? (
+            <Hideable hidden={searching}>
+              <Text className="text-base text-text-muted">{subtitle}</Text>
+            </Hideable>
+          ) : null}
         </View>
         <View testID="missions-controls" className={`flex-row items-center gap-3 ${searching ? 'flex-1' : 'shrink-0'}`}>
           {filters}
@@ -122,6 +129,20 @@ export function MissionsHeader({ landscape, subtitle, showControls, sort, onSort
         {buttons}
       </View>
       {filters}
+    </View>
+  );
+}
+
+/** Its children, laid out as ever but, when `hidden`, unseen, untouchable and skipped by screen readers. */
+function Hideable({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+  return (
+    <View
+      testID={hidden ? 'missions-hidden' : undefined}
+      pointerEvents={hidden ? 'none' : 'auto'}
+      accessibilityElementsHidden={hidden}
+      importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'}
+      className={hidden ? 'opacity-0' : undefined}>
+      {children}
     </View>
   );
 }
