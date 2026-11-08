@@ -1,4 +1,4 @@
-import { cameraFromMapState, clampZoom, fitBounds, MAX_ZOOM, MIN_ZOOM, toCameraStop, WORLD_CAMERA } from './camera';
+import { cameraFromMapState, clampZoom, fitBounds, MAX_ZOOM, MIN_ZOOM, screenDistance, toCameraStop, WORLD_CAMERA } from './camera';
 
 function state(center: number[], zoom = 12, heading = 0) {
   return { properties: { center, zoom, heading } };
@@ -70,5 +70,25 @@ describe('fitBounds', () => {
 
   it('caps the zoom for a very short line', () => {
     expect(fitBounds({ sw, ne: { lat: 38.9000001, lon: -77.0999999 } }, { width: 400, height: 800 }).zoom).toBeLessThanOrEqual(MAX_ZOOM);
+  });
+});
+
+describe('screenDistance', () => {
+  const at = { lat: 38.9, lon: -77 };
+  // About 1.5 m north.
+  const near = { lat: 38.9000135, lon: -77 };
+
+  it('puts a metre or two of GPS jitter under a point at the self zoom, and over it zoomed in', () => {
+    expect(screenDistance(at, near, 15)).toBeLessThan(1);
+    expect(screenDistance(at, near, 17)).toBeGreaterThan(1);
+  });
+
+  it('doubles with each zoom level', () => {
+    const d = screenDistance(at, { lat: 38.91, lon: -76.99 }, 10);
+    expect(screenDistance(at, { lat: 38.91, lon: -76.99 }, 11)).toBeCloseTo(2 * d, 6);
+  });
+
+  it('measures the short way across the antimeridian', () => {
+    expect(screenDistance({ lat: 0, lon: 179.9999 }, { lat: 0, lon: -179.9999 }, 0)).toBeCloseTo((0.0002 / 360) * 512, 9);
   });
 });

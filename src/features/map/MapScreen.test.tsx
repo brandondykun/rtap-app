@@ -238,6 +238,28 @@ describe('MapScreen', () => {
     expect(calls[calls.length - 1][0]).toHaveProperty('zoomLevel');
   });
 
+  it('following, does not move the camera for GPS jitter, and follows once the fixes add up to a visible move', async () => {
+    const ctx = makeTestContext();
+    const r = await createMission(ctx, { name: 'Op Iron' });
+    if (!r.ok) throw new Error('setup');
+    await renderWithProviders(<MapScreen missionId={r.value.id} />, ctx);
+    await screen.findByTestId('map-view');
+    const fix = (lat: number) => usePresence.getState().setSelfPosition({ position: { lat, lon: -77 }, accuracyM: 5, timestamp: 1 });
+    await act(async () => fix(38.9));
+    await fireEvent.press(screen.getByLabelText('Recenter on me'));
+    await act(async () => useInteraction.getState().setCamera({ center: { lat: 38.9, lon: -77 }, zoom: 15, bearing: 0 }));
+    const centers = () =>
+      mapboxMock().__camera.setCamera.mock.calls.map((c) => (c[0] as { centerCoordinate?: number[] }).centerCoordinate).filter(Boolean);
+    mapboxMock().__camera.setCamera.mockClear();
+    // About 1 m, then 1.5 m from where the map was centered: under a point (≈1.9 m) at zoom 15.
+    await act(async () => fix(38.900009));
+    await act(async () => fix(38.9000135));
+    expect(centers()).toEqual([]);
+    // About 4 m: the map follows.
+    await act(async () => fix(38.900036));
+    expect(centers()).toEqual([[-77, 38.900036]]);
+  });
+
   describe('camera persistence', () => {
     const state = (gesture: boolean) => ({
       properties: { center: [-77, 38.9], zoom: 11, heading: 10 },

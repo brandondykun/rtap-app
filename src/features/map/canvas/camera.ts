@@ -21,6 +21,20 @@ const mercatorY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.P
 const latFromMercatorY = (y: number) => (Math.atan(Math.exp(y)) * 360) / Math.PI - 90;
 
 /**
+ * A move shorter than this (points) can't be seen, so the self icon and a following camera stay put for it: GPS jitters
+ * a metre or two at rest, and each change keeps Mapbox drawing for many frames, which costs battery.
+ */
+export const VISIBLE_MOVE_PT = 1;
+
+/** Distance in points between two positions as drawn flat at `zoom` (pitch ignored). */
+export function screenDistance(a: LatLon, b: LatLon, zoom: number): number {
+  const size = WORLD_SIZE * 2 ** zoom;
+  const dx = (wrapLon(b.lon - a.lon) / 360) * size;
+  const dy = ((mercatorY(b.lat) - mercatorY(a.lat)) / (2 * Math.PI)) * size;
+  return Math.hypot(dx, dy);
+}
+
+/**
  * Center and zoom that fit `bounds` inside a visible area (points; the map minus any panel).
  * Used instead of Mapbox `bounds` stops, which rebuild the camera without our panel padding.
  */

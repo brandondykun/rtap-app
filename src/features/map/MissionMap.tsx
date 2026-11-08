@@ -41,7 +41,7 @@ import { usePlacing, type PlacingCategory } from '@/stores/placing';
 import { usePresence } from '@/stores/presence';
 import { useSettings } from '@/stores/settings';
 
-import { clampZoom, fitBounds, SELF_ZOOM, WORLD_CAMERA } from './canvas/camera';
+import { clampZoom, fitBounds, screenDistance, SELF_ZOOM, VISIBLE_MOVE_PT, WORLD_CAMERA } from './canvas/camera';
 import { useCameraPersistence } from './canvas/camera-persistence';
 import { MapCanvas } from './canvas/MapCanvas';
 import { useMissionSnapshot } from './canvas/mission-snapshot';
@@ -161,6 +161,8 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const drawingPolygon = useDraft((s) => s.mode !== null && s.category === 'polygon');
   // A draft-follow move still in flight: a padding change must complete it, not cancel it.
   const followTarget = useRef<LatLon | null>(null);
+  // Where follow mode last centered the map, so GPS jitter around it does not move the camera.
+  const followedAt = useRef<LatLon | null>(null);
   // A line fit still in flight: a padding change re-issues it instead of cancelling it.
   const fitTarget = useRef<{ sw: LatLon; ne: LatLon } | null>(null);
   // Every camera move carries the panel's full padding: a move without it targets the padding of the
@@ -215,6 +217,11 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         markMoved();
         moveCamera({ centerCoordinate, zoomLevel: SELF_ZOOM, animationDuration: 0 });
       } else if (useInteraction.getState().followMode) {
+        // A fix the eye can't tell from the last one followed (GPS jitter at rest) moves nothing: each move keeps the map
+        // drawing for half a second. Small fixes still add up: once they reach a point from it, the map follows.
+        const last = followedAt.current;
+        if (last && screenDistance(last, { lat, lon }, useInteraction.getState().cameraZoom) < VISIBLE_MOVE_PT) return;
+        followedAt.current = { lat, lon };
         moveCamera({ centerCoordinate, ...EASE, animationDuration: 500 });
       }
     };
@@ -546,6 +553,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
     followTarget.current = null;
     fitTarget.current = null;
     setFollowMode(true);
+    followedAt.current = self;
     const zoomLevel = Math.max(useInteraction.getState().cameraZoom, SELF_ZOOM);
     moveCamera({ centerCoordinate: [self.lon, self.lat], zoomLevel, ...EASE, animationDuration: 500 });
   };
