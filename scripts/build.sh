@@ -45,6 +45,12 @@ fi
 
 profile=$(choose 'Profile:' 'development  RTAP (D)' 'preview      RTAP (P)' 'production   RTAP, for the App Store') || exit 1
 profile="${profile%% *}"
+# The store app is built only from a release branch, so work on main can't reach it.
+branch=$(git branch --show-current)
+if [ "$profile" = production ] && [[ "$branch" != release/* ]]; then
+  echo "Production builds come from a release branch, not ${branch:-a detached HEAD}: git switch release/1.x"
+  exit 1
+fi
 platform=$(choose 'Platform:' ios android all) || exit 1
 
 # The runtime version is a fingerprint of the native code. If the latest build of this profile already has the same

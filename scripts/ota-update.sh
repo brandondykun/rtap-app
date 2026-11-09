@@ -23,6 +23,13 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+# The store app gets updates only from a release branch, so work on main can't reach it even with a matching fingerprint.
+branch=$(git branch --show-current)
+if [ "$channel" = production ] && [[ "$branch" != release/* ]]; then
+  echo "Production updates come from a release branch, not ${branch:-a detached HEAD}: git switch release/1.x"
+  exit 1
+fi
+
 eas() { npx --yes eas-cli@latest "$@"; }
 
 # An update only reaches builds with the same native fingerprint. Refuse instead of publishing one no phone will run.

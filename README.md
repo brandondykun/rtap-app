@@ -191,6 +191,37 @@ About page then shows `update <id>`.
 
 **Test on preview first.** Publish to preview, check it on RTAP (P), then publish the same commit to production.
 
+### Release branches
+
+The store app is built and updated only from a release branch; new work (the cloud version) happens on `main`.
+`scripts/build.sh` and `scripts/ota-update.sh` refuse production from any other branch.
+
+| Branch | What goes there | Ships to |
+| --- | --- | --- |
+| `main` | New features | development, preview |
+| `release/1.x` | Fixes for the app in the store | production (and preview, to test a fix) |
+
+**Shipping a version.** On `release/1.x`, make the production build, then tag the commit it was built from, e.g.
+`git tag v1.0.0`. A tag marks every commit that became a store build.
+
+**Fixing a bug in the store app.**
+
+1. `git switch release/1.x`, fix it and commit.
+2. Publish to preview and check it on RTAP (P), then publish the same commit to production (see above).
+3. Bring the fix into `main`: `git switch main && git merge release/1.x`. Fix on the release branch first, never
+   the other way round, so `main`'s new work never ends up in the store app by accident.
+
+A fix that needs native code is a new build: raise `version` in `app.json` (1.0.0 → 1.0.1) on the release branch,
+build, tag `v1.0.1`.
+
+**Testing a fix on preview.** A fix reaches only builds with its fingerprint. While `main` has the same native code as
+the release, RTAP (P) gets release fixes. Once `main` adds native code, make a preview build from `release/1.x` before
+testing a fix there (RTAP (P) then runs the release until you build preview from `main` again).
+
+**The next version.** When `main` is ready to ship (e.g. 2.0 with sync), branch `release/2.x` from it and build
+production there. Fixes for 1.x stop then: 2.0 adds native code (accounts, purchases), so its updates can't reach 1.x phones, which get
+2.0 from the store.
+
 ### Undoing a bad update
 
 ```bash
