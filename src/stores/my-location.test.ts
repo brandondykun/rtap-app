@@ -43,6 +43,15 @@ describe('my-location store', () => {
     expect(useMyLocation.getState()).toMatchObject(DEFAULT_MY_LOCATION);
   });
 
+  it('remembers the dev Fake GPS switch, which starts off and ignores an invalid stored value', async () => {
+    expect(useMyLocation.getState().devFakeGps).toBe(false);
+    useMyLocation.getState().setDevFakeGps(true);
+    expect(stored()).toMatchObject({ devFakeGps: true });
+    Storage.setItemSync('my-location', JSON.stringify({ state: { source: 'gps', manual: null, offNoticeClosed: false, devFakeGps: 'yes' }, version: 1 }));
+    await useMyLocation.persist.rehydrate();
+    expect(useMyLocation.getState().devFakeGps).toBe(true);
+  });
+
   it('keeps a stored Manual source with no position (unset after a restart)', async () => {
     Storage.setItemSync('my-location', JSON.stringify({ state: { source: 'manual', manual: null, offNoticeClosed: false }, version: 1 }));
     await useMyLocation.persist.rehydrate();

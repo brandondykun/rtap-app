@@ -13,6 +13,11 @@ export type MyLocationValues = {
   manual: LatLon | null;
   /** The map's location-off notice was closed; it never shows again. */
   offNoticeClosed: boolean;
+  /**
+   * Development builds only (for store screenshots): the manual position shows as a GPS fix, with an accuracy, the
+   * terrain altitude and the live compass. Ignored in other builds.
+   */
+  devFakeGps: boolean;
 };
 
 type MyLocationActions = {
@@ -23,11 +28,12 @@ type MyLocationActions = {
   /** Manual without changing the position (unset after switchToGps). */
   switchToManual: () => void;
   closeOffNotice: () => void;
+  setDevFakeGps: (on: boolean) => void;
 };
 
 export type MyLocationState = MyLocationValues & MyLocationActions;
 
-export const DEFAULT_MY_LOCATION: MyLocationValues = { source: 'gps', manual: null, offNoticeClosed: false };
+export const DEFAULT_MY_LOCATION: MyLocationValues = { source: 'gps', manual: null, offNoticeClosed: false, devFakeGps: false };
 
 const syncStorage: StateStorage = {
   getItem: (key) => Storage.getItemSync(key),
@@ -49,6 +55,7 @@ function mergePersisted(persisted: unknown, current: MyLocationState): MyLocatio
     source: p.source === 'gps' || p.source === 'manual' ? p.source : current.source,
     manual: p.manual === null || isValidPosition(p.manual) ? (p.manual as LatLon | null) : current.manual,
     offNoticeClosed: typeof p.offNoticeClosed === 'boolean' ? p.offNoticeClosed : current.offNoticeClosed,
+    devFakeGps: typeof p.devFakeGps === 'boolean' ? p.devFakeGps : current.devFakeGps,
   };
 }
 
@@ -65,13 +72,14 @@ export const useMyLocation = create<MyLocationState>()(
       switchToGps: () => set({ source: 'gps', manual: null }),
       switchToManual: () => set({ source: 'manual' }),
       closeOffNotice: () => set({ offNoticeClosed: true }),
+      setDevFakeGps: (on) => set({ devFakeGps: on }),
     }),
     {
       name: 'my-location',
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ source, manual, offNoticeClosed }) => ({ source, manual, offNoticeClosed }),
+      partialize: ({ source, manual, offNoticeClosed, devFakeGps }) => ({ source, manual, offNoticeClosed, devFakeGps }),
     },
   ),
 );

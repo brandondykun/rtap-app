@@ -7,6 +7,8 @@ import { DEFAULT_MY_LOCATION, useMyLocation } from '@/stores/my-location';
 import { INITIAL_GPS_AVERAGE, useGpsAverage } from '@/stores/gps-average';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
 
+import { setElevationSource } from '@/features/map/terrain/elevation';
+
 import { useSelfLocation } from './use-self-location';
 
 const mocked = jest.mocked(Location);
@@ -333,6 +335,63 @@ describe('useSelfLocation', () => {
       await render(<Probe />);
       await act(async () => {});
       expect(usePresence.getState()).toMatchObject({ selfPosition: null, locationStatus: 'granted' });
+    });
+
+    describe('with the dev Fake GPS switch on', () => {
+      afterEach(() => setElevationSource(null));
+
+      it('publishes the manual position as a GPS fix, with terrain altitude and the live compass, without watching position', async () => {
+        const fake = grant();
+        mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+        setElevationSource(async () => 312.4);
+        useMyLocation.setState({ source: 'manual', manual: { lat: 38.9, lon: -77 }, devFakeGps: true });
+        await render(<Probe />);
+        await act(async () => {});
+        expect(mocked.watchPositionAsync).not.toHaveBeenCalled();
+        const fix = usePresence.getState().selfPosition;
+        expect(fix).toMatchObject({ position: { lat: 38.9, lon: -77 }, accuracyM: 3, altitudeM: 312.4 });
+        expect(fix?.manual).toBeUndefined();
+        await act(async () => fake.heading({ trueHeading: 45, magHeading: 50, accuracy: 3 }));
+        expect(usePresence.getState().selfHeading).toBe(45);
+      });
+
+      it('turning it off goes back to the plain manual position and stops the compass', async () => {
+        const fake = grant();
+        mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+        useMyLocation.setState({ source: 'manual', manual: { lat: 1, lon: 2 }, devFakeGps: true });
+        await render(<Probe />);
+        await act(async () => {});
+        expect(usePresence.getState().selfPosition?.manual).toBeUndefined();
+        await act(async () => useMyLocation.getState().setDevFakeGps(false));
+        expect(fake.removes.heading).toHaveBeenCalled();
+        expect(usePresence.getState()).toMatchObject({ selfHeading: null, selfPosition: { manual: true, accuracyM: null } });
+      });
+
+      it('does not leave the fake fix up as "me" when the source goes back to GPS', async () => {
+        grant();
+        mocked.getForegroundPermissionsAsync.mockResolvedValue({ status: 'granted', granted: true } as never);
+        useMyLocation.setState({ source: 'manual', manual: { lat: 1, lon: 2 }, devFakeGps: true });
+        await render(<Probe />);
+        await act(async () => {});
+        await act(async () => useMyLocation.getState().switchToGps());
+        expect(mocked.watchPositionAsync).toHaveBeenCalled();
+        expect(usePresence.getState().selfPosition).toBeNull();
+      });
+
+      it('does nothing outside development builds', async () => {
+        const g = globalThis as unknown as { __DEV__: boolean };
+        const dev = g.__DEV__;
+        g.__DEV__ = false;
+        try {
+          useMyLocation.setState({ source: 'manual', manual: { lat: 1, lon: 2 }, devFakeGps: true });
+          await render(<Probe />);
+          await act(async () => {});
+          expect(usePresence.getState().selfPosition?.manual).toBe(true);
+          expect(mocked.watchHeadingAsync).not.toHaveBeenCalled();
+        } finally {
+          g.__DEV__ = dev;
+        }
+      });
     });
 
     it('reports a permission that can still be asked for (iOS Allow Once expired) as unknown, not denied', async () => {

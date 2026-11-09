@@ -69,6 +69,14 @@ describe('Location in Settings', () => {
     expect(screen.queryByTestId('menu-section-Manual position')).toBeNull();
   });
 
+  it('offers the dev Fake GPS switch only while Manual is chosen', async () => {
+    await renderSettings();
+    expect(screen.queryByLabelText('Fake GPS (dev)')).toBeNull();
+    await act(async () => useMyLocation.getState().setManual(DC));
+    await fireEvent(screen.getByLabelText('Fake GPS (dev)'), 'valueChange', true);
+    expect(useMyLocation.getState().devFakeGps).toBe(true);
+  });
+
   it('Change closes Settings and opens the box with the saved position', async () => {
     useMyLocation.getState().setManual(DC);
     await renderSettings();

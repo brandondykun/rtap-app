@@ -3,6 +3,8 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { elevationAt } from '@/features/map/terrain/elevation';
+import type { LatLon } from '@/lib/geo/types';
 import { normalizeDeg } from '@/lib/geo/units/angle';
 import { useGpsAverage } from '@/stores/gps-average';
 import { useMyLocation } from '@/stores/my-location';
@@ -33,6 +35,11 @@ export function watchOptions(averageOn: boolean): Location.LocationOptions {
   };
 }
 
+/** Dev Fake GPS: the accuracy the fake fix claims, and how long to keep asking the terrain for its altitude. */
+const FAKE_ACCURACY_M = 3;
+const FAKE_ALTITUDE_TRIES = 15;
+const FAKE_ALTITUDE_RETRY_MS = 2000;
+
 function orientationName(o: ScreenOrientation.Orientation): Orientation {
   switch (o) {
     case ScreenOrientation.Orientation.PORTRAIT_UP:
@@ -56,6 +63,9 @@ function orientationName(o: ScreenOrientation.Orientation): Orientation {
  * With the Manual source it stops using location altogether (no watch, no prompt) and publishes the position set by
  * hand instead, marked `manual`, so everything that uses "me" works from it. Permission is still read, without
  * prompting, for the location-off notices.
+ *
+ * Development builds with Fake GPS on (for store screenshots) publish the manual position as a GPS fix instead: not
+ * marked `manual`, with an accuracy and the terrain altitude, and the compass keeps running.
  */
 export function useSelfLocation(): void {
   useEffect(() => {
@@ -70,9 +80,14 @@ export function useSelfLocation(): void {
     let lastEvent: Location.LocationHeadingObject | null = null;
     // The newest GPS fix as it came, so "me" can drop back to it the moment Average mode turns off.
     let lastLive: SelfPosition | null = null;
+    // Dev Fake GPS: the compass watch while it is on, and a count that cancels an altitude lookup once it is stale.
+    let fakeHeading: { remove: () => void } | null = null;
+    let fakeShown = false;
+    let fakeLookup = 0;
 
     const averageOn = () => useGpsAverage.getState().phase !== 'off';
     const manualSource = () => useMyLocation.getState().source === 'manual';
+    const fakeGps = () => __DEV__ && manualSource() && useMyLocation.getState().devFakeGps;
 
     const onPosition = (loc: Location.LocationObject) => {
       if (manualSource()) return;
@@ -93,7 +108,7 @@ export function useSelfLocation(): void {
     };
 
     const onHeading = (event: Location.LocationHeadingObject, force = false) => {
-      if (manualSource()) return;
+      if (manualSource() && !fakeGps()) return;
       lastEvent = event;
       const presence = usePresence.getState();
       const compass = trueHeadingFrom(
@@ -117,6 +132,12 @@ export function useSelfLocation(): void {
       presence.setSelfHeading(heading);
     };
 
+    const stopFake = () => {
+      fakeHeading?.remove();
+      fakeHeading = null;
+      fakeLookup++;
+    };
+
     const stopGps = () => {
       subscriptions.forEach((sub) => sub.remove());
       subscriptions = [];
@@ -124,6 +145,37 @@ export function useSelfLocation(): void {
       smoothed = null;
       lastEvent = null;
       lastLive = null;
+      stopFake();
+    };
+
+    // The fix at once without an altitude, then with it: the terrain answers only once the map has loaded it there.
+    const publishFake = (at: LatLon) => {
+      const lookup = ++fakeLookup;
+      const fix = (altitudeM: number | null): SelfPosition => ({ position: at, accuracyM: FAKE_ACCURACY_M, timestamp: Date.now(), altitudeM });
+      usePresence.getState().setSelfPosition(fix(null));
+      fakeShown = true;
+      void (async () => {
+        for (let i = 0; i < FAKE_ALTITUDE_TRIES; i++) {
+          if (i > 0) await new Promise((resolve) => setTimeout(resolve, FAKE_ALTITUDE_RETRY_MS));
+          if (disposed || lookup !== fakeLookup) return;
+          const m = await elevationAt(at);
+          if (disposed || lookup !== fakeLookup) return;
+          if (m !== null) {
+            usePresence.getState().setSelfPosition(fix(m));
+            return;
+          }
+        }
+      })();
+    };
+
+    const startFakeHeading = async () => {
+      try {
+        const heading = await Location.watchHeadingAsync(onHeading);
+        if (disposed || !fakeGps() || fakeHeading) heading.remove();
+        else fakeHeading = heading;
+      } catch (e) {
+        console.warn('[location] heading unavailable', e);
+      }
     };
 
     const applyManual = async () => {
@@ -132,13 +184,18 @@ export function useSelfLocation(): void {
       const presence = usePresence.getState();
       if (presence.selfHeading !== null) presence.setSelfHeading(null);
       const { manual } = useMyLocation.getState();
-      if (manual) presence.setSelfPosition({ position: manual, accuracyM: null, timestamp: Date.now(), altitudeM: null, manual: true });
-      else presence.clearSelfPosition();
+      if (manual && fakeGps()) publishFake(manual);
+      else {
+        fakeShown = false;
+        if (manual) presence.setSelfPosition({ position: manual, accuracyM: null, timestamp: Date.now(), altitudeM: null, manual: true });
+        else presence.clearSelfPosition();
+      }
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
         if (disposed || !manualSource()) return;
         // Not yet decided (e.g. iOS "Allow Once" expired) is not off: GPS stays selectable and asks when chosen.
         usePresence.getState().setLocationStatus(status === 'granted' ? 'granted' : status === 'undetermined' ? 'unknown' : 'denied');
+        if (status === 'granted' && fakeGps()) await startFakeHeading();
       } catch (e) {
         console.warn('[location] permission unavailable', e);
         if (!disposed && manualSource()) usePresence.getState().setLocationStatus('unavailable');
@@ -148,8 +205,10 @@ export function useSelfLocation(): void {
     const startGps = async () => {
       if (starting || subscriptions.length > 0) return;
       starting = true;
-      // A manual position must not stay up as "me" once GPS is the source again.
-      if (usePresence.getState().selfPosition?.manual) usePresence.getState().clearSelfPosition();
+      // A manual (or dev fake) position must not stay up as "me" once GPS is the source again.
+      stopFake();
+      if (usePresence.getState().selfPosition?.manual || fakeShown) usePresence.getState().clearSelfPosition();
+      fakeShown = false;
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (disposed || manualSource()) return;
@@ -241,7 +300,7 @@ export function useSelfLocation(): void {
       else if (usePresence.getState().locationStatus !== 'granted') void startGps();
     });
     const source = useMyLocation.subscribe((next, prev) => {
-      if (next.source !== prev.source || next.manual !== prev.manual) void start();
+      if (next.source !== prev.source || next.manual !== prev.manual || next.devFakeGps !== prev.devFakeGps) void start();
     });
     void start();
 

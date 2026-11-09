@@ -4,6 +4,7 @@ import { MenuButton } from '@/components/menu/MenuButton';
 import { MenuGroup } from '@/components/menu/MenuGroup';
 import { MenuSection } from '@/components/menu/MenuSection';
 import { MenuSegmented } from '@/components/menu/MenuSegmented';
+import { MenuToggle } from '@/components/menu/MenuToggle';
 import { Icon } from '@/components/ui/Icon';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { useManualEntry } from '@/stores/manual-entry';
@@ -33,13 +34,15 @@ export function LocationOffNotice() {
 
 /**
  * Where "me" comes from: GPS (greyed out while location is off) or a position set by hand. Switching to GPS clears the
- * manual position. Set / Change close Settings and open the Set manually box on the map.
+ * manual position. Set / Change close Settings and open the Set manually box on the map. Development builds add Fake
+ * GPS under it, for store screenshots.
  */
 export function LocationSettingsGroup() {
   const off = useLocationOff();
   const source = useMyLocation((s) => s.source);
   const manual = useMyLocation((s) => s.manual);
   const coordinateFormat = useSettings((s) => s.coordinateFormat);
+  const devFakeGps = useMyLocation((s) => s.devFakeGps);
 
   const change = (next: PositionSource) => {
     if (next === source) return;
@@ -72,6 +75,11 @@ export function LocationSettingsGroup() {
             </Text>
             <MenuButton compact label={manual ? 'Change' : 'Set'} icon={manual ? 'pencil-outline' : 'crosshairs-gps'} onPress={edit} />
           </View>
+        </MenuSection>
+      ) : null}
+      {__DEV__ && source === 'manual' ? (
+        <MenuSection label="Development">
+          <MenuToggle label="Fake GPS (dev)" value={devFakeGps} onValueChange={(on) => useMyLocation.getState().setDevFakeGps(on)} />
         </MenuSection>
       ) : null}
     </MenuGroup>
