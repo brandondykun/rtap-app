@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PanelFrame } from '@/components/menu/panel-geometry';
 import { glassHalo } from '@/components/ui/glass';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { formatLength } from '@/features/location/gps-format';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { EDGE, selfCardClearance } from '@/features/map/layout';
@@ -111,7 +112,7 @@ export function QuickPlotCard({ landscape, panel = null }: { landscape: boolean;
             style={halo}
             className="ml-auto font-mono text-sm text-text-muted">
             {'ALT '}
-            <Text className="font-mono-bold text-value-altitude">{formatLength(altitudeM, altitudeUnit)}</Text>
+            <Text className="font-mono-bold text-value-altitude">{tightUnit(formatLength(altitudeM, altitudeUnit), 14)}</Text>
           </Text>
         </View>
         <View testID="quick-plot-card-buttons" className="flex-row gap-2">

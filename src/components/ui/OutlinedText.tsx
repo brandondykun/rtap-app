@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { Text, View, type TextProps } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
 
 import { OUTLINE_HIDDEN, outlineShifts } from './outline';
 
-type Props = TextProps & { className?: string; color: string; children: string };
+type Props = TextProps & { className?: string; color: string; children: ReactNode };
 
 /**
  * Text with a crisp dark edge one device pixel wide, so it reads over snow without a backing behind it. The dark

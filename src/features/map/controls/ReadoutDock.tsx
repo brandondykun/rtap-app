@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
 import { Icon } from '@/components/ui/Icon';
 import { OutlinedText } from '@/components/ui/OutlinedText';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { AverageActions, AverageHeader } from '@/features/location/AverageStatus';
 import { formatLength } from '@/features/location/gps-format';
 import type { AngleUnit, LatLon } from '@/lib/geo/types';
@@ -119,7 +120,7 @@ function Reserve({ inline, template, children }: { inline: boolean; template: st
     <View className="items-end">
       {children}
       <Text testID="detail-reserve" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ height: 0 }} className="font-mono text-xs opacity-0">
-        {template}
+        {tightUnit(template, 12)}
       </Text>
     </View>
   );
@@ -164,7 +165,7 @@ function OpRow({ inline, minimal, at, elevationM }: { inline: boolean; minimal: 
         lead={<CardLead icon={<Icon name="binoculars" size={inline ? 12 : 14} color={colors.accent} outline />} tag="OP" tagColor={colors.accent} tagStyle={glassHalo(colors)} outline />}
         top={
           <OutlinedText testID="op-elevation" accessibilityLabel={`Altitude ${formatLength(elevationM, unit)}`} color={colors['value-altitude']} style={glassHalo(colors)} className="font-mono text-xs">
-            {`ALT ${formatLength(elevationM, unit)}`}
+            {tightUnit(`ALT ${formatLength(elevationM, unit)}`, 12)}
           </OutlinedText>
         }>
         <Grid testID="op-position" outline small={inline}>
@@ -194,7 +195,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
   const detailPlaceholder = (template: string) => (
     <Placeholder>
       <OutlinedText color={colors.friendly} style={halo} className="font-mono text-xs" numberOfLines={1}>
-        {template}
+        {tightUnit(template, 12)}
       </OutlinedText>
     </Placeholder>
   );
@@ -234,7 +235,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
           shown && !shown.manual ? (
             <Reserve inline={inline} template={ALTITUDE_TEMPLATE[unit]}>
               <OutlinedText testID="gps-altitude" accessibilityLabel={`Altitude ${formatLength(shown.altitudeM, unit)}`} color={colors['value-altitude']} style={halo} className="font-mono text-xs">
-                {`ALT ${formatLength(shown.altitudeM, unit)}`}
+                {tightUnit(`ALT ${formatLength(shown.altitudeM, unit)}`, 12)}
               </OutlinedText>
             </Reserve>
           ) : shown || (setting && !inline) ? null : (
@@ -260,7 +261,7 @@ function MeRow({ inline, minimal, following, disabled, onRecenter, onSetLocation
                   </OutlinedText>
                 ) : null}
                 <OutlinedText testID="gps-accuracy" accessibilityLabel={averaged ? undefined : `Accuracy ±${formatLength(shown.accuracyM, unit)}`} color={colors['value-accuracy']} style={halo} className="font-mono text-xs">
-                  {`±${formatLength(shown.accuracyM, unit)}`}
+                  {tightUnit(`±${formatLength(shown.accuracyM, unit)}`, 12)}
                 </OutlinedText>
               </View>
             </Reserve>
@@ -316,7 +317,7 @@ function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
           ) : null}
           <Reserve inline={inline} template={DISTANCE_TEMPLATE}>
             <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors['value-distance']} style={halo} className="font-mono text-xs">
-              {r.distance}
+              {tightUnit(r.distance, 12)}
             </OutlinedText>
           </Reserve>
         </>
@@ -324,7 +325,7 @@ function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
       bottom={
         <Reserve inline={inline} template={BEARING_TEMPLATE[angleUnit]}>
           <OutlinedText testID="readout-bearing" accessibilityLabel={`Bearing from ${who} ${r.bearing} ${r.ref}`} color={colors['value-bearing']} style={halo} className="font-mono text-xs">
-            {r.bearing}
+            {tightUnit(r.bearing, 12)}
           </OutlinedText>
         </Reserve>
       }>

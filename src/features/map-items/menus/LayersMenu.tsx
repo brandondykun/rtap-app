@@ -10,6 +10,7 @@ import { MenuSegmented } from '@/components/menu/MenuSegmented';
 import { usePanelListProps } from '@/components/menu/panel-list';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { TextField } from '@/components/ui/TextField';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { notifyError } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { defineMenu, type MenuComponentProps } from '@/features/menus/define-menu';
@@ -464,7 +465,7 @@ function layerSubtitle(row: LayerRow, coordinateFormat: CoordinateFormat): { tex
     content: (
       <>
         {prefix}
-        <Text className={VALUE_TEXT_CLASS.distance}>{value}</Text>
+        <Text className={VALUE_TEXT_CLASS.distance}>{tightUnit(value, 12)}</Text>
       </>
     ),
   });
@@ -472,8 +473,8 @@ function layerSubtitle(row: LayerRow, coordinateFormat: CoordinateFormat): { tex
   if (row.polygonType) {
     const label = `${polygonTypeInfo(row.polygonType).label} · `;
     if (row.radiusM !== null) return distance(`${label}r `, formatDistance(row.radiusM));
-    const text = `${label}${row.areaM2 !== null ? formatArea(row.areaM2) : '—'}`;
-    return { text, content: text };
+    const area = row.areaM2 !== null ? formatArea(row.areaM2) : '—';
+    return { text: `${label}${area}`, content: <>{label}{tightUnit(area, 12)}</> };
   }
   if (!row.coord) return { text: '—', content: '—' };
   const grid = formatCoordinate(row.coord, coordinateFormat);

@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_TEXT_CLASS, type ValueKind } from '@/theme/value-colors';
 
@@ -43,7 +44,7 @@ export function MenuVertexRow({ number, title, detail, detailKind, selected = fa
           <Text numberOfLines={1} className="shrink font-mono text-base text-text">
             {title}
           </Text>
-          <Text className={`ml-auto font-mono text-sm ${detailKind ? VALUE_TEXT_CLASS[detailKind] : selected ? 'text-accent' : 'text-text-muted'}`}>{detail}</Text>
+          <Text className={`ml-auto font-mono text-sm ${detailKind ? VALUE_TEXT_CLASS[detailKind] : selected ? 'text-accent' : 'text-text-muted'}`}>{tightUnit(detail, 14)}</Text>
         </Pressable>
         {onRemove ? (
           <Pressable

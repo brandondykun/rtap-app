@@ -8,6 +8,7 @@ import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { notifyRemoved } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { LINE_TYPES, lineNamePrefix, type LineType } from '@/features/symbology/line-types';
@@ -74,7 +75,7 @@ export function LineForm({ missionId, mode }: { missionId: string; mode: DraftMo
       <MenuSection label="Line type">
         <MenuSelect<LineType> label="Line type" options={TYPE_OPTIONS} value={lineType} onChange={(t) => useDraft.getState().setLineType(t)} disabled={locked} />
       </MenuSection>
-      <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? <><Text className={VALUE_TEXT_CLASS.distance}>{formatDistance(totalLength(vertices))}</Text> total</> : undefined}>
+      <MenuSection label={`POINTS · ${vertices.length}`} trailing={vertices.length >= 2 ? <><Text className={VALUE_TEXT_CLASS.distance}>{tightUnit(formatDistance(totalLength(vertices)), 14)}</Text> total</> : undefined}>
         <View>
           {vertices.map((v, i) => (
             <MenuVertexRow

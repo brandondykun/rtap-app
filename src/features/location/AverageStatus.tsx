@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { clusterStats } from '@/features/location/gps-average-math';
 import { inverse } from '@/lib/geo/measure/geodesic';
 import { formatDistance } from '@/lib/geo/format/measure';
@@ -87,7 +88,7 @@ export function AverageHeader({ inline, minimal = false }: { inline: boolean; mi
   const fromAverage = phase === 'paused' && fresh && stats ? formatDistance(inverse(live.position, stats.center.position).distanceM) : null;
   const distance = (text: string) => (
     <Text testID="average-distance" style={{ color: colors['value-distance'] }} className="font-mono">
-      {text}
+      {tightUnit(text, 14)}
     </Text>
   );
 

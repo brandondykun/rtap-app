@@ -9,6 +9,7 @@ import { MenuVertexRow } from '@/components/menu/MenuVertexRow';
 import { MgrsInput } from '@/components/menu/MgrsInput';
 import { evaluateMgrsFields, mgrsFieldsFor, squareFieldsFor } from '@/components/menu/mgrs-fields';
 import { TextField } from '@/components/ui/TextField';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { notifyRemoved } from '@/features/feedback/feedback';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { POLYGON_FILLS, POLYGON_TYPES, polygonTypeInfo, type PolygonFill, type PolygonType } from '@/features/symbology/polygon-types';
@@ -105,8 +106,9 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
   const pointsTrailing =
     vertices.length >= 3 ? (
       <>
-        <Text className={VALUE_TEXT_CLASS.distance}>{formatDistance(perimeterM(vertices))}</Text>
-        {` · ${formatArea(areaM2(vertices))}`}
+        <Text className={VALUE_TEXT_CLASS.distance}>{tightUnit(formatDistance(perimeterM(vertices)), 14)}</Text>
+        {' · '}
+        {tightUnit(formatArea(areaM2(vertices)), 14)}
       </>
     ) : undefined;
   const circleArea = center && radiusM ? formatArea(areaM2(circleRing(center, radiusM))) : undefined;
@@ -167,7 +169,7 @@ export function PolygonForm({ missionId, mode }: { missionId: string; mode: Draf
       ) : (
         <>
           <LocationSection />
-          <MenuSection label="Radius" trailing={circleArea}>
+          <MenuSection label="Radius" trailing={circleArea && tightUnit(circleArea, 14)}>
             <View className="flex-row items-center gap-2">
               <View className="flex-1">
                 <TextField mono editable={!locked} accessibilityLabel="Radius" value={radius} onChangeText={onRadius} keyboardType="decimal-pad" placeholder="500" />

@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { glassHalo } from '@/components/ui/glass';
+import { tightUnit } from '@/components/ui/unit-gap';
 import { formatLength } from '@/features/location/gps-format';
 import { OP_EYE_RANGE, useOp } from '@/stores/op';
 import { useSettings } from '@/stores/settings';
@@ -48,7 +49,7 @@ export function OpEyeSlider() {
     // Only the track takes touches: swipes that start on the panel around it still turn the view.
     <View testID="op-eye-slider" pointerEvents="box-none" className="shrink items-center gap-2 rounded-2xl bg-surface-glass py-2.5" style={{ width: PANEL_WIDTH }}>
       <Text testID="op-eye-label" pointerEvents="none" className="font-mono text-xs font-semibold text-value-altitude" style={glassHalo(colors)}>
-        {formatLength(eyeM, altitudeUnit)}
+        {tightUnit(formatLength(eyeM, altitudeUnit), 12)}
       </Text>
       <GestureDetector gesture={drag}>
         {/* The touch area is wider than the drawn track so it is easy to grab. */}

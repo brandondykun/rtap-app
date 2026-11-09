@@ -1,5 +1,6 @@
 import { Platform, Text, View } from 'react-native';
 
+import { tightUnit } from '@/components/ui/unit-gap';
 import { formatLength } from '@/features/location/gps-format';
 import { formatCoordinate } from '@/features/map/interaction/readout';
 import { useReadoutOrigin } from '@/features/map/interaction/use-readout-origin';
@@ -59,7 +60,7 @@ export function LocationCard({ item }: { item: MapItemSnapshot }) {
               : ring.parts.map((p, i) => (
                   <Text key={p.kind}>
                     {i > 0 ? ' · ' : ''}
-                    <Text className={VALUE_TEXT_CLASS[p.kind]}>{p.text}</Text>
+                    <Text className={VALUE_TEXT_CLASS[p.kind]}>{tightUnit(p.text, 16)}</Text>
                   </Text>
                 ))}
           </Text>

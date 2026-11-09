@@ -16,7 +16,10 @@ const DC = { lat: 38.8977, lon: -77.0365 };
 const CENTER = { lat: 38.905, lon: -77.03 };
 const HIDDEN = { includeHiddenElements: true };
 /** The dark copies drawn under a text to outline it. */
-const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text);
+/** A text node's string, joining nested spans (a value's narrowed unit gap is one). */
+const textOf = (children: unknown): string =>
+  typeof children === 'string' ? children : Array.isArray(children) ? children.map(textOf).join('') : children && typeof children === 'object' && 'props' in children ? textOf((children as { props: { children: unknown } }).props.children) : '';
+const edgesOf = (text: string) => screen.queryAllByTestId('text-outline', HIDDEN).filter((c) => textOf(c.props.children) === text);
 const PROPS = { following: false, disabled: false, onRecenter: () => {}, onSetLocation: () => {} };
 
 const fix = (altitudeM: number | null) => usePresence.getState().setSelfPosition({ position: DC, accuracyM: 4.6, timestamp: 1, altitudeM });
@@ -96,7 +99,7 @@ describe('ReadoutDock', () => {
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
     fix(142.4);
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
-    const reserves = () => screen.getAllByTestId('detail-reserve', HIDDEN).map((r) => r.props.children);
+    const reserves = () => screen.getAllByTestId('detail-reserve', HIDDEN).map((r) => textOf(r.props.children));
     expect(reserves()).toEqual(['0000 km', '000°', 'ALT 0000 m', '±0000 m']);
     await screen.unmount();
     await act(async () => useSettings.setState({ altitudeUnit: 'ft', angleUnit: 'mil' }));
@@ -105,6 +108,22 @@ describe('ReadoutDock', () => {
     await screen.unmount();
     await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
     expect(screen.queryAllByTestId('detail-reserve', HIDDEN)).toHaveLength(0);
+  });
+
+  it('narrows the space between each value and its unit, in its outline and its reserve too', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    fix(142.4);
+    await act(async () => useSettings.setState({ altitudeUnit: 'ft', angleUnit: 'mil' }));
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter inline />);
+    const gapsIn = (children: unknown) => (Array.isArray(children) ? children.filter((c) => c?.props?.style?.letterSpacing < 0) : []);
+    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) {
+      const value = screen.getByTestId(id);
+      expect(gapsIn(value.props.children)).toHaveLength(1);
+      expect(textOf(value.props.children)).toMatch(/\d [a-z]+$/);
+    }
+    for (const reserve of screen.getAllByTestId('detail-reserve', HIDDEN)) expect(gapsIn(reserve.props.children)).toHaveLength(1);
+    // ALT keeps its full space; only the number-to-unit one narrows.
+    expect(textOf(screen.getByTestId('gps-altitude').props.children)).toMatch(/^ALT \d/);
   });
 
   it('minimal shows only each row\'s lead and grid', async () => {
@@ -136,7 +155,7 @@ describe('ReadoutDock', () => {
     const me = within(screen.getByTestId('dock-self'));
     expect(me.getAllByTestId('icon-outline', HIDDEN)).toHaveLength(8);
     for (const text of ['ME', formatCoordinate(DC, 'mgrs')]) expect(me.getAllByTestId('text-outline', HIDDEN).filter((c) => c.props.children === text)).toHaveLength(8);
-    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(edgesOf(screen.getByTestId(id).props.children)).toHaveLength(8);
+    for (const id of ['readout-range', 'readout-bearing', 'gps-altitude', 'gps-accuracy']) expect(edgesOf(textOf(screen.getByTestId(id).props.children))).toHaveLength(8);
     // Value colors: each kind of value has its own color, your grid the friendly blue (see AGENTS.md).
     const c = themeColors('dark');
     expect(screen.getByTestId('readout-range')).toHaveStyle({ color: c['value-distance'] });
@@ -255,7 +274,7 @@ describe('ReadoutDock', () => {
       await renderWithProviders(<ReadoutDock {...PROPS} showCenter={false} inline />);
       expect(screen.getByTestId('gps-accuracy')).toHaveTextContent('±7 ft');
       expect(screen.getByLabelText('Held average, accuracy ±7 ft')).toBeTruthy();
-      expect(screen.getAllByTestId('detail-reserve', HIDDEN).map((n) => n.props.children)).toContain('HELD ±00000 ft');
+      expect(screen.getAllByTestId('detail-reserve', HIDDEN).map((n) => textOf(n.props.children))).toContain('HELD ±00000 ft');
     });
 
     it('looks as before when Average mode is off', async () => {
