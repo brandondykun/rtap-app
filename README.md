@@ -199,17 +199,29 @@ The store app is built and updated only from a release branch; new work (the clo
 | Branch | What goes there | Ships to |
 | --- | --- | --- |
 | `main` | New features | development, preview |
+| `feat/<name>` (optional) | One larger feature while it is unfinished | development, preview |
 | `release/1.x` | Fixes for the app in the store | production (and preview, to test a fix) |
 
-**Shipping a version.** On `release/1.x`, make the production build, then tag the commit it was built from, e.g.
-`git tag v1.0.0`. A tag marks every commit that became a store build.
+Changes only flow towards `main`: feature branches into `main`, release fixes into `main`. Nothing goes from `main`
+into a release branch once that version has shipped.
+
+**New features.** Small changes can be committed straight to `main`. A larger one (several days, or broken along the
+way) goes on `git switch -c feat/<name>` from `main` and merges back fast-forward when done (rebase it on `main`
+first if `main` has moved), so `main` always works and can be published to preview.
+
+**Shipping a version.** Until a version first ships, everything on `main` is meant for it, so bring the release branch
+up to date right before the build: `git switch release/1.x && git merge main`. Make the production build there, then tag
+the commit it was built from, e.g. `git tag v1.0.0`. A tag marks every commit that became a store build. From then on,
+`main` moves on to the next version and the release branch only gets fixes.
 
 **Fixing a bug in the store app.**
 
 1. `git switch release/1.x`, fix it and commit.
 2. Publish to preview and check it on RTAP (P), then publish the same commit to production (see above).
-3. Bring the fix into `main`: `git switch main && git merge release/1.x`. Fix on the release branch first, never
-   the other way round, so `main`'s new work never ends up in the store app by accident.
+3. Bring the fix into `main`: `git switch main && git merge --no-ff release/1.x`. This is a merge commit, not a
+   fast-forward (`main` has moved on), so git knows the fix is in `main` and the history shows where it came from.
+   Fix on the release branch first, never the other way round, so `main`'s new work never ends up in the store app
+   by accident.
 
 A fix that needs native code is a new build: raise `version` in `app.json` (1.0.0 → 1.0.1) on the release branch,
 build, tag `v1.0.1`.
@@ -221,6 +233,8 @@ testing a fix there (RTAP (P) then runs the release until you build preview from
 **The next version.** When `main` is ready to ship (e.g. 2.0 with sync), branch `release/2.x` from it and build
 production there. Fixes for 1.x stop then: 2.0 adds native code (accounts, purchases), so its updates can't reach 1.x phones, which get
 2.0 from the store.
+
+**Pushing.** Push the release branch and tags along with `main`: `git push -u origin main release/1.x --tags`.
 
 ### Undoing a bad update
 
@@ -271,7 +285,8 @@ Sentry works out a city from each report's IP address.
 
 ## Conventions
 
-- Work on a feature branch off `main`. Merges are fast-forward only.
+- Small changes go straight to `main`; larger ones on a `feat/<name>` branch off `main`, merged fast-forward only. The
+  one exception: release fixes come into `main` as a merge commit (see [Release branches](#release-branches)).
 - Commit messages follow Conventional Commits (see `.claude/skills/commits`), with no attribution trailers.
 - Use single quotes. Colors come from theme tokens.
 - Install packages with `npx expo install <package>`.
