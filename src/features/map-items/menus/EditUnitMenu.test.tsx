@@ -85,6 +85,26 @@ describe('EditUnitMenu', () => {
     }
   });
 
+  it('selecting a unit while adding one shows that unit, not a menu stuck loading', async () => {
+    const ctx = makeTestContext();
+    const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('hostile', 'infantry'), name: 'HOS-9' });
+    if (!r.ok) throw new Error('setup');
+    const map = observeMissionItems(ctx.db, 'm1').subscribe();
+    await waitFor(() => expect(peekMissionItem(ctx.db, 'm1', r.value.id)).toBeDefined());
+    try {
+      await renderWithProviders(<MenuHost landscape={false} missionId="m1" />, ctx);
+      await act(async () => useMenu.getState().openMenu('unit.add', {}));
+      await screen.findByTestId('add-form');
+      // The add menu's draft clean-up must not wipe the unit the edit menu just loaded.
+      await act(async () => useMenu.getState().openMenu('unit.edit', { itemId: r.value.id }));
+      expect(await screen.findByTestId('item-title')).toHaveAccessibleName(/^HOS-9, /);
+      expect(screen.queryByTestId('item-loading')).toBeNull();
+      expect(useDraft.getState()).toMatchObject({ mode: 'edit', itemId: r.value.id });
+    } finally {
+      map.unsubscribe();
+    }
+  });
+
   it('opens straight onto the details when the map already has the unit, with no empty frame', async () => {
     const ctx = makeTestContext();
     const r = await placePoint(ctx, { missionId: 'm1', coord: AT, sidc: composeSidc('friend', 'armor'), name: 'FRD-2' });

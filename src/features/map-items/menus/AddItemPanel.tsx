@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { MenuHeader } from '@/components/menu/MenuHeader';
@@ -45,10 +45,13 @@ export function AddItemPanel({
       const start = at ?? useInteraction.getState().cameraCenter;
       useDraft.getState().startAdd({ coord: start, source: at ? 'press' : 'crosshair', category, unitPreset });
     }
-    return () => useDraft.getState().clear();
     // Opened once per panel; later long-presses move the draft instead of reopening.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A layout effect, as in EditItemPanel: when selecting an item on the map replaces this menu, this clears the draft
+  // before that item's menu fills it. (A plain effect's clean-up would run after, wiping the item and leaving it loading.)
+  useLayoutEffect(() => () => useDraft.getState().clear(), []);
 
   const canAdd = useDraft((s) => adapter.canSave(s));
 
