@@ -18,6 +18,7 @@ import { ornamentPositions, type Insets } from '../layout';
 import { needsNewGrid } from '../layers/mgrs-grid';
 import { terrainExaggeration, THREE_D_PITCH } from '../terrain/three-d';
 import { cameraFromMapState, MIN_ZOOM, toCameraStop, viewFromMapState } from './camera';
+import { scheduleCameraPublish } from './camera-publish';
 import { createLatestThrottle } from './frame-throttle';
 import { BASEMAP_LABELS, BASEMAP_STYLE_URLS } from './mapbox';
 
@@ -93,7 +94,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
     toolbarHeight: toolbar,
     android: Platform.OS === 'android',
   });
-  const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera), []);
+  const publishCamera = useMemo(() => createLatestThrottle(useInteraction.getState().setCamera, scheduleCameraPublish), []);
   const checkGridView = useMemo(() => createLatestThrottle(refreshGridView), []);
   // The latest view, so the grid can be drawn the moment it is switched on.
   const latestView = useRef<ViewBounds | null>(null);

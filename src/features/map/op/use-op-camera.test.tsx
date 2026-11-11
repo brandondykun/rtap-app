@@ -124,6 +124,37 @@ describe('useOpCamera', () => {
     expect(lastValues()[0][2]).toBe(350);
   });
 
+  it('sends one placement at a time: moves made while one is applying are sent as the latest, once it lands', async () => {
+    map().queryTerrainElevation.mockResolvedValue(300);
+    setup();
+    await act(async () => useOp.getState().stake(AT, 45));
+    await flushFrames();
+    let land: () => void = () => {};
+    map()._runNative.mockClear();
+    map()._runNative.mockImplementation(() => new Promise<undefined>((resolve) => (land = () => resolve(undefined))));
+    try {
+      await act(async () => useOp.getState().look(10, 0));
+      await flushFrames();
+      expect(placements()).toHaveLength(1);
+      // Two more frames of turning while the first is still applying: nothing is sent yet.
+      await act(async () => useOp.getState().look(5, 0));
+      await flushFrames();
+      await act(async () => useOp.getState().look(5, 0));
+      await flushFrames();
+      expect(placements()).toHaveLength(1);
+      // Landing runs through a short promise chain (the native call, then the hook's follow-up).
+      await act(async () => {
+        land();
+        for (let i = 0; i < 5; i++) await Promise.resolve();
+      });
+      await flushFrames();
+      expect(placements()).toHaveLength(2);
+      expect(lastValues()[0][4]).toBe(295);
+    } finally {
+      map()._runNative.mockImplementation(async () => undefined);
+    }
+  });
+
   it('does not re-place on a refresh that finds the same ground', async () => {
     map().queryTerrainElevation.mockResolvedValue(300);
     setup();

@@ -22,11 +22,26 @@ export function useOpCamera(mapRef: RefObject<MapView | null>): void {
     let frame: number | null = null;
     let timer: ReturnType<typeof setInterval> | null = null;
     let first: ReturnType<typeof setTimeout> | null = null;
+    // One placement in flight at a time. Turning asks for one per frame, faster than the map can apply them; queued up
+    // they delayed each other. Moves made meanwhile are sent as the latest once it lands.
+    let placing = false;
+    let again = false;
 
     const place = () => {
+      if (placing) {
+        again = true;
+        return;
+      }
       const { at, groundM, eyeM, pitch, bearing } = useOp.getState();
       if (useOp.getState().phase !== 'on' || !at || groundM === null) return;
-      setFreeCamera(mapRef.current, { at, altitudeM: groundM + eyeM, pitch, bearing });
+      placing = true;
+      void setFreeCamera(mapRef.current, { at, altitudeM: groundM + eyeM, pitch, bearing }).finally(() => {
+        placing = false;
+        if (again) {
+          again = false;
+          schedule();
+        }
+      });
     };
 
     const schedule = () => {
