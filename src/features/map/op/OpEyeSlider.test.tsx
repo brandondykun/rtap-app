@@ -58,12 +58,6 @@ describe('OpEyeSlider', () => {
     expect(useOp.getState().eyeM).toBe(250);
   });
 
-  it('shows no magnification', async () => {
-    useOp.setState({ zoom: 2 });
-    await renderWithProviders(<OpEyeSlider />);
-    expect(screen.queryByText(/×/)).toBeNull();
-  });
-
   it('lets touches on the panel around the track through to the map', async () => {
     await renderWithProviders(<OpEyeSlider />);
     expect(screen.getByTestId('op-eye-slider')).toHaveProp('pointerEvents', 'box-none');

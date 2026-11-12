@@ -1234,15 +1234,6 @@ describe('MapScreen', () => {
       expect(mapboxMock().__camera.setCamera).toHaveBeenCalledWith(expect.objectContaining({ centerCoordinate: [-77, 38.9], zoomLevel: 15, pitch: 60, heading: 30 }));
     });
 
-    it('exiting while magnified returns at 1×', async () => {
-      await openMap();
-      await stakeOnMap();
-      await act(async () => useOp.getState().setZoom(2.5));
-      await fireEvent.press(screen.getByLabelText('Exit'));
-      expect(useOp.getState().zoom).toBe(1);
-      expect(useOp.getState().phase).toBe('off');
-    });
-
     it('turning 3D off in OP mode exits and flattens', async () => {
       await openMap();
       await stakeOnMap();

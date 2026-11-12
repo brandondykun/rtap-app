@@ -36,20 +36,6 @@ describe('OpGestures', () => {
     expect(useOp.getState().pitch).toBeCloseTo(50);
   });
 
-  it('pinching magnifies up to 3x', async () => {
-    useOp.setState({ phase: 'on', zoom: 1 });
-    await renderGestures();
-    await act(() => {
-      fireGestureHandler(getByGestureTestId('op-pinch'), [
-        { state: State.BEGAN },
-        { state: State.ACTIVE },
-        { state: State.ACTIVE, scale: 5 },
-        { state: State.END },
-      ]);
-    });
-    expect(useOp.getState().zoom).toBe(3);
-  });
-
   it('ignores gestures when not in OP mode', async () => {
     await renderGestures();
     await act(() => {
@@ -59,15 +45,8 @@ describe('OpGestures', () => {
         { state: State.ACTIVE, translationX: 40, translationY: 50 },
         { state: State.END },
       ]);
-      fireGestureHandler(getByGestureTestId('op-pinch'), [
-        { state: State.BEGAN },
-        { state: State.ACTIVE },
-        { state: State.ACTIVE, scale: 2 },
-        { state: State.END },
-      ]);
     });
     expect(useOp.getState().bearing).toBe(INITIAL_OP.bearing);
     expect(useOp.getState().pitch).toBe(INITIAL_OP.pitch);
-    expect(useOp.getState().zoom).toBe(1);
   });
 });

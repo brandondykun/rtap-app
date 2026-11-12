@@ -12,7 +12,6 @@ export type OpValues = {
   eyeM: number;
   bearing: number;
   pitch: number;
-  zoom: number;
 };
 
 type OpActions = {
@@ -22,7 +21,6 @@ type OpActions = {
   setGround: (m: number) => void;
   look: (dBearing: number, dPitch: number) => void;
   setEye: (m: number) => void;
-  setZoom: (z: number) => void;
   exit: () => void;
 };
 
@@ -33,12 +31,10 @@ export const INITIAL_OP: OpValues = {
   eyeM: 10,
   bearing: 0,
   pitch: 80,
-  zoom: 1,
 };
 
 export const OP_EYE_RANGE = [5, 250] as const;
 export const OP_MAX_PITCH = 85;
-export const OP_ZOOM_RANGE = [1, 3] as const;
 
 const ENTRY_PITCH = 80;
 
@@ -51,7 +47,7 @@ export const useOp = create<OpValues & OpActions>()((set) => ({
   startPicking: () => set({ phase: 'picking' }),
   cancel: () => set((s) => (s.phase === 'picking' ? { phase: 'off' } : {})),
   stake: (at, bearing) =>
-    set({ phase: 'on', at, bearing, pitch: ENTRY_PITCH, groundM: null, zoom: OP_ZOOM_RANGE[0] }),
+    set({ phase: 'on', at, bearing, pitch: ENTRY_PITCH, groundM: null }),
   setGround: (m) => {
     if (Number.isFinite(m)) set({ groundM: m });
   },
@@ -64,9 +60,6 @@ export const useOp = create<OpValues & OpActions>()((set) => ({
   },
   setEye: (m) => {
     if (Number.isFinite(m)) set({ eyeM: clamp(m, OP_EYE_RANGE) });
-  },
-  setZoom: (z) => {
-    if (Number.isFinite(z)) set({ zoom: clamp(z, OP_ZOOM_RANGE) });
   },
   exit: () => set((s) => ({ ...INITIAL_OP, eyeM: s.eyeM })),
 }));
