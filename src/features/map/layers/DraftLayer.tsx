@@ -11,14 +11,15 @@ import { useReadoutOrigin } from '../interaction/use-readout-origin';
 import { draftFeatureCollection } from './draft-features';
 import {
   DRAFT_FILTERS,
-  DRAFT_RING_STYLE,
-  DRAFT_SYMBOL_STYLE,
   makeDraftLabelStyle,
+  makeDraftRingStyle,
+  makeDraftSymbolStyle,
   makeRangeLabelStyle,
   makeRangeLineStyle,
 } from './styles';
 import { useOpSymbolStyle } from './op-symbol-scale';
 import { useLabelTextSize } from './use-label-text-size';
+import { useSymbolScale } from './use-symbol-scale';
 
 type Filter = ComponentProps<typeof SymbolLayer>['filter'];
 const filter = (f: unknown) => f as Filter;
@@ -42,9 +43,10 @@ export function DraftLayer() {
   const declinationOverrideDeg = useSettings((s) => s.declinationOverrideDeg);
 
   const labelSize = useLabelTextSize();
-  const ringStyle = useOpSymbolStyle(DRAFT_RING_STYLE);
-  const symbolStyle = useOpSymbolStyle(DRAFT_SYMBOL_STYLE);
-  const labelStyle = useMemo(() => makeDraftLabelStyle(colors, labelSize), [colors, labelSize]);
+  const symbolScale = useSymbolScale();
+  const ringStyle = useOpSymbolStyle(useMemo(() => makeDraftRingStyle(symbolScale), [symbolScale]));
+  const symbolStyle = useOpSymbolStyle(useMemo(() => makeDraftSymbolStyle(symbolScale), [symbolScale]));
+  const labelStyle = useMemo(() => makeDraftLabelStyle(colors, labelSize, symbolScale), [colors, labelSize, symbolScale]);
   const lineStyle = useMemo(() => makeRangeLineStyle(colors), [colors]);
   const rangeLabelStyle = useMemo(() => makeRangeLabelStyle(colors), [colors]);
   const opLabelStyle = useOpSymbolStyle(labelStyle);

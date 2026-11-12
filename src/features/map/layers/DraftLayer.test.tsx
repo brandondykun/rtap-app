@@ -5,12 +5,13 @@ import { INITIAL_DRAFT, useDraft } from '@/stores/draft';
 import { useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { INITIAL_PRESENCE, usePresence } from '@/stores/presence';
+import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { mapboxMock } from '@/test-utils/mapbox-mock';
 import { renderWithProviders } from '@/test-utils/render';
 
 import { DraftLayer } from './DraftLayer';
 import { opSize, opTextSize } from './op-symbol-scale';
-import { DRAFT_SYMBOL_STYLE } from './styles';
+import { DRAFT_SYMBOL_STYLE, makeDraftSymbolStyle, SYMBOL_SCALES } from './styles';
 
 jest.mock('@rnmapbox/maps');
 
@@ -21,6 +22,7 @@ beforeEach(() => {
   useDraft.setState(INITIAL_DRAFT);
   usePresence.setState(INITIAL_PRESENCE);
   useOp.setState(INITIAL_OP);
+  useSettings.setState(DEFAULT_SETTINGS);
 });
 
 describe('DraftLayer', () => {
@@ -106,6 +108,15 @@ describe('DraftLayer', () => {
     useDraft.getState().setCoord({ lat: 38.9, lon: -77 }, 'press');
     await renderWithProviders(<DraftLayer />);
     expect((mapboxMock().__props.ShapeSource.draft.shape as Shape).features).toEqual([]);
+  });
+
+  it('sizes the draft symbol and its ring by the Symbol size setting', async () => {
+    useSettings.setState({ symbolSize: 'large' });
+    useDraft.getState().startAdd({ coord: DRAFT, source: 'crosshair', category: 'point' });
+    await renderWithProviders(<DraftLayer />);
+    const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { iconSize?: unknown }).iconSize;
+    expect(size('draft-symbol')).toEqual(makeDraftSymbolStyle(SYMBOL_SCALES.large).iconSize);
+    expect(size('draft-ring')).toBe(SYMBOL_SCALES.large);
   });
 
   it('in OP mode sizes the draft symbol and its ring by zoom, and back to normal after', async () => {

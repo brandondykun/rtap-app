@@ -17,6 +17,7 @@ export const SETTINGS_HELP: readonly SettingHelp[] = [
     choices: 'Satellite · Hybrid · Topo · Dark',
     help: 'The map underneath. Hybrid adds roads and place names to the imagery, Topo is a contour map, Dark is a dim street map.',
   },
+  { name: 'Symbol size', choices: 'Small · Medium · Large', help: 'The size of unit and point symbols on the map. Their names move with them.' },
   { name: 'Label text size', choices: 'Small · Medium · Large', help: 'The size of names on units, points, lines and polygons.' },
   { name: '3D terrain height', choices: '1× · 1.5× · 2× · 3×', help: 'How much hills are raised in 3D. 1× is true scale.' },
   { name: 'Terrain in 2D', help: 'Raises hills at true scale in 2D.' },

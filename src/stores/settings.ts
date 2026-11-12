@@ -12,6 +12,8 @@ export const BASEMAPS: readonly Basemap[] = ['satellite', 'hybrid', 'topo', 'dar
 export type AltitudeUnit = 'm' | 'ft';
 /** Text size of the name labels on map items. */
 export type LabelSize = 'small' | 'medium' | 'large';
+/** Size of the unit and point symbols on the map. */
+export type SymbolSize = 'small' | 'medium' | 'large';
 export type MissionSort = 'recent' | 'name' | 'most';
 /** How dark the see-through panels over the map are (toolbar, readouts, map buttons, bars, toasts). */
 export type PanelBackground = 'clear' | 'light' | 'heavy' | 'solid';
@@ -62,6 +64,7 @@ type SettingsValues = {
   /** Terrain raised at true scale in 2D; off lays it flat in 2D (3D still uses `terrainExaggeration`). */
   terrainIn2d: boolean;
   labelSize: LabelSize;
+  symbolSize: SymbolSize;
   missionSort: MissionSort;
   panelBackground: PanelBackground;
 };
@@ -90,6 +93,7 @@ type SettingsActions = {
   setTerrainExaggeration: (x: number) => boolean;
   setTerrainIn2d: (on: boolean) => void;
   setLabelSize: (size: LabelSize) => void;
+  setSymbolSize: (size: SymbolSize) => void;
   setMissionSort: (sort: MissionSort) => void;
   setPanelBackground: (level: PanelBackground) => void;
   /** One-tap toggle used by the readout: grid ↔ magnetic (true north goes to grid). */
@@ -124,6 +128,7 @@ export const DEFAULT_SETTINGS: SettingsValues = {
   terrainExaggeration: 1.5,
   terrainIn2d: true,
   labelSize: 'medium',
+  symbolSize: 'medium',
   missionSort: 'recent',
   panelBackground: 'heavy',
 };
@@ -174,6 +179,7 @@ function mergePersisted(persisted: unknown, current: SettingsState): SettingsSta
     terrainExaggeration: validExaggeration(p.terrainExaggeration) ? p.terrainExaggeration : current.terrainExaggeration,
     terrainIn2d: typeof p.terrainIn2d === 'boolean' ? p.terrainIn2d : current.terrainIn2d,
     labelSize: pick(p.labelSize, ['small', 'medium', 'large'], current.labelSize),
+    symbolSize: pick(p.symbolSize, ['small', 'medium', 'large'], current.symbolSize),
     missionSort: pick(p.missionSort, MISSION_SORTS, current.missionSort),
     panelBackground: pick(p.panelBackground, PANEL_BACKGROUNDS, current.panelBackground),
   };
@@ -209,6 +215,7 @@ export const useSettings = create<SettingsState>()(
       },
       setTerrainIn2d: (terrainIn2d) => set({ terrainIn2d }),
       setLabelSize: (labelSize) => set({ labelSize }),
+      setSymbolSize: (symbolSize) => set({ symbolSize }),
       setMissionSort: (missionSort) => set({ missionSort }),
       setPanelBackground: (panelBackground) => set({ panelBackground }),
       toggleGridMagnetic: () => set({ northRef: get().northRef === 'grid' ? 'magnetic' : 'grid' }),
@@ -223,7 +230,7 @@ export const useSettings = create<SettingsState>()(
       version: 1,
       storage: createJSONStorage(() => syncStorage),
       merge: mergePersisted,
-      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, keyboardSuggestions, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, gridStrength, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, missionSort, panelBackground }) => ({
+      partialize: ({ coordinateFormat, angleUnit, northRef, declinationOverrideDeg, basemap, altitudeUnit, showLineDistances, showZoomButtons, longPressAddUnit, keyboardSuggestions, showCenterGrid, minimalLandscapeGrids, showToolbarText, showMgrsGrid, showGridLabels, showGrid100m, gridColor, gridStrength, showMapLabels, terrain3d, terrainExaggeration, terrainIn2d, labelSize, symbolSize, missionSort, panelBackground }) => ({
         coordinateFormat,
         angleUnit,
         northRef,
@@ -247,6 +254,7 @@ export const useSettings = create<SettingsState>()(
         terrainExaggeration,
         terrainIn2d,
         labelSize,
+        symbolSize,
         missionSort,
         panelBackground,
       }),

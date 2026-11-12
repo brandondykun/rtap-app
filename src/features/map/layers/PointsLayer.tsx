@@ -14,8 +14,9 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 import { nearestFeature, SYMBOL_HITBOX } from './nearest-feature';
 import { useOpSymbolStyle } from './op-symbol-scale';
-import { makePointLabelStyle, POINT_SYMBOL_STYLE } from './styles';
+import { makePointLabelStyle, makePointSymbolStyle } from './styles';
 import { useLabelTextSize } from './use-label-text-size';
+import { useSymbolScale } from './use-symbol-scale';
 
 type LayerFilter = ComponentProps<typeof SymbolLayer>['filter'];
 
@@ -47,11 +48,12 @@ export function PointsLayer({ missionId, excludeId = null, onItemPress }: Props)
   const filter = useMemo(() => hiddenFilter(excludeId ? [...hiddenIds, excludeId] : hiddenIds) as unknown as LayerFilter, [hiddenIds, excludeId]);
   const showLabels = useSettings((s) => s.showMapLabels);
   const labelSize = useLabelTextSize();
+  const symbolScale = useSymbolScale();
   const labelStyle = useMemo(
-    () => ({ ...makePointLabelStyle(colors, labelSize), visibility: showLabels ? 'visible' : 'none' }) as const,
-    [colors, showLabels, labelSize],
+    () => ({ ...makePointLabelStyle(colors, labelSize, symbolScale), visibility: showLabels ? 'visible' : 'none' }) as const,
+    [colors, showLabels, labelSize, symbolScale],
   );
-  const symbolStyle = useOpSymbolStyle(POINT_SYMBOL_STYLE);
+  const symbolStyle = useOpSymbolStyle(useMemo(() => makePointSymbolStyle(symbolScale), [symbolScale]));
   const opLabelStyle = useOpSymbolStyle(labelStyle);
 
   return (

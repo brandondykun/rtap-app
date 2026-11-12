@@ -8,11 +8,12 @@ import { useInteraction } from '@/stores/interaction';
 import { INITIAL_OP, useOp } from '@/stores/op';
 import { DEFAULT_SETTINGS, useSettings } from '@/stores/settings';
 import { renderWithProviders } from '@/test-utils/render';
+import { themeColors } from '@/theme/tokens';
 
 import { opSize, opTextSize } from './op-symbol-scale';
 import { SYMBOL_HITBOX } from './nearest-feature';
 import { POINT_LABEL_MIN_ZOOM, PointsLayer } from './PointsLayer';
-import { POINT_SYMBOL_STYLE } from './styles';
+import { makePointLabelStyle, makePointSymbolStyle, POINT_SYMBOL_STYLE, SYMBOL_SCALES } from './styles';
 
 jest.mock('@rnmapbox/maps');
 
@@ -137,6 +138,16 @@ describe('PointsLayer', () => {
     expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textSize: 12 });
     await act(async () => useSettings.getState().setLabelSize('large'));
     expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textSize: 15 });
+    useSettings.setState(DEFAULT_SETTINGS);
+  });
+
+  it('sizes the symbols and moves their labels by the Symbol size setting', async () => {
+    await renderWithProviders(<PointsLayer missionId="m1" />);
+    const props = mapboxMock().__props;
+    expect(props.SymbolLayer['points-symbols'].style).toMatchObject({ iconSize: POINT_SYMBOL_STYLE.iconSize });
+    await act(async () => useSettings.getState().setSymbolSize('small'));
+    expect(props.SymbolLayer['points-symbols'].style).toMatchObject({ iconSize: makePointSymbolStyle(SYMBOL_SCALES.small).iconSize });
+    expect(props.SymbolLayer['points-labels'].style).toMatchObject({ textOffset: makePointLabelStyle(themeColors('dark'), 12, SYMBOL_SCALES.small).textOffset });
     useSettings.setState(DEFAULT_SETTINGS);
   });
 

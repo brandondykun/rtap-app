@@ -310,6 +310,15 @@ describe('SettingsMenu', () => {
     expect(section.getByLabelText('Light')).toBeDisabled();
   });
 
+  it('sets the unit and point symbol size (Medium by default)', async () => {
+    await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
+    const section = within(screen.getByTestId('menu-section-Symbol size'));
+    expect(section.getByLabelText('Medium')).toBeSelected();
+    await fireEvent.press(section.getByLabelText('Small'));
+    expect(useSettings.getState().symbolSize).toBe('small');
+    expect(section.getByLabelText('Small')).toBeSelected();
+  });
+
   it('sets the label text size (Medium by default)', async () => {
     await renderWithProviders(<SettingsMenu params={{}} missionId="m1" />);
     expect(screen.getByText('Label text size')).toBeTruthy();

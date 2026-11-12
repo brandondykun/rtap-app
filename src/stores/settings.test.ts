@@ -152,6 +152,13 @@ describe('settings store', () => {
     expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ labelSize: 'large' });
   });
 
+  it('sets and persists the symbol size (medium by default)', () => {
+    expect(useSettings.getState().symbolSize).toBe('medium');
+    useSettings.getState().setSymbolSize('small');
+    expect(useSettings.getState().symbolSize).toBe('small');
+    expect(JSON.parse(Storage.getItemSync('settings') ?? '{}').state).toMatchObject({ symbolSize: 'small' });
+  });
+
   it('toggles grid ↔ magnetic', () => {
     useSettings.getState().toggleGridMagnetic();
     expect(useSettings.getState().northRef).toBe('magnetic');

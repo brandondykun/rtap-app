@@ -15,7 +15,7 @@ import type { AngleUnit, NorthRef } from '@/lib/geo/types';
 import { gridShadeColors, type GridShade } from '@/theme/tokens';
 import { useInteraction } from '@/stores/interaction';
 import { useMenu } from '@/stores/menu';
-import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type GridStrength, type LabelSize, type PanelBackground } from '@/stores/settings';
+import { useSettings, type AltitudeUnit, type Basemap, type CoordinateFormat, type GridStrength, type LabelSize, type PanelBackground, type SymbolSize } from '@/stores/settings';
 
 import { defineMenu, type MenuComponentProps } from '../define-menu';
 import { formatAngleSize, formatEastWest, formatEastWestBoth, roundsToZero } from './settings-format';
@@ -130,6 +130,8 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
   const setBasemap = useSettings((s) => s.setBasemap);
   const labelSize = useSettings((s) => s.labelSize);
   const setLabelSize = useSettings((s) => s.setLabelSize);
+  const symbolSize = useSettings((s) => s.symbolSize);
+  const setSymbolSize = useSettings((s) => s.setSymbolSize);
   const showZoomButtons = useSettings((s) => s.showZoomButtons);
   const setShowZoomButtons = useSettings((s) => s.setShowZoomButtons);
   const longPressAddUnit = useSettings((s) => s.longPressAddUnit);
@@ -213,6 +215,18 @@ export function SettingsMenu(_props: MenuComponentProps<'settings'>) {
       <MenuGroup title="Map" icon="map-outline">
         <MenuSection label="Basemap">
           <MenuSegmented<Basemap> options={BASEMAP_OPTIONS} value={basemap} onChange={setBasemap} />
+        </MenuSection>
+        <MenuSection label="Symbol size">
+          <MenuSegmented<SymbolSize>
+            options={[
+              { value: 'small', label: 'Small' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large' },
+            ]}
+            value={symbolSize}
+            onChange={setSymbolSize}
+          />
+          <Text className="text-xs text-text-muted">Units and points on the map.</Text>
         </MenuSection>
         <MenuSection label="Label text size">
           <MenuSegmented<LabelSize>

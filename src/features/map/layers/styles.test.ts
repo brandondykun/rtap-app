@@ -5,7 +5,12 @@ import { LABEL_CHIP_CONTENT_INSET_PT } from '../images/map-image-specs';
 import { MAP_IMAGE_IDS } from '../images/map-images';
 
 import {
+  DRAFT_RING_STYLE,
   DRAFT_SYMBOL_STYLE,
+  makeDraftRingStyle,
+  makeDraftSymbolStyle,
+  makePointSymbolStyle,
+  SYMBOL_SCALES,
   LABEL_TEXT_SIZES,
   LINE_DASH,
   LINE_WIDTHS,
@@ -41,6 +46,20 @@ describe('symbol sizes', () => {
     const bySize = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE, MARKER_ICON_SIZE];
     expect(POINT_SYMBOL_STYLE.iconSize).toEqual(bySize);
     expect(DRAFT_SYMBOL_STYLE.iconSize).toEqual(bySize);
+  });
+
+  it('scales unit and point symbols, and the draft and its ring, by the Symbol size setting (medium is today’s size)', () => {
+    expect(SYMBOL_SCALES.medium).toBe(1);
+    expect(SYMBOL_SCALES.small).toBeLessThan(1);
+    expect(SYMBOL_SCALES.large).toBeGreaterThan(1);
+    expect(makePointSymbolStyle(1)).toEqual(POINT_SYMBOL_STYLE);
+    expect(makeDraftSymbolStyle(1)).toEqual(DRAFT_SYMBOL_STYLE);
+    expect(makeDraftRingStyle(1)).toEqual(DRAFT_RING_STYLE);
+    const small = SYMBOL_SCALES.small;
+    const scaled = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE * small, MARKER_ICON_SIZE * small];
+    expect(makePointSymbolStyle(small).iconSize).toEqual(scaled);
+    expect(makeDraftSymbolStyle(small).iconSize).toEqual(scaled);
+    expect(makeDraftRingStyle(small).iconSize).toBe(small);
   });
 });
 
@@ -235,6 +254,15 @@ describe('label text sizes', () => {
         expect(pointGap(makePointLabelStyle(colors, size), sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), sidc));
       }
       expect(pt(makeDraftLabelStyle(colors, size), 1)).toBeCloseTo(pt(makeDraftLabelStyle(colors), 1));
+    }
+  });
+
+  it('moves each label in with a smaller symbol and out with a larger one, so it stays just below it', () => {
+    for (const scale of Object.values(SYMBOL_SCALES)) {
+      for (const sidc of [...POINT_TYPES.map((t) => t.sidc), HOSTILE_UNIT, FRIENDLY_UNIT]) {
+        expect(pointGap(makePointLabelStyle(colors, 15, scale), sidc)).toBeCloseTo(pointGap(makePointLabelStyle(colors), sidc) * scale);
+      }
+      expect(pt(makeDraftLabelStyle(colors, 15, scale), 1)).toBeCloseTo(pt(makeDraftLabelStyle(colors), 1) * scale);
     }
   });
 

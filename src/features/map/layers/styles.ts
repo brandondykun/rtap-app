@@ -1,7 +1,7 @@
 import type { CircleLayerStyle, FillLayerStyle, LineLayerStyle, SymbolLayerStyle } from '@rnmapbox/maps';
 
 import { sidcForPointType } from '@/features/symbology/point-types';
-import type { GridStrength, LabelSize } from '@/stores/settings';
+import type { GridStrength, LabelSize, SymbolSize } from '@/stores/settings';
 import type { SemanticToken } from '@/theme/tokens';
 
 import { MIN_ZOOM } from '../canvas/camera';
@@ -19,8 +19,10 @@ export const MAP_LABEL_FONT = ['DIN Pro Medium', 'Arial Unicode MS Regular'];
 export const MARKER_ICON_SIZE = 0.8;
 /** Scale for point (control-measure overlay) symbols: a little smaller than units. */
 export const POINT_ICON_SIZE = 0.76;
-/** Per-feature size from its `category` property (set by the selectors from itemCategory). */
-const ICON_SIZE_BY_CATEGORY: SymbolLayerStyle['iconSize'] = ['match', ['get', 'category'], 'point', POINT_ICON_SIZE, MARKER_ICON_SIZE];
+/** The Symbol size setting: unit and point symbols (and the draft) at this times their size; medium is the original. */
+export const SYMBOL_SCALES: Record<SymbolSize, number> = { small: 0.75, medium: 1, large: 1.25 };
+/** Per-feature size from its `category` property (set by the selectors from itemCategory), times `scale`. */
+const iconSizeByCategory = (scale: number): SymbolLayerStyle['iconSize'] => ['match', ['get', 'category'], 'point', POINT_ICON_SIZE * scale, MARKER_ICON_SIZE * scale];
 /** Item label text sizes in pt for the Label text size setting (medium is the original size). */
 export const LABEL_TEXT_SIZES: Record<LabelSize, number> = { small: 10, medium: 12, large: 15 };
 // Label offsets are in ems; these are the distances in pt (at 12 pt: 1.3, 0.9 and 3.3 em).
@@ -42,17 +44,18 @@ const LABEL_CHIP_PADDING: [number, number, number, number] = [0, 2, 0, 2];
  */
 const POINT_CHIP_PADDING: [number, number, number, number] = [-1.5, 0.5, -1.5, 0.5];
 
-/** Symbol icons: every point always shows; collisions never hide a symbol. */
-export const POINT_SYMBOL_STYLE: SymbolLayerStyle = {
-  iconImage: ['get', 'sidc'],
-  iconSize: ICON_SIZE_BY_CATEGORY,
-  iconAllowOverlap: true,
-  iconIgnorePlacement: true,
-};
+/** Symbol icons at `scale` (SYMBOL_SCALES): every point always shows; collisions never hide a symbol. */
+export function makePointSymbolStyle(scale: number): SymbolLayerStyle {
+  return { iconImage: ['get', 'sidc'], iconSize: iconSizeByCategory(scale), iconAllowOverlap: true, iconIgnorePlacement: true };
+}
+export const POINT_SYMBOL_STYLE = makePointSymbolStyle(1);
 
-/** Label chips below each symbol; labels may hide each other when crowded (never the symbols). */
-export function makePointLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
-  const below = (gapPt: number) => ['literal', [0, gapPt / textSize]];
+/**
+ * Label chips below each symbol; labels may hide each other when crowded (never the symbols). `symbolScale` (SYMBOL_SCALES)
+ * moves each label in or out with its symbol's size, so it stays just below it.
+ */
+export function makePointLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium, symbolScale = 1): SymbolLayerStyle {
+  const below = (gapPt: number) => ['literal', [0, (gapPt * symbolScale) / textSize]];
   return {
     textField: ['get', 'name'],
     textFont: MAP_LABEL_FONT,
@@ -114,28 +117,26 @@ const role = (r: string) => ['==', ['get', 'role'], r];
 /** Layer filters for the draft source's three feature roles. */
 export const DRAFT_FILTERS = { draft: role('draft'), range: role('range'), rangeLabel: role('range-label') };
 
-export const DRAFT_RING_STYLE: SymbolLayerStyle = {
-  iconImage: MAP_IMAGE_IDS.draftRing,
-  iconAllowOverlap: true,
-  iconIgnorePlacement: true,
-};
+/** The dashed ring around the draft, at `scale` (SYMBOL_SCALES) like its symbol; at 1 the image's own size. */
+export function makeDraftRingStyle(scale: number): SymbolLayerStyle {
+  return { iconImage: MAP_IMAGE_IDS.draftRing, ...(scale === 1 ? {} : { iconSize: scale }), iconAllowOverlap: true, iconIgnorePlacement: true };
+}
+export const DRAFT_RING_STYLE = makeDraftRingStyle(1);
 
-export const DRAFT_SYMBOL_STYLE: SymbolLayerStyle = {
-  iconImage: ['get', 'sidc'],
-  iconSize: ICON_SIZE_BY_CATEGORY,
-  iconAllowOverlap: true,
-  iconIgnorePlacement: true,
-};
+export function makeDraftSymbolStyle(scale: number): SymbolLayerStyle {
+  return { iconImage: ['get', 'sidc'], iconSize: iconSizeByCategory(scale), iconAllowOverlap: true, iconIgnorePlacement: true };
+}
+export const DRAFT_SYMBOL_STYLE = makeDraftSymbolStyle(1);
 
-/** Amber "HOS-4 · NEW" chip below the draft; always shown. */
-export function makeDraftLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium): SymbolLayerStyle {
+/** Amber "HOS-4 · NEW" chip below the draft (its ring scaled by `symbolScale`); always shown. */
+export function makeDraftLabelStyle(colors: Record<SemanticToken, string>, textSize = LABEL_TEXT_SIZES.medium, symbolScale = 1): SymbolLayerStyle {
   return {
     textField: ['get', 'label'],
     textFont: MAP_LABEL_FONT,
     textSize,
     textColor: colors['on-accent'],
     textAnchor: 'top',
-    textOffset: [0, DRAFT_LABEL_GAP_PT / textSize],
+    textOffset: [0, (DRAFT_LABEL_GAP_PT * symbolScale) / textSize],
     iconImage: MAP_IMAGE_IDS.labelChipAccent,
     iconTextFit: 'both',
     iconTextFitPadding: LABEL_CHIP_PADDING,
