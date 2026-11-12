@@ -1204,6 +1204,14 @@ describe('MapScreen', () => {
       expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBe(before);
     });
 
+    it('in OP mode a minimized menu bar pushes the readout dock up instead of covering it', async () => {
+      await openMap();
+      await stakeOnMap();
+      const before = StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom;
+      await act(async () => useMenu.setState({ panelFrame: { side: 'bottom', size: 48 }, panelMinimized: true }));
+      expect(StyleSheet.flatten(screen.getByTestId('map-controls-bottom').props.style).bottom).toBeGreaterThan(before);
+    });
+
     it('in OP mode Exit floats alone bottom right under the eye slider, and the dock keeps the CTR readout FROM OP', async () => {
       await openMap();
       await stakeOnMap();

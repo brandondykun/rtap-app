@@ -140,6 +140,7 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
   const averageOn = useGpsAverage((s) => s.phase !== 'off');
   const averageHeld = useGpsAverage((s) => s.phase === 'paused');
   const panel = useMenu((s) => s.panelFrame);
+  const panelMinimized = useMenu((s) => s.panelMinimized);
   const topId = useMenu((s) => topMenu(s)?.id ?? null);
   // The menu the stack started from: Layers stays the open tool while an item drilled into from it shows.
   const rootId = useMenu((s) => s.stack[0]?.id ?? null);
@@ -629,8 +630,9 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         onZoomIn={() => zoomBy(1)}
         onZoomOut={() => zoomBy(-1)}
         onRecenter={recenter}
-        // In OP mode a menu covers the readout and bar rather than pushing them up into the view.
-        panel={opPhase === 'on' ? null : panel}
+        // In OP mode an open menu covers the readout and bar rather than pushing them up into the view;
+        // minimized, its reopen bar is small enough to sit under them, so it still lifts them clear.
+        panel={opPhase === 'on' && !panelMinimized ? null : panel}
         showNorthUp={opPhase !== 'on'}
         side={
           opPhase === 'on' ? (
