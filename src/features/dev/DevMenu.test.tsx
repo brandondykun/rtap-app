@@ -1,8 +1,8 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { renderWithProviders } from '@/test-utils/render';
 
-import { DevMenu } from './DevMenu';
+import { DEV_BUTTON_HIDE_MS, DevMenu } from './DevMenu';
 
 describe('DevMenu', () => {
   it('is one small button until opened, then lists its actions', async () => {
@@ -33,5 +33,22 @@ describe('DevMenu', () => {
     await fireEvent.press(screen.getByLabelText('Close developer menu', { includeHiddenElements: true }));
     expect(screen.queryByTestId('dev-menu')).toBeNull();
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it('Hide button hides the wrench for a while, then brings it back', async () => {
+    jest.useFakeTimers();
+    try {
+      await renderWithProviders(<DevMenu actions={[]} />);
+      await fireEvent.press(screen.getByRole('button', { name: 'Developer menu' }));
+      await fireEvent.press(screen.getByRole('button', { name: 'Hide button' }));
+      expect(screen.queryByRole('button', { name: 'Developer menu' })).toBeNull();
+      expect(screen.getByTestId('dev-menu-hidden')).toBeTruthy();
+      await act(() => jest.advanceTimersByTime(DEV_BUTTON_HIDE_MS - 1));
+      expect(screen.queryByRole('button', { name: 'Developer menu' })).toBeNull();
+      await act(() => jest.advanceTimersByTime(1));
+      expect(screen.getByRole('button', { name: 'Developer menu' })).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -6,14 +6,26 @@ import { useTheme } from '@/theme/ThemeProvider';
 
 export type DevAction = { label: string; icon: IconName; onPress: () => void };
 
+/** How long "Hide button" keeps the wrench out of the header, for screenshots. */
+export const DEV_BUTTON_HIDE_MS = 10_000;
+
 /**
  * Development builds only (the caller checks `__DEV__`): one small wrench in a header that opens the developer actions
- * in a centered card, styled as ConfirmDialog. Choosing one closes the card, then runs it.
+ * in a centered card, styled as ConfirmDialog. Choosing one closes the card, then runs it. The last action, Hide
+ * button, blanks the wrench for DEV_BUTTON_HIDE_MS (keeping its space so the header doesn't shift) for screenshots.
  */
 export function DevMenu({ actions }: { actions: readonly DevAction[] }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const close = () => setOpen(false);
+  useEffect(() => {
+    if (!hidden) return;
+    const timer = setTimeout(() => setHidden(false), DEV_BUTTON_HIDE_MS);
+    return () => clearTimeout(timer);
+  }, [hidden]);
+  const allActions: readonly DevAction[] = [...actions, { label: 'Hide button', icon: 'eye-off-outline', onPress: () => setHidden(true) }];
+  if (hidden) return <View testID="dev-menu-hidden" className="h-12 w-8" />;
   return (
     <>
       <Pressable accessibilityRole="button" accessibilityLabel="Developer menu" onPress={() => setOpen(true)} hitSlop={8} className="h-12 w-8 items-center justify-center active:opacity-60">
@@ -30,7 +42,7 @@ export function DevMenu({ actions }: { actions: readonly DevAction[] }) {
               </Text>
               <Text className="text-sm text-text-muted">Development builds only</Text>
             </View>
-            {actions.map((a) => (
+            {allActions.map((a) => (
               <Pressable
                 key={a.label}
                 accessibilityRole="button"
