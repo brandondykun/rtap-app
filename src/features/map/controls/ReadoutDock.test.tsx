@@ -363,6 +363,36 @@ describe('ReadoutDock', () => {
     expect(screen.getByTestId('readout-range').props.accessibilityLabel).toContain('from the OP');
   });
 
+  it('in OP mode in portrait puts FROM OP and the distance on one line when they fit beside the full-size grid', async () => {
+    useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC });
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    const lineOf = () => screen.queryByTestId('readout-from-op-line');
+    // Not measured yet: stacked.
+    expect(lineOf()).toBeNull();
+    const layout = (id: string, width: number) =>
+      fireEvent(screen.getByTestId(id, HIDDEN), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width, height: 40 } } });
+    await act(async () => {
+      layout('dock-center', 360);
+      // The grid at full size and the one-line details, beside the lead (48) and its gap (8): 56 + 310 > 360.
+      layout('dock-center-one-line-measure', 310);
+    });
+    expect(lineOf()).toBeNull();
+    await act(async () => layout('dock-center-one-line-measure', 304));
+    expect(lineOf()).toContainElement(screen.getByTestId('readout-from-op'));
+    expect(lineOf()).toContainElement(screen.getByTestId('readout-range'));
+    expect(lineOf()).not.toContainElement(screen.getByTestId('readout-bearing'));
+    expect(lineOf()!.props.className).toContain('flex-row');
+  });
+
+  it('measures nothing for one line out of OP mode or in landscape (inline already puts the details on one line)', async () => {
+    useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });
+    await renderWithProviders(<ReadoutDock {...PROPS} showCenter />);
+    expect(screen.queryByTestId('dock-center-one-line-measure', HIDDEN)).toBeNull();
+    await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: DC }));
+    expect(screen.getByTestId('dock-center-one-line-measure', HIDDEN)).toBeTruthy();
+  });
+
   it('shows no FROM tag when measuring from a manual position (screen readers still hear it is manual)', async () => {
     usePresence.getState().setSelfPosition({ position: DC, accuracyM: null, timestamp: 1, manual: true });
     useInteraction.getState().setCamera({ center: CENTER, zoom: 12, bearing: 0 });

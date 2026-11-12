@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { CrosshairGlyph } from '@/components/ui/CrosshairGlyph';
@@ -72,16 +72,27 @@ type RowProps = {
   bottom?: ReactNode;
   /** Inline: a tighter gap between the two details (ME, whose labelled altitude is the longer). */
   tight?: boolean;
+  /** The row's laid-out width. */
+  onWidth?: (width: number) => void;
+  /** Laid out invisibly over the row, for measuring (see CenterRow). */
+  measure?: ReactNode;
 };
+
+/** Stacked (not inline): the lead's width (w-12) plus the gap after it (gap-2). */
+const STACKED_LEAD_SPACE = 48 + 8;
 
 /**
  * Lead, grid, then the details on the right: two small lines, or one line when `inline`. The lead has a fixed width so
  * both grids line up; inline, the grid grows to the widest row so the details line up too, and everything is tighter
  * to take as little of the map as it can.
  */
-function Row({ testID, inline, minimal = false, lead, children, top, bottom, tight = false }: RowProps) {
+function Row({ testID, inline, minimal = false, lead, children, top, bottom, tight = false, onWidth, measure }: RowProps) {
   return (
-    <View testID={testID} className={inline ? 'flex-row items-center gap-1.5 py-1' : 'min-h-12 flex-row items-center gap-2 py-1.5'}>
+    <View
+      testID={testID}
+      className={inline ? 'flex-row items-center gap-1.5 py-1' : 'min-h-12 flex-row items-center gap-2 py-1.5'}
+      onLayout={onWidth ? (e) => onWidth(e.nativeEvent.layout.width) : undefined}>
+      {measure}
       <View className={inline ? 'w-10' : 'w-12'}>{lead}</View>
       <View className={inline ? 'shrink grow' : 'flex-1'}>{children}</View>
       {!minimal && (top || bottom) ? (
@@ -302,25 +313,63 @@ function CenterRow({ inline, minimal }: { inline: boolean; minimal: boolean }) {
   const { colors } = useTheme();
   // The small text is full white with a crisp dark edge, so it reads over bright ground.
   const halo = glassHalo(colors);
+  // Stacked, FROM OP takes a line of its own over the distance. It joins the distance on one line when both fit beside
+  // the grid at full size (the grid shrinks to fit what is beside it, so the free room is measured: an invisible copy of
+  // the grid and the one-line pair, laid out at their natural widths).
+  const measureOneLine = isOp && !inline && !minimal;
+  const [rowWidth, setRowWidth] = useState(0);
+  const [oneLineWidth, setOneLineWidth] = useState(Infinity);
+  const oneLine = measureOneLine && rowWidth > 0 && STACKED_LEAD_SPACE + oneLineWidth <= rowWidth;
+  const fromOp = isOp ? (
+    <OutlinedText testID="readout-from-op" color={colors.text} style={halo} className="font-mono text-xs">
+      FROM OP
+    </OutlinedText>
+  ) : null;
+  const range = (
+    <Reserve inline={inline} template={DISTANCE_TEMPLATE}>
+      <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors['value-distance']} style={halo} className="font-mono text-xs">
+        {tightUnit(r.distance, 12)}
+      </OutlinedText>
+    </Reserve>
+  );
   return (
     <Row
       testID="dock-center"
       inline={inline}
       minimal={minimal}
       lead={<CardLead icon={<CrosshairGlyph size={inline ? 12 : 14} outline />} tag="CTR" tagColor={colors.text} tagStyle={halo} outline />}
+      onWidth={measureOneLine ? setRowWidth : undefined}
+      measure={
+        measureOneLine ? (
+          <View
+            testID="dock-center-one-line-measure"
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute left-0 top-0 flex-row items-center gap-2 opacity-0"
+            onLayout={(e) => setOneLineWidth(e.nativeEvent.layout.width)}>
+            <Text className="font-mono-bold text-lg" numberOfLines={1}>
+              {r.coordinate}
+            </Text>
+            <View className="flex-row gap-1.5">
+              <Text className="font-mono text-xs">FROM OP</Text>
+              <Text className="font-mono text-xs">{tightUnit(r.distance, 12)}</Text>
+            </View>
+          </View>
+        ) : null
+      }
       top={
-        <>
-          {isOp ? (
-            <OutlinedText testID="readout-from-op" color={colors.text} style={halo} className="font-mono text-xs">
-              FROM OP
-            </OutlinedText>
-          ) : null}
-          <Reserve inline={inline} template={DISTANCE_TEMPLATE}>
-            <OutlinedText testID="readout-range" accessibilityLabel={`Distance from ${who} ${r.distance}`} color={colors['value-distance']} style={halo} className="font-mono text-xs">
-              {tightUnit(r.distance, 12)}
-            </OutlinedText>
-          </Reserve>
-        </>
+        oneLine ? (
+          <View testID="readout-from-op-line" className="flex-row gap-1.5">
+            {fromOp}
+            {range}
+          </View>
+        ) : (
+          <>
+            {fromOp}
+            {range}
+          </>
+        )
       }
       bottom={
         <Reserve inline={inline} template={BEARING_TEMPLATE[angleUnit]}>
