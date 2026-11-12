@@ -67,6 +67,7 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
   const terrainIn2d = useSettings((s) => s.terrainIn2d);
   // In OP mode the map is fixed (the camera is placed by the OP) and looking is done with OpGestures.
   const inOp = useOp((s) => s.phase === 'on');
+  const gestureSettings = useMemo(() => ({ doubleTouchToZoomOutEnabled: !inOp }), [inOp]);
   // If the chosen style can't load (e.g. offline with only Satellite cached), use Satellite for
   // this session so points and the self icon still render. Choosing a basemap again retries it.
   const [failedBasemap, setFailedBasemap] = useState<Basemap | null>(null);
@@ -138,6 +139,9 @@ export function MapCanvas({ cameraRef, mapRef, initialCamera, onCameraIdle, onUs
       zoomEnabled={!inOp}
       rotateEnabled={!inOp}
       pitchEnabled={threeD && !inOp}
+      // On iOS zoomEnabled leaves Mapbox's two-finger tap to zoom out on, and the start of a pinch can fire it: at an OP
+      // the camera eased out and snapped back to the OP. (Android already turns it off with zoomEnabled.)
+      gestureSettings={gestureSettings}
       scaleBarEnabled={false}
       logoPosition={ornaments.logo}
       attributionPosition={ornaments.attribution}

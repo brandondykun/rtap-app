@@ -97,6 +97,13 @@ describe('MapCanvas', () => {
     expect(mapboxMock().__props.Atmosphere.main).toMatchObject({ style: { range: [2, 20] } });
   });
 
+  it('in OP mode also turns off the two-finger tap that zooms out (iOS keeps it on under zoomEnabled)', async () => {
+    await renderCanvas();
+    expect(mapboxMock().__props.MapView.main.gestureSettings).toEqual({ doubleTouchToZoomOutEnabled: true });
+    await act(() => useOp.setState({ phase: 'on' }));
+    expect(mapboxMock().__props.MapView.main.gestureSettings).toEqual({ doubleTouchToZoomOutEnabled: false });
+  });
+
   it('with terrain in 2D off, lays the terrain flat in 2D and raises it to the setting in 3D', async () => {
     useSettings.setState({ terrainIn2d: false, terrainExaggeration: 2 });
     await renderCanvas();
