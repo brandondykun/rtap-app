@@ -636,13 +636,13 @@ export function MissionMap({ missionId, savedCamera }: { missionId: string; save
         showNorthUp={opPhase !== 'on'}
         side={
           opPhase === 'on' ? (
-            // Bottom right, in the zoom buttons' place: eye height, then Exit on its own.
-            <View testID="op-side" pointerEvents="box-none" className="flex-1 items-end justify-end gap-3">
+            // Bottom right, in the zoom buttons' place: eye height, then Exit on its own (sideAction).
+            <View testID="op-side" pointerEvents="box-none" className="flex-1 items-end justify-end">
               <OpEyeSlider />
-              <MenuButton glass compact label="Exit" icon="close" onPress={() => exitOp()} />
             </View>
           ) : undefined
         }
+        sideAction={opPhase === 'on' ? <MenuButton glass compact label="Exit" icon="close" onPress={() => exitOp()} /> : undefined}
         landscape={landscape}
         // The temp card sits beside the dock (landscape) or over it (portrait, as a bar), which keeps its CTR row either way.
         showCenter={showCenterGrid}

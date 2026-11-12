@@ -259,6 +259,45 @@ describe('MapControls', () => {
     expect(zoomSide).toBe(screen.getByTestId('zoom-group'));
   });
 
+  it('in landscape keeps a side control (OP mode) and its action in one full-height column, the bar left of it', async () => {
+    await renderWithProviders(
+      <MapControls
+        following={false}
+        canRecenter
+        {...handlers()}
+        panel={null}
+        landscape
+        bar={<View testID="bar" />}
+        side={<View testID="side" />}
+        sideAction={<View testID="side-action" />}
+        showCenter
+      />,
+    );
+    const [barRow, slot] = screen.getByTestId('map-controls-bottom').children as { props: { testID?: string; className?: string } }[];
+    expect(barRow.props.testID).toBe('bar-over-dock');
+    expect(barRow.props.className).toContain('flex-1');
+    const [barSide, column] = screen.getByTestId('bar-over-dock').children as { props: { testID?: string; className?: string } }[];
+    expect(barSide).toContainElement(screen.getByTestId('bar'));
+    expect(column.props.testID).toBe('side-column');
+    expect(column.props.className).toContain('self-stretch');
+    expect(column).toContainElement(screen.getByTestId('side'));
+    expect(column).toContainElement(screen.getByTestId('side-action'));
+    expect(slot).toContainElement(screen.getByTestId('readout-dock'));
+  });
+
+  const sideProps = () => ({ following: false, canRecenter: true, ...handlers(), panel: null, side: <View testID="side" />, sideAction: <View testID="side-action" /> });
+
+  it('keeps a side action under the side control in landscape without a bar', async () => {
+    await renderWithProviders(<MapControls {...sideProps()} landscape />);
+    expect(screen.getByTestId('side-column')).toContainElement(screen.getByTestId('side-action'));
+  });
+
+  it('keeps a side action out of the bar in portrait', async () => {
+    await renderWithProviders(<MapControls {...sideProps()} landscape={false} bar={<View testID="bar" />} barOverDock />);
+    expect(screen.getByTestId('bar-over-dock')).not.toContainElement(screen.getByTestId('side-action'));
+    expect(screen.getByTestId('side-action')).toBeTruthy();
+  });
+
   it('in landscape with the zoom buttons hidden, puts the action bar flush right over the dock', async () => {
     useSettings.setState({ showZoomButtons: false });
     await renderWithProviders(<MapControls following={false} canRecenter {...handlers()} panel={null} landscape bar={<View testID="bar" />} showCenter />);

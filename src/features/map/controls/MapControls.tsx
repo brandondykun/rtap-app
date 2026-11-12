@@ -35,6 +35,11 @@ type Props = {
   showNorthUp?: boolean;
   /** Shown in place of the zoom buttons, always (OP mode's eye height slider). */
   side?: ReactNode;
+  /**
+   * A button under the side control (OP mode's Exit). In landscape, with an action bar up, it moves into the bar's row
+   * at its right end, the bar left of it.
+   */
+  sideAction?: ReactNode;
 };
 
 /** Height of the dock before it is first laid out: one row, or two with the divider. */
@@ -55,7 +60,7 @@ export const TALL_SHEET_FRACTION = 0.5;
  * An action bar is always shown. In portrait it takes the dock's place (centered) or floats centered over it. In landscape
  * both grids stay: the bar sits over the dock, left of the zoom buttons when they show, else flush right.
  */
-export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side }: Props) {
+export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, onZoomIn, onZoomOut, onRecenter, panel, landscape, bar, barOverDock = false, showCenter = false, showNorthUp = true, side, sideAction }: Props) {
   const insets = useSafeAreaInsets();
   const right = insets.right + EDGE;
   const { width, height } = useWindowDimensions();
@@ -106,6 +111,7 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
           style={{ bottom, left: insets.left + EDGE, right, ...sideTop }}>
           <View pointerEvents="box-none" className={`items-end gap-3 ${side ? 'flex-1' : ''}`}>
             {side ?? (showZoom && room >= ZOOM_HEIGHT + below ? zoom : null)}
+            {side ? sideAction : null}
           </View>
           {over ? (
             <View testID="bar-over-dock" pointerEvents="box-none" className="items-center" onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
@@ -128,19 +134,27 @@ export function MapControls({ following, canRecenter, onSetLocation, onNorthUp, 
       </SelfCardSlot>
     );
   const below = card ? dockSize + STACK_GAP : 0;
-  const buttons = side ? (
-    <View pointerEvents="box-none" className="flex-1 items-end">
-      {side}
-    </View>
-  ) : !showZoom || room < ZOOM_HEIGHT + below ? null : (
-    zoom
-  );
+  const buttons = !showZoom || room < ZOOM_HEIGHT + below ? null : zoom;
   // The action bar always shows: it is how the user finishes the mode. Over the dock, so both grids stay in view.
-  const top = bar ? (
-    <View testID="bar-over-dock" pointerEvents="box-none" className="flex-row items-end gap-3" style={{ maxWidth }}>
-      <View pointerEvents="box-none" className="shrink">
-        {bar}
+  const barBox = bar ? (
+    <View pointerEvents="box-none" className="shrink">
+      {bar}
+    </View>
+  ) : null;
+  // A side control (OP mode) and its action (Exit) keep one column the full height down to the dock, bar or no bar, so
+  // they never move; a bar sits left of it, along its bottom. (In the bar's row the column would only get the bar's
+  // height, and a bar taller than Exit would lift the slider.)
+  const top = side ? (
+    <View testID={bar ? 'bar-over-dock' : 'side-row'} pointerEvents="box-none" className="flex-1 flex-row items-end gap-3" style={{ maxWidth }}>
+      {barBox}
+      <View testID="side-column" pointerEvents="box-none" className="items-end gap-3 self-stretch">
+        {side}
+        {sideAction}
       </View>
+    </View>
+  ) : bar ? (
+    <View testID="bar-over-dock" pointerEvents="box-none" className="flex-row items-end gap-3" style={{ maxWidth }}>
+      {barBox}
       {buttons}
     </View>
   ) : (

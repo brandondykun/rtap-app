@@ -1217,8 +1217,8 @@ describe('MapScreen', () => {
       await stakeOnMap();
       expect(screen.queryByTestId('bar-over-dock')).toBeNull();
       expect(screen.queryByTestId('op-bar')).toBeNull();
-      expect(screen.getByTestId('op-side')).toContainElement(screen.getByLabelText('Exit'));
       expect(screen.getByTestId('op-side')).toContainElement(screen.getByTestId('op-eye-slider'));
+      expect(screen.getByLabelText('Exit')).toBeTruthy();
       expect(screen.getByTestId('dock-center')).toBeTruthy();
       expect(screen.getByTestId('readout-from-op')).toHaveTextContent('FROM OP');
     });
