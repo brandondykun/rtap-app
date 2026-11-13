@@ -3,6 +3,6 @@
   "build": {
     "development": { "developmentClient": true, "distribution": "internal", "channel": "development", "environment": "development" },
     "preview": { "distribution": "internal", "channel": "preview", "environment": "preview" },
-    "production": { "channel": "production", "environment": "production" }
+    "production": { "channel": "production", "environment": "production", "autoIncrement": true }
   }
 }
