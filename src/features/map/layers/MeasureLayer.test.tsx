@@ -42,7 +42,7 @@ describe('MeasureLayer', () => {
     expect(shape().features.find((f) => f.properties.role === 'chip')!.properties.label).toBe('1.11 km · 000° TRUE');
     const props = mapboxMock().__props;
     for (const id of ['measure-halo', 'measure-line']) expect(props.LineLayer[id]).toBeDefined();
-    for (const id of ['measure-dots', 'measure-chip']) expect(props.SymbolLayer[id]).toBeDefined();
+    for (const id of ['measure-dots', 'measure-numbers', 'measure-chip']) expect(props.SymbolLayer[id]).toBeDefined();
   });
 
   it('a tap on a dot picks it to move (and again lets it go); only the dots take taps', async () => {
@@ -69,21 +69,21 @@ describe('MeasureLayer', () => {
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureLayer />);
     const size = () => (mapboxMock().__props.SymbolLayer['measure-dots'].style as { iconSize?: unknown }).iconSize;
-    expect(size()).toEqual(opSize(0.7));
+    expect(size()).toEqual(opSize(undefined));
     await act(async () => useOp.getState().exit());
-    expect(size()).toBe(0.7);
+    expect(size()).toBeUndefined();
   });
 
-  it('in OP mode sizes the chip by zoom, and back to normal after', async () => {
+  it('in OP mode sizes the chip and the dot numbers by zoom, and back to normal after', async () => {
     useMeasure.getState().startMeasure();
     useMeasure.getState().place({ lat: 38.9, lon: -77 });
     await renderWithProviders(<MeasureLayer />);
     const size = (id: string) => (mapboxMock().__props.SymbolLayer[id].style as { textSize?: unknown }).textSize;
     useInteraction.setState({ cameraZoom: 18 });
-    const before = ['measure-chip'].map((id) => size(id));
+    const before = ['measure-chip', 'measure-numbers'].map((id) => size(id));
     await act(async () => useOp.setState({ ...INITIAL_OP, phase: 'on', at: { lat: 38.9, lon: -77 } }));
-    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
+    ['measure-chip', 'measure-numbers'].forEach((id, i) => expect(size(id)).toEqual(opTextSize(before[i] as number, 18)));
     await act(async () => useOp.getState().exit());
-    ['measure-chip'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
+    ['measure-chip', 'measure-numbers'].forEach((id, i) => expect(size(id)).toEqual(before[i]));
   });
 });

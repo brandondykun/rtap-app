@@ -4,8 +4,11 @@ import type { LatLon } from '@/lib/geo/types';
 
 import type { MeasurePoint } from './measure-step';
 
-/** A dot names its `point` (start or end) and whether it is `picked` to move. */
-type Props = { role: 'line' | 'dot' | 'chip'; label?: string; point?: MeasurePoint; picked?: boolean } & Partial<RangeParts>;
+/**
+ * A dot names its `point` (start or end), its `number` drawn on it (1 for the start, 2 for the end: letters would read as
+ * compass points next to a bearing) and whether it is `picked` to move.
+ */
+type Props = { role: 'line' | 'dot' | 'chip'; label?: string; point?: MeasurePoint; number?: string; picked?: boolean } & Partial<RangeParts>;
 type Feature =
   | { type: 'Feature'; id: string; geometry: { type: 'LineString'; coordinates: [number, number][] }; properties: Props }
   | { type: 'Feature'; id: string; geometry: { type: 'Point'; coordinates: [number, number] }; properties: Props };
@@ -26,7 +29,7 @@ export function measureFeatures(
     type: 'Feature',
     id: point,
     geometry: { type: 'Point', coordinates: lonLat(at) },
-    properties: { role: 'dot', point, picked: editing === point },
+    properties: { role: 'dot', point, number: point === 'start' ? '1' : '2', picked: editing === point },
   });
   if (!start) return { type: 'FeatureCollection', features: [] };
   if (!end) return { type: 'FeatureCollection', features: [dot('start', start)] };

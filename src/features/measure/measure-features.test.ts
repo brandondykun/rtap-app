@@ -17,6 +17,17 @@ describe('measureFeatures', () => {
     expect((chip.geometry.coordinates as number[])[1]).toBeCloseTo(38.905, 3);
   });
 
+  it('numbers the start 1 and the end 2', () => {
+    expect(measureFeatures(A, null, 'x').features.map((f) => f.properties.number)).toEqual(['1']);
+    const numbers = measureFeatures(A, B, 'x')
+      .features.filter((f) => f.properties.role === 'dot')
+      .map((f) => [f.properties.point, f.properties.number]);
+    expect(numbers).toEqual([
+      ['start', '1'],
+      ['end', '2'],
+    ]);
+  });
+
   it('names each dot and rings only the one picked to move', () => {
     const dots = (editing: 'start' | 'end' | null) =>
       measureFeatures(A, B, 'x', undefined, editing)

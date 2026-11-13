@@ -16,13 +16,16 @@ type Filter = ComponentProps<typeof LineLayer>['filter'];
 const LINE = ['==', ['get', 'role'], 'line'] as unknown as Filter;
 const CHIP = ['==', ['get', 'role'], 'chip'] as unknown as Filter;
 const PICKED = ['==', ['get', 'picked'], true] as unknown as Filter;
-const DOT_STYLE = { iconImage: MAP_IMAGE_IDS.lineVertex, iconSize: 0.7, iconAllowOverlap: true, iconIgnorePlacement: true } as const;
+// Full size, like the line tool's vertices, so the point's number fits on it.
+const DOT_STYLE = { iconImage: MAP_IMAGE_IDS.lineVertex, iconAllowOverlap: true, iconIgnorePlacement: true } as const;
+/** Each dot's number (1 start, 2 end), so the direction of the bearing is clear. Its own layer: OP mode sizes icons and text apart. */
+const NUMBER_STYLE = { textField: ['get', 'number'], textSize: 11, textAllowOverlap: true, textIgnorePlacement: true } as const;
 /** A finger-sized target around each dot (points), so picking one is easy. */
 export const MEASURE_DOT_HITBOX = { width: 44, height: 44 };
 
 /**
  * The measure line from start to end (only the start dot until the end is set), its readout chip at the middle, and the
- * dots, which a tap picks to move (ringed while picked). The dots have a source of their own, so only they take taps:
+ * dots numbered 1 (start) and 2 (end), which a tap picks to move (ringed while picked). The dots have a source of their own, so only they take taps:
  * a tap anywhere else, even on the line, still sets the point being set.
  */
 export function MeasureLayer() {
@@ -46,9 +49,16 @@ export function MeasureLayer() {
   const styles = useMemo(() => {
     // Measure is drawn in amber over the same dark halo as lines (halo uses the normal 3 pt width).
     const line = { lineColor: colors.accent, lineWidth: 3, lineCap: 'round' as const, lineJoin: 'round' as const };
-    return { halo: makeLineHaloStyle(colors), line, chip: makeMeasureChipStyle(colors), picked: makeMeasurePickedStyle(colors) };
+    return {
+      halo: makeLineHaloStyle(colors),
+      line,
+      chip: makeMeasureChipStyle(colors),
+      picked: makeMeasurePickedStyle(colors),
+      number: { ...NUMBER_STYLE, textColor: colors['surface-input'] },
+    };
   }, [colors]);
   const chipStyle = useOpSymbolStyle(styles.chip);
+  const numberStyle = useOpSymbolStyle(styles.number);
 
   return (
     <>
@@ -67,6 +77,7 @@ export function MeasureLayer() {
         }}>
         <CircleLayer id="measure-picked" style={styles.picked} filter={PICKED} />
         <SymbolLayer id="measure-dots" style={iconStyle} />
+        <SymbolLayer id="measure-numbers" style={numberStyle} />
       </ShapeSource>
     </>
   );
