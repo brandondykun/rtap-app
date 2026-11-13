@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fireEvent, screen } from '@testing-library/react-native';
 import Constants from 'expo-constants';
-import { Linking, StyleSheet } from 'react-native';
+import { Linking, ScrollView, StyleSheet } from 'react-native';
 import * as SafeArea from 'react-native-safe-area-context';
 
 import { SETTINGS_HELP } from '@/features/menus/menus/settings-help';
@@ -13,7 +13,8 @@ import { renderWithProviders } from '@/test-utils/render';
 import { themeColors } from '@/theme/tokens';
 import { VALUE_COLOR_GUIDE } from '@/theme/value-colors';
 
-import { AboutScreen } from './AboutScreen';
+import { ITEMS_HELP, MAP_HELP, MISSIONS_HELP } from './about-help';
+import { ABOUT_CONTENTS, AboutScreen } from './AboutScreen';
 
 
 const mockRouter = { back: jest.fn() };
@@ -22,16 +23,39 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 afterEach(() => jest.restoreAllMocks());
 
 describe('AboutScreen', () => {
+  it('lists every section at the top, in page order, and a tap scrolls to it', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});
+    await renderWithProviders(<AboutScreen />);
+    const titles = ABOUT_CONTENTS.map((c) => c.title);
+    const shown = screen.getAllByRole('header').map((h) => h.props.children).filter((t) => titles.includes(t));
+    expect(shown).toEqual(titles);
+    // Each section's title row and its layout box share the title text's parent.
+    let section = screen.getByRole('header', { name: 'Missions' });
+    while (!section.props.onLayout) section = section.parent!;
+    await fireEvent(section, 'layout', { nativeEvent: { layout: { x: 0, y: 1234, width: 300, height: 200 } } });
+    await fireEvent.press(screen.getByTestId('contents-missions'));
+    expect(scrollTo).toHaveBeenCalledWith({ y: 1234, animated: true });
+  });
+
+  it('explains the map screen, working with items and missions', async () => {
+    await renderWithProviders(<AboutScreen />);
+    for (const name of ['The map screen', 'Working with items', 'Missions']) expect(screen.getByRole('header', { name })).toBeTruthy();
+    for (const [prefix, items] of [['map-help', MAP_HELP], ['items-help', ITEMS_HELP], ['missions-help', MISSIONS_HELP]] as const) {
+      for (const h of items) expect(screen.getByTestId(`${prefix}-${h.title}`)).toHaveTextContent(h.help, { exact: false });
+    }
+  });
+
   it('explains overlays: what they are, Base, showing and hiding, adding items, managing them', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('Overlays')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Overlays' })).toBeTruthy();
     for (const h of OVERLAYS_HELP) expect(screen.getByTestId(`overlay-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
   });
 
   it('explains Average mode: what it does, how long, the display, moving, the fixes and its orange', async () => {
     await renderWithProviders(<AboutScreen />);
-    // The section title, and the color guide's orange row.
-    expect(screen.getAllByText('Average mode')).toHaveLength(2);
+    // The section title, its contents row and the color guide's orange row.
+    expect(screen.getByRole('header', { name: 'Average mode' })).toBeTruthy();
+    expect(screen.getAllByText('Average mode')).toHaveLength(3);
     expect(screen.getByTestId('about-average')).toBeTruthy();
     expect(AVERAGE_HELP).toHaveLength(6);
     for (const h of AVERAGE_HELP) expect(screen.getByTestId(`average-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
@@ -39,7 +63,7 @@ describe('AboutScreen', () => {
 
   it('explains the value colors, each sample drawn in its own color', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('Reading the colors')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Reading the colors' })).toBeTruthy();
     const colors = themeColors('dark');
     for (const g of VALUE_COLOR_GUIDE) {
       expect(screen.getByTestId(`color-help-${g.name}`)).toHaveTextContent(g.help, { exact: false });
@@ -85,7 +109,7 @@ describe('AboutScreen', () => {
 
   it('opens the toolbar guide with the two ways to place anything', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('Toolbar guide')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Toolbar guide' })).toBeTruthy();
     expect(screen.getByTestId('about-tip')).toHaveTextContent(
       'Two ways to place anything: tap the map, or line up the crosshair and press CTR for precision.',
     );
@@ -150,7 +174,7 @@ describe('AboutScreen', () => {
 
   it('explains every setting after the toolbar guide: its name, choices and what it does', async () => {
     await renderWithProviders(<AboutScreen />);
-    expect(screen.getByText('Settings guide')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Settings guide' })).toBeTruthy();
     for (const h of SETTINGS_HELP) {
       const row = screen.getByTestId(`setting-help-${h.name}`);
       expect(row).toHaveTextContent(h.name, { exact: false });

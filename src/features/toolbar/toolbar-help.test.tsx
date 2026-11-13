@@ -17,7 +17,7 @@ describe('TOOLBAR_HELP', () => {
     expect(HELP_GROUPS.map((g) => g.title)).toEqual(['Plot on the map', 'Read the map', 'App']);
     expect(byGroup('plot')).toEqual(['UNIT', 'POINT', 'LINE', 'POLYGON', 'PLOT']);
     expect(byGroup('read')).toEqual(['MEASURE', 'AVG', 'LAYERS', 'LABELS', '3D', 'OP']);
-    expect(TOOLBAR_HELP.find((h) => h.label === 'OP')?.help).toBe('Look out over the 3D map from a spot you pick.');
+    expect(TOOLBAR_HELP.find((h) => h.label === 'OP')?.help).toBe('See the 3D map as you would standing on the ground. Tap the map or press CTR to pick your spot, then drag to look around. The slider sets your eye height.');
     expect(byGroup('app')).toEqual(['Menu']);
   });
 
@@ -26,7 +26,7 @@ describe('TOOLBAR_HELP', () => {
       expect(h.icon).toBeTruthy();
       expect(h.help.length).toBeGreaterThan(10);
     }
-    expect(TOOLBAR_HELP.find((h) => h.label === 'UNIT')?.help).toBe('Place a unit, then pick its affiliation and type.');
+    expect(TOOLBAR_HELP.find((h) => h.label === 'UNIT')?.help).toBe('Place a unit, then pick its affiliation, type and echelon.');
     expect(TOOLBAR_HELP.find((h) => h.label === 'Menu')?.help).toBe('Switch missions, change settings or open this page.');
     expect(TOOLBAR_HELP.some((h) => 'accent' in h)).toBe(false);
   });

@@ -3,7 +3,8 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Linking, Pressable, ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
@@ -15,6 +16,7 @@ import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_COLOR_GUIDE, type ValueColorGuide } from '@/theme/value-colors';
 
+import { ITEMS_HELP, MAP_HELP, MISSIONS_HELP } from './about-help';
 import { updateLabel } from './update-label';
 
 const APP_ICON = require('../../../assets/images/icon.png');
@@ -22,11 +24,28 @@ const APP_ICON = require('../../../assets/images/icon.png');
 /** The company's website, opened in the phone's browser. */
 export const COMPANY_URL = 'https://eratas.dev';
 
+/** The page's sections, in order, for the contents card at the top: each row scrolls to its section. */
+export const ABOUT_CONTENTS = [
+  { id: 'toolbar', title: 'Toolbar guide', summary: 'What each toolbar button does' },
+  { id: 'map', title: 'The map screen', summary: 'The crosshair, your position, map buttons and menus' },
+  { id: 'items', title: 'Working with items', summary: 'Adding, viewing and editing units, points, lines and polygons' },
+  { id: 'missions', title: 'Missions', summary: 'Switching, creating and managing missions' },
+  { id: 'overlays', title: 'Overlays', summary: 'Grouping items to show and hide them together' },
+  { id: 'average', title: 'Average mode', summary: 'A steadier, more accurate position' },
+  { id: 'colors', title: 'Reading the colors', summary: 'What each value color means' },
+  { id: 'settings', title: 'Settings guide', summary: 'What each setting does' },
+] as const;
+type SectionId = (typeof ABOUT_CONTENTS)[number]['id'];
+
+/** The scroll content's top padding: the sections' offsets are measured inside it. */
+const CONTENT_TOP = 16;
+
 /** Readable line length on wide (landscape, tablet) screens. */
 const MAX_CONTENT_WIDTH = 720;
 
 /**
- * Full-screen About page (a route, not a menu): app info, what each toolbar button does and what each setting does. It draws
+ * Full-screen About page (a route, not a menu): app info, what each toolbar button does, the map screen, items, missions,
+ * overlays, Average mode, the value colors and what each setting does. It draws
  * its own iOS-style header: the native iOS 26 back button flashes light as the page opens. Swipe back
  * (iOS) and the system back (Android) still work; they come from the navigator, not the header.
  */
@@ -35,6 +54,15 @@ export function AboutScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? '—';
+  const scroll = useRef<ScrollView>(null);
+  // Where each section sits, so its contents row can scroll to it. Kept across renders; changing it redraws nothing.
+  const [offsets] = useState(() => new Map<SectionId, number>());
+  const at = (id: SectionId) => (e: LayoutChangeEvent) => void offsets.set(id, e.nativeEvent.layout.y);
+  const goTo = (id: SectionId) => {
+    const y = offsets.get(id);
+    // The section's title lands with the same room above it as the page's own top.
+    if (y !== undefined) scroll.current?.scrollTo({ y, animated: true });
+  };
   return (
     <View className="flex-1 bg-surface">
       <View
@@ -61,9 +89,10 @@ export function AboutScreen() {
         </View>
       </View>
       <ScrollView
+        ref={scroll}
         testID="about-scroll"
         contentContainerStyle={{
-          paddingTop: 16,
+          paddingTop: CONTENT_TOP,
           paddingBottom: insets.bottom + 24,
           // Clear of the notch and rounded corners in landscape.
           paddingLeft: insets.left + 16,
@@ -80,6 +109,28 @@ export function AboutScreen() {
           </View>
 
           <View className="gap-2">
+            <SectionTitle>On this page</SectionTitle>
+            <View testID="about-contents" className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
+              {ABOUT_CONTENTS.map((c, i) => (
+                <Pressable
+                  key={c.id}
+                  testID={`contents-${c.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={c.title}
+                  accessibilityHint={c.summary}
+                  onPress={() => goTo(c.id)}
+                  className={`min-h-11 flex-row items-center gap-3 px-4 py-3 active:opacity-60 ${i === 0 ? '' : 'border-t border-border'}`}>
+                  <View className="flex-1">
+                    <Text className="text-base font-bold text-text">{c.title}</Text>
+                    <Text className="text-sm text-text-muted">{c.summary}</Text>
+                  </View>
+                  <Icon name="chevron-right" size={20} color={colors['text-muted']} />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View className="gap-2" onLayout={at('toolbar')}>
             <SectionTitle>Toolbar guide</SectionTitle>
             <View testID="about-tip" accessible className="flex-row items-center gap-4 rounded-2xl border border-border bg-surface-input px-4 py-4">
               <CrosshairGlyph size={44} />
@@ -103,17 +154,32 @@ export function AboutScreen() {
             </View>
           ))}
 
-          <View className="gap-2">
+          <View className="gap-2" onLayout={at('map')}>
+            <SectionTitle>The map screen</SectionTitle>
+            <HelpList testID="about-map" itemTestID="map-help" items={MAP_HELP} />
+          </View>
+
+          <View className="gap-2" onLayout={at('items')}>
+            <SectionTitle>Working with items</SectionTitle>
+            <HelpList testID="about-items" itemTestID="items-help" items={ITEMS_HELP} />
+          </View>
+
+          <View className="gap-2" onLayout={at('missions')}>
+            <SectionTitle>Missions</SectionTitle>
+            <HelpList testID="about-missions" itemTestID="missions-help" items={MISSIONS_HELP} />
+          </View>
+
+          <View className="gap-2" onLayout={at('overlays')}>
             <SectionTitle>Overlays</SectionTitle>
             <HelpList testID="about-overlays" itemTestID="overlay-help" items={OVERLAYS_HELP} />
           </View>
 
-          <View className="gap-2">
+          <View className="gap-2" onLayout={at('average')}>
             <SectionTitle>Average mode</SectionTitle>
             <HelpList testID="about-average" itemTestID="average-help" items={AVERAGE_HELP} />
           </View>
 
-          <View className="gap-2">
+          <View className="gap-2" onLayout={at('colors')}>
             <SectionTitle>Reading the colors</SectionTitle>
             <Text testID="about-colors-intro" className="ml-1 text-base text-text">
               Each kind of value has one color everywhere it shows, on the map, in the readouts and in the menus, so you can tell
@@ -126,7 +192,7 @@ export function AboutScreen() {
             </View>
           </View>
 
-          <View className="gap-2">
+          <View className="gap-2" onLayout={at('settings')}>
             <SectionTitle>Settings guide</SectionTitle>
             <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
               {SETTINGS_HELP.map((h, i) => (
