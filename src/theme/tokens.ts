@@ -50,6 +50,8 @@ const dark = {
   /** The toolbar separator while tools are scrolled out of sight behind it. */
   'divider-lit': { color: 'stone-50', alpha: 0.7 },
   text: 'stone-50',
+  /** Running text under a title (the About page's explanations): a step softer than `text`, so the titles above it lead. */
+  'text-body': 'stone-300',
   'text-muted': 'stone-400',
   accent: 'amber-500',
   'accent-subtle': 'amber-950',

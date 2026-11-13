@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
@@ -15,6 +15,8 @@ import { OVERLAYS_HELP, type OverlayHelp } from '@/features/overlays/overlays-he
 import { HELP_GROUPS, TOOLBAR_HELP, type ToolbarHelp } from '@/features/toolbar/toolbar-help';
 import { useTheme } from '@/theme/ThemeProvider';
 import { VALUE_COLOR_GUIDE, type ValueColorGuide } from '@/theme/value-colors';
+
+import { isLandscape } from '@/features/map/layout';
 
 import { ITEMS_HELP, MAP_HELP, MISSIONS_HELP } from './about-help';
 import { updateLabel } from './update-label';
@@ -37,8 +39,14 @@ export const ABOUT_CONTENTS = [
 ] as const;
 type SectionId = (typeof ABOUT_CONTENTS)[number]['id'];
 
+/** A section's number on this page ("01"), shown both in the contents and on its heading. */
+const sectionNumber = (id: SectionId) => String(ABOUT_CONTENTS.findIndex((c) => c.id === id) + 1).padStart(2, '0');
+
 /** The scroll content's top padding: the sections' offsets are measured inside it. */
 const CONTENT_TOP = 16;
+
+/** Extra room above the header in landscape, where iOS hides the status bar and the top inset drops to 0. */
+export const LANDSCAPE_HEADER_TOP = 12;
 
 /** Readable line length on wide (landscape, tablet) screens. */
 const MAX_CONTENT_WIDTH = 720;
@@ -52,6 +60,8 @@ const MAX_CONTENT_WIDTH = 720;
 export function AboutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const headerTop = insets.top + (isLandscape(width, height) ? LANDSCAPE_HEADER_TOP : 0);
   const { colors } = useTheme();
   const version = Constants.expoConfig?.version ?? '—';
   const scroll = useRef<ScrollView>(null);
@@ -68,7 +78,7 @@ export function AboutScreen() {
       <View
         testID="about-header"
         className="bg-surface pb-2"
-        style={{ paddingTop: insets.top, paddingLeft: insets.left + 8, paddingRight: insets.right + 8 }}>
+        style={{ paddingTop: headerTop, paddingLeft: insets.left + 8, paddingRight: insets.right + 8 }}>
         <View className="h-11 flex-row items-center">
           <Text
             accessibilityRole="header"
@@ -117,21 +127,24 @@ export function AboutScreen() {
                   testID={`contents-${c.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={c.title}
-                  accessibilityHint={c.summary}
+                  accessibilityHint={`Jumps to this section: ${c.summary}`}
                   onPress={() => goTo(c.id)}
-                  className={`min-h-11 flex-row items-center gap-3 px-4 py-3 active:opacity-60 ${i === 0 ? '' : 'border-t border-border'}`}>
+                  // A table of contents, not a list of screens: numbered like the page's order, with a down arrow (no
+                  // chevron, which reads as opening another screen) and the title in the page's link amber.
+                  className={`min-h-11 flex-row items-center gap-3 px-4 py-2.5 active:opacity-60 ${i === 0 ? '' : 'border-t border-border'}`}>
+                  <Text className="w-6 font-mono text-sm text-text-muted">{sectionNumber(c.id)}</Text>
                   <View className="flex-1">
-                    <Text className="text-base font-bold text-text">{c.title}</Text>
+                    <Text className="text-base font-semibold text-accent">{c.title}</Text>
                     <Text className="text-sm text-text-muted">{c.summary}</Text>
                   </View>
-                  <Icon name="chevron-right" size={20} color={colors['text-muted']} />
+                  <Icon name="arrow-down" size={16} color={colors['text-muted']} />
                 </Pressable>
               ))}
             </View>
           </View>
 
           <View className="gap-2" onLayout={at('toolbar')}>
-            <SectionTitle>Toolbar guide</SectionTitle>
+            <SectionTitle section="toolbar" />
             <View testID="about-tip" accessible className="flex-row items-center gap-4 rounded-2xl border border-border bg-surface-input px-4 py-4">
               <CrosshairGlyph size={44} />
               <Text className="flex-1 text-base text-text">
@@ -145,7 +158,7 @@ export function AboutScreen() {
 
           {HELP_GROUPS.map((group) => (
             <View key={group.id} className="gap-2">
-              <SectionTitle>{group.title}</SectionTitle>
+              <SubsectionTitle>{group.title}</SubsectionTitle>
               <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
                 {TOOLBAR_HELP.filter((h) => h.group === group.id).map((h, i) => (
                   <HelpRow key={h.label} help={h} first={i === 0} />
@@ -155,33 +168,33 @@ export function AboutScreen() {
           ))}
 
           <View className="gap-2" onLayout={at('map')}>
-            <SectionTitle>The map screen</SectionTitle>
+            <SectionTitle section="map" />
             <HelpList testID="about-map" itemTestID="map-help" items={MAP_HELP} />
           </View>
 
           <View className="gap-2" onLayout={at('items')}>
-            <SectionTitle>Working with items</SectionTitle>
+            <SectionTitle section="items" />
             <HelpList testID="about-items" itemTestID="items-help" items={ITEMS_HELP} />
           </View>
 
           <View className="gap-2" onLayout={at('missions')}>
-            <SectionTitle>Missions</SectionTitle>
+            <SectionTitle section="missions" />
             <HelpList testID="about-missions" itemTestID="missions-help" items={MISSIONS_HELP} />
           </View>
 
           <View className="gap-2" onLayout={at('overlays')}>
-            <SectionTitle>Overlays</SectionTitle>
+            <SectionTitle section="overlays" />
             <HelpList testID="about-overlays" itemTestID="overlay-help" items={OVERLAYS_HELP} />
           </View>
 
           <View className="gap-2" onLayout={at('average')}>
-            <SectionTitle>Average mode</SectionTitle>
+            <SectionTitle section="average" />
             <HelpList testID="about-average" itemTestID="average-help" items={AVERAGE_HELP} />
           </View>
 
           <View className="gap-2" onLayout={at('colors')}>
-            <SectionTitle>Reading the colors</SectionTitle>
-            <Text testID="about-colors-intro" className="ml-1 text-base text-text">
+            <SectionTitle section="colors" />
+            <Text testID="about-colors-intro" className="ml-1 text-base text-text-body">
               Each kind of value has one color everywhere it shows, on the map, in the readouts and in the menus, so you can tell
               them apart at a glance.
             </Text>
@@ -193,7 +206,7 @@ export function AboutScreen() {
           </View>
 
           <View className="gap-2" onLayout={at('settings')}>
-            <SectionTitle>Settings guide</SectionTitle>
+            <SectionTitle section="settings" />
             <View className="overflow-hidden rounded-2xl border border-border bg-surface-raised">
               {SETTINGS_HELP.map((h, i) => (
                 <SettingRow key={h.name} help={h} first={i === 0} />
@@ -232,14 +245,30 @@ function HelpList({ testID, itemTestID, items }: { testID: string; itemTestID: s
       {items.map((h, i) => (
         <View key={h.title} testID={`${itemTestID}-${h.title}`} accessible className={`gap-0.5 px-4 py-3 ${i === 0 ? '' : 'border-t border-border'}`}>
           <Text className="text-base font-bold uppercase tracking-widest text-text">{h.title}</Text>
-          <Text className="text-base text-text">{h.help}</Text>
+          <Text className="text-base text-text-body">{h.help}</Text>
         </View>
       ))}
     </View>
   );
 }
 
-function SectionTitle({ children }: { children: string }) {
+/**
+ * A heading, a step above the 16 pt titles inside the cards. A contents `section` takes its number and title from
+ * ABOUT_CONTENTS, so they always match its row there: the number muted, the title amber.
+ */
+function SectionTitle(props: { section: SectionId } | { children: string }) {
+  const entry = 'section' in props ? ABOUT_CONTENTS.find((c) => c.id === props.section)! : null;
+  const title = entry ? entry.title : (props as { children: string }).children;
+  return (
+    <Text accessibilityRole="header" accessibilityLabel={title} className="ml-1 text-lg font-bold uppercase tracking-widest text-accent">
+      {entry ? <Text className="font-mono text-text-muted">{`${sectionNumber(entry.id)}  `}</Text> : null}
+      {title}
+    </Text>
+  );
+}
+
+/** A heading within a section (the toolbar guide's groups): small and muted, so it reads as part of the section above. */
+function SubsectionTitle({ children }: { children: string }) {
   return (
     <Text accessibilityRole="header" className="ml-1 text-sm font-bold uppercase tracking-widest text-text-muted">
       {children}
@@ -285,7 +314,7 @@ function HelpRow({ help, first }: { help: ToolbarHelp; first: boolean }) {
       </View>
       <View className="flex-1">
         <Text className="text-base font-bold uppercase tracking-widest text-text">{help.label}</Text>
-        <Text className="text-base text-text">{help.help}</Text>
+        <Text className="text-base text-text-body">{help.help}</Text>
       </View>
     </View>
   );
@@ -304,7 +333,7 @@ function ColorRow({ guide, first }: { guide: ValueColorGuide; first: boolean }) 
         </View>
         <Text className="text-base font-bold uppercase tracking-widest text-text">{guide.name}</Text>
       </View>
-      <Text className="text-base text-text">{guide.help}</Text>
+      <Text className="text-base text-text-body">{guide.help}</Text>
     </View>
   );
 }
@@ -315,7 +344,7 @@ function SettingRow({ help, first }: { help: SettingHelp; first: boolean }) {
     <View testID={`setting-help-${help.name}`} accessible className={`gap-0.5 px-4 py-3 ${first ? '' : 'border-t border-border'}`}>
       <Text className="text-base font-bold uppercase tracking-widest text-text">{help.name}</Text>
       {help.choices ? <Text className="font-mono text-sm text-text-muted">{help.choices}</Text> : null}
-      <Text className="text-base text-text">{help.help}</Text>
+      <Text className="text-base text-text-body">{help.help}</Text>
     </View>
   );
 }

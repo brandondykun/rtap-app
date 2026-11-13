@@ -14,21 +14,35 @@ import { themeColors } from '@/theme/tokens';
 import { VALUE_COLOR_GUIDE } from '@/theme/value-colors';
 
 import { ITEMS_HELP, MAP_HELP, MISSIONS_HELP } from './about-help';
-import { ABOUT_CONTENTS, AboutScreen } from './AboutScreen';
+import { ABOUT_CONTENTS, AboutScreen, LANDSCAPE_HEADER_TOP } from './AboutScreen';
 
+
+const PORTRAIT = { width: 393, height: 852, scale: 3, fontScale: 1 };
+const LANDSCAPE = { width: 852, height: 393, scale: 3, fontScale: 1 };
+let mockDims = PORTRAIT;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({ __esModule: true, default: () => mockDims }));
 
 const mockRouter = { back: jest.fn() };
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+  mockDims = PORTRAIT;
+});
 
 describe('AboutScreen', () => {
   it('lists every section at the top, in page order, and a tap scrolls to it', async () => {
     const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(() => {});
     await renderWithProviders(<AboutScreen />);
     const titles = ABOUT_CONTENTS.map((c) => c.title);
-    const shown = screen.getAllByRole('header').map((h) => h.props.children).filter((t) => titles.includes(t));
+    const shown = screen.getAllByRole('header').map((h) => h.props.accessibilityLabel).filter((t) => titles.includes(t));
     expect(shown).toEqual(titles);
+    // Each heading carries its number from the contents.
+    ABOUT_CONTENTS.forEach((c, i) => {
+      const number = String(i + 1).padStart(2, '0');
+      expect(screen.getByTestId(`contents-${c.id}`)).toHaveTextContent(number, { exact: false });
+      expect(screen.getByRole('header', { name: c.title })).toHaveTextContent(`${number}  ${c.title}`);
+    });
     // Each section's title row and its layout box share the title text's parent.
     let section = screen.getByRole('header', { name: 'Missions' });
     while (!section.props.onLayout) section = section.parent!;
@@ -53,9 +67,9 @@ describe('AboutScreen', () => {
 
   it('explains Average mode: what it does, how long, the display, moving, the fixes and its orange', async () => {
     await renderWithProviders(<AboutScreen />);
-    // The section title, its contents row and the color guide's orange row.
+    // The section title (with its number), its contents row and the color guide's orange row.
     expect(screen.getByRole('header', { name: 'Average mode' })).toBeTruthy();
-    expect(screen.getAllByText('Average mode')).toHaveLength(3);
+    expect(screen.getAllByText('Average mode')).toHaveLength(2);
     expect(screen.getByTestId('about-average')).toBeTruthy();
     expect(AVERAGE_HELP).toHaveLength(6);
     for (const h of AVERAGE_HELP) expect(screen.getByTestId(`average-help-${h.title}`)).toHaveTextContent(h.help, { exact: false });
@@ -135,11 +149,14 @@ describe('AboutScreen', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it('keeps the header below the status bar and clear of the notch', async () => {
+  it('keeps the header below the status bar and clear of the notch, with room above it in landscape', async () => {
+    // Landscape: iOS hides the status bar (top inset 0), so the header gets its own room above it.
+    mockDims = LANDSCAPE;
     jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 0, right: 47, bottom: 21, left: 59 });
     await renderWithProviders(<AboutScreen />);
     let header = StyleSheet.flatten(screen.getByTestId('about-header').props.style);
-    expect([header.paddingTop, header.paddingLeft, header.paddingRight]).toEqual([0, 59 + 8, 47 + 8]);
+    expect([header.paddingTop, header.paddingLeft, header.paddingRight]).toEqual([LANDSCAPE_HEADER_TOP, 59 + 8, 47 + 8]);
+    mockDims = PORTRAIT;
     jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 59, right: 0, bottom: 34, left: 0 });
     await screen.unmount();
     await renderWithProviders(<AboutScreen />);
@@ -181,7 +198,7 @@ describe('AboutScreen', () => {
       expect(row).toHaveTextContent(h.help, { exact: false });
       if (h.choices) expect(row).toHaveTextContent(h.choices, { exact: false });
     }
-    const headers = screen.getAllByRole('header').map((el) => el.props.children as string);
+    const headers = screen.getAllByRole('header').map((el) => (el.props.accessibilityLabel ?? el.props.children) as string);
     expect(headers.indexOf('Settings guide')).toBeGreaterThan(headers.indexOf('App'));
   });
 });
