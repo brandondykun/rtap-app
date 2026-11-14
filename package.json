@@ -79,6 +79,7 @@
     "postinstall": "patch-package"
   },
   "private": true,
+  "license": "UNLICENSED",
   "jest": {
     "preset": "jest-expo",
     "maxWorkers": "40%",

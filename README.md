@@ -2,13 +2,60 @@
   <img src="assets/images/icon.png" alt="RTAP app icon" width="128" height="128" />
 </p>
 
-# RTAP
+<h1 align="center">RTAP</h1>
 
-**Realtime Team Awareness Platform**: an offline-first tactical map for iOS. Plan missions on satellite,
-hybrid or topo maps, place MIL-STD-2525C units and control points, draw lines and areas, read MGRS grids, measure,
-and look out from an observation post in 3D.
+<p align="center">
+  <strong>Realtime Team Awareness Platform</strong><br />
+  An offline-first tactical map for iPhone.<br />
+  <a href="https://apps.apple.com/app/id6834856833"><strong>Download on the App Store</strong></a>
+</p>
+
+<p align="center">
+  <img src="docs/readme/map.jpg" alt="The map: friendly and hostile units, phase lines and an engagement area on satellite imagery, with the crosshair and your own grid at the bottom" width="180" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/readme/3d.jpg" alt="The same plan tilted in 3D over the terrain" width="180" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/readme/op.jpg" alt="OP mode: looking out across the terrain from an observation post at eye height" width="180" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/readme/measure.jpg" alt="Measuring from point 1 to point 2, labelled with the distance and direction in mils" width="180" />
+</p>
+
+RTAP lets you plan and track an operation on real terrain. Plot MIL-STD-2525C units, control points, lines and areas
+on satellite, hybrid or topo maps, read any MGRS grid at a glance, measure range and direction, and look out from an
+observation post in 3D. Everything is saved on the phone the moment you plot it, so it keeps working with no signal.
 
 > Training and simulation only. Not for real-world military use or targeting.
+
+## Features
+
+- **Units and graphics:** MIL-STD-2525C unit symbols with echelons, points, lines, polygons and circles, with range
+  rings for artillery, mortar and air defense units.
+- **MGRS grid:** grid lines that get finer as you zoom, quick plot by typing a grid, and the grid, distance and bearing
+  under the crosshair always on screen.
+- **Range and direction:** measure between any two points in mils or degrees, from true, magnetic or grid north.
+- **3D terrain and OP view:** tilt the map over 3D terrain, or stand at an observation post at your own eye height and
+  look around.
+- **Overlays and missions:** group graphics into overlays you turn on and off, and keep each exercise as its own
+  mission.
+- **Built for the field:** no account, no sign-up, nothing uploaded. GPS averaging, portrait and landscape layouts, and
+  a full in-app guide.
+
+## Engineering highlights
+
+- **Offline-first, sync-ready data layer.** Missions and map items live in SQLite through PowerSync's local-only tables.
+  Records get UUIDs on the phone and every write goes through a command that stamps who made it and when, so team sync
+  can be added later without migrating anyone's data (see [Data and future sharing](#data-and-future-sharing)).
+- **Geodesy in one place.** MGRS conversion, geodesic distance and bearing (GeographicLib), and true, magnetic and grid
+  north with the WMM2025 magnetic model all live in `src/lib/geo/`, the only code allowed to import geodesy libraries.
+- **3D observation post.** A ground-level free camera over Mapbox terrain, with a small patch to `@rnmapbox/maps` and
+  symbols that rescale with the camera so they hold their size as the view tilts.
+- **Measured on device.** Map layers and camera handling were profiled on a phone for frame time and battery use, and
+  tuned from those measurements.
+- **Tested.** More than 1,900 Jest and React Native Testing Library tests across 188 test files, with strict TypeScript
+  and the React Compiler.
+- **Release engineering.** Three side-by-side app variants (development, preview, production), cloud builds on EAS,
+  over-the-air updates matched to native code by fingerprint, a release branch for store fixes, and Sentry crash
+  reporting that strips grids, coordinates and IP addresses.
 
 ## Stack
 
@@ -290,3 +337,8 @@ Sentry works out a city from each report's IP address.
 - Commit messages follow Conventional Commits (see `.claude/skills/commits`), with no attribution trailers.
 - Use single quotes. Colors come from theme tokens.
 - Install packages with `npx expo install <package>`.
+
+## License
+
+Copyright © 2026 Eratas Software LLC. All rights reserved. The source is public to read, not open source: see
+[LICENSE](LICENSE).
