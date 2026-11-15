@@ -186,7 +186,10 @@ optional message, shows the command and starts the build once you confirm. Along
 - Compares your code's fingerprint with the latest finished build of that profile and platform. If they match, the
   build would install the same native app, so it warns and asks before using up a build (ship JS changes with
   `scripts/ota-update.sh` instead).
-- For production, asks whether to submit the build to the store when it finishes (`--auto-submit`).
+- For production, asks whether to submit the build to the store when it finishes (`--auto-submit`). That needs a
+  `"submit": { "production": {} }` profile in `eas.json`, which `release/1.x` leaves out for now: adding it changes the
+  fingerprint, so add it only with the next round of native builds. Until then the script prints the
+  `npx eas-cli@latest submit -p <platform> --latest` command to run once the build finishes.
 
 The commands it runs:
 
@@ -220,9 +223,11 @@ scripts/ota-update.sh production "Fix the grid readout"    # to the App Store ap
 `scripts/ota-update.sh` does it in this order, and stops at the first problem:
 
 1. Checks you gave a message and have no uncommitted changes, so every update matches a commit.
-2. Compares your code's fingerprint with the latest build on that channel. If they differ, it stops and tells you to
-   build instead, because no phone could run the update.
-3. **`eas update --channel <channel> --environment <channel> --platform ios`** bundles the app into `dist/` and
+2. Compares your code's fingerprint with the latest build on that channel, for iOS and Android separately (each has
+   its own). It publishes to every platform that matches and skips one with no build on that channel yet. If a
+   platform's build is out of date it asks before publishing to the other one only, and if none match it stops and
+   tells you to build instead, because no phone could run the update.
+3. **`eas update --channel <channel> --environment <channel> --platform <ios|android|all>`** bundles the app into `dist/` and
    publishes it. The channel decides which app receives it; the environment supplies that app's EAS variables
    (`APP_VARIANT`, Mapbox token, Sentry DSN). They must always match, or the update gets the wrong fingerprint and
    silently reaches nobody. The script guarantees that.
