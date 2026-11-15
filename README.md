@@ -139,7 +139,10 @@ optional message, shows the command and starts the build once you confirm. Along
 - Compares your code's fingerprint with the latest finished build of that profile and platform. If they match, the
   build would install the same native app, so it warns and asks before using up a build (ship JS changes with
   `scripts/ota-update.sh` instead).
-- For production, asks whether to submit the build to the store when it finishes (`--auto-submit`).
+- For production, asks whether to submit the build to the store when it finishes (`--auto-submit`). That needs a
+  `"submit": { "production": {} }` profile in `eas.json`, which `release/1.x` leaves out for now: adding it changes the
+  fingerprint, so add it only with the next round of native builds. Until then the script prints the
+  `npx eas-cli@latest submit -p <platform> --latest` command to run once the build finishes.
 
 The commands it runs:
 
