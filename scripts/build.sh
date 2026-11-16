@@ -88,8 +88,8 @@ args=(build --profile "$profile" --platform "$platform")
 if [ -n "$message" ]; then
   args+=(--message "$message")
 fi
-# --auto-submit needs a "production" submit profile in eas.json. It is left out of release/1.x for now, because adding
-# it changes the fingerprint and would cut the store apps off from OTA updates; submit by hand instead.
+# --auto-submit needs a "production" submit profile in eas.json. eas.json is part of the fingerprint, so if the profile
+# is ever left out (to keep a store build's fingerprint), skip the question and submit by hand.
 if [ "$profile" = production ]; then
   if node -e 'process.exit(require("./eas.json").submit?.production ? 0 : 1)'; then
     if confirm 'Submit to the store when the build finishes?'; then
